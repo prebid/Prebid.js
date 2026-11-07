@@ -12,7 +12,7 @@ export function getViewportCoordinates() {
 }
 
 export function getViewportSize(win) {
-  const windowDimensions = win ? win : getWinDimensions();
+  const windowDimensions = win || getWinDimensions();
   try {
     const innerHeight = windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight || windowDimensions.document.body.clientHeight || 0;
     const innerWidth = windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth || windowDimensions.document.body.clientWidth || 0;
