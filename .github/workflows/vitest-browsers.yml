@@ -31,7 +31,6 @@ jobs:
     outputs:
       runners: ${{ toJSON(fromJSON(steps.define.outputs.result).runners) }}
       browserstack: ${{ toJSON(fromJSON(steps.define.outputs.result).browserstack) }}
-      browserstack-max-parallel: ${{ fromJSON(steps.define.outputs.result).browserstackMaxParallel }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -40,6 +39,7 @@ jobs:
           # test/spec for browsers.json's `specsMatching`
           sparse-checkout: |
             browsers.json
+            browsers-es5.json
             .github/workflows/scripts/browserMatrices.js
             test/spec/
           sparse-checkout-cone-mode: false
@@ -51,8 +51,7 @@ jobs:
             const browsers = require('./browsers.json');
             return {
               runners: m.vitestRunners(browsers),
-              browserstack: m.vitestBrowserstack(browsers),
-              browserstackMaxParallel: m.vitestBrowserstackMaxParallel(browsers),
+              browserstack: m.vitestBrowserstack(browsers, require('./browsers-es5.json')),
             };
 
 
@@ -136,13 +135,15 @@ jobs:
     if: ${{ needs.browserstack-check.outputs.available == 'true' && needs.define.outputs.browserstack != '[]' }}
     strategy:
       fail-fast: false
-      # One BrowserStack session per shard, two at a time for the iPhone (one at a time took 25 minutes).
-      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari still closes
-      # the page partway through a long session, so a shard is a quarter of the suite. The limit is the whole job's, across entries: the lowest `maxParallel` in browsers.json (entries without
-      # one don't lower it).
-      max-parallel: ${{ fromJSON(needs.define.outputs.browserstack-max-parallel) }}
+      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari's page process
+      # still dies partway through a long session, so the iPhone's suite is split into 6 shards.
       matrix:
         include: ${{ fromJSON(needs.define.outputs.browserstack) }}
+    # One BrowserStack session per job, at most one job per lane across all workflow runs: the lowest `maxParallel` in
+    # browsers.json (two for the iPhone; one took 25 minutes), capped by the sessions the ES5 e2e job leaves free.
+    concurrency:
+      group: browserstack-vitest-lane-${{ matrix.lane }}
+      queue: max
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -171,14 +172,8 @@ jobs:
         with:
           local-testing: start
           local-identifier: random
-      # Waits for 2 free sessions (counting the account's queue), so no job here takes the last one from the ES5 e2e
-      # job (test.yml).
-      - name: Wait for BrowserStack
-        uses: ./.github/actions/wait-for-browserstack
-        with:
-          sessions: 2
-      # Up to 3 attempts (retry-vitest.sh), each a new session. A retry doesn't wait for free sessions again: it takes
-      # the place of the session that just ended.
+      # Up to 4 attempts (retry-vitest.sh), each a new session. A retry waits a few minutes first only when BrowserStack
+      # refused the session as over its queue limit.
       - name: Run specs (${{ matrix.label }})
         timeout-minutes: 40
         env:
