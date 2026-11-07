@@ -1,6 +1,7 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
+import { server } from 'test/mocks/xhr.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -176,17 +177,82 @@ describe('byData Analytics Adapter ', () => {
         options: initOptions
       });
     });
-    it('sends and formatted auction data ', function () {
+    function sentValues() {
+      return server.requests
+        .filter(req => req.url === 'https://pbjs-stream.bydata.com/topics/prebid')
+        .map(req => JSON.parse(req.requestBody).records[0].value);
+    }
+    // crypto.subtle needs a secure context, which BrowserStack's http://bs-local.com page is not
+    const secureIt = window.isSecureContext ? it : () => {};
+
+    secureIt('sends and formatted auction data ', async function () {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
       events.emit(EVENTS.BID_WON, bidWonArgs);
-      var userToken = ascAdapter.getVisitorData(userData);
+      var userToken = await ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);
       newAuData['visitor_data'] = userToken;
       newBwData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedDataArgs);
       expect(newBwData).to.deep.equal(expectedBidWonArgs);
+    });
+
+    secureIt('waits for signing and snapshots each outgoing payload', async function () {
+      const tokenPromise = ascAdapter.getVisitorData(userData);
+      const first = { aid: 'first-auction', auctionData: [{ bid: 'first-bid' }] };
+      const firstSend = ascAdapter.sendPayload(first);
+      first.aid = 'second-auction';
+      first.auctionData[0].bid = 'second-bid';
+      const secondSend = ascAdapter.sendPayload(first);
+
+      const sent = () => sentValues().filter(value => ['first-auction', 'second-auction'].includes(value.aid));
+      expect(sent()).to.have.length(0);
+      const token = await tokenPromise;
+      await Promise.all([firstSend, secondSend]);
+
+      expect(token).to.equal(expectedDataArgs.visitor_data);
+      const values = sent();
+      expect(values).to.have.length(2);
+      expect(values[0]).to.deep.equal({
+        aid: 'first-auction', auctionData: [{ bid: 'first-bid' }], visitor_data: token
+      });
+      expect(values[1]).to.deep.equal({
+        aid: 'second-auction', auctionData: [{ bid: 'second-bid' }], visitor_data: token
+      });
+    });
+
+    secureIt('retries signing after a failure', async function () {
+      const sent = () => sentValues().filter(value => value.aid === 'retry-auction');
+      const importKey = sinon.stub(window.crypto.subtle, 'importKey').rejects(new Error('fail'));
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'retry-auction' });
+        expect(sent()).to.have.length(0);
+      } finally {
+        importKey.restore();
+      }
+      await ascAdapter.sendPayload({ aid: 'retry-auction' });
+      expect(sent()).to.have.length(1);
+      expect(sent()[0].visitor_data).to.be.a('string');
+    });
+
+    it('does not retry signing when Web Crypto is unavailable', async function () {
+      const subtle = window.crypto.subtle && sinon.stub(window.crypto, 'subtle').get(() => undefined);
+      const getVisitorData = sinon.spy(ascAdapter, 'getVisitorData');
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        expect(getVisitorData.callCount).to.equal(1);
+        expect(sentValues().filter(value => value.aid === 'no-crypto-auction')).to.have.length(0);
+      } finally {
+        getVisitorData.restore();
+        if (subtle) {
+          subtle.restore();
+          await ascAdapter.getVisitorData(userData);
+        }
+      }
     });
   });
 });

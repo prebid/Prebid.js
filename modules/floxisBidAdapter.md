@@ -1,6 +1,6 @@
 # Overview
 
-```
+```text
 Module Name: Floxis Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: prebid@floxis.tech
@@ -11,6 +11,7 @@ Maintainer: prebid@floxis.tech
 The Floxis Bid Adapter enables integration with the Floxis programmatic advertising platform via Prebid.js. It supports banner, video, and native formats.
 
 **Key Features:**
+
 - Banner, Video and Native ad support
 - OpenRTB 2.x compliant
 - Privacy signal forwarding (GDPR/TCF, USP, GPP, COPPA) via Prebid.js core
@@ -21,12 +22,13 @@ The Floxis Bid Adapter enables integration with the Floxis programmatic advertis
 - User sync (iframe and pixel cookie matching)
 
 ## Supported Media Types
+
 - Banner
 - Video (instream; outstream requires a publisher-supplied `mediaTypes.video.renderer`)
 - Native
 
 ## Floors Module Support
-The Floxis Bid Adapter supports the Prebid.js [Floors Module](https://docs.prebid.org/dev-docs/modules/floors.html). Floor values are automatically included in the OpenRTB request as `imp.bidfloor` and `imp.bidfloorcur`. When the Floors module is not in the build, a static `params.bidFloor` (with optional `params.bidFloorCur`) is used as a fallback.
+The Floxis Bid Adapter supports the Prebid.js [Floors Module](https://docs.prebid.org/dev-docs/modules/floors.html) through the core OpenRTB converter. Static `params.bidFloor` (with optional `params.bidFloorCur`) applies only when no Floors API applies and `ortb2Imp` supplies no floor, including when floor data is unavailable. It is not sent for an intentionally skipped Floors auction or a bidder in `noFloorSignalBidders`.
 
 ## User Identity & Supply Chain
 `user.ext.eids` from the Prebid [User ID module](https://docs.prebid.org/dev-docs/modules/userId.html) and `source.ext.schain` (set via `pbjs.setConfig({ schain })` or `ortb2`) are forwarded automatically through first-party-data passthrough — no adapter-specific configuration is required.
@@ -34,10 +36,11 @@ The Floxis Bid Adapter supports the Prebid.js [Floors Module](https://docs.prebi
 ## First-Party Fallback Id
 Floxis's primary identity signal, the `__fxId` cookie set on `.floxis.tech`, is a third-party cookie relative to the publisher and is blocked by Safari, Firefox and other ITP/ETP browsers. To keep an identity-of-last-resort in those browsers, the adapter mints a random v4 UUID **in the publisher's own page context** (first-party) and places it at `user.ext.floxisId` in the OpenRTB request.
 
-- **Storage & scope**: the id is persisted via `localStorage` (preferred) and a cookie, both scoped to the *publisher's own origin* — it is per-publisher, not cross-site, and is never shared between different sites running the adapter. Cookie lifetime is ~30 days; the id is regenerated if the stored value is not a well-formed 36-character UUID.
+- **Storage & scope**: the id is persisted via `localStorage` (preferred) and a cookie, both scoped to the *publisher's own origin* — it is per-publisher, not cross-site, and is never shared between different sites running the adapter. Cookie lifetime is ~30 days; the id is regenerated if the stored value is not a canonical UUID v4.
 - **Priority on the backend**: the client id is a fallback only. Floxis's backend applies `processedCookieUserId (the __fxId cookie) .orElse(clientFloxisId) .orElse(existing user.id)` — when the `__fxId` cookie is present (e.g. Chrome/Edge), behavior is unchanged and the client id is ignored.
-- **Consent**: storage access goes through Prebid.js core's `storageManager`, gated by the standard `deviceAccess` config and GDPR purpose-1 consent under Floxis's registered `gvlid` (1609) — the adapter adds no bespoke consent logic. If storage access is disallowed, no id is generated or sent, and the auction is unaffected.
+- **Consent**: storage access goes through Prebid.js core's `storageManager`, gated by `deviceAccess` and GDPR purpose-1 consent under GVL ID 1609. If storage access is disallowed, no stored fallback id is read or generated. Transmission also requires both `transmitEids` and `transmitUfpd` activity controls to allow it; if either is denied, both custom identifiers (`user.ext.floxisId` and `user.ext.wlid`) are omitted, including publisher-supplied values, and fallback storage is not accessed.
 - **Publisher opt-in required**: since Prebid.js 7.x, bidder-level storage access is denied by default and must be explicitly granted per bidder — without it, no `floxisId` is ever generated (a safe no-op, not an error). Enable it via:
+
 ```js
 // https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
 pbjs.bidderSettings = {
@@ -53,6 +56,7 @@ GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and au
 ## Example Usage
 
 Banner:
+
 ```javascript
 pbjs.addAdUnits([
   {
@@ -64,6 +68,7 @@ pbjs.addAdUnits([
 ```
 
 Video (instream):
+
 ```javascript
 pbjs.addAdUnits([
   {
@@ -82,6 +87,7 @@ pbjs.addAdUnits([
 ```
 
 Native:
+
 ```javascript
 pbjs.addAdUnits([
   {
@@ -106,13 +112,14 @@ pbjs.addAdUnits([
 | `seat` | required | Seat identifier | `'testSeat'` | `string` |
 | `region` | optional | Region identifier for routing (defaults to `us-e`) | `'us-e'` | `string` |
 | `partner` | optional | Partner identifier (defaults to `floxis`) | `'floxis'` | `string` |
-| `bidFloor` | optional | Static bid floor (CPM) used only when the Floors module is absent | `0.5` | `number` |
+| `bidFloor` | optional | Static bid floor (CPM) when no Floors API applies and floor signaling is not suppressed | `0.5` | `number` |
 | `bidFloorCur` | optional | Currency for `bidFloor` (defaults to `USD`) | `'USD'` | `string` |
 
 Only `seat` is required. `region` and `partner` are optional and accepted as-is (validated as DNS host labels) — any value routes to the matching `[<partner>-]<region>.floxis.tech` endpoint.
 
 ## User Sync
 The adapter registers cookie syncs to the Floxis trackers endpoint (`px-<region>.floxis.tech/sync`), which sets the Floxis DMP id and chains to the seat's demand-partner syncs. Both iframe and pixel syncs are supported; the type emitted follows your `userSync` configuration. Enable it for the adapter, e.g.:
+
 ```javascript
 pbjs.setConfig({
   userSync: {
@@ -124,7 +131,9 @@ pbjs.setConfig({
 ```
 
 ## Error & Timeout Telemetry
-The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, auction ID, publisher domain) — no user or device identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
+The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, publisher domain) — no user, device or auction identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
+
+For split requests, transport errors are reported only for the target identified by the failed response URL. If a network failure provides no URL and multiple targets were requested, the error beacon is omitted.
 
 ## Testing
 Unit tests are provided in `test/spec/modules/floxisBidAdapter_spec.js` and cover validation, request building (params, host-label safety, floors, placement `tagid`, FPD/consent passthrough, first-party fallback id), response interpretation and meta mapping, user syncs, billing notifications, and error/timeout telemetry callbacks.

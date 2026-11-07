@@ -102,15 +102,7 @@ declare module './bidfactory' {
   }
 }
 
-export interface CacheConfig {
-  /**
-   * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
-   */
-  url: string;
-  /**
-   * Flag determining whether to locally save VAST XML as a blob
-   */
-  useLocal?: boolean;
+interface BaseCacheConfig {
   /**
    * When true, allows VAST XML-only bids to pass even without cache.url or cache.useLocal.
    */
@@ -141,6 +133,30 @@ export interface CacheConfig {
    */
   batchTimeout?: number;
 }
+
+export interface RemoteCacheConfig extends BaseCacheConfig {
+  /**
+   * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
+   */
+  url: string;
+  /**
+   * Flag determining whether to locally save VAST XML as a blob
+   */
+  useLocal?: false;
+}
+
+export interface LocalCacheConfig extends BaseCacheConfig {
+  /**
+   * The URL of the Prebid Cache server endpoint. Not used when `useLocal` is true.
+   */
+  url?: string;
+  /**
+   * Flag determining whether to locally save VAST XML as a blob
+   */
+  useLocal: true;
+}
+
+export type CacheConfig = RemoteCacheConfig | LocalCacheConfig;
 
 declare module './config' {
   interface Config {
@@ -229,7 +245,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
+export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error, _uuids) => {}, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
@@ -241,7 +257,16 @@ export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax 
 }
 
 export function getCacheUrl(cacheUrl, id) {
-  return `${cacheUrl}?uuid=${id}`;
+  let url;
+  try {
+    url = new URL(cacheUrl, document.baseURI);
+  } catch (e) {
+    return `${cacheUrl}?uuid=${encodeURIComponent(id)}`;
+  }
+  const params = url.search.replace(/^\?/, '').split('&').filter(param => param && param.split('=')[0] !== 'uuid');
+  params.push(`uuid=${encodeURIComponent(id)}`);
+  url.search = `?${params.join('&')}`;
+  return url.toString();
 }
 
 export const storeLocally = (bid) => {
@@ -273,7 +298,19 @@ export function handleVideoBidCaching({
     ignoreBidderCacheKey
   } = config.getConfig('cache') || {};
 
-  const shouldUseCache = (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM);
+  const activeRendererRequiresVastUrl = bidResponse.safeRenderer?.url
+    ? bidResponse.safeRenderer.requiresVastUrl
+    : bidResponse.renderer?.requiresVastUrl;
+  const rendererNeedsVastUrl = bidResponse.mediaType === 'video' && context === OUTSTREAM &&
+    activeRendererRequiresVastUrl === true && !bidResponse.vastUrl;
+  const cacheDisabled = bidResponse.mediaType === 'video' && videoMediaType?.cache === false;
+  if (rendererNeedsVastUrl && (!bidResponse.vastXml || cacheDisabled || (!useLocal && !cacheUrl))) {
+    logError('Video renderer requires vastUrl, but this bid has no VAST XML or video cache is disabled');
+    afterBidAdded();
+    return;
+  }
+
+  const shouldUseCache = !cacheDisabled && (useLocal || cacheUrl) && (useCacheKey || context !== OUTSTREAM || rendererNeedsVastUrl);
   const shouldStoreBid = !bidResponse.videoCacheKey || ignoreBidderCacheKey;
 
   if (shouldUseCache && shouldStoreBid) {
@@ -282,6 +319,7 @@ export function handleVideoBidCaching({
   }
   if (shouldUseCache && !shouldStoreBid && !bidResponse.vastUrl) {
     logError('videoCacheKey specified but not required vastUrl for video bid');
+    afterBidAdded();
     return;
   }
   addBidToAuction(auctionInstance, bidResponse);
@@ -314,13 +352,16 @@ export function storeBatch(batch) {
   _internal.store(bids, function (error, cacheIds) {
     if (error) {
       err(error);
+      batch.forEach(({ afterBidAdded }) => afterBidAdded());
     } else if (batch.length !== cacheIds.length) {
       logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`);
+      batch.forEach(({ afterBidAdded }) => afterBidAdded());
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        if (cacheId == null || typeof cacheId.uuid !== 'string' || cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was rejected or missing from Prebid Cache. Video bid must be discarded.`);
+          afterBidAdded();
         } else {
           bidResponse.cacheUrl = cacheUrl;
           assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheUrl, cacheId.uuid), cacheId.uuid);
@@ -361,6 +402,7 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
 export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
   let batches = [[]];
   let debouncing = false;
+  // Preserve synchronous dispatch when batching is not delayed.
   const noTimeout = cb => cb();
 
   return function (auctionInstance, bidResponse, afterBidAdded) {

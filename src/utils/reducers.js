@@ -1,3 +1,5 @@
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from './desirability.js';
+
 export function simpleCompare(a, b) {
   if (a === b) return 0;
   return a < b ? -1 : 1;
@@ -35,7 +37,27 @@ const timestampCompare = keyCompare((bid) => bid.responseTimestamp);
 // This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
 export const getHighestCpm = maximum(tiebreakCompare(cpmCompare, reverseCompare(keyCompare((bid) => bid.timeToRespond))));
 
-const bidDesirabilityCompare = keyCompare((bid) => bid.desirability);
+export function priorityCompare(left, right) {
+  const a = left.priority ?? DEFAULT_PRIORITY;
+  const b = right.priority ?? DEFAULT_PRIORITY;
+  if (a === b) return 0;
+  return a < b ? -PRIORITY_INCREMENT : PRIORITY_INCREMENT;
+}
+
+export function dealsFirst(a, b) {
+  if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
+    return -1;
+  }
+  if ((a.adserverTargeting.hb_deal === undefined && b.adserverTargeting.hb_deal !== undefined)) {
+    return 1;
+  }
+  return 0;
+}
+
+export const bidDesirabilityCompare = tiebreakCompare(priorityCompare, keyCompare((bid) => bid.desirability ?? bid.cpm));
+
+// Sort comparator that orders bids by `.desirability` (falling back to cpm), highest first.
+export const highestDesirabilityFirst = reverseCompare(bidDesirabilityCompare);
 
 // This function will get highest bid by `.desirability` (publisher `bidDesirabilityAdjustment` when set, else mirrors cpm via `adjustBids`);
 // ties use lowest `timeToRespond`, matching {@link getHighestCpm}.

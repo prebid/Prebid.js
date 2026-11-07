@@ -135,7 +135,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
       page: page
     },
     device: {
-      ua: window.navigator.userAgent
+      ua: bidderRequest.ortb2?.device?.ua
     },
     tmax: bidderRequest.timeout
   };

@@ -7,6 +7,7 @@ const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+const {specsMatching} = require('./.github/workflows/scripts/browserMatrices.js');
 
 const BOOLEAN_OPTIONS = [
   'nolint',
@@ -37,6 +38,7 @@ const {values: argv, tokens} = parseArgs({
     // string options
     host: {type: 'string'},
     file: {type: 'string'},
+    files: {type: 'string'},
     modules: {type: 'string'},
     browsers: {type: 'string'},
     disable: {type: 'string'},
@@ -99,6 +101,10 @@ function isModuleDirectory(filePath) {
   } catch (error) {}
 }
 
+function getParentModule(module) {
+  return Object.entries(submodules).find(([, children])=> children.includes(module))?.[0];
+};
+
 module.exports = {
   getSourceFolders() {
     return SOURCE_FOLDERS
@@ -108,6 +114,30 @@ module.exports = {
   },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
+  },
+
+  /**
+   * The Vitest environment for each browsers.json entry that has `browserstack`, or for the ones named in `keys`, and
+   * the spec files to run for an entry with `vitest.specsMatching`.
+   */
+  browserstackTargets(keys = [], browsers = require('./browsers.json')) {
+    const available = Object.keys(browsers).filter(key => browsers[key].browserstack);
+    const unknown = keys.filter(key => !available.includes(key));
+    if (unknown.length) {
+      throw new Error(`No BrowserStack settings for ${unknown.join(', ')}; browsers.json has them for ${available.join(', ')}`);
+    }
+    return (keys.length ? keys : available).map(key => {
+      const bs = browsers[key].browserstack;
+      return {
+        key,
+        shards: bs.vitest?.shards ?? 1,
+        ...(bs.vitest?.specsMatching ? {files: specsMatching(bs.vitest.specsMatching, __dirname)} : {}),
+        // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
+        env: bs.deviceName
+          ? {VITEST_DEVICE: bs.deviceName, VITEST_OS: undefined, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: undefined}
+          : {VITEST_DEVICE: undefined, VITEST_OS: bs.os, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: bs.browserVersion},
+      };
+    });
   },
 
   getArgModules() {
@@ -128,17 +158,12 @@ module.exports = {
     }
 
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
-    Object.keys(submodules).forEach(parentModule => {
-      if (
-        !modules.includes(parentModule) &&
-        modules.some(module => submodules[parentModule].includes(module))
-      ) {
-        modules.unshift(parentModule);
-      }
-    });
-
+    new Set(
+      modules.map(getParentModule).filter(module => module != null && !modules.includes(module))
+    ).forEach((module => modules.unshift(module)));
     return modules;
   },
+  getParentModule,
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;

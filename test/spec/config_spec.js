@@ -353,6 +353,25 @@ describe('config API', function () {
     expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
+  it('sets auctionOptions viewabilityMeasurement', function () {
+    const auctionOptionsConfig = {
+      'viewabilityMeasurement': 'boundingBox'
+    };
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('should log warning for invalid auctionOptions viewabilityMeasurement', function () {
+    setConfig({
+      auctionOptions: {
+        'viewabilityMeasurement': 'nope',
+      }
+    });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options viewabilityMeasurement must be one of: observer, boundingBox';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);

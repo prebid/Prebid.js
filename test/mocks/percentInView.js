@@ -22,3 +22,43 @@ export function enable() {
 export function disable() {
   enabled = false;
 }
+
+let frameRectEnabled = true;
+const frameElement = window.frameElement;
+
+if (frameElement != null) {
+  // karma runs tests inside an iframe (context.html) that is offset from the top window, while the
+  // debug page runs them in the top window. Report the top window's viewport as the containing
+  // frame's box, so that viewability measurements do not depend on which of the two is in use.
+  const original = frameElement.getBoundingClientRect;
+  frameElement.getBoundingClientRect = function () {
+    if (!frameRectEnabled) {
+      return original.call(this);
+    }
+    const doc = window.top.document.documentElement;
+    return {
+      left: 0,
+      top: 0,
+      x: 0,
+      y: 0,
+      right: doc.clientWidth,
+      bottom: doc.clientHeight,
+      width: doc.clientWidth,
+      height: doc.clientHeight
+    };
+  };
+  // Vitest holds on to the iframe element for a while after removing it, and the stub would keep this whole frame alive
+  window.addEventListener('pagehide', () => { delete frameElement.getBoundingClientRect; });
+}
+
+export function enableFrameRect() {
+  frameRectEnabled = true;
+}
+
+/**
+ * Report the real box of the frame containing the tests, for tests that need the frame's actual
+ * position or size. Remember to `enableFrameRect()` afterwards.
+ */
+export function disableFrameRect() {
+  frameRectEnabled = false;
+}

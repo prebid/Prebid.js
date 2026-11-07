@@ -8,10 +8,12 @@ import {
   isNumber,
   isPlainObject,
   logError,
+  logWarn,
   pick,
   politeTriggerPixel,
   triggerPixel
 } from './utils.js';
+import { validateSizes } from './utils/objects.js';
 
 import { auctionManager } from './auctionManager.js';
 import {
@@ -70,12 +72,20 @@ type LegacyAssetRequest = {
   required?: boolean;
 };
 
+type LegacyVideoAssetRequest = LegacyAssetRequest & {
+  mimes: string[];
+  protocols: number[];
+  minduration: number;
+  maxduration: number;
+};
+
 export type LegacyNativeRequest = {
   privacyLink?: LegacyAssetRequest;
   clickUrl?: LegacyAssetRequest;
   title?: LegacyAssetRequest & {
     len?: number;
   };
+  video?: LegacyVideoAssetRequest;
   ext?: Ext;
 } & {
   [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
@@ -497,19 +507,21 @@ export function getAllAssetsMessage(data, adObject) {
 }
 
 /**
- * Native assets can be a string or an object with a url prop. Returns the value
- * appropriate for sending in adserver targeting or placeholder replacement.
+ * Native assets can be a string, an image object with a url, or a video object
+ * with content (e.g. AppNexus). Returns the value appropriate for adserver
+ * targeting or placeholder replacement.
  */
 function getAssetValue(value) {
-  return value?.url || value;
+  return value?.url || value?.content || value;
 }
+
 /**
  * converts Prebid legacy native assets request to OpenRTB format
  * @param {object} legacyNativeAssets an object that describes a native bid request in Prebid proprietary format
  * @returns an OpenRTB format of the same bid request
  */
 export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): NativeRequest {
-  if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
+  if (!legacyNativeAssets || !isPlainObject(legacyNativeAssets)) {
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
@@ -552,22 +564,26 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
       ortbAsset.img = {
         type: key === 'icon' ? NATIVE_IMAGE_TYPES.ICON : NATIVE_IMAGE_TYPES.MAIN,
       };
+      const sizes = validateSizes(asset.sizes);
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
-          logError("image.aspect_ratios was passed, but it's not a an array:", asset.aspect_ratios);
+          logError(`${key}.aspect_ratios was passed, but it's not an array:`, asset.aspect_ratios);
         } else if (!asset.aspect_ratios.length) {
-          logError("image.aspect_ratios was passed, but it's empty:", asset.aspect_ratios);
+          logError(`${key}.aspect_ratios was passed, but it's empty:`, asset.aspect_ratios);
         } else {
-          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
+          if (!sizes.length && asset.aspect_ratios.slice(1).some(ar => ar?.min_width != null || ar?.min_height != null)) {
+            logWarn(`${key}.aspect_ratios has multiple entries; min_width/min_height of all but the first are ignored in the ORTB native request:`, asset.aspect_ratios.slice(1));
+          }
+          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0] ?? {};
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
-            logError('image.aspect_ratios min_width or min_height are invalid: ', minWidth, minHeight);
+            logError(`${key}.aspect_ratios min_width or min_height are invalid: `, minWidth, minHeight);
           } else {
             ortbAsset.img.wmin = minWidth;
             ortbAsset.img.hmin = minHeight;
           }
           const aspectRatios = asset.aspect_ratios
-            .filter((ar) => ar.ratio_width && ar.ratio_height)
+            .filter((ar) => ar?.ratio_width && ar?.ratio_height)
             .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
           if (aspectRatios.length > 0) {
             ortbAsset.img.ext = {
@@ -579,11 +595,14 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
 
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
-        if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
-          logError('image.sizes was passed, but its value is not an array of integers:', asset.sizes);
+        if (!sizes.length) {
+          logError(`${key}.sizes was passed, but its value is not a size or an array of sizes:`, asset.sizes);
         } else {
-          ortbAsset.img.w = asset.sizes[0];
-          ortbAsset.img.h = asset.sizes[1];
+          if (sizes.length > 1) {
+            logWarn(`${key}.sizes has multiple sizes; only the first one (${sizes[0].join('x')}) will be used in the ORTB native request. Extra sizes are dropped:`, sizes.slice(1));
+          }
+          ortbAsset.img.w = sizes[0][0];
+          ortbAsset.img.h = sizes[0][1];
           delete ortbAsset.img.hmin;
           delete ortbAsset.img.wmin;
         }
@@ -595,6 +614,9 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
         // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || 140
       };
+    // video case
+    } else if (key === 'video') {
+      ortbAsset.video = getDefinedParams(asset, ['mimes', 'protocols', 'minduration', 'maxduration']);
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = asset;
@@ -672,11 +694,15 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
+    } else if (asset.video) {
+      oldNativeObject.video = {
+        required: asset.required ? Boolean(asset.required) : false,
+        ...getDefinedParams(asset.video, ['mimes', 'protocols', 'minduration', 'maxduration'])
+      };
     }
     if (openRTBRequest.privacy) {
       oldNativeObject.privacyLink = { required: false };
     }
-    // video was not supported by old prebid assets
   }
   return oldNativeObject;
 }
@@ -792,6 +818,14 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
           };
         });
         break;
+      case 'video':
+        useRequestAsset(asset => asset.video != null, videoAsset => {
+          const vasttag = typeof value === 'string' ? value : value?.content;
+          videoAsset.video = {
+            vasttag
+          };
+        });
+        break;
       default:
         if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
           useRequestAsset(asset => asset.data != null && asset.data.type === NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]], dataAsset => {
@@ -828,7 +862,14 @@ export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest: Nati
         height: asset.img.h
       };
     } else if (asset.data) {
-      legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset?.data?.type]]] = asset.data.value;
+      const requestDataType = requestAsset?.data?.type;
+      const nativeAssetType = requestDataType != null ? NATIVE_ASSET_TYPES_INVERSE[requestDataType] : undefined;
+      const legacyDataKey = nativeAssetType != null ? PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[nativeAssetType] : undefined;
+      if (legacyDataKey != null) {
+        legacyResponse[legacyDataKey] = asset.data.value;
+      }
+    } else if (asset.video) {
+      legacyResponse.video = asset.video.vasttag;
     }
   }
 
