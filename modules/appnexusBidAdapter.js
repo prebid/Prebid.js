@@ -1,6 +1,5 @@
 import {
   createTrackPixelHtml,
-  deepAccess,
   deepClone,
   getBidRequest,
   getParameterByName,
@@ -612,7 +611,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    const videoContext = bidRequest?.mediaTypes?.video?.context;
     switch (videoContext) {
       case OUTSTREAM:
         bid.adResponse = serverBid;
@@ -622,9 +621,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
-          let rendererOptions = deepAccess(videoBid, 'mediaTypes.video.renderer.options'); // mediaType definition has preference (shouldn't options be .config?)
+          let rendererOptions = videoBid?.mediaTypes?.video?.renderer?.options; // mediaType definition has preference (shouldn't options be .config?)
           if (!rendererOptions) {
-            rendererOptions = deepAccess(videoBid, 'renderer.options'); // second the adUnit definition has preference (shouldn't options be .config?)
+            rendererOptions = videoBid?.renderer?.options; // second the adUnit definition has preference (shouldn't options be .config?)
           }
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
@@ -855,7 +854,7 @@ function bidToTag(bid) {
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
-    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = bid?.mediaTypes?.banner?.pos || bid?.mediaTypes?.video?.pos;
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -884,22 +883,22 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.external_imp_id;
   }
 
-  const auKeywords = getANKewyordParamFromMaps(convertKeywordStringToANMap(deepAccess(bid, 'ortb2Imp.ext.data.keywords')), bid.params?.keywords);
+  const auKeywords = getANKewyordParamFromMaps(convertKeywordStringToANMap(bid?.ortb2Imp?.ext?.data?.keywords), bid.params?.keywords);
   if (auKeywords.length > 0) {
     tag.keywords = auKeywords;
   }
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
   if (gpid) {
     tag.gpid = gpid;
   }
 
-  const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  const tid = bid?.ortb2Imp?.ext?.tid;
   if (tid) {
     tag.tid = tid;
   }
 
-  if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {
+  if (FEATURES.NATIVE && (bid.mediaType === NATIVE || bid?.mediaTypes?.[NATIVE])) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);
@@ -912,8 +911,8 @@ function bidToTag(bid) {
   }
 
   if (FEATURES.VIDEO) {
-    const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-    const context = deepAccess(bid, 'mediaTypes.video.context');
+    const videoMediaType = bid?.mediaTypes?.[VIDEO];
+    const context = bid?.mediaTypes?.video?.context;
 
     tag.hb_source = 1;
     if (bid.mediaType === VIDEO || videoMediaType) {
@@ -1019,7 +1018,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
-  if (deepAccess(bid, `mediaTypes.${BANNER}`)) {
+  if (bid?.mediaTypes?.[BANNER]) {
     tag.ad_types.push(BANNER);
   }
 

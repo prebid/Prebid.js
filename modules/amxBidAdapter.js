@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   _each,
-  deepAccess,
   formatQS,
   getUniqueIdentifierStr,
   isArray,
@@ -45,8 +44,8 @@ function getTimeoutSize(timeoutData) {
 
 const largestSize = (sizes, mediaTypes) => {
   const allSizes = sizes
-    .concat(deepAccess(mediaTypes, `${BANNER}.sizes`, []) || [])
-    .concat(deepAccess(mediaTypes, `${VIDEO}.sizes`, []) || []);
+    .concat(mediaTypes?.[BANNER]?.sizes || [])
+    .concat(mediaTypes?.[VIDEO]?.sizes || []);
 
   return allSizes.sort((a, b) => b[0] * b[1] - a[0] * a[1])[0];
 };
@@ -136,7 +135,7 @@ function ensureFloor(floorValue) {
 
 function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
+    return bid?.params?.floor ?? DEFAULT_MIN_FLOOR;
   }
 
   try {
@@ -154,14 +153,15 @@ function getFloor(bid) {
 }
 
 function refInfo(bidderRequest, subKey, defaultValue) {
-  return deepAccess(bidderRequest, 'refererInfo.' + subKey, defaultValue);
+  const value = bidderRequest?.refererInfo?.[subKey];
+  return value === undefined ? defaultValue : value;
 }
 
 function convertRequest(bid) {
   const size = largestSize(bid.sizes, bid.mediaTypes) || [0, 0];
   const isVideoBid = bid.mediaType === VIDEO || VIDEO in bid.mediaTypes;
   const av = isVideoBid || size[1] > 100;
-  const tid = deepAccess(bid, 'params.tagId');
+  const tid = bid?.params?.tagId;
 
   const au =
     bid.params != null &&
@@ -172,11 +172,11 @@ function convertRequest(bid) {
 
   const multiSizes = [
     bid.sizes,
-    deepAccess(bid, `mediaTypes.${BANNER}.sizes`, []) || [],
-    deepAccess(bid, `mediaTypes.${VIDEO}.sizes`, []) || [],
+    bid?.mediaTypes?.[BANNER]?.sizes || [],
+    bid?.mediaTypes?.[VIDEO]?.sizes || [],
   ];
 
-  const videoData = deepAccess(bid, `mediaTypes.${VIDEO}`, {}) || {};
+  const videoData = bid?.mediaTypes?.[VIDEO] || {};
 
   const params = {
     au,
@@ -320,15 +320,15 @@ export const spec = {
 
   isBidRequestValid(bid) {
     return (
-      nullOrType(deepAccess(bid, 'params.endpoint', null), 'string') &&
-      nullOrType(deepAccess(bid, 'params.tagId', null), 'string')
+      nullOrType(bid?.params?.endpoint ?? null, 'string') &&
+      nullOrType(bid?.params?.tagId ?? null, 'string')
     );
   },
 
   buildRequests(bidRequests, bidderRequest) {
     const loc = getLocation(bidderRequest);
-    const tagId = deepAccess(bidRequests[0], 'params.tagId', null);
-    const testMode = deepAccess(bidRequests[0], 'params.testMode', 0);
+    const tagId = bidRequests[0]?.params?.tagId ?? null;
+    const testMode = bidRequests[0]?.params?.testMode ?? 0;
     const fbid =
       bidRequests[0] != null
         ? bidRequests[0]
@@ -355,8 +355,8 @@ export const spec = {
       st: 'prebid',
       h: screen.height,
       w: screen.width,
-      gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
-      gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+      gs: bidderRequest?.gdprConsent?.gdprApplies ?? '',
+      gc: bidderRequest?.gdprConsent?.consentString ?? '',
       gpp: getGpp(bidderRequest),
       u: refInfo(bidderRequest, 'page', loc.href),
       do: refInfo(bidderRequest, 'site', loc.hostname),
@@ -394,7 +394,7 @@ export const spec = {
       data: payload,
       method: 'POST',
       browsingTopics: true,
-      url: deepAccess(bidRequests[0], 'params.endpoint', DEFAULT_ENDPOINT),
+      url: bidRequests[0]?.params?.endpoint ?? DEFAULT_ENDPOINT,
       withCredentials: true,
     };
   },

@@ -1,6 +1,6 @@
 'use strict';
 
-import { deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
+import { deepSetValue, isFn, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -75,7 +75,7 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
-      let pos = parseInt(bid.params.pos || deepAccess(bid.mediaTypes, 'video.pos'), 10);
+      let pos = parseInt(bid.params.pos || bid.mediaTypes?.video?.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Advertising.com: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
@@ -93,7 +93,7 @@ export const spec = {
       if (imps.length > 0) {
         imps.forEach(i => {
           // Deeply add ext section to all imp[] for GPID, prebid slot id, and anything else down the line
-          const extSection = deepAccess(bid, 'ortb2Imp.ext');
+          const extSection = bid?.ortb2Imp?.ext;
           if (extSection) {
             deepSetValue(i, 'ext', extSection);
           }
