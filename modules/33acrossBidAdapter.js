@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {
   deepAccess,
-  getWindowSelf,
   getWindowTop,
   isArray,
   isGptPubadsDefined,
@@ -617,20 +616,6 @@ function _createSync({ zoneId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   return sync;
 }
 
-function getTopMostAccessibleWindow() {
-  let mostAccessibleWindow = getWindowSelf();
-
-  try {
-    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
-      mostAccessibleWindow.parent.document) {
-      mostAccessibleWindow = mostAccessibleWindow.parent;
-    }
-  } catch (err) {
-    // Do not throw an exception if we can't access the topmost frame.
-  }
-
-  return mostAccessibleWindow;
-}
 
 function getViewportDimensions() {
   const { width, height } = getViewportSize();
