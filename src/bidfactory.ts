@@ -43,6 +43,11 @@ export interface DealMeta {
    * Relative precedence among deals.
    */
   priority?: number;
+  /**
+   * Who validated the deal metadata; Prebid Server sets `"adserver"` on metadata from bidders listed in the request's
+   * `ext.prebid.as.apb`. Informational only: whether Prebid.js trusts the metadata depends on `allowPriorityBids`, not on this field.
+   */
+  source?: string;
 }
 
 /**

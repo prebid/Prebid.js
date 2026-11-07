@@ -55,5 +55,26 @@ describe('metadata', () => {
         components
       });
     });
+    it('includes all disclosures for components that have more than one', () => {
+      const components = [
+        {
+          componentType: 'rtd',
+          componentName: 'mock',
+          disclosureURL: ['first.url', 'second.url']
+        }
+      ];
+      const disclosures = {
+        'first.url': { disclosures: ['foo'] },
+        'second.url': { disclosures: ['bar'] }
+      };
+      metadata.register('mockModule', {
+        components,
+        disclosures
+      });
+      expect(metadata.getModuleMetadata('mockModule')).to.eql({
+        disclosures,
+        components
+      });
+    });
   });
 });

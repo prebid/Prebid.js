@@ -91,6 +91,10 @@ describe('build CLI argument parsing', () => {
     });
   });
 
+  it('takes the value of --files given as a separate argument', () => {
+    expect(parse('lint', '--files', 'src/a.js')).to.eql({ files: 'src/a.js' });
+  });
+
   it('does not rewrite a flag given an explicit value once', () => {
     expect(parse('--coverage=false')).to.eql({ coverage: 'false' });
   });
