@@ -11,8 +11,8 @@ export function getViewportCoordinates() {
   }
 }
 
-export function getViewportSize(win) {
-  const windowDimensions = win || getWinDimensions();
+export function getViewportSize() {
+  const windowDimensions = getWinDimensions();
   try {
     const innerHeight = windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight || windowDimensions.document.body.clientHeight || 0;
     const innerWidth = windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth || windowDimensions.document.body.clientWidth || 0;

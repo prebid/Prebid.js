@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { deepAccess, getWinDimensions, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -58,7 +58,7 @@ export const spec = {
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: getWinDimensions().document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions(window).document.documentElement.clientWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
@@ -218,7 +218,7 @@ function buildImp(bidRequest, ortb2) {
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      const rect = getBoundingClientRect(getAdContainer(bidRequest.params.divId));
+      const rect = getElementDimensions(getAdContainer(bidRequest.params.divId));
       imp.adContainerWidth = rect.width;
       imp.adContainerHeight = rect.height;
     }

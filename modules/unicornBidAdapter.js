@@ -1,4 +1,6 @@
-import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf, getWinDimensions } from '../src/utils.js';
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
+import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
+import { getWinDimensions } from '../src/utils/winDimensions.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -67,7 +69,7 @@ function fixedOrSticky(el) {
   let fixed = false;
   let sticky = false;
   while (node && node.nodeType === 1) {
-    const position = win.getComputedStyle(node).position;
+    const position = getElementStyle(node, win).position;
     if (position === 'fixed') fixed = true;
     else if (position === 'sticky') sticky = true;
     node = node.parentElement;
@@ -117,7 +119,7 @@ function measureAdslot(bidRequest) {
   // y against the viewport height, not the (scroll-dependent) viewport-relative
   // rect.top. This keeps `pos` stable across refresh auctions after the user
   // has scrolled.
-  const { height: vh } = getWinDimensions().document.documentElement;
+  const vh = dims.document.documentElement.clientHeight;
   const pos = y < vh ? 1 : 3; // OpenRTB AdPosition: 1 = above the fold, 3 = below the fold
 
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();

@@ -1,7 +1,6 @@
-import { logInfo, deepAccess, logWarn, isArray, getParameterByName } from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
@@ -123,7 +122,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        const { width, height } = getViewportSize();
+        const winDimensions = getWinDimensions();
+        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);

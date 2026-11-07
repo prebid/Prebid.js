@@ -1,3 +1,4 @@
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
 import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
@@ -182,8 +183,8 @@ function getIsHidden(elem) {
     m = m + 1;
     try {
       if (
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('display') === 'none' ||
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('visibility') === 'hidden'
+        getElementStyle(lastElem, getContext(elem)).display === 'none' ||
+        getElementStyle(lastElem, getContext(elem)).visibility === 'hidden'
       ) {
         return true;
       } else {
@@ -212,14 +213,9 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const width = getWinDimensions().document.body.clientWidth;
-    const height = Math.max(
-      getWinDimensions().document.body.scrollHeight,
-      getWinDimensions().document.body.offsetHeight,
-      getWinDimensions().document.documentElement.clientHeight,
-      getWinDimensions().document.documentElement.scrollHeight,
-      getWinDimensions().document.documentElement.offsetHeight
-    );
+    const { document: { documentElement, body } } = getWinDimensions();
+    const width = body.clientWidth;
+    const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];
   } catch (t) {
     return [-1, -1];

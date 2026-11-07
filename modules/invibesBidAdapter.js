@@ -65,7 +65,7 @@ let _customUserSync;
 let _disableUserSyncs;
 
 function updateInfiniteScrollFlag() {
-  const { scrollHeight } = getWinDimensions().document.documentElement;
+  const { scrollHeight } = getWinDimensions(window).document.documentElement;
 
   if (invibes.originalURL === undefined) {
     invibes.originalURL = window.location.href;

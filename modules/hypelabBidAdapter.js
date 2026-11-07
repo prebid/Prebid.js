@@ -2,12 +2,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
   generateUUID,
+  getWinDimensions,
   mergeDeep,
   replaceAuctionPrice,
   triggerPixel,
 } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getViewportSize } from '../libraries/viewport/viewport.js';
 import {
   getWalletPresence,
   getWalletProviderFlags,
@@ -123,8 +123,17 @@ function getUserId(bidRequests, request) {
 }
 
 function getViewport() {
-  const { width, height } = getViewportSize();
-  return [width, height];
+  const win = getWinDimensions();
+  return [
+    Math.max(
+      win?.document.documentElement.clientWidth || 0,
+      win?.innerWidth || 0
+    ),
+    Math.max(
+      win?.document.documentElement.clientHeight || 0,
+      win?.innerHeight || 0
+    ),
+  ];
 }
 
 export const spec = {
