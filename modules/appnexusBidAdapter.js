@@ -612,7 +612,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    const videoContext = bidRequest?.mediaTypes?.video?.context;
     switch (videoContext) {
       case OUTSTREAM:
         bid.adResponse = serverBid;
@@ -622,9 +622,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
-          let rendererOptions = deepAccess(videoBid, 'mediaTypes.video.renderer.options'); // mediaType definition has preference (shouldn't options be .config?)
+          let rendererOptions = videoBid?.mediaTypes?.video?.renderer?.options; // mediaType definition has preference (shouldn't options be .config?)
           if (!rendererOptions) {
-            rendererOptions = deepAccess(videoBid, 'renderer.options'); // second the adUnit definition has preference (shouldn't options be .config?)
+            rendererOptions = videoBid?.renderer?.options; // second the adUnit definition has preference (shouldn't options be .config?)
           }
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
@@ -884,17 +884,17 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.external_imp_id;
   }
 
-  const auKeywords = getANKewyordParamFromMaps(convertKeywordStringToANMap(deepAccess(bid, 'ortb2Imp.ext.data.keywords')), bid.params?.keywords);
+  const auKeywords = getANKewordParamFromMaps(convertKeywordStringToANMap(bid?.ortb2Imp?.ext?.data?.keywords), bid.params?.keywords);
   if (auKeywords.length > 0) {
     tag.keywords = auKeywords;
   }
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
   if (gpid) {
     tag.gpid = gpid;
   }
 
-  const tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  const tid = bid?.ortb2Imp?.ext?.tid;
   if (tid) {
     tag.tid = tid;
   }
@@ -913,7 +913,7 @@ function bidToTag(bid) {
 
   if (FEATURES.VIDEO) {
     const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-    const context = deepAccess(bid, 'mediaTypes.video.context');
+    const context = bid?.mediaTypes?.video?.context;
 
     tag.hb_source = 1;
     if (bid.mediaType === VIDEO || videoMediaType) {
