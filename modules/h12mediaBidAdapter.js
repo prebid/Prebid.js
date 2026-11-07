@@ -86,8 +86,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: windowTop.scrollX,
-            scrollbary: windowTop.scrollY,
+            scrollbarx: getWinDimensions().scrollX,
+            scrollbary: getWinDimensions().scrollY,
           },
           bidrequest,
         },
@@ -220,9 +220,14 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const { document: { documentElement, body } } = getWinDimensions();
-    const width = body.clientWidth;
-    const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
+    const width = getWinDimensions().document.body.clientWidth;
+    const height = Math.max(
+      getWinDimensions().document.body.scrollHeight,
+      getWinDimensions().document.body.offsetHeight,
+      getWinDimensions().document.documentElement.clientHeight,
+      getWinDimensions().document.documentElement.scrollHeight,
+      getWinDimensions().document.documentElement.offsetHeight
+    );
     return [width, height];
   } catch (t) {
     return [-1, -1];
