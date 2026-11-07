@@ -28,12 +28,14 @@ describe('ALVADS Bid Adapter', function() {
   const bidderRequestBanner = {
     refererInfo: { page: "http://localhost:1200" },
     gdprConsent: true,
-    uspConsent: '1YNN'
+    uspConsent: '1YNN',
+    ortb2: { device: { ua: 'Mozilla/5.0 (test)' } }
   };
   const bidderRequestVideo = {
     refererInfo: { page: "https://instagram.com" },
     gdprConsent: true,
-    uspConsent: '1YNN'
+    uspConsent: '1YNN',
+    ortb2: { device: { ua: 'Mozilla/5.0 (test)' } }
   };
 
   // -----------------------------
@@ -76,6 +78,7 @@ describe('ALVADS Bid Adapter', function() {
       expect(data.imp[0].banner).to.deep.equal({ w: 320, h: 100 });
       expect(data.imp[0].tagid).to.equal(bannerBid.params.tagid);
       expect(data.site.publisher.id).to.equal(bannerBid.params.publisherId);
+      expect(data.device.ua).to.equal('Mozilla/5.0 (test)');
     });
 
     it('builds correct video request payload', function() {

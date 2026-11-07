@@ -1780,7 +1780,7 @@ describe('gumgumAdapter', function () {
       expect(result.native).to.be.undefined;
     });
   });
-  describe('getUserSyncs', function () {
+  it('getUserSyncs should map pixel types to image and iframe', function () {
     const syncOptions = {
       'iframeEnabled': 'true'
     };
