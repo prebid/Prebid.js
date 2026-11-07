@@ -12,6 +12,17 @@ const LAYOUT_PROPERTIES = new Set([
 ]);
 
 const MESSAGE = 'Avoid synchronous layout reads; use the Prebid viewport/bounding-client-rect utilities instead.';
+const TRUSTED_UTILITY_CALLEES = new Set(['getWinDimensions', 'getViewportSize', 'getViewportCoordinates']);
+
+function isTrustedUtilityResult(node) {
+  let current = node;
+  while (current?.type === 'MemberExpression') {
+    current = current.object;
+  }
+  return current?.type === 'CallExpression' &&
+    current.callee?.type === 'Identifier' &&
+    TRUSTED_UTILITY_CALLEES.has(current.callee.name);
+}
 
 module.exports = {
   meta: {
@@ -24,7 +35,7 @@ module.exports = {
   create(context) {
     return {
       MemberExpression(node) {
-        if (node.computed) return;
+        if (node.computed || isTrustedUtilityResult(node)) return;
         const property = node.property;
         if (property?.type === 'Identifier' && LAYOUT_PROPERTIES.has(property.name)) {
           context.report({node, message: MESSAGE});
