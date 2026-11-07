@@ -1,6 +1,6 @@
 import { config } from '../../src/config.js';
 import * as events from '../../src/events.js';
-import { logError, logWarn, mergeDeep } from '../../src/utils.js';
+import { isArrayOfNums, logError, logWarn, mergeDeep } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import { EVENTS } from '../../src/constants.js';
 import {
@@ -24,7 +24,7 @@ import { auctionManager } from '../../src/auctionManager.js';
 import { doRender } from '../../src/adRendering.js';
 import { getHook } from '../../src/hook.js';
 import { type VideoBid } from '../../src/bidfactory.js';
-import type { BidderCode } from "../../src/types/common.d.ts";
+import type { BidderCode, Size } from "../../src/types/common.d.ts";
 import type { ORTBImp, ORTBRequest } from "../../src/types/ortb/request.d.ts";
 import type { DeepPartial } from "../../src/types/objects.d.ts";
 import type { AdServerVendor } from "../../libraries/video/constants/vendorCodes.ts";
@@ -40,7 +40,7 @@ declare module '../../src/events' {
   }
 }
 
-interface AdServerConfig {
+export interface AdServerConfig {
   /**
    * The identifier of the AdServer vendor (i.e. gam, etc).
    */
@@ -67,6 +67,98 @@ interface AdUnitVideoOptions {
   adServer?: AdServerConfig
 }
 
+export interface VideoProviderConfig {
+  /**
+   * The identifier of the Video Provider vendor (i.e. 1 for JW Player, 2 for videojs, etc).
+   */
+  vendorCode: number;
+  /**
+   * The HTML element id of the player or its placeholder div.
+   */
+  divId: string;
+  playerConfig?: Record<string, unknown>;
+  /**
+   * Configuration for ad server integration, applied to all ad units linked to this provider.
+   */
+  adServer?: AdServerConfig;
+}
+
+export interface VideoModuleConfig {
+  /**
+   * List of Provider configurations; one for each player instance that should be integrated.
+   */
+  providers: VideoProviderConfig[];
+  /**
+   * Defaults to true. Set to false to prevent the Video Module from enriching `site.content` in the bidder request.
+   */
+  contentEnrichmentEnabled?: boolean;
+  /**
+   * Div Id of the video player intended to populate `site.content` in the bidder request.
+   */
+  mainContentDivId?: string;
+  /**
+   * Configuration for ad server integration, applied to all providers and ad units.
+   */
+  adServer?: AdServerConfig;
+  /**
+   * List of player sizes, as `[width, height]`, that the video module should report instead of
+   * the player's actual size. Since players are often sized dynamically, their real dimensions
+   * rarely match the sizes that demand targets; when this is set, the size reported for each ad unit
+   * (`mediaTypes.video.playerSize`, `.w` and `.h`, which become `imp.video.w` / `imp.video.h`)
+   * is the bucket nearest to the player's actual size, and the actual size is
+   * reported as `imp.video.ext.true_size` (`{w, h}`).
+   *
+   * "Nearest" is the smallest Euclidean distance between `[width, height]` pairs; ties go to the bucket
+   * listed first. Entries that are not a pair of positive integers are ignored (with a warning).
+   * Bucketing is skipped for ad units where the publisher has set `playerSize`, `w` or `h`.
+   */
+  sizeBuckets?: Size[];
+}
+
+declare module '../../src/config' {
+  interface Config {
+    video?: VideoModuleConfig;
+  }
+}
+
+/**
+ * Validates `video.sizeBuckets`, dropping (and warning about) invalid entries.
+ * Returns null when there are no valid buckets.
+ */
+export function normalizeSizeBuckets(sizeBuckets: unknown): Size[] | null {
+  if (sizeBuckets == null) {
+    return null;
+  }
+  if (!Array.isArray(sizeBuckets)) {
+    logWarn('video.sizeBuckets must be an array of [width, height] sizes; ignoring it', sizeBuckets);
+    return null;
+  }
+  const valid = sizeBuckets.filter((bucket): bucket is Size => {
+    const isValid = isArrayOfNums(bucket, 2) && bucket.every(dimension => dimension > 0);
+    if (!isValid) {
+      logWarn('Ignoring invalid video.sizeBuckets entry; expected [width, height] with positive integers', bucket);
+    }
+    return isValid;
+  });
+  return valid.length ? valid : null;
+}
+
+/**
+ * Returns the bucket with the smallest Euclidean distance to `size`. Ties go to the first bucket in the list.
+ */
+export function getNearestSizeBucket([width, height]: Size, sizeBuckets: Size[]): Size {
+  let nearest: Size = null;
+  let nearestDistance = Infinity;
+  sizeBuckets.forEach(bucket => {
+    const distance = (bucket[0] - width) ** 2 + (bucket[1] - height) ** 2;
+    if (distance < nearestDistance) {
+      nearest = bucket;
+      nearestDistance = distance;
+    }
+  });
+  return nearest && [nearest[0], nearest[1]];
+}
+
 declare module '../../src/adUnits' {
   interface AdUnitDefinition {
     video?: AdUnitVideoOptions
@@ -89,6 +181,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
   let gamSubmodule;
   let mainContentDivId;
   let contentEnrichmentEnabled = true;
+  let sizeBuckets: Size[] | null = null;
   const videoImpressionVerifierFactory = videoImpressionVerifierFactory_;
   let videoImpressionVerifier;
 
@@ -112,6 +205,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
       });
       contentEnrichmentEnabled = video.contentEnrichmentEnabled !== false;
       mainContentDivId = contentEnrichmentEnabled ? video.mainContentDivId : null;
+      sizeBuckets = normalizeSizeBuckets(video.sizeBuckets);
     });
 
     requestBids.before(beforeBidsRequested, 40);
@@ -186,9 +280,14 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
       enrichOrtb2(mainContentDivId, bidderRequest);
     }
 
-    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
-    adUnits.forEach(adUnit => {
+    const adUnits = bidderRequest.adUnits ?? (bidderRequest.adUnits = (pbGlobal.adUnits || []).slice());
+    adUnits.forEach((adUnit, i) => {
       const divId = getDivId(adUnit);
+      if (divId) {
+        // enrich a copy: requestBids only copies the array, and publishers often reuse ad unit objects, so the sizes
+        // written here would otherwise stick to the publisher's object and skip enrichment in later auctions
+        adUnit = adUnits[i] = { ...adUnit, mediaTypes: { ...adUnit.mediaTypes } };
+      }
       enrichAdUnit(adUnit, divId);
       if (contentEnrichmentEnabled && !mainContentDivId) {
         enrichOrtb2(divId, bidderRequest);
@@ -224,10 +323,21 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     const width = ortbVideo.w;
     const height = ortbVideo.h;
     if (!video.playerSize && width && height) {
-      video.playerSize = [width, height];
+      const bucket = sizeBuckets && !hasPublisherSize(adUnit) ? getNearestSizeBucket([width, height], sizeBuckets) : null;
+      if (bucket) {
+        [video.w, video.h] = bucket;
+        video.playerSize = bucket;
+        adUnit.ortb2Imp = mergeDeep({}, adUnit.ortb2Imp, { video: { ext: { true_size: { w: width, h: height } } } });
+      } else {
+        video.playerSize = [width, height];
+      }
     }
 
     adUnit.mediaTypes.video = video;
+  }
+
+  function hasPublisherSize(adUnit) {
+    return [adUnit.mediaTypes.video, adUnit.ortb2Imp?.video].some(video => video?.w != null || video?.h != null);
   }
 
   function enrichOrtb2(divId, bidderRequest) {
