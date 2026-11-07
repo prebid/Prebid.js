@@ -2,7 +2,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
+import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
@@ -241,8 +241,8 @@ export const spec = {
       deepSetValue(data, 'ext.isiframe', isIframe);
 
       if (windowContext) {
-        deepSetValue(data, 'device.ext.scroll.top', windowContext.scrollY);
-        deepSetValue(data, 'device.ext.scroll.left', windowContext.scrollX);
+        deepSetValue(data, 'device.ext.scroll.top', getWinDimensions().scrollY);
+        deepSetValue(data, 'device.ext.scroll.left', getWinDimensions().scrollX);
       }
 
       const queryParamsString = formatQS(queryParams);
