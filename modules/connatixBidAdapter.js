@@ -25,6 +25,7 @@ import {
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
