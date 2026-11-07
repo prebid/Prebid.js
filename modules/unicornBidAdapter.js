@@ -118,7 +118,7 @@ function measureAdslot(bidRequest) {
   // y against the viewport height, not the (scroll-dependent) viewport-relative
   // rect.top. This keeps `pos` stable across refresh auctions after the user
   // has scrolled.
-  const { height: vh } = getViewportSize();
+  const { height: vh } = getWinDimensions().document.documentElement;
   const pos = y < vh ? 1 : 3; // OpenRTB AdPosition: 1 = above the fold, 3 = below the fold
 
   const topWin = canAccessWindowTop() ? getWindowTop() : getWindowSelf();
