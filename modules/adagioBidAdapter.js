@@ -375,7 +375,7 @@ export function setExtraParam(bid, paramName) {
   const adgGlobalConf = config.getConfig('adagio') || {};
   const ortb2Conf = bid.ortb2;
 
-  const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
+  const detected = adgGlobalConf[paramName] || ortb2Conf?.site?.ext?.data?.[paramName];
   if (detected) {
     // First Party Data can be an array.
     // As we consider that params detected from FPD are fallbacks, we just keep the 1st value.
@@ -541,14 +541,14 @@ export const spec = {
     const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
 
     // If no session data is provided, we always generate a new one.
-    const sessionData = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.session', {});
+    const { session: sessionData = {} } = bidderRequest?.ortb2?.site?.ext?.data?.adg_rtd || {};
     if (!Object.keys(sessionData).length) {
       logInfo(LOG_PREFIX, 'No session data provided. A new session is be generated.');
       sessionData.new = true;
       sessionData.rnd = Math.random();
     }
 
-    const aucId = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID();
+    const aucId = bidderRequest?.ortb2?.site?.ext?.data?.adg_rtd?.uid || generateUUID();
 
     const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);
@@ -607,7 +607,7 @@ export const spec = {
       if (isArray(computedFloors) && computedFloors.length) {
         bidRequest.floors = computedFloors;
 
-        if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+        if (bidRequest?.mediaTypes?.banner) {
           const bannerObj = bidRequest.mediaTypes.banner;
 
           const computeNewSizeArray = (sizeArr = []) => {
@@ -626,7 +626,7 @@ export const spec = {
             : computeNewSizeArray(bannerObj.sizes);
         }
 
-        if (deepAccess(bidRequest, 'mediaTypes.video')) {
+        if (bidRequest?.mediaTypes?.video) {
           const videoObj = bidRequest.mediaTypes.video;
           const videoFloors = bidRequest.floors.filter(floor => floor.mt === VIDEO);
           const playerSize = (videoObj.playerSize && isArray(videoObj.playerSize[0])) ? videoObj.playerSize[0] : videoObj.playerSize;
@@ -635,7 +635,7 @@ export const spec = {
           bidRequest.mediaTypes.video.floor = (videoFloors) ? videoSizeFloor ? videoSizeFloor.f : videoFloors[0].f : null;
         }
 
-        if (deepAccess(bidRequest, 'mediaTypes.native')) {
+        if (bidRequest?.mediaTypes?.native) {
           const nativeFloors = bidRequest.floors.filter(floor => floor.mt === NATIVE);
           if (nativeFloors.length) {
             bidRequest.mediaTypes.native.floor = nativeFloors[0].f;
@@ -643,29 +643,29 @@ export const spec = {
         }
       }
 
-      if (deepAccess(bidRequest, 'mediaTypes.video')) {
+      if (bidRequest?.mediaTypes?.video) {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      const gpid = bidRequest?.ortb2Imp?.ext?.gpid;
       if (gpid) {
         bidRequest.gpid = gpid;
       }
 
-      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      const instl = bidRequest?.ortb2Imp?.instl;
       if (instl !== undefined) {
         bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
       }
-      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      const rwdd = bidRequest?.ortb2Imp?.rwdd;
       if (rwdd !== undefined) {
         bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
 
       // features are added by the adagioRtdProvider.
       const rawFeatures = {
-        ...deepAccess(bidRequest, 'ortb2.site.ext.data.adg_rtd.features', {}),
+        ...bidRequest?.ortb2?.site?.ext?.data?.adg_rtd?.features,
         print_number: (bidRequest.bidderRequestsCount || 1).toString(),
-        adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
+        adunit_position: bidRequest?.ortb2Imp?.ext?.data?.adg_rtd?.adunit_position
       };
       // Clean the features object from null or undefined values.
       bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
@@ -782,22 +782,23 @@ export const spec = {
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
-              bidObj.meta = deepAccess(bidObj, 'meta', {});
+              if (bidObj.meta === undefined) bidObj.meta = {};
               bidObj.meta.mediaType = bidObj.mediaType;
               bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
 
               if (bidObj.mediaType === VIDEO) {
-                const mediaTypeContext = deepAccess(bidReq, 'mediaTypes.video.context');
+                const mediaTypeContext = bidReq?.mediaTypes?.video?.context;
                 // Adagio SSP returns a `vastXml` only. No `vastUrl` nor `videoCacheKey`.
                 if (!bidObj.vastUrl && bidObj.vastXml) {
                   bidObj.vastUrl = 'data:text/xml;charset=utf-8;base64,' + window.btoa(bidObj.vastXml.replace(/\\"/g, '"'));
                 }
 
                 if (mediaTypeContext === OUTSTREAM) {
-                  bidObj.outstreamRendererCode = deepAccess(bidReq, 'params.rendererCode', BB_RENDERER_DEFAULT);
+                  const { rendererCode = BB_RENDERER_DEFAULT } = bidReq?.params || {};
+                  bidObj.outstreamRendererCode = rendererCode;
 
-                  if (deepAccess(bidReq, 'mediaTypes.video.skip')) {
-                    const skipOffset = deepAccess(bidReq, 'mediaTypes.video.skipafter', 5); // default 5s.
+                  if (bidReq?.mediaTypes?.video?.skip) {
+                    const { skipafter: skipOffset = 5 } = bidReq.mediaTypes.video; // default 5s.
                     bidObj.skipOffset = skipOffset;
                   }
 

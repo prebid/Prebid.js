@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -27,13 +27,6 @@ const STORAGE = getStorageManager({ bidderCode: BIDDER.CODE });
 const CURRENCY = Object.freeze({
   KEY: 'currency',
   US_DOLLAR: 'USD',
-});
-
-const REQUEST_KEYS = Object.freeze({
-  USER_DATA: 'ortb2.user.data',
-  SOCIAL_CANVAS: 'params.socialCanvas',
-  SUA: 'ortb2.device.sua',
-  TDID_ADAPTER: 'userId.tdid',
 });
 
 const SUA = Object.freeze({
@@ -87,7 +80,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   const firstBidRequest = validBidRequests[0];
-  const tdidAdapter = deepAccess(firstBidRequest, REQUEST_KEYS.TDID_ADAPTER);
+  const tdidAdapter = firstBidRequest?.userId?.tdid;
 
   const metadata = getAllMetadata(bidderRequest);
 
@@ -121,7 +114,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // Add user data object if available
-  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
+  krakenParams.user.data = firstBidRequest?.ortb2?.user?.data || [];
 
   krakenParams.requestCount = getRequestCount();
 
@@ -139,14 +132,14 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // Pull Social Canvas segments and embed URL
-  const socialCanvas = deepAccess(firstBidRequest, REQUEST_KEYS.SOCIAL_CANVAS);
+  const socialCanvas = firstBidRequest?.params?.socialCanvas;
 
   if (socialCanvas !== null && socialCanvas !== undefined) {
     krakenParams.socan = socialCanvas;
   }
 
   // User Agent Client Hints / SUA
-  const uaClientHints = deepAccess(firstBidRequest, REQUEST_KEYS.SUA);
+  const uaClientHints = firstBidRequest?.ortb2?.device?.sua;
   if (uaClientHints) {
     const suaValidAttributes = [];
 

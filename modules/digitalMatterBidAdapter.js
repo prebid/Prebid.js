@@ -1,4 +1,4 @@
-import { deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
+import { deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput, setOnAny } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -37,8 +37,8 @@ export const spec = {
     }
 
     const device = getDevice(common.device);
-    const schain = getByKey(validBidRequests, 'ortb2.source.ext.schain');
-    const eids = getByKey(validBidRequests, 'userIdAsEids');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
+    const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const currency = config.getConfig('currency');
     const cur = currency && [currency];
 
@@ -199,15 +199,6 @@ function getDevice(data) {
     dnt: dnt,
     language: data.language || navigator.language,
   };
-}
-
-function getByKey(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 registerBidder(spec);

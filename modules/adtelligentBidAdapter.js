@@ -188,7 +188,7 @@ function prepareBidRequests(bidReq) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return bidderRequest?.mediaTypes?.video ? VIDEO : BANNER;
 }
 
 /**

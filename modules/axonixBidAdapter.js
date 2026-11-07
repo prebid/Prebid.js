@@ -72,19 +72,19 @@ function getSignalURL(params, path) {
 }
 
 function getSchain(validBidRequest, bidderRequest) {
-  return deepAccess(validBidRequest, 'ortb2.source.ext.schain') ||
-    deepAccess(validBidRequest, 'ortb2.source.schain') ||
-    deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
-    deepAccess(bidderRequest, 'ortb2.source.schain') ||
+  return validBidRequest?.ortb2?.source?.ext?.schain ||
+    validBidRequest?.ortb2?.source?.schain ||
+    bidderRequest?.ortb2?.source?.ext?.schain ||
+    bidderRequest?.ortb2?.source?.schain ||
     validBidRequest.schain;
 }
 
 function getTid(validBidRequest, bidderRequest) {
-  const sourceTid = deepAccess(validBidRequest, 'ortb2.source.tid') ||
-    deepAccess(bidderRequest, 'ortb2.source.tid') ||
+  const sourceTid = validBidRequest?.ortb2?.source?.tid ||
+    bidderRequest?.ortb2?.source?.tid ||
     bidderRequest.auctionId ||
     null;
-  const impTid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid') ||
+  const impTid = validBidRequest?.ortb2Imp?.ext?.tid ||
     validBidRequest.transactionId ||
     null;
 
@@ -228,7 +228,7 @@ export const spec = {
   },
 
   onTimeout: function(timeoutData) {
-    const params = deepAccess(timeoutData, '0.params.0');
+    const params = timeoutData?.[0]?.params?.[0];
     if (params && Object.keys(params).length > 0) {
       ajax(getSignalURL(params, 'timeout/v2'), null, timeoutData[0], {
         method: 'POST',
@@ -252,7 +252,7 @@ export const spec = {
   },
 
   onDataDeletionRequest: function(bidderRequests) {
-    const params = deepAccess(bidderRequests, '0.bids.0.params');
+    const params = bidderRequests?.[0]?.bids?.[0]?.params;
     if (!params?.supplyId) {
       return;
     }

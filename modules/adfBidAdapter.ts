@@ -1,5 +1,5 @@
 import { registerBidder, type AdapterRequest, type AdapterResponse, type BidderSpec, type ExtendedResponse, type ServerResponse } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
 import { deepSetValue, setOnAny } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -107,7 +107,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = bid?.ext?.prebid?.type;
+    context.mediaType = bid?.ext?.prebid?.type as MediaType;
     const bidResponse = buildBidResponse(bid, context);
 
     bidResponse.meta = bidResponse.meta || {};

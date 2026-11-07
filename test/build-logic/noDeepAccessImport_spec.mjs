@@ -10,16 +10,26 @@ ruleTester.run('no-deep-access-import', rule, {
     "import { deepAccess as access } from '../src/other.js';",
     "import { deepClone } from '../src/utils.js';",
     'const deepAccess = value => value;',
-    "import { deepAccess } from './utils.js';"
+    "import { deepAccess } from './utils.js';",
+    ...['js', 'mjs', 'ts', 'mts'].flatMap(extension => [
+      {
+        filename: `test/spec/modules/example_spec.${extension}`,
+        code: "import { deepAccess } from '../../../src/utils.js';"
+      },
+      {
+        filename: `C:\\prebid\\test\\spec\\modules\\example_spec.${extension}`,
+        code: "import { deepAccess } from '../../../src/utils.js';"
+      }
+    ])
   ],
   invalid: [
     {
       code: "import { deepAccess } from '../src/utils.js';",
-      errors: [{message: 'Prefer optional chaining over deepAccess when the property path is statically known.'}]
+      errors: [{ message: 'Prefer optional chaining over deepAccess when the property path is statically known.' }]
     },
     {
       code: "import { deepAccess, deepClone } from '../../src/utils.js';",
-      errors: [{message: 'Prefer optional chaining over deepAccess when the property path is statically known.'}]
+      errors: [{ message: 'Prefer optional chaining over deepAccess when the property path is statically known.' }]
     }
   ]
 });

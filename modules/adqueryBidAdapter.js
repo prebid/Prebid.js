@@ -264,7 +264,7 @@ export const spec = {
       logMessage('no gdpr or purpose1 consent, no syncs');
       return [];
     }
-    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
+    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => r?.body?.data?.qid).find(Boolean) : null;
     if (!qid) {
       logMessage('no qid found in server responses');
       return [];

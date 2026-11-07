@@ -153,7 +153,8 @@ function getFloor(bid) {
 }
 
 function refInfo(bidderRequest, subKey, defaultValue) {
-  return deepAccess(bidderRequest, 'refererInfo.' + subKey, defaultValue);
+  const value = bidderRequest?.refererInfo?.[subKey];
+  return value === undefined ? defaultValue : value;
 }
 
 function convertRequest(bid) {

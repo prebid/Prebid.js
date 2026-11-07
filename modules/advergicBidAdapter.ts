@@ -453,7 +453,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       ortbRequest.regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections;
     }
 
-    const schain = validBidRequests[0]?.schain;
+    const schain = asRecord(validBidRequests[0]).schain;
     if (schain) {
       ortbRequest.source.ext.schain = schain;
     }
