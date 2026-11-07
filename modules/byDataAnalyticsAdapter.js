@@ -1,4 +1,4 @@
-import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
+import { deepClone, logInfo, logError } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -209,8 +209,8 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
   function detectWidth() {
     const { width: viewportWidth } = getViewportSize();
-    const windowDimensions = getWinDimensions();
-    return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
+    const { width } = getViewportSize();
+    return width || viewportWidth;
   }
   function giveDeviceTypeOnScreenSize() {
     var _dWidth = detectWidth();
