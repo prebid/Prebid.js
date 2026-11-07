@@ -73,7 +73,7 @@ export function validateBanner(mediaTypes) {
     return true;
   }
 
-  const banner = deepAccess(mediaTypes, BANNER, {});
+  const banner = mediaTypes?.[BANNER] || {};
   return (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
 }
 
