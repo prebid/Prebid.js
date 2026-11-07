@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
+import { deepSetValue, getWinDimensions, inIframe, logWarn, parseSizesInput } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -44,8 +44,8 @@ export const spec = {
 
     const imp = validBidRequests.map((bid, id) => {
       const { accountId, siteId } = bid.params;
-      const bannerParams = deepAccess(bid, 'mediaTypes.banner');
-      const position = deepAccess(bid, 'mediaTypes.banner.pos') ?? 0;
+      const bannerParams = bid?.mediaTypes?.banner;
+      const position = bid?.mediaTypes?.banner?.pos ?? 0;
 
       return {
         id: bid.adUnitCode,
@@ -96,7 +96,7 @@ export const spec = {
       deepSetValue(payload, 'user.ext.eids', eids);
     }
 
-    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
+    if (bidderRequest?.gdprConsent?.gdprApplies !== undefined) {
       deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
     }
@@ -182,7 +182,7 @@ export const spec = {
 const usersSynced = false;
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!bidRequest?.mediaTypes?.banner;
 }
 
 function getDevice(data) {
