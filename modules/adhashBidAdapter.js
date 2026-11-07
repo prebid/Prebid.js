@@ -175,14 +175,18 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
-    const { document: { body, documentElement: html } } = getWinDimensions();
     const pageHeight = Math.max(
-      body.scrollHeight,
-      body.clientHeight,
-      html.clientHeight,
-      html.scrollHeight
+      getWinDimensions().document.body.scrollHeight,
+      getWinDimensions().document.body.clientHeight,
+      getWinDimensions().document.documentElement.clientHeight,
+      getWinDimensions().document.documentElement.scrollHeight
     );
-    const pageWidth = Math.max(body.scrollWidth, body.clientWidth, html.clientWidth, html.scrollWidth);
+    const pageWidth = Math.max(
+      getWinDimensions().document.body.scrollWidth,
+      getWinDimensions().document.body.clientWidth,
+      getWinDimensions().document.documentElement.clientWidth,
+      getWinDimensions().document.documentElement.scrollWidth
+    );
 
     for (let i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
