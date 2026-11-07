@@ -26,7 +26,7 @@ function sourcePattern(name) {
 
 const allowedImports = {
   modules: [
-    'crypto-js',
+    '@noble/hashes',
     'live-connect' // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
   ],
   src: [

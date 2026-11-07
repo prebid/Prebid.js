@@ -1,4 +1,6 @@
-import MD5 from 'crypto-js/md5.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
+import { utf8ToBytes } from '../libraries/utf8Utils/utf8Utils.js';
+import { md5 } from '@noble/hashes/legacy.js';
 import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
 import { activityParams } from '../src/activities/activityParams.js';
 import { MODULE_TYPE_PREBID } from '../src/activities/modules.js';
@@ -232,7 +234,7 @@ function postData() {
   }
   _logInfo('Users' + userIds);
   const syncPayload = {};
-  syncPayload.hid = MD5(email).toString();
+  syncPayload.hid = bytesToHex(md5(utf8ToBytes(email)));
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   _logInfo(payloadString);
