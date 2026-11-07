@@ -232,6 +232,7 @@ function init(provider, userConsent) {
 /** @type {RtdSubmodule} */
 export const imRtdSubmodule = {
   name: submoduleName,
+  acpId: 2279, // Google Additional Consent provider ID
   getBidRequestData: getRealTimeData,
   init: init
 };

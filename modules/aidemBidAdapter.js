@@ -1,10 +1,11 @@
-import { deepAccess, deepClone, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
+import { deepAccess, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
@@ -84,33 +85,11 @@ const converter = ortbConverter({
   }
 });
 
-// AIDEM Custom FN
-function recur(obj) {
-  var result = {}; var _tmp;
-  for (var i in obj) {
-    // enabledPlugin is too nested, also skip functions
-    if (!(i === 'enabledPlugin' || typeof obj[i] === 'function')) {
-      if (typeof obj[i] === 'object' && obj[i] !== null) {
-        // get props recursively
-        _tmp = recur(obj[i]);
-        // if object is not {}
-        if (Object.keys(_tmp).length) {
-          result[i] = _tmp;
-        }
-      } else {
-        // string, number or boolean
-        result[i] = obj[i];
-      }
-    }
-  }
-  return result;
-}
-
 function getRegs(bidderRequest) {
   const regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
-  const coppa = config.getConfig('coppa');
+  const coppa = bidderRequest?.ortb2?.regs?.coppa ?? coppaDataHandler.getCoppa();
   if (euConsentManagement && euConsentManagement.consentString) {
     deepSetValue(regs, 'gdpr_applies', !!euConsentManagement.consentString);
   } else {
@@ -122,8 +101,8 @@ function getRegs(bidderRequest) {
   } else {
     deepSetValue(regs, 'usp_applies', false);
   }
-  if (isBoolean(coppa)) {
-    deepSetValue(regs, 'coppa_applies', !!coppa);
+  if (isBoolean(coppa) || coppa === 1) {
+    deepSetValue(regs, 'coppa_applies', coppa === true || coppa === 1);
   } else {
     deepSetValue(regs, 'coppa_applies', false);
   }
@@ -132,11 +111,10 @@ function getRegs(bidderRequest) {
 }
 
 function setPrebidRequestEnvironment(payload) {
-  const __navigator = deepClone(recur(navigator));
-  delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
   deepSetValue(payload, 'environment.hl', window.history.length);
-  deepSetValue(payload, 'environment.nav', __navigator);
+  // Preserve the expected payload shape without collecting browser fingerprints.
+  deepSetValue(payload, 'environment.nav', {});
   deepSetValue(payload, 'environment.inp.euc', window.encodeURIComponent.name === 'encodeURIComponent' && typeof window.encodeURIComponent.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.eu', window.encodeURI.name === 'encodeURI' && typeof window.encodeURI.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.js', window.JSON.stringify.name === 'stringify' && typeof window.JSON.stringify.prototype === 'undefined');

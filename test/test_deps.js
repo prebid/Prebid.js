@@ -1,14 +1,3 @@
-window.__karma__.loaded = ((orig) => {
-  // for some reason, tests sometimes run before the DOM is ready
-  return function () {
-    if (document.readyState === "complete") {
-      orig();
-    } else {
-      window.onload = orig;
-    }
-  };
-})(window.__karma__.loaded.bind(window.__karma__));
-
 window.process = {
   env: {
     NODE_ENV: 'production'
@@ -25,7 +14,7 @@ window.addEventListener('unhandledrejection', function (ev) {
   if (ev.reason === 'pending failure' || ev.reason == null) return;
   // consentManagement tests intentionally exercise missing and rejecting CMP paths
   if ([
-    'TCF2 CMP not found.',
+    'TCF CMP not found',
     'CMP unable to register callback function.',
     'GPP CMP not found'
   ].some(msg => ev.reason?.message?.startsWith(msg))) return;
@@ -44,16 +33,6 @@ sinon.fakeServerWithClock = fakeServerWithClock;
 sinon.useFakeXMLHttpRequest = fakeXhr.useFakeXMLHttpRequest.bind(fakeXhr);
 sinon.createFakeServer = fakeServer.create.bind(fakeServer);
 sinon.createFakeServerWithClock = fakeServerWithClock.create.bind(fakeServerWithClock);
-
-localStorage.clear();
-
-if (window.frameElement != null) {
-  // sometimes (e.g. chrome headless) the tests run in an iframe that is offset from the top window
-  // other times (e.g. browser debug page) they run in the top window
-  // this can cause inconsistencies with the percentInView libraries; if we are in a frame,
-  // fake the same dimensions as the top window
-  window.frameElement.getBoundingClientRect = () => window.top.getBoundingClientRect();
-}
 
 require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');

@@ -81,6 +81,12 @@ describe('TrafficgateOpenxRtbAdapter', function () {
     });
   });
 
+  describe('gvlid', function () {
+    it('should declare the TrafficGate GVL ID', function () {
+      expect(spec.gvlid).to.equal(1272);
+    });
+  });
+
   describe('isBidRequestValid()', function () {
     describe('when request is for a banner ad', function () {
       let bannerBid;
@@ -1293,9 +1299,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       it('should return the proper mediaType', function () {
-        it('should return a creativeId', function () {
-          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-        });
+        expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
       });
     });
 

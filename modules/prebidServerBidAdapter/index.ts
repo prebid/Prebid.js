@@ -6,7 +6,6 @@ import {
   flatten,
   generateUUID,
   getParameterByName,
-  insertUserSyncIframe,
   isGzipCompressionSupported,
   isNumber,
   isPlainObject,
@@ -25,7 +24,9 @@ import { isValid } from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
+import { insertUserSyncIframe } from '../../src/userSync.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
+import { parseUntrustedJSON } from '../../src/utils/untrustedJson.js';
 import { hasVendorPurposeConsent } from '../../libraries/consentManagement/consentUtils.js';
 import { buildPBSRequest, interpretPBSResponse } from './ortbConverter.js';
 import { useMetrics } from '../../src/utils/perfMetrics.js';
@@ -35,8 +36,7 @@ import type { Identifier, BidderCode } from '../../src/types/common.d.ts';
 import type { Metrics } from "../../src/utils/perfMetrics.ts";
 import type { ORTBResponse } from "../../src/types/ortb/response.d.ts";
 import type { NativeRequest } from '../../src/types/ortb/native.d.ts';
-import { browserSupportsUserSyncCookies } from "../../src/userSync.ts";
-import type { SyncType } from "../../src/userSync.ts";
+import { browserSupportsUserSyncCookies, type SyncType } from "../../src/userSync.ts";
 
 const getConfig = config.getConfig;
 
@@ -56,7 +56,7 @@ type Endpoint = string | {
   noP1Consent: string;
 };
 
-type S2SConfig = {
+export type S2SConfig = {
   /**
    * Your Prebid Server account ID. This is obtained from whoever’s hosting your Prebid Server.
    */
@@ -129,6 +129,10 @@ type S2SConfig = {
    * Configures the default TTL in the Prebid Server adapter to use when Prebid Server does not return a bid TTL.
    * Defaults to 60.
    */
+  defaultTtl?: number;
+  /**
+   * @deprecated use defaultTtl
+   */
   defaultTTL?: number;
   /**
    * Arguments will be added to resulting OpenRTB payload to Prebid Server in every impression object at request.imp[].ext.BIDDER
@@ -150,6 +154,13 @@ type S2SConfig = {
    * If true, exclude ad units that have no bidders defined.
    */
   filterBidderlessCalls?: boolean;
+  /**
+   * Bidders routed through this Prebid Server instance whose deal metadata (`bid.meta.deal`) is trusted when ranking:
+   * their desirability starts from `meta.deal.priorityAdjustedCpm` instead of `cpm`.
+   * Trusted bidders must be listed explicitly; there is no option to trust every bidder on the instance.
+   * The listed bidders in each request are also sent to Prebid Server as `ext.prebid.as.apb`, with `ext.prebid.as.ap: true`.
+   */
+  allowPriorityBids?: BidderCode[];
 };
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
@@ -327,7 +338,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: 
   ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent, s2sConfig.hostGvlid),
     (response) => {
       try {
-        const responseJson = JSON.parse(response);
+        const responseJson = parseUntrustedJSON(response);
         doAllSyncs(responseJson.bidder_status, s2sConfig);
       } catch (e) {
         logError(e);
@@ -602,7 +613,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
             networkDone();
             let result;
             try {
-              result = JSON.parse(response);
+              result = parseUntrustedJSON(response);
               const { bids } = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
               bids.forEach(onBid);
             } catch (error) {
@@ -636,14 +647,23 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
     }
 
-    if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
-      compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
-        const url = new URL(requestData.endpointUrl);
-        url.searchParams.set('gzip', '1');
-        callAjax(compressedPayload, url.href);
-      });
+    const sendUncompressed = () => callAjax(requestData.requestJson, requestData.endpointUrl);
+
+    if (enableGZipCompression && !debugMode) {
+      isGzipCompressionSupported().then((supported) => {
+        if (supported) {
+          return compressDataWithGZip(requestData.requestJson)
+            .then(compressedPayload => {
+              const url = new URL(requestData.endpointUrl);
+              url.searchParams.set('gzip', '1');
+              callAjax(compressedPayload, url.href);
+            });
+        } else {
+          sendUncompressed();
+        }
+      }).catch(sendUncompressed);
     } else {
-      callAjax(requestData.requestJson, requestData.endpointUrl);
+      sendUncompressed();
     }
   } else {
     logError('PBS request not made.  Check endpoints.');

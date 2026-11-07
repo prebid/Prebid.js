@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/adrelevantisBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ssp.adrelevantis.com/prebid';
 
@@ -466,18 +465,12 @@ describe('AdrelevantisAdapter', function () {
       });
     });
 
-    it('should populate coppa if set in config', function () {
+    it('should populate coppa if set in ortb2', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-
-      const request = spec.buildRequests([bidRequest], {});
+      const request = spec.buildRequests([bidRequest], { ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
-
-      config.getConfig.restore();
     });
   });
 

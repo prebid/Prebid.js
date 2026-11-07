@@ -31,9 +31,6 @@ import { config } from 'src/config.js';
  * ortb2Imp: {ext: {data: {pbadslot: string}}}}}
  */
 
-const w = (utils.canAccessWindowTop()) ? utils.getWindowTop() : utils.getWindowSelf();
-const connectionType = getEffectiveConnectionType();
-let domLoadingDuration = utils.getDomLoadingDuration(w).toString();
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -60,8 +57,6 @@ const getConfigBid = (placement) => {
         },
       },
     },
-    domLoadingDuration,
-    ect: connectionType,
     params: {
       placement: placement,
       tagId: '14f30eca-85d2-11e8-9eed-0242ac120007',
@@ -243,7 +238,16 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
         <VASTAdTagURI>https://vast.bliink.io/p/508379d0-9f65-4198-8ba5-f61f2b51224f.xml</VASTAdTagURI>
         <Error>https://e.api.bliink.io/e?name=vast-error&token=${SAMPLE_VAST_EVENT_TOKEN}</Error>
         <Impression>https://e.api.bliink.io/e?name=impression&token=${SAMPLE_VAST_EVENT_TOKEN}</Impression>
-        <Extensions><Price>1</Price><Currency>EUR</Currency>
+        <Extensions><Price>1</Price><Currency>EUR</Currency></Extensions>
+        <Creatives>
+          <Creative>
+            <Linear>
+              <TrackingEvents>
+                <Tracking event="start">https://e.api.bliink.io/e?name=start&token=${SAMPLE_VAST_EVENT_TOKEN}</Tracking>
+              </TrackingEvents>
+            </Linear>
+          </Creative>
+        </Creatives>
       </Wrapper>
     </Ad>
   </VAST>
@@ -530,10 +534,7 @@ describe('BLIINK Adapter interpretResponse', function () {
   for (const test of testsInterpretResponse) {
     it(test.title, () => {
       const res = test.args.fn;
-
-      if (res) {
-        expect(res).to.eql(test.want);
-      }
+      expect(res).to.eql(test.want);
     });
   }
 });
@@ -670,21 +671,21 @@ const testsBuildRequests = [
   {
     title: 'Should not build request, no bidder request exist',
     args: {
-      fn: spec.buildRequests(),
+      fn: () => spec.buildRequests(),
     },
-    want: null,
+    want: () => null,
   },
   {
     title: 'Should build request if bidderRequest exist',
     args: {
-      fn: spec.buildRequests([], getConfigBuildRequest('banner')),
+      fn: () => spec.buildRequests([], getConfigBuildRequest('banner')),
     },
-    want: {
+    want: () => ({
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
-        ect: connectionType,
+        domLoadingDuration: '0',
+        ect: getEffectiveConnectionType(),
         keywords: '',
         pageDescription: '',
         pageTitle: '',
@@ -693,7 +694,7 @@ const testsBuildRequests = [
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
-            refresh: window.bliinkBid['14f30eca-85d2-11e8-9eed-0242ac120007'] || undefined,
+            refresh: undefined,
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: 'https://www.example.com/adimage.jpg',
             videoUrl: 'https://www.example.com/advideo.mp4',
@@ -707,12 +708,12 @@ const testsBuildRequests = [
           },
         ],
       },
-    },
+    }),
   },
   {
     title: 'Should build request width GDPR configuration',
     args: {
-      fn: spec.buildRequests(
+      fn: () => spec.buildRequests(
         [],
         Object.assign(getConfigBuildRequest('banner'), {
           gdprConsent: {
@@ -722,12 +723,12 @@ const testsBuildRequests = [
         })
       ),
     },
-    want: {
+    want: () => ({
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
-        ect: connectionType,
+        domLoadingDuration: '0',
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         gdprConsent: 'XXXX',
         pageDescription: '',
@@ -738,7 +739,7 @@ const testsBuildRequests = [
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
-            refresh: window.bliinkBid['14f30eca-85d2-11e8-9eed-0242ac120007'] || undefined,
+            refresh: undefined,
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: 'https://www.example.com/adimage.jpg',
             videoUrl: 'https://www.example.com/advideo.mp4',
@@ -752,12 +753,12 @@ const testsBuildRequests = [
           },
         ],
       },
-    },
+    }),
   },
   {
     title: 'Should build request width uspConsent if exists',
     args: {
-      fn: spec.buildRequests(
+      fn: () => spec.buildRequests(
         [],
         Object.assign(getConfigBuildRequest('banner'), {
           gdprConsent: {
@@ -768,12 +769,12 @@ const testsBuildRequests = [
         })
       ),
     },
-    want: {
+    want: () => ({
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
-        ect: connectionType,
+        domLoadingDuration: '0',
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         uspConsent: 'uspConsent',
         gdprConsent: 'XXXX',
@@ -785,7 +786,7 @@ const testsBuildRequests = [
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
-            refresh: window.bliinkBid['14f30eca-85d2-11e8-9eed-0242ac120007'] || undefined,
+            refresh: undefined,
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: 'https://www.example.com/adimage.jpg',
             videoUrl: 'https://www.example.com/advideo.mp4',
@@ -799,12 +800,12 @@ const testsBuildRequests = [
           },
         ],
       },
-    },
+    }),
   },
   {
     title: 'Should build request width schain if exists',
     args: {
-      fn: spec.buildRequests(
+      fn: () => spec.buildRequests(
         [
           {
             ortb2: {
@@ -834,12 +835,12 @@ const testsBuildRequests = [
         })
       ),
     },
-    want: {
+    want: () => ({
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
-        ect: connectionType,
+        domLoadingDuration: '0',
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         gdprConsent: 'XXXX',
         pageDescription: '',
@@ -861,7 +862,7 @@ const testsBuildRequests = [
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
-            refresh: window.bliinkBid['14f30eca-85d2-11e8-9eed-0242ac120007'] || undefined,
+            refresh: undefined,
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: 'https://www.example.com/adimage.jpg',
             videoUrl: 'https://www.example.com/advideo.mp4',
@@ -875,12 +876,12 @@ const testsBuildRequests = [
           },
         ],
       },
-    },
+    }),
   },
   {
     title: 'Should build request with eids if exists',
     args: {
-      fn: spec.buildRequests(
+      fn: () => spec.buildRequests(
         [
           {
             userIdAsEids: [
@@ -913,12 +914,12 @@ const testsBuildRequests = [
         })
       ),
     },
-    want: {
+    want: () => ({
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
-        ect: connectionType,
+        domLoadingDuration: '0',
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         gdprConsent: 'XXXX',
         pageDescription: '',
@@ -949,7 +950,7 @@ const testsBuildRequests = [
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
-            refresh: window.bliinkBid['14f30eca-85d2-11e8-9eed-0242ac120007'] || undefined,
+            refresh: undefined,
             id: '14f30eca-85d2-11e8-9eed-0242ac120007',
             imageUrl: 'https://www.example.com/adimage.jpg',
             videoUrl: 'https://www.example.com/advideo.mp4',
@@ -963,15 +964,30 @@ const testsBuildRequests = [
           },
         ],
       },
-    },
+    }),
   },
 ];
 
 describe('BLIINK Adapter buildRequests', function () {
+  let sandbox;
+  let originalTitle;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'getDomLoadingDuration').returns(0);
+    window.bliinkBid = {};
+    originalTitle = document.title;
+    document.title = '';
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    document.title = originalTitle;
+  });
+
   for (const test of testsBuildRequests) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
+      expect(test.args.fn()).to.eql(test.want());
     });
   }
 });
@@ -1109,9 +1125,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';
     sinon.stub(utils, 'getDomLoadingDuration').returns(0);
-    domLoadingDuration = '0';
     configStub = sinon.stub(config, 'getConfig');
-    configStub.withArgs('coppa').returns(true);
     querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
     originalTitle = document.title;
     document.title = '';
@@ -1129,6 +1143,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       spec.buildRequests(
         [],
         Object.assign(getConfigBuildRequest('banner'), {
+          ortb2: { regs: { coppa: 1 } },
           gdprConsent: {
             gdprApplies: true,
             consentString: 'XXXX',
@@ -1139,7 +1154,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
-        domLoadingDuration,
+        domLoadingDuration: '0',
         ect: getEffectiveConnectionType(),
         gdpr: true,
         coppa: 1,
@@ -1186,10 +1201,11 @@ describe('getEffectiveConnectionType', () => {
       navigatorStub.restore();
     }
   });
-  if (navigatorStub) {
-    it('should return "unsupported" when effective connection type is undefined', () => {
-      const result = getEffectiveConnectionType();
-      expect(result).to.equal('unsupported');
-    });
-  }
+  it('should return "unsupported" when effective connection type is undefined', function () {
+    if (!('connection' in navigator)) {
+      this.skip();
+    }
+    const result = getEffectiveConnectionType();
+    expect(result).to.equal('unsupported');
+  });
 });

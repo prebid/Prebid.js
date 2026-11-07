@@ -1,0 +1,124 @@
+name: Vitest unit tests (Chromium)
+
+# Stage 1 of the unit test gate (#16007), called from test.yml: every spec in Chromium, in 2 shards per feature
+# variant (Vitest's `--shard`, several pages at once), and coverage from the default variant. test.yml starts stage 2
+# (vitest-browsers.yml) and base branch coverage only once this passes. See test/vitest/README.md, "CI".
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to test (default the triggering ref)
+        type: string
+        default: ''
+        required: false
+      coverage-only:
+        description: Only run the coverage build (default variant), e.g. for the base branch
+        type: boolean
+        default: false
+        required: false
+    outputs:
+      coverage:
+        description: Name of the artifact holding the combined lcov file (coverage.info)
+        value: ${{ jobs.coverage.outputs.artifact }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Two shards per feature variant. Each runs half of the specs (Vitest's `--shard`, balanced by file) with several
+  # pages at once (Vitest's default: a page per CPU core but one): each spec file runs in its own page, so there is no Karma-style chunk to keep together, and the whole
+  # suite takes about a minute that way.
+  chromium:
+    name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree the precompile
+        # step leaves in dist/src. Coverage comes from the default variant, as it did with Karma.
+        variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Base coverage is informational: a base commit that can't produce it (one from before Vitest) leaves
+    # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
+    continue-on-error: ${{ inputs.coverage-only }}
+    env:
+      VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      # ubuntu-latest already has the system libraries Chromium needs (it ships Google Chrome); --with-deps
+      # would add an apt-get run of 10s or more, occasionally minutes, to every job.
+      - name: Install browser
+        run: npx playwright install chromium
+      # takes about half off precompile time (#16009)
+      - name: Restore precompile cache
+        uses: ./.github/actions/precompile-cache
+        with:
+          variant: ${{ matrix.variant }}
+          save: 'true'
+          ref: ${{ inputs.ref }}
+      # Vitest's record of each spec file's last result and duration: with it, files that failed last time run
+      # first, so their annotations show up on the PR within seconds of the tests starting. Per PR branch,
+      # falling back to the base branch's.
+      - name: Restore Vitest results
+        uses: actions/cache@v5
+        with:
+          path: node_modules/.vite/vitest
+          key: vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-
+            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
+      - name: Precompile (${{ matrix.variant }})
+        run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
+      - name: Run specs, shard ${{ matrix.shard }} of 2
+        run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/2
+      - name: Upload coverage
+        if: ${{ matrix.variant == 'default' && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.shard }}
+          # build/coverage/chunks/shard-<i>/lcov.info
+          path: build/coverage/chunks
+          if-no-files-found: error
+
+
+  # Combines the chunks into one lcov file for test.yml.
+  coverage:
+    name: Vitest coverage
+    needs: [chromium]
+    if: ${{ !cancelled() }}
+    continue-on-error: ${{ inputs.coverage-only }}
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.name.outputs.artifact }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-*
+          path: build/coverage/chunks
+          merge-multiple: true
+      - name: Combine coverage results
+        run: |
+          # a shard that failed before writing coverage would otherwise leave a plausible but partial total.
+          for shard in 1 2; do
+            if [ ! -s "build/coverage/chunks/shard-$shard/lcov.info" ]; then
+              echo "::error::No coverage for shard $shard; not combining a partial result"
+              exit 1
+            fi
+          done
+          sudo apt-get update
+          sudo apt-get install lcov -y
+          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
+          { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - id: name
+        run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.name.outputs.artifact }}
+          path: coverage.info

@@ -199,6 +199,53 @@ describe('ats analytics adapter', function () {
       // check that the publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     });
+
+    it('continues when the sampling request is blocked immediately', function () {
+      sinon.stub(Math, 'random').returns(0.99);
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Safari');
+      storage.setCookie('_lr_sampling_rate', '0', 'Thu, 01 Jan 1970 00:00:01 GMT');
+      atsAnalyticsAdapter.enableAnalytics({
+        options: { pid: '10433394', bidWonTimeout: 1 }
+      });
+      atsAnalyticsAdapter.callHandler(EVENTS.BID_REQUESTED, {
+        auctionStart: now.getTime(),
+        auctionId: 'blocked-preflight-auction',
+        bids: [{ bidder: 'appnexus', bidId: 'blocked-preflight-bid' }]
+      });
+      sandbox.stub(getGlobal(), 'getAllWinningBids').returns([]);
+
+      atsAnalyticsAdapter.callHandler(EVENTS.AUCTION_END, {});
+      clock.tick(1);
+      const request = server.requests.find(req => req.url === 'https://check.analytics.rlcdn.com/check/10433394');
+
+      expect(request).to.not.be.undefined;
+      expect(() => request.error()).to.not.throw();
+      expect(storage.getCookie('_lr_sampling_rate')).to.equal('0');
+    });
+
+    it('continues when the analytics request is blocked immediately', function () {
+      sinon.stub(Math, 'random').returns(0.99);
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Safari');
+      now.setTime(now.getTime() + 3600000);
+      storage.setCookie('_lr_sampling_rate', '10', now.toUTCString());
+      atsAnalyticsAdapter.enableAnalytics({
+        options: { pid: '10433394', bidWonTimeout: 1 }
+      });
+      atsAnalyticsAdapter.callHandler(EVENTS.BID_REQUESTED, {
+        auctionStart: now.getTime(),
+        auctionId: 'blocked-analytics-auction',
+        bids: [{ bidder: 'appnexus', bidId: 'blocked-analytics-bid' }]
+      });
+      sandbox.stub(getGlobal(), 'getAllWinningBids').returns([]);
+
+      atsAnalyticsAdapter.callHandler(EVENTS.AUCTION_END, {});
+      clock.tick(1);
+      const request = server.requests.find(req => req.url.startsWith(analyticsUrl));
+
+      expect(request).to.not.be.undefined;
+      expect(() => request.error()).to.not.throw();
+    });
+
     it('check browser is safari', function () {
       sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       sinon.stub(Math, 'random').returns(0.99);

@@ -487,6 +487,11 @@ describe('OpenxRtbAdapter', function () {
         expect(request[0].data.ext.pv).to.equal(version);
       });
 
+      it('should always request gzip compression of the request body', function () {
+        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+        expect(request[0].options).to.deep.equal({ endpointCompression: true });
+      });
+
       it('should send delivery domain, if available', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].data.ext.delDomain).to.equal(bidRequestsWithMediaTypes[0].params.delDomain);

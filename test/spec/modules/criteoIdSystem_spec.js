@@ -22,12 +22,16 @@ describe('CriteoId module', function () {
   const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
   const nowTimestamp = new Date().getTime();
+  // the module computes the expiry when it writes, from utils.timestamp() (stubbed below)
+  const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
 
   let getCookieStub;
   let setCookieStub;
   let getLocalStorageStub;
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
+  let cookiesAreEnabledStub;
+  let localStorageIsEnabledStub;
   let timeStampStub;
   let parseUrlStub;
   let triggerPixelStub;
@@ -41,6 +45,8 @@ describe('CriteoId module', function () {
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled').returns(true);
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' });
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
@@ -56,6 +62,8 @@ describe('CriteoId module', function () {
     getLocalStorageStub.restore();
     setLocalStorageStub.restore();
     removeFromLocalStorageStub.restore();
+    cookiesAreEnabledStub.restore();
+    localStorageIsEnabledStub.restore();
     timeStampStub.restore();
     triggerPixelStub.restore();
     parseUrlStub.restore();
@@ -145,8 +153,6 @@ describe('CriteoId module', function () {
   ];
 
   responses.forEach(response => describe('test user sync response behavior', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     it('should save bidId if it exists', function () {
       const result = criteoIdSubmodule.getId(response.submoduleConfig);
       result.callback((id) => {
@@ -211,8 +217,6 @@ describe('CriteoId module', function () {
   ];
 
   it('should call sync pixels if request by backend', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     const result = criteoIdSubmodule.getId();
     result.callback((id) => {
 
@@ -253,8 +257,6 @@ describe('CriteoId module', function () {
   });
 
   it('should call sync pixels and use error handler', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     const result = criteoIdSubmodule.getId();
     result.callback((id) => {
     });

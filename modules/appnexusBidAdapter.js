@@ -36,6 +36,7 @@ import { convertCamelToUnderscore, appnexusAliases } from '../libraries/appnexus
 import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -156,7 +157,7 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
-    if (config.getConfig('coppa') === true) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {
@@ -311,9 +312,11 @@ export const spec = {
 
       if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
         const ac = bidderRequest.gdprConsent.addtlConsent;
-        // pull only the ids from the string (after the ~) and convert them to an array of ints
-        const acStr = ac.substring(ac.indexOf('~') + 1);
-        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+        const segments = ac.split('~');
+        const consentedSegment = segments[1] || '';
+        // ACv1 uses: version~vendorIds; ACv2 uses: version~consentedVendorIds~dv.disclosedVendorIds
+        // Only the consented-vendor segment should be populated into gdpr_consent.addtl_consent.
+        payload.gdpr_consent.addtl_consent = consentedSegment.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
       }
     }
 
