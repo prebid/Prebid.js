@@ -616,7 +616,6 @@ function _createSync({ zoneId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   return sync;
 }
 
-
 function getViewportDimensions() {
   const { width, height } = getViewportSize();
   return {
