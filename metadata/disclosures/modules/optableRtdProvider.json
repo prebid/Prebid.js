@@ -1,0 +1,28 @@
+{
+  "disclosures": [
+    {
+      "identifier": "optable-cache:targeting",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1, 3, 4]
+    },
+    {
+      "identifier": "OPTABLE_TARGETING_*",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1, 3, 4]
+    },
+    {
+      "identifier": "OPTABLE_PASSPORT_*",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "With enableTargeting, the module caches Optable targeting responses in localStorage under optable-cache:targeting and the Optable Web SDK's OPTABLE_TARGETING_* key, and stores the visitor passport returned by the DCN under OPTABLE_PASSPORT_*."
+    }
+  ]
+}
