@@ -57,7 +57,7 @@ export const spec = {
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions().document.documentElement.clientWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
@@ -217,8 +217,9 @@ function buildImp(bidRequest, ortb2) {
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth;
-      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight;
+      const rect = getBoundingClientRect(getAdContainer(bidRequest.params.divId));
+      imp.adContainerWidth = rect.width;
+      imp.adContainerHeight = rect.height;
     }
   }
 
