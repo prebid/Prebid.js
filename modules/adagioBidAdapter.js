@@ -2,7 +2,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   canAccessWindowTop,
   cleanObj,
-  deepAccess,
   deepClone,
   generateUUID,
   getWindowSelf,
@@ -90,11 +89,11 @@ function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
 
 function isRendererPreferredFromPublisher(bidRequest) {
   // renderer defined at adUnit level
-  const adUnitRenderer = deepAccess(bidRequest, 'renderer');
+  const adUnitRenderer = bidRequest?.renderer;
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = deepAccess(bidRequest, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = bidRequest?.mediaTypes?.video?.renderer;
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
@@ -129,7 +128,7 @@ export const _internal = {
 };
 
 function _getGdprConsent(bidderRequest) {
-  if (!deepAccess(bidderRequest, 'gdprConsent')) {
+  if (!bidderRequest?.gdprConsent) {
     return false;
   }
 
@@ -155,15 +154,15 @@ function _getCoppa(bidderRequest) {
 }
 
 function _getUspConsent(bidderRequest) {
-  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+  return bidderRequest?.uspConsent ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
+  return bidRequest?.ortb2?.source?.ext?.schain;
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userIdAsEids')) {
+  if (bidRequest?.userIdAsEids) {
     return bidRequest.userIdAsEids;
   }
 }
@@ -175,8 +174,8 @@ function _getEids(bidRequest) {
  * @returns {void}
  */
 function _buildVideoBidRequest(bidRequest) {
-  const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnitParams = bidRequest?.mediaTypes?.video || {};
+  const videoBidderParams = bidRequest?.params?.video || {};
   const computedParams = {};
 
   // Special case for playerSize.
@@ -404,10 +403,10 @@ function autoFillParams(bid) {
   }
 
   if (!bid.params.placement) {
-    let p = deepAccess(bid, 'ortb2Imp.ext.data.adg_rtd.placement', '');
+    let p = bid?.ortb2Imp?.ext?.data?.adg_rtd?.placement ?? '';
     if (!p) {
       // Use ortb2Imp.ext.data.placement for backward compatibility.
-      p = deepAccess(bid, 'ortb2Imp.ext.data.placement', '');
+      p = bid?.ortb2Imp?.ext?.data?.placement ?? '';
     }
 
     // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
@@ -417,7 +416,7 @@ function autoFillParams(bid) {
     bid.params.placement = p;
   }
 
-  bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.divId', bid.params.adUnitElementId);
+  bid.params.adUnitElementId = bid?.ortb2Imp?.ext?.data?.divId ?? bid.params.adUnitElementId;
   if (!bid.params.adUnitElementId) {
     if (adgGlobalConf.useAdUnitCodeAsAdUnitElementId === true || bid.params.useAdUnitCodeAsAdUnitElementId === true) {
       bid.params.adUnitElementId = bid.adUnitCode;
@@ -532,14 +531,14 @@ export const spec = {
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa(bidderRequest);
-    const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
+    const { gpp, gpp_sid: gppSid } = bidderRequest?.ortb2?.regs || {};
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
-    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled');
+    const syncEnabled = config.getConfig('userSync')?.syncEnabled;
     const canSyncWithIframe = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio');
 
     // We don't validate the dsa object in adapter and let our server do it.
-    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
 
     // If no session data is provided, we always generate a new one.
     const sessionData = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.session', {});
