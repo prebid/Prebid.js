@@ -331,7 +331,7 @@ module.exports = [
       prebid
     },
     rules: {
-      'prebid/no-synchronous-layout-read': 'warn',
+      'prebid/no-synchronous-layout-read': 'error',
       'no-restricted-properties': [
         'error',
         ...noGlobals({
