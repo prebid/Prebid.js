@@ -8,7 +8,9 @@ import {
   logInfo,
   safeJSONEncode,
   deepClone,
-  deepSetValue, getWindowTop
+  deepSetValue,
+  getWindowTop,
+  getWinDimensions
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
