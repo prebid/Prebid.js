@@ -268,6 +268,9 @@ describe('kargo adapter tests', function() {
     });
 
     beforeEach(function() {
+      // Each test must start without a Cerberus cookie or localStorage value from a previous run.
+      document.cookie = 'krg_crb=; Max-Age=0; Path=/';
+      localStorage.removeItem('krg_crb');
       undefinedCurrency = false;
       noAdServerCurrency = false;
       nonUSDAdServerCurrency = false;
@@ -315,7 +318,7 @@ describe('kargo adapter tests', function() {
       };
     });
     afterEach(function() {
-      cookies.forEach(key => document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`);
+      cookies.forEach(key => document.cookie = `${encodeURIComponent(key)}=; Max-Age=0; Path=/`);
       cookies = [];
 
       localStorageItems.forEach(key => localStorage.removeItem(key));

@@ -342,6 +342,8 @@ describe('bidderFactory', () => {
             expect(bidderReq.getAID()).to.eql('aid');
             expect(reqs[0].getTIDs()).to.eql(['aid', 'tid']);
             done();
+            // no requests: returning nothing made callBids throw after done(), which went unnoticed
+            return [];
           });
           newBidder(spec).callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         });
