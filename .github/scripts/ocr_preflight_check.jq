@@ -6,6 +6,9 @@ def explains_bounds:
      and (($description | contains("&&")) or ($description | test("(^|[^a-z])(and|both)([^a-z]|$)")))
      and ($description | test("(^|[^a-z])(window|range|bound|bounds|between|outside|before|after|start|end)([^a-z]|$)")));
 
+# Models often copy the diff's leading "+" into code fields; ignore it.
+def code: (. // "") | gsub("[[:space:]]"; "") | ltrimstr("+");
+
 (.choices[0].message.tool_calls // []) as $calls
 | if ($calls | type) != "array" or ($calls | length) != 1 or $calls[0].function.name != "code_comment"
   then false
@@ -20,7 +23,7 @@ def explains_bounds:
           (($comment.content // "") | type) == "string" and
           (($comment.content // "") | length) >= 20 and
           ($comment.content | explains_bounds) and
-          (($comment.existing_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start||now<=end;" and
-          (($comment.suggestion_code // "") | gsub("[[:space:]]"; "")) == "returnnow>=start&&now<=end;"
+          ($comment.existing_code | code) == "returnnow>=start||now<=end;" and
+          ($comment.suggestion_code | code) == "returnnow>=start&&now<=end;"
       end
   end

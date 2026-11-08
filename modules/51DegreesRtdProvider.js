@@ -1,5 +1,5 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { fetchExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
@@ -703,38 +703,26 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       // Every branch below has to reach callbackOnce: a callback the module never
       // invokes stalls the auction for the whole auctionDelay, with nothing in the
       // log to attribute it to this module.
-      const tag = loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, {
-        success: () => {
-          logMessage('Successfully injected 51Degrees script');
-          const fod = /** @type {Object} */ (window.fod);
-          // A rejected request (unknown resource key, expired licence) still
-          // serves a script body, but one that defines only fod.errors. Calling
-          // complete() on it throws inside the loader, which swallows the error.
-          if (!fod || typeof fod.complete !== 'function') {
-            const errors = getPageFodErrors();
-            logError('Injected 51Degrees script did not provide a usable fod object' +
-              (errors ? ': ' + errors.join('; ') : ''));
-            callbackOnce();
-            return;
-          }
-          ownFod = fod;
-          // Convert and merge device data in the callback
-          fod.complete(onData);
-        },
-        // Blocked, offline, or a non-200 response. Only the object form of the
-        // callback gets told about this; a bare function is called on success only.
-        error: (e) => {
-          logError('Failed to load the 51Degrees script: ', e);
+      return fetchExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, document, { crossOrigin: 'anonymous' }).then(() => {
+        logMessage('Successfully injected 51Degrees script');
+        const fod = /** @type {Object} */ (window.fod);
+        // A rejected request (unknown resource key, expired licence) still
+        // serves a script body, but one that defines only fod.errors.
+        if (!fod || typeof fod.complete !== 'function') {
+          const errors = getPageFodErrors();
+          logError('Injected 51Degrees script did not provide a usable fod object' +
+            (errors ? ': ' + errors.join('; ') : ''));
           callbackOnce();
-        },
-      }, document, { crossOrigin: 'anonymous' });
-
-      // loadExternalScript returns nothing when activity controls deny the load,
-      // and in that case neither callback ever runs.
-      if (!tag) {
-        logError('Loading the 51Degrees script was not allowed');
+          return;
+        }
+        ownFod = fod;
+        // Convert and merge device data in the callback
+        fod.complete(onData);
+      }, (e) => {
+        // blocked, offline, a non-200 response, or denied by activity controls
+        logError('Failed to load the 51Degrees script: ', e);
         callbackOnce();
-      }
+      });
     }).catch((error) => {
       logError(error);
       callbackOnce();

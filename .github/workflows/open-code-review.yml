@@ -22,10 +22,14 @@ jobs:
     if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-agent-') }}
     name: Experimental OpenCodeReview (Qwen3.5 9B)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # CPU prefill runs at roughly 13-25 tokens/s, and every agent turn sends
+    # a 3K+ token prompt, so even a tiny diff needs several minutes per turn.
+    timeout-minutes: 75
     env:
       OCR_EXPERIMENT: 'true'
-      OCR_MODEL: qwen3.5:9b-q4_K_M
+      OCR_BASE_MODEL: qwen3.5:9b-q4_K_M
+      # Local alias of the base model that uses every runner vCPU (see below).
+      OCR_MODEL: ocr-qwen3.5-9b
 
     steps:
       - name: Set runner-writable npm installation prefix
@@ -37,7 +41,7 @@ jobs:
           echo "NPM_CONFIG_PREFIX=$npm_prefix" >> "$GITHUB_ENV"
           echo "$npm_prefix/bin" >> "$GITHUB_PATH"
       - name: Checkout trusted base and test OCR validator
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
@@ -83,12 +87,19 @@ jobs:
           fi
 
           # Experimental only: Qwen3.5 9B; bounded review owns ordinary PRs.
-          ollama pull "$OCR_MODEL"
+          ollama pull "$OCR_BASE_MODEL"
+          # Ollama defaults to physical cores (2 of the 4 vCPUs on ubuntu-latest).
+          # The OpenAI-compatible endpoint cannot pass num_thread per request,
+          # so bake it into a local model alias instead.
+          printf 'FROM %s\nPARAMETER num_thread %s\n' "$OCR_BASE_MODEL" "$(nproc)" > "$RUNNER_TEMP/Modelfile"
+          ollama create "$OCR_MODEL" -f "$RUNNER_TEMP/Modelfile"
 
           # This preflight uses the real OCR tool schemas, not a toy report_bug tool.
           # Fail before launching a long review if the model cannot emit structured calls.
+          # temperature 0 keeps the answer repeatable, so a lucky or unlucky sample
+          # does not decide whether the review runs.
           curl --fail --silent --show-error --max-time 180 \
-            https://raw.githubusercontent.com/alibaba/open-code-review/375f64cd6f67a48a135da83cfcf59c52669a09cb/internal/config/toolsconfig/tools.json \
+            https://raw.githubusercontent.com/alibaba/open-code-review/abb7abcd5c5196fa0278dc87db85780fa269562f/internal/config/toolsconfig/tools.json \
             --output "$RUNNER_TEMP/ocr-tools.json"
           jq -n --slurpfile defs "$RUNNER_TEMP/ocr-tools.json" \
             --arg model "$OCR_MODEL" \
@@ -114,11 +125,12 @@ jobs:
               ],
               tools: ($defs[0] | map(select(.name == "code_comment" or .name == "task_done") | {type:"function",function:.definition})),
               tool_choice:"required",
+              temperature:0,
               max_tokens:1024,
               stream:false
             } + (if $experimental then {reasoning_effort:"none"} else {} end)' \
             > "$RUNNER_TEMP/ocr-tool-preflight.json"
-          curl --fail --silent --show-error --max-time 180 \
+          curl --fail --silent --show-error --max-time 300 \
             http://127.0.0.1:11434/v1/chat/completions \
             --header 'Content-Type: application/json' \
             --data-binary @"$RUNNER_TEMP/ocr-tool-preflight.json" \
@@ -144,13 +156,13 @@ jobs:
           # and tokenization differences on a small local model.
           # The pinned action subsequently configures the same CLI and does
           # not overwrite this persisted max_tokens setting.
-          npm install -g @alibaba-group/open-code-review@1.13.3
+          npm install -g @alibaba-group/open-code-review@1.13.5
           ocr config set max_tokens 8192
           jq --exit-status '.max_tokens == 8192' "$HOME/.opencodereview/config.json"
 
       - name: Review PR and publish comments
-        # OpenCodeReview v1.13.3 (the action and installed CLI are both pinned).
-        uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb
+        # OpenCodeReview v1.13.5 (the action and installed CLI are both pinned).
+        uses: alibaba/open-code-review@abb7abcd5c5196fa0278dc87db85780fa269562f
         with:
           llm_url: http://127.0.0.1:11434/v1
           llm_auth_token: ollama
@@ -159,19 +171,22 @@ jobs:
           llm_protocol: openai
           # Default OCR extra_body targets other providers' thinking formats.
           llm_extra_body: '{"reasoning_effort":"none"}'
-          ocr_version: '1.13.3'
+          ocr_version: '1.13.5'
           language: English
           rule: .opencodereview/rule.json
           # CPU runner: do not generate multiple competing model requests.
           review_concurrency: '1'
           # Limits aggregate model tokens inside the agent loop, not just across groups.
-          # OCR v1.13.3 cannot reduce --max-tools below its 100-round template default.
+          # The CLI honors --max-tools below its 100-round default since v1.13.5 (alibaba/open-code-review#1118),
+          # but the action has no input for it yet, so rounds stay at the default.
           max_tokens_budget: '50000'
           effort: low
           # Publish agent progress to the Actions log during long CPU reviews.
           stream_progress: 'true'
-          llm_timeout: '180'
-          review_task_timeout: '5'
+          # One OCR agent turn re-sends a 3K+ token prompt; at CPU prefill speed
+          # that alone takes 2-4 minutes, and a review needs several turns.
+          llm_timeout: '600'
+          review_task_timeout: '60'
           # Leave the whole-run budget unlimited: OCR estimates even a tiny
           # review group at >16K tokens before making its first model call.
           # The 8,192-token per-prompt ceiling above still limits context.

@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
+import * as autoplay from '../../../libraries/autoplayDetection/autoplay.js';
 
+// runs the detection again, as loading the library does, with whatever document.createElement now returns
 function loadAutoplay() {
-  delete require.cache[require.resolve('../../../libraries/autoplayDetection/autoplay.js')];
-  return require('../../../libraries/autoplayDetection/autoplay.js');
+  autoplay.startDetection();
+  return autoplay;
 }
 
 describe('autoplay detection', () => {
@@ -12,7 +14,6 @@ describe('autoplay detection', () => {
     if (createElementStub) {
       createElementStub?.restore();
     }
-    delete require.cache[require.resolve('../../../libraries/autoplayDetection/autoplay.js')];
   });
 
   it('does not throw when play() does not return a promise', () => {
@@ -57,6 +58,17 @@ describe('autoplay detection', () => {
 
   it('returns false when play() is rejected with a NotAllowedError', async () => {
     const mod = loadAutoplayWithPlay(() => Promise.reject(new DOMException('play() is not allowed', 'NotAllowedError')));
+    await flushPromises();
+    expect(mod.isAutoplayEnabled()).to.equal(false);
+  });
+
+  it('ignores an earlier detection that settles after a restart', async () => {
+    let resolveEarlier;
+    loadAutoplayWithPlay(() => new Promise((resolve) => { resolveEarlier = resolve; }));
+    createElementStub.restore();
+    const mod = loadAutoplayWithPlay(() => Promise.reject(new DOMException('play() is not allowed', 'NotAllowedError')));
+    await flushPromises();
+    resolveEarlier();
     await flushPromises();
     expect(mod.isAutoplayEnabled()).to.equal(false);
   });

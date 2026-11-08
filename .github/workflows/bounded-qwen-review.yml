@@ -14,11 +14,14 @@ concurrency:
 
 jobs:
   review:
+    # Paused on regular PRs: its findings have mostly been false positives. Like OpenCodeReview
+    # (ci/ocr-agent-*), it runs only on branches that opt in by name.
+    if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/qwen-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - name: Check out trusted base branch only
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
@@ -27,6 +30,10 @@ jobs:
         run: python3 -m unittest discover -s .github/scripts -p 'test_bounded_qwen_review.py' -v
 
       - name: Install Ollama
+        # The checksum pins the installer; OLLAMA_VERSION pins the binary it
+        # downloads (without it, install.sh fetches the latest release).
+        env:
+          OLLAMA_VERSION: '0.40.13'
         run: |
           curl --fail --silent --show-error --location --retry 3 \
             --output "$RUNNER_TEMP/ollama-install.sh" \
