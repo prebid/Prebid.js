@@ -840,40 +840,40 @@ describe('adRendering', () => {
         };
       });
 
-    it('reports the native click event once, preserves the asset ID, and fires bidder trackers on every click', () => {
-      bid.mediaType = 'native';
-      bid.bidder = 'nativeBidder';
-      bid.native = { clickUrl: 'https://advertiser.example/landing' };
-      const fireTrackers = sinon.stub();
-      const emit = sandbox.stub(events, 'emit');
-      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
-      const click = { action: 'click', assetId: 3 };
-      handleNativeMessage(click, bid, { fireTrackers });
-      handleNativeMessage(click, bid, { fireTrackers });
-      sinon.assert.calledTwice(fireTrackers);
-      sinon.assert.alwaysCalledWithExactly(fireTrackers, click, bid);
-      sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
-      config.setConfig({ bidClickTracking: { enabled: false } });
-    });
+      it('reports the native click event once, preserves the asset ID, and fires bidder trackers on every click', () => {
+        bid.mediaType = 'native';
+        bid.bidder = 'nativeBidder';
+        bid.native = { clickUrl: 'https://advertiser.example/landing' };
+        const fireTrackers = sinon.stub();
+        const emit = sandbox.stub(events, 'emit');
+        config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+        const click = { action: 'click', assetId: 3 };
+        handleNativeMessage(click, bid, { fireTrackers });
+        handleNativeMessage(click, bid, { fireTrackers });
+        sinon.assert.calledTwice(fireTrackers);
+        sinon.assert.alwaysCalledWithExactly(fireTrackers, click, bid);
+        sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
+        config.setConfig({ bidClickTracking: { enabled: false } });
+      });
 
-    it('reports every native click event when deduplication is explicitly disabled', () => {
-      bid.mediaType = 'native';
-      bid.native = { clickUrl: 'https://advertiser.example/landing' };
-      const fireTrackers = sinon.stub();
-      sandbox.stub(events, 'emit');
-      config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
-      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
-      handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
-      sinon.assert.calledTwice(fireTrackers);
-      sinon.assert.calledTwice(events.emit);
-      config.setConfig({ bidClickTracking: { enabled: false } });
-    });
+      it('reports every native click event when deduplication is explicitly disabled', () => {
+        bid.mediaType = 'native';
+        bid.native = { clickUrl: 'https://advertiser.example/landing' };
+        const fireTrackers = sinon.stub();
+        sandbox.stub(events, 'emit');
+        config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
+        handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+        handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+        sinon.assert.calledTwice(fireTrackers);
+        sinon.assert.calledTwice(events.emit);
+        config.setConfig({ bidClickTracking: { enabled: false } });
+      });
 
-    it('should resize', () => {
-      const resizeFn = sinon.stub();
-      handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
-      sinon.assert.calledWith(resizeFn, undefined, 100);
-    });
+      it('should resize', () => {
+        const resizeFn = sinon.stub();
+        handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
+        sinon.assert.calledWith(resizeFn, undefined, 100);
+      });
 
       it('should fire trackers', () => {
         const data = {
