@@ -1,5 +1,5 @@
 name: NPM install
-description: Run npm install and cache dependencies
+description: Run npm ci, or restore node_modules from the cache (per OS, CPU, lockfile and Node version)
 
 runs:
   using: 'composite'
@@ -13,7 +13,7 @@ runs:
       uses: actions/cache/restore@v5
       with:
         path: "node_modules"
-        key: node_modules-${{ hashFiles('package-lock.json') }}
+        key: node_modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', '.nvmrc') }}
     - name: Run npm ci
       if: ${{ steps.restore-modules.outputs.cache-hit != 'true'  }}
       shell: bash
@@ -24,4 +24,4 @@ runs:
       uses: actions/cache/save@v5
       with:
         path: "node_modules"
-        key: node_modules-${{ hashFiles('package-lock.json') }}
+        key: node_modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', '.nvmrc') }}

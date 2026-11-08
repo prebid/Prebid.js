@@ -700,6 +700,26 @@ describe('Utils', function () {
         comeWithMe: 'ifuwant2live',
       });
     });
+
+    it('preserves falsy values, but omits null and undefined', function () {
+      const params = {
+        enabled: false,
+        count: 0,
+        label: '',
+        optional: null,
+        unset: undefined
+      };
+
+      const actual = utils.getDefinedParams(params, [
+        'enabled', 'count', 'label', 'optional', 'unset', 'missing'
+      ]);
+
+      assert.deepEqual(actual, {
+        enabled: false,
+        count: 0,
+        label: ''
+      });
+    });
   });
 
   describe('deepClone', function () {
@@ -1320,12 +1340,13 @@ describe('Utils', function () {
       expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
-      after(function () {
-        delete Array.prototype.unitTestTempProp;
-      });
       // eslint-disable-next-line no-extend-native
       Array.prototype.unitTestTempProp = 'testing';
-      expect(deepEqual([], [])).to.be.true;
+      try {
+        expect(deepEqual([], [])).to.be.true;
+      } finally {
+        delete Array.prototype.unitTestTempProp;
+      }
     });
 
     describe('cyrb53Hash', function() {
@@ -1387,9 +1408,14 @@ describe('Utils', function () {
   });
 
   describe('getUnixTimestampFromNow', () => {
+    let nowStub;
+    afterEach(() => {
+      nowStub?.restore();
+    });
+
     it('correctly obtains unix timestamp', () => {
       const nowValue = new Date('2024-01-01').valueOf();
-      sinon.stub(Date, 'now').returns(nowValue);
+      nowStub = sinon.stub(Date, 'now').returns(nowValue);
       let val = utils.getUnixTimestampFromNow();
       expect(val).equal(nowValue);
 
