@@ -11,6 +11,7 @@ describe('Unified ID', () => {
     let refererStub;
     const config = { params: { partner: 'test-partner' } };
     const consentString = 'consent+/=&%?#';
+    const invalidValues = [undefined, null, '', ' \t\n', 123, true, {}, []];
 
     beforeEach(() => {
       refererStub = sinon.stub(refererDetection, 'getRefererInfo').returns({ domain: 'publisher.example' });
@@ -215,7 +216,11 @@ describe('Unified ID', () => {
       expect(request().url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=test-partner&fmt=json');
     });
 
-    [undefined, null, {}, { params: {} }, { params: { partner: '' } }, { params: { url: '' } }].forEach((moduleConfig, index) => {
+    [
+      undefined, null, {}, { params: null }, { params: {} },
+      ...invalidValues.flatMap(value => [{ params: { partner: value } }, { params: { url: value } }]),
+      { params: { partner: '', url: ' \t\n' } }
+    ].forEach((moduleConfig, index) => {
       it(`should not request an ID without a partner or URL (case ${index + 1})`, () => {
         const logStub = sinon.stub(utils, 'logError');
         try {
@@ -225,6 +230,25 @@ describe('Unified ID', () => {
         } finally {
           logStub.restore();
         }
+      });
+    });
+
+    invalidValues.forEach(value => {
+      it(`should use a valid partner when the URL is ${JSON.stringify(value)}`, () => {
+        const url = new URL(request({ gdpr: { gdprApplies: true, consentString } }, { params: { partner: 'test-partner', url: value } }).url);
+        expect(url.origin).to.equal('https://match.adsrvr.org');
+        expect(url.pathname).to.equal('/track/rid');
+        const query = url.searchParams;
+        expect(query.get('ttd_pid')).to.equal('test-partner');
+        expect(query.get('gdpr')).to.equal('1');
+        expect(query.get('gdpr_consent')).to.equal(consentString);
+        expect(query.get('domain')).to.equal('publisher.example');
+      });
+
+      it(`should use a valid URL when the partner is ${JSON.stringify(value)}`, () => {
+        const url = 'https://given-url/';
+        expect(request(null, { params: { partner: value, url } }).url).to.equal(url);
+        expect(refererStub.called).to.be.false;
       });
     });
 

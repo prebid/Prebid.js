@@ -52,11 +52,11 @@ export const unifiedIdSubmodule = {
     const configParams = (config && config.params) || {};
     const hasValidPartner = typeof configParams.partner === 'string' && configParams.partner.trim() !== '';
     const hasValidUrl = typeof configParams.url === 'string' && configParams.url.trim() !== '';
-    if (!configParams || (!hasValidPartner && !hasValidUrl)) {
+    if (!hasValidPartner && !hasValidUrl) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
-    let url = configParams.url;
+    let url = hasValidUrl ? configParams.url : undefined;
     const customUrl = url && parseUrl(url, { noDecodeWholeURL: true });
     if (!url || customUrl.hostname === 'match.adsrvr.org') {
       const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };
