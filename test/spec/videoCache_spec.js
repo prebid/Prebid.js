@@ -277,6 +277,34 @@ describe('The video cache', function () {
     });
 
     if (FEATURES.VIDEO) {
+      it('dispatches zero-timeout batches synchronously', () => {
+        const mockTimeout = sinon.stub();
+        const stubCache = sinon.stub();
+        const afterBidAdded = sinon.stub();
+
+        config.setConfig({
+          cache: {
+            url: 'https://test.cache.url/endpoint',
+            batchSize: 1,
+            batchTimeout: 0
+          }
+        });
+
+        const batchAndStore = batchingCache(mockTimeout, stubCache);
+        const auctionInstance = {};
+        const bidResponse = {};
+        batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+
+        // batches.forEach(cache) also passes the index and array.
+        sinon.assert.calledOnce(stubCache);
+        sinon.assert.calledWith(stubCache, [{
+          auctionInstance,
+          bidResponse,
+          afterBidAdded
+        }]);
+        sinon.assert.notCalled(mockTimeout);
+      });
+
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
         const mockAfterBidAdded = function() {};
         let callback = null;
@@ -390,7 +418,7 @@ describe('The video cache', function () {
     it('should set bids\' videoCacheKey, vastUrl, and cacheUrl', () => {
       config.setConfig({
         cache: {
-          url: 'mock-cache'
+          url: 'https://mock-cache/'
         }
       });
       const el = { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() };
@@ -398,8 +426,8 @@ describe('The video cache', function () {
       storeBatch([el]);
       sinon.assert.match(el.bidResponse, {
         videoCacheKey: 'mock-id',
-        vastUrl: 'mock-cache?uuid=mock-id',
-        cacheUrl: 'mock-cache',
+        vastUrl: 'https://mock-cache/?uuid=mock-id',
+        cacheUrl: 'https://mock-cache/',
       });
     });
   });
@@ -950,5 +978,36 @@ describe('The getCache function', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
     const url = getCacheUrl(CACHE_URL, uuid);
     url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
+  });
+
+  it('preserves existing query parameters and replaces an existing uuid', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1&uuid=old', 'new-id')).to.equal(
+      CACHE_URL + '?keep=1&uuid=new-id'
+    );
+  });
+
+  it('does not re-encode existing query parameters', function () {
+    expect(getCacheUrl(CACHE_URL + '?a=b%20c&flag&x=1;y=2', 'id')).to.equal(
+      CACHE_URL + '?a=b%20c&flag&x=1;y=2&uuid=id'
+    );
+  });
+
+  it('encodes cache IDs and keeps fragments after the query', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1#fragment', 'id with&special')).to.equal(
+      CACHE_URL + '?keep=1&uuid=id%20with%26special#fragment'
+    );
+  });
+
+  it('resolves relative and protocol-relative URLs against the document', function () {
+    expect(getCacheUrl('/cache?keep=1#fragment', 'new-id')).to.equal(
+      new URL('/cache?keep=1&uuid=new-id#fragment', document.baseURI).toString()
+    );
+    expect(getCacheUrl('//cache.example/path?uuid=old', 'new-id')).to.equal(
+      new URL('//cache.example/path?uuid=new-id', document.baseURI).toString()
+    );
+  });
+
+  it('falls back to appending the uuid when the URL cannot be parsed', function () {
+    expect(getCacheUrl('http://[invalid', 'id')).to.equal('http://[invalid?uuid=id');
   });
 });

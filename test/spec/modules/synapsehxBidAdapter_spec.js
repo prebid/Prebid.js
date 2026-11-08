@@ -155,7 +155,7 @@ const SERVER_RESPONSE_VIDEO = {
 };
 
 describe('Prebid Adapter: Synapse HX', function () {
-  describe('code returns a bidder code of synapsehx', function () {
+  it('code returns a bidder code of synapsehx', function () {
     expect(spec.code).to.eql('synapsehx');
   });
 
