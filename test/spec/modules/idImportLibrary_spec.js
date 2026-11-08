@@ -246,52 +246,53 @@ describe('IdImportLibrary Tests', function () {
     });
   });
 
-  describe('hashed email', function () {
-    // WebCrypto is only there in a secure context
-    if (!window.isSecureContext) return;
-    let stubs;
-    beforeEach(function () {
-      stubs = [
-        sinon.stub(getGlobal(), 'refreshUserIds'),
-        sinon.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } }),
-        sinon.stub(window, 'MutationObserver').returns(mockMutationObserver),
-      ];
-    });
-    afterEach(function () {
-      stubs.forEach(stub => stub.restore());
-      document.body.innerHTML = '';
-    });
+  // Codex bot: guard WebCrypto suite registration to avoid an empty suite in insecure contexts.
+  if (window.isSecureContext) {
+    describe('hashed email', function () {
+      let stubs;
+      beforeEach(function () {
+        stubs = [
+          sinon.stub(getGlobal(), 'refreshUserIds'),
+          sinon.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } }),
+          sinon.stub(window, 'MutationObserver').returns(mockMutationObserver),
+        ];
+      });
+      afterEach(function () {
+        stubs.forEach(stub => stub.restore());
+        document.body.innerHTML = '';
+      });
 
-    it('sha256Base64 hashes as UID2 does: SHA-256, base64-encoded', async function () {
-      expect(await sha256Base64('testuser@gmail.com')).to.equal('2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=');
-    });
+      it('sha256Base64 hashes as UID2 does: SHA-256, base64-encoded', async function () {
+        expect(await sha256Base64('testuser@gmail.com')).to.equal('2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=');
+      });
 
-    it('posts the hash of the address normalized as UID2 does', async function () {
-      document.body.innerHTML = '<body><input type="text" id="userid" value=" Test.User@Gmail.com "></body>';
-      idImportlibrary.setConfig({ url: 'URL', formElementId: 'userid', debounce: 0 });
-      let request;
-      for (let i = 0; i < 100 && !request; i++) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        request = server.requests.find(r => r.url.endsWith('/URL'));
-      }
-      expect(request.method).to.equal('POST');
-      expect(JSON.parse(request.requestBody)).to.deep.equal({
-        hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
-        uids: { id: { 'MOCKID': '1111' } },
+      it('posts the hash of the address normalized as UID2 does', async function () {
+        document.body.innerHTML = '<body><input type="text" id="userid" value=" Test.User@Gmail.com "></body>';
+        idImportlibrary.setConfig({ url: 'URL', formElementId: 'userid', debounce: 0 });
+        let request;
+        for (let i = 0; i < 100 && !request; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          request = server.requests.find(r => r.url.endsWith('/URL'));
+        }
+        expect(request.method).to.equal('POST');
+        expect(JSON.parse(request.requestBody)).to.deep.equal({
+          hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
+          uids: { id: { 'MOCKID': '1111' } },
+        });
+      });
+
+      it('posts to the URL configured when the hash started, even if setConfig changes it meanwhile', async function () {
+        document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
+        idImportlibrary.setConfig({ url: 'URL1', formElementId: 'userid', debounce: 0 });
+        idImportlibrary.setConfig({ url: 'URL2', formElementId: 'userid', debounce: 0 });
+        for (let i = 0; i < 100 && server.requests.filter(r => ['URL1', 'URL2'].includes(r.url.slice(-4))).length < 2; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        expect(server.requests.map(r => r.url).map(url => url.slice(-4)).filter(url => ['URL1', 'URL2'].includes(url)).sort())
+          .to.deep.equal(['URL1', 'URL2']);
       });
     });
-
-    it('posts to the URL configured when the hash started, even if setConfig changes it meanwhile', async function () {
-      document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
-      idImportlibrary.setConfig({ url: 'URL1', formElementId: 'userid', debounce: 0 });
-      idImportlibrary.setConfig({ url: 'URL2', formElementId: 'userid', debounce: 0 });
-      for (let i = 0; i < 100 && server.requests.filter(r => ['URL1', 'URL2'].includes(r.url.slice(-4))).length < 2; i++) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      expect(server.requests.map(r => r.url).map(url => url.slice(-4)).filter(url => ['URL1', 'URL2'].includes(url)).sort())
-        .to.deep.equal(['URL1', 'URL2']);
-    });
-  });
+  }
 
   describe('Tests with no user ids', function () {
     let mutationObserverStub;
