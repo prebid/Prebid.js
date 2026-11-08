@@ -8,6 +8,7 @@ import {
 } from 'libraries/vastTrackers/vastTrackers.js';
 import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
+import { store } from '../../../src/videoCache.js';
 import { cachedVideoImpressionVerifier, tracker as bidTracker } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
@@ -464,6 +465,41 @@ describe('vast trackers', () => {
 
       expect(textsOf(parse(result), 'Tracking[event="complete"]')).to.deep.equal([existingUrl]);
     });
+  });
+
+  describe('cached tracker payload', () => {
+    if (FEATURES.VIDEO) {
+      it('should cache each bidder tracker once after video module verification and the tracker hook', () => {
+        const videoBid = { ...createBidWithTrackers(bid), adId: 'ad', adUnitCode: 'unit', vastUrl: 'https://bidder.example/vast' };
+        const adUnit = {
+          code: 'unit',
+          video: {
+            adServer: {
+              tracking: {
+                impression: { getUrl: () => 'https://publisher.example/impression', id: 'imp-id' },
+                error: { getUrl: () => 'https://publisher.example/error' }
+              }
+            }
+          }
+        };
+        cachedVideoImpressionVerifier(vastXmlEditorFactory(), bidTracker()).trackBid(videoBid, adUnit);
+        updateVastHook({ index })(sinon.stub(), videoBid);
+        const ajax = sinon.stub();
+
+        store([videoBid], sinon.stub(), () => ajax);
+
+        const cachedXml = JSON.parse(ajax.firstCall.args[2]).puts[0].value;
+        const doc = new DOMParser().parseFromString(cachedXml, 'text/xml');
+        expect(doc.querySelectorAll('parsererror')).to.have.lengthOf(0);
+        const urls = selector => Array.from(doc.querySelectorAll(selector), node => node.textContent);
+        expect(urls('Wrapper > Impression')).to.eql([
+          'https://publisher.example/impression', 'https://bidder.com/impression', 'https://vasttracking.mydomain.com/vast?cpm=1'
+        ]);
+        expect(doc.querySelector('Impression').getAttribute('id')).to.equal('imp-id');
+        expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', 'https://bidder.com/error']);
+        expect(urls('Tracking[event="start"]')).to.eql(['https://bidder.com/start']);
+      });
+    }
   });
 
   // insertVastTrackers builds nodes with DOM APIs rather than by string concatenation, which is

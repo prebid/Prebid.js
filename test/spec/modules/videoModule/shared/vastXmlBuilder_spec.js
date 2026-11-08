@@ -96,6 +96,34 @@ describe('buildVastWrapper', function () {
       </VAST>
     `));
   });
+  it('should include bidder trackers alongside the ad server trackers', function () {
+    const trackers = {
+      impression: ['https://bidder.example/impression1', 'https://bidder.example/impression2'],
+      error: ['https://bidder.example/error'],
+      trackingEvents: [
+        { event: 'start', url: 'https://bidder.example/start' },
+        { event: 'complete', url: 'https://bidder.example/complete' }
+      ]
+    };
+    const xml = buildVastWrapper('ad', 'https://bidder.example/vast',
+      'https://publisher.example/impression', 'imp-id', 'https://publisher.example/error', trackers);
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const urls = selector => Array.from(doc.querySelectorAll(selector), node => node.textContent);
+
+    expect(urls('Wrapper > Impression')).to.eql(['https://publisher.example/impression', ...trackers.impression]);
+    expect(doc.querySelector('Impression').getAttribute('id')).to.equal('imp-id');
+    expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', ...trackers.error]);
+    expect(urls('Creatives > Creative > Linear > TrackingEvents > Tracking')).to.eql(trackers.trackingEvents.map(t => t.url));
+    expect(Array.from(doc.querySelectorAll('Tracking'), node => node.getAttribute('event'))).to.eql(['start', 'complete']);
+  });
+
+  it('should omit empty bidder tracker nodes', function () {
+    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null,
+      { impression: [], error: [], trackingEvents: [] });
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+
+    expect(doc.querySelectorAll('Impression, Error, Creatives')).to.have.lengthOf(0);
+  });
 });
 
 describe('getLinearTrackingCreativesNode', function () {
@@ -247,5 +275,23 @@ describe('values containing XML syntax', function () {
     expect(uris).to.have.lengthOf(1);
     expect(uris[0].textContent).to.equal(uri);
     expect(doc.getElementsByTagName('Impression')).to.have.lengthOf(0);
+  });
+
+  it('keeps bidder tracker URLs and event names as text', function () {
+    const event = 'start" foo="bar&<';
+    const doc = parse(buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null, {
+      impression: [BREAKOUT],
+      error: [BREAKOUT],
+      trackingEvents: [{ event, url: BREAKOUT }]
+    }));
+
+    ['Impression', 'Error', 'Tracking'].forEach(tag => {
+      const nodes = doc.getElementsByTagName(tag);
+      expect(nodes).to.have.lengthOf(1);
+      expect(nodes[0].textContent).to.equal(BREAKOUT);
+    });
+    const tracking = doc.querySelector('Tracking');
+    expect(tracking.getAttributeNames()).to.eql(['event']);
+    expect(tracking.getAttribute('event')).to.equal(event);
   });
 });
