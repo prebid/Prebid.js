@@ -1,13 +1,19 @@
 import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
 import { CachedApiWrapper } from './cachedApiWrapper.js';
-
-const CHECK_INTERVAL_MS = 20;
+import { endLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from './layoutEpoch.js';
 
 const winDimensions = new CachedApiWrapper(
-  () => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf(),
+  () => {
+    // called for every value read into the cache, including through an object obtained from
+    // getWinDimensions() in an earlier epoch, so that each value is discarded when the epoch it was read in ends
+    startLayoutEpoch();
+    return canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf();
+  },
   {
     innerHeight: true,
     innerWidth: true,
+    scrollX: true,
+    scrollY: true,
     screen: {
       width: true,
       height: true,
@@ -37,19 +43,19 @@ export const internal = {
   winDimensions,
 };
 
-export const getWinDimensions = (() => {
-  let lastCheckTimestamp;
-  return function () {
-    if (!lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.winDimensions.reset();
-      lastCheckTimestamp = Date.now();
-    }
-    return internal.winDimensions.obj;
-  };
-})();
+onLayoutEpochEnd(() => internal.winDimensions.reset());
+
+/**
+ * Dimensions and scroll offsets of the top window (or of this window, if the top one is not accessible).
+ * Values are cached for the current layout epoch, together with element rects from the
+ * `boundingClientRect` library, so the two can be combined; see `layoutEpoch.js`.
+ */
+export function getWinDimensions() {
+  return internal.winDimensions.obj;
+}
 
 export function resetWinDimensions() {
-  internal.winDimensions.reset();
+  endLayoutEpoch();
 }
 
 export function getScreenOrientation(win) {

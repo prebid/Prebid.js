@@ -2,11 +2,15 @@ import type { BidResponse, SeatBid, Bid } from "iab-openrtb/v26";
 import type { Ext } from './common.d.ts';
 import type { DSAResponse } from "./ext/dsa.d.ts";
 import type { DemandChain } from "./ext/dchain.d.ts";
+import type { DealExt } from "./ext/deal.d.ts";
 
 export interface ORTBBid extends Bid {
   ext: Ext & {
     dsa?: DSAResponse
     dchain?: DemandChain
+    prebid?: Ext & {
+      deal?: DealExt
+    }
   }
 }
 export interface ORTBSeatBid extends SeatBid {

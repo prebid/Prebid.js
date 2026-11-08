@@ -526,6 +526,21 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
   });
 
   describe('getUserSyncs', function () {
+    [undefined, null].forEach(gdprConsent => {
+      it(`returns no syncs when GDPR consent is ${gdprConsent}`, function () {
+        expect(spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent)).to.be.empty;
+      });
+    });
+
+    it('returns no syncs when GDPR applies and purpose-1 consent is denied', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'abc123',
+        vendorData: { purpose: { consents: { 1: false } } },
+      };
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent)).to.be.empty;
+    });
+
     it('returns no syncs when GDPR purpose-1 consent is missing', function () {
       expect(spec.getUserSyncs({}, {}, {}, {})).to.be.empty;
     });
@@ -553,7 +568,7 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
       );
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal(
-        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString'
+        'https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString'
       );
     });
 
@@ -566,7 +581,7 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, gdprConsent, {});
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.equal(
-        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123'
+        'https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123'
       );
     });
   });

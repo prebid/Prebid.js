@@ -36,11 +36,17 @@ import { hook } from '../../../src/hook.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import { getPPID } from '../../../src/adserver.js';
 import { uninstall as uninstallTcfControl } from 'modules/tcfControl.js';
-import { allConsent, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler } from '../../../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
-import { ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from '../../../src/activities/params.js';
-import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS } from '../../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from '../../../src/activities/params.js';
+import { isActivityAllowed, registerActivityControl } from '../../../src/activities/rules.js';
+import { activityParams } from '../../../src/activities/activityParams.js';
 import {
   discloseStorageUse,
   getCoreStorageManager,
@@ -52,6 +58,15 @@ import {
 const assert = require('chai').assert;
 const expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+
+// The module writes the pubcid cookies on sharedId's domainOverride(): the page's root domain, which a page on a
+// real domain has (bs-local.com on a BrowserStack device) and localhost doesn't. Erase both that one and a host-only
+// one, or a cookie the module wrote outlives the test that erased it.
+function eraseCookie(name) {
+  coreStorage.setCookie(name, '', EXPIRED_COOKIE_DATE);
+  const domain = sharedIdSystemSubmodule.domainOverride?.();
+  if (domain) coreStorage.setCookie(name, '', EXPIRED_COOKIE_DATE, undefined, domain);
+}
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function () {
@@ -210,6 +225,16 @@ describe('User ID', function () {
       attachIdSystem({ name: 'gvlidMock', gvlid: 123 });
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
     });
+
+    it('registers Additional Consent provider IDs', () => {
+      sinon.stub(GDPR_ACPIDS, 'register');
+      try {
+        attachIdSystem({ name: 'acpIdMock', acpId: 321 });
+        sinon.assert.calledWith(GDPR_ACPIDS.register, MODULE_TYPE_UID, 'acpIdMock', 321);
+      } finally {
+        GDPR_ACPIDS.register.restore();
+      }
+    });
   });
 
   describe('userId config validation', () => {
@@ -276,7 +301,7 @@ describe('User ID', function () {
       // reset mockGpt so nothing else interferes
       mockGpt.disable();
       mockGpt.enable();
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      eraseCookie('pubcid');
       coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 20000).toUTCString()));
       sinon.spy(coreStorage, 'setCookie');
       sinon.stub(utils, 'logWarn');
@@ -291,8 +316,8 @@ describe('User ID', function () {
     });
 
     after(function () {
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('pubcid_alt', '', EXPIRED_COOKIE_DATE);
+      eraseCookie('pubcid');
+      eraseCookie('pubcid_alt');
     });
 
     function getGlobalEids() {
@@ -321,32 +346,31 @@ describe('User ID', function () {
     });
 
     it('Check different cookies', async function () {
-      let pubcid1;
-      let pubcid2;
+      // Each auction's id comes from its EIDs rather than from reading the pubcid cookie back, which real Safari
+      // doesn't reliably return on the test page.
+      const pubcidOf = (eids) => {
+        expect(eids).to.have.length(1);
+        expect(eids[0].source).to.equal('pubcid.org');
+        expect(eids[0].uids).to.have.length(1);
+        expect(eids[0].uids[0].atype).to.equal(1);
+        expect(eids[0].uids[0].id).to.be.a('string').and.not.be.empty;
+        return eids[0].uids[0].id;
+      };
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids1 = await getGlobalEids();
-      pubcid1 = coreStorage.getCookie('pubcid'); // get first cookie
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE); // erase cookie
-      expect(eids1).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid1, atype: 1 }]
-      }]);
+      const pubcid1 = pubcidOf(await getGlobalEids());
+      eraseCookie('pubcid'); // erase cookie
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids2 = await getGlobalEids();
-      pubcid2 = coreStorage.getCookie('pubcid'); // get second cookie
-      expect(eids2).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid2, atype: 1 }]
-      }]);
+      const pubcid2 = pubcidOf(await getGlobalEids());
+      // the erased cookie's id wasn't reused
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
@@ -2165,7 +2189,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
         }
       });
 
@@ -2207,7 +2231,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
           localStorage.removeItem('pubcid');
           localStorage.removeItem('pubcid_exp');
         }
@@ -2247,7 +2271,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
         }
       });
 
@@ -2515,13 +2539,13 @@ describe('User ID', function () {
         });
         sinon.stub(events, 'getEvents').returns([]);
         sinon.stub(utils, 'triggerPixel');
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        eraseCookie('pubcid');
       });
 
       afterEach(function () {
         events.getEvents.restore();
         utils.triggerPixel.restore();
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        eraseCookie('pubcid');
         resetConsentData();
         delete window.__tcfapi;
       });
@@ -3715,6 +3739,7 @@ describe('User ID', function () {
     let warnLogSpy;
     const UID_MODULE_NAME = 'userIdModule';
     const cookieName = 'testCookie';
+    const localStorageKey = 'testLocalStorageKey';
     const userSync = {
       userIds: [
         {
@@ -3740,6 +3765,7 @@ describe('User ID', function () {
     afterEach(() => {
       warnLogSpy.restore();
       getCoreStorageManager('test').setCookie(cookieName, '', EXPIRED_COOKIE_DATE);
+      getCoreStorageManager('test').removeDataFromLocalStorage(localStorageKey);
     });
 
     it('should not warn when reading', () => {
@@ -3767,6 +3793,46 @@ describe('User ID', function () {
       const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
       storage.setCookie(cookieName, 'value', 20000);
       expect(storage.getCookie(cookieName)).to.not.exist;
+    });
+
+    [
+      `${STORAGE_TYPE_COOKIES}&${STORAGE_TYPE_LOCALSTORAGE}`,
+      `${STORAGE_TYPE_LOCALSTORAGE}&${STORAGE_TYPE_COOKIES}`
+    ].forEach(storageType => {
+      describe(`with storage type '${storageType}'`, () => {
+        const userIds = [
+          {
+            name: UID_MODULE_NAME,
+            storage: {
+              type: storageType,
+              name: 'storageName'
+            }
+          }
+        ];
+
+        Object.entries({
+          'unset': {},
+          'set to true': { enforceStorageType: true }
+        }).forEach(([desc, enforceConfig]) => {
+          it(`should allow userId module to store data in cookies and local storage without warning for enforceStorageType ${desc}`, () => {
+            config.setConfig({ userSync: { ...enforceConfig, userIds } });
+            const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME });
+            storage.setCookie(cookieName, 'value', 20000);
+            storage.setDataInLocalStorage(localStorageKey, 'value');
+            expect(storage.getCookie(cookieName)).to.eql('value');
+            expect(storage.getDataFromLocalStorage(localStorageKey)).to.eql('value');
+            sinon.assert.notCalled(warnLogSpy);
+          });
+        });
+
+        it('should not allow userId module to store data in a storage type that is not listed for enforceStorageType set to true', () => {
+          config.setConfig({ userSync: { enforceStorageType: true, userIds } });
+          expect(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_UID, UID_MODULE_NAME, {
+            [ACTIVITY_PARAM_STORAGE_TYPE]: 'unlisted',
+            [ACTIVITY_PARAM_STORAGE_WRITE]: true
+          }))).to.be.false;
+        });
+      });
     });
   });
 });
