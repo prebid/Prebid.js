@@ -53,7 +53,7 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(ev.source.postMessage, JSON.stringify('test'));
     });
 
-    it('should use MesagePort.postMessage if available', () => {
+    it('should use MessagePort.postMessage if available', () => {
       const ev = {
         ports: [{
           postMessage: sinon.spy()
@@ -244,6 +244,7 @@ describe('secureCreatives', () => {
           sinon.assert.notCalled(adResponse.renderer.render);
           sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+        }).finally(() => {
           configObj.setConfig({ 'auctionOptions': {} });
         });
       });

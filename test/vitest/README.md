@@ -128,8 +128,8 @@ desktop Safari 16.5 in its place, because karma-browserstack-launcher can't driv
 
 ```sh
 export BROWSERSTACK_USERNAME=... BROWSERSTACK_ACCESS_KEY=...
-VITEST_BROWSERSTACK=1 npm run test:vitest -- --shard=1/4                             # iPhone 14, iOS 16
-VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/4
+VITEST_BROWSERSTACK=1 npm run test:vitest -- --shard=1/6                             # iPhone 14, iOS 16
+VITEST_BROWSERSTACK=1 VITEST_DEVICE="iPad 10th" npm run test:vitest -- --shard=1/6
 # a desktop browser instead
 VITEST_BROWSERSTACK=1 VITEST_OS="OS X" VITEST_OS_VERSION=Ventura VITEST_BROWSER_VERSION=16.5 npm run test:vitest
 # every browsers.json entry with `browserstack` in turn, or the ones named; one session per shard of its `vitest.shards`
@@ -158,12 +158,14 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
 - A phone ignores the 800x600 window: the test iframe is still 800x600, but `screen` reports the phone's.
 - A run is one BrowserStack session, which carries no WebDriver traffic while the tests run. BrowserStack ends a
   session after at most 300 s of that, mid-run, so `vitest.config.mjs` asks the page for its title every minute to
-  keep it alive. iOS Safari still closes the page partway through a long session (after about 150 spec files in
-  recent runs), so CI runs 4 shards, two at a time. Each session runs one spec file at a time: WebdriverIO can't run
-  several pages at once, so more sessions (shards) are the only way to run more at once.
+  keep it alive. iOS Safari's page process still dies partway through a long session (3-4 minutes in; Safari reloads
+  the tab, which then reads "Invalid session ID"), likely out of memory, so CI runs 6 shards, two at a time. Each
+  session runs one spec file at a time: WebdriverIO can't run several pages at once, so more sessions (shards) are
+  the only way to run more at once.
 - CI runs the BrowserStack jobs wherever the BrowserStack secrets are available. Fork PRs get no secrets, so they
-  don't run on them; their changes are tested on BrowserStack by the run on master after merge. Each job waits until
-  two sessions are free, so they never take the last one from the ES5 e2e job.
+  don't run on them; their changes are tested on BrowserStack by the run on master after merge. The jobs of every run
+  queue for the same few concurrency groups ("lanes", see `maxParallel` below), and the ES5 e2e job for one of its
+  own, so CI never holds more BrowserStack sessions than the lanes allow.
 
 ## CI
 
@@ -191,10 +193,12 @@ A failure is annotated at the failing test's line in the source spec as soon as 
 past results is cached per branch, so the spec files that failed last time run first and their annotations come
 first. `node_modules` is restored from a cache (per OS, CPU, lockfile and Node version) instead of running `npm ci`.
 
-A job runs its specs up to 3 times, but only when the run lost (or never got) its connection to the browser and no
+A job runs its specs up to 4 times, but only when the run lost (or never got) its connection to the browser and no
 test failed: `infraFailureReporter.mjs` leaves `build/vitest-infra-failure` then, and
-`.github/workflows/scripts/retry-vitest.sh` reruns the whole shard. A failing test is never retried, and a retry never
-runs only the files that didn't finish, so specs that interfere with each other still fail.
+`.github/workflows/scripts/retry-vitest.sh` reruns the whole shard. When BrowserStack refused the session because its
+queue was full (`BROWSERSTACK_QUEUE_SIZE_EXCEEDED`), the script waits 2, 4, then 6 minutes before each retry. A
+failing test is never retried, and a retry never runs only the files that didn't finish, so specs that interfere with
+each other still fail.
 
 The e2e tests, the build logic tests and the packed package's type check stay in `browser-tests.yml`.
 
@@ -212,8 +216,9 @@ run in has an object of its own:
 - `vitest`, in either, puts the entry in `vitest-browsers.yml`, in `shards` jobs: on runners, `browser`
   (`VITEST_BROWSER`), `playwright` (the browser to `npx playwright install`), `channel` (`VITEST_CHANNEL`),
   `chromeVersion` (a Chrome from `@puppeteer/browsers`) and `safari` (configure Safari for safaridriver); on
-  BrowserStack, `maxParallel`. GitHub can't vary `max-parallel` within a matrix, so the BrowserStack job runs at most
-  the lowest `maxParallel` at once. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
+  BrowserStack, `maxParallel`. The BrowserStack jobs of all workflow runs share the lowest `maxParallel` lanes, and
+  run at most one job per lane at once. The lanes never take more of the account's 5 sessions than the ES5 e2e job
+  (one per `browsers-es5.json` browser) leaves free. A BrowserStack `vitest` with `specsMatching` (a regular expression) runs, in one
   job labelled `specsLabel`, only the spec files under `test/spec` whose source matches it, found when the job is
   defined; with none, there is no job. `gulp test --browserstack` does the same for that entry, unless `--file` is
   given.
