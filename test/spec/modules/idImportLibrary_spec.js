@@ -246,7 +246,7 @@ describe('IdImportLibrary Tests', function () {
     });
   });
 
-  // Codex bot: guard WebCrypto suite registration to avoid an empty suite in insecure contexts.
+  // Guard WebCrypto suite registration to avoid an empty suite in insecure contexts.
   if (window.isSecureContext) {
     describe('hashed email', function () {
       let stubs;
