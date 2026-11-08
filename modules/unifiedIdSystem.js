@@ -50,7 +50,9 @@ export const unifiedIdSubmodule = {
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
-    if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
+    const hasValidPartner = typeof configParams.partner === 'string' && configParams.partner.trim() !== '';
+    const hasValidUrl = typeof configParams.url === 'string' && configParams.url.trim() !== '';
+    if (!configParams || (!hasValidPartner && !hasValidUrl)) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
