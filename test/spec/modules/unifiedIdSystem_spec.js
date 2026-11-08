@@ -25,7 +25,7 @@ describe('Unified ID', () => {
       return server.requests[0];
     }
 
-    it('should use provided URL verbatim even with consent and domain available', () => {
+    it('should use a non-TTD URL verbatim even with consent and domain available', () => {
       const url = 'https://given-url/?gdpr=0&gdpr_consent=custom&domain=custom.example#fragment';
       const req = request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } });
       expect(req.url).to.equal(url);
@@ -34,6 +34,117 @@ describe('Unified ID', () => {
 
     it('should use provided URL without consent data', () => {
       expect(request(null, { params: { url: 'https://given-url/' } }).url).to.equal('https://given-url/');
+    });
+
+    describe('custom TTD URLs', () => {
+      [
+        'https://match.adsrvr.org/track/rid?ttd_pid=custom-partner&fmt=json',
+        'http://match.adsrvr.org/track/rid?ttd_pid=custom-partner&fmt=json',
+        '//match.adsrvr.org/track/rid?ttd_pid=custom-partner&fmt=json',
+        'https://MATCH.ADSRVR.ORG/custom/rid?ttd_pid=custom-partner&fmt=json',
+        'https://match.adsrvr.org:8443/track/rid?ttd_pid=custom-partner&fmt=json'
+      ].forEach(url => {
+        it(`should forward signals to ${url}`, () => {
+          const req = request({ gdpr: { gdprApplies: true, consentString } }, { params: { url, partner: 'unused-partner' } });
+          const expected = new URL(url, window.location.href);
+          const actual = new URL(req.url);
+          expect(actual.origin).to.equal(expected.origin);
+          expect(actual.pathname).to.equal(expected.pathname);
+          expect(actual.searchParams.get('ttd_pid')).to.equal('custom-partner');
+          expect(actual.searchParams.get('fmt')).to.equal('json');
+          expect(actual.searchParams.get('gdpr')).to.equal('1');
+          expect(actual.searchParams.get('gdpr_consent')).to.equal(consentString);
+          expect(actual.searchParams.get('domain')).to.equal('publisher.example');
+        });
+      });
+
+      it('should add signals to a URL with no query string', () => {
+        const req = request({ gdpr: { gdprApplies: false, consentString } }, { params: { url: 'https://match.adsrvr.org/custom' } });
+        const query = new URL(req.url).searchParams;
+        expect(query.get('gdpr')).to.equal('0');
+        expect(query.get('gdpr_consent')).to.equal(consentString);
+        expect(query.get('domain')).to.equal('publisher.example');
+        expect(query.has('ttd_pid')).to.be.false;
+        expect(query.has('fmt')).to.be.false;
+      });
+
+      it('should preserve existing signals, duplicates, other parameters, and the fragment', () => {
+        const url = 'https://match.adsrvr.org/track/rid?ttd_pid=custom&gdpr=0&gdpr=0&gdpr_consent=old&gdpr_consent=older&domain=old.example&domain=other.example&tag=one&tag=two&next=https%3A%2F%2Fpublisher.example%2F%3Fa%3D1%26b%3D2#fragment';
+        const req = request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } });
+        const actual = new URL(req.url);
+        expect(actual.searchParams.getAll('gdpr')).to.deep.equal(['0', '0']);
+        expect(actual.searchParams.getAll('gdpr_consent')).to.deep.equal(['old', 'older']);
+        expect(actual.searchParams.getAll('domain')).to.deep.equal(['old.example', 'other.example']);
+        expect(actual.searchParams.getAll('tag')).to.deep.equal(['one', 'two']);
+        expect(actual.searchParams.get('next')).to.equal('https://publisher.example/?a=1&b=2');
+        expect(actual.searchParams.get('ttd_pid')).to.equal('custom');
+        expect(actual.hash).to.equal('#fragment');
+      });
+
+      Object.entries({ gdpr: '0', gdpr_consent: 'configured+/=', domain: 'configured.example' }).forEach(([key, value]) => {
+        it(`should preserve configured ${key} and fill only the other missing signals`, () => {
+          const url = `https://match.adsrvr.org/track/rid?ttd_pid=custom&${key}=${encodeURIComponent(value)}`;
+          const query = new URL(request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } }).url).searchParams;
+          const expected = { gdpr: '1', gdpr_consent: consentString, domain: 'publisher.example', [key]: value };
+          Object.entries(expected).forEach(([name, expectedValue]) => {
+            expect(query.getAll(name)).to.deep.equal([expectedValue]);
+          });
+        });
+      });
+
+      ['', '='].forEach(assignment => {
+        it(`should preserve empty configured signals using '${assignment}'`, () => {
+          const url = `https://match.adsrvr.org/track/rid?ttd_pid=custom&gdpr${assignment}&gdpr_consent${assignment}&domain${assignment}`;
+          const query = new URL(request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } }).url).searchParams;
+          ['gdpr', 'gdpr_consent', 'domain'].forEach(name => {
+            expect(query.getAll(name)).to.deep.equal(['']);
+          });
+        });
+      });
+
+      it('should preserve literal placeholders supplied in the URL', () => {
+        const url = 'https://match.adsrvr.org/track/rid?ttd_pid=custom&gdpr=${GDPR}&gdpr_consent=${GDPR_CONSENT_21}&domain=${DOMAIN}';
+        const query = new URL(request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } }).url).searchParams;
+        expect(query.get('gdpr')).to.equal('${GDPR}');
+        expect(query.get('gdpr_consent')).to.equal('${GDPR_CONSENT_21}');
+        expect(query.get('domain')).to.equal('${DOMAIN}');
+      });
+
+      it('should send the domain without consent data', () => {
+        const req = request(null, { params: { url: 'https://match.adsrvr.org/track/rid?ttd_pid=custom' } });
+        const query = new URL(req.url).searchParams;
+        expect(query.get('domain')).to.equal('publisher.example');
+        expect(query.has('gdpr')).to.be.false;
+        expect(query.has('gdpr_consent')).to.be.false;
+      });
+
+      it('should preserve configured signals when runtime values are unavailable', () => {
+        refererStub.returns({ domain: null });
+        const url = 'https://match.adsrvr.org/track/rid?ttd_pid=custom&gdpr=1&gdpr_consent=custom%2B%2F%3D&domain=custom.example';
+        const query = new URL(request(null, { params: { url } }).url).searchParams;
+        expect(query.get('gdpr')).to.equal('1');
+        expect(query.get('gdpr_consent')).to.equal('custom+/=');
+        expect(query.get('domain')).to.equal('custom.example');
+      });
+    });
+
+    [
+      'https://match.adsrvr.org.other.example/track/rid',
+      'https://other.example/track/rid?next=https%3A%2F%2Fmatch.adsrvr.org',
+      'https://sub.match.adsrvr.org/track/rid'
+    ].forEach(url => {
+      it(`should not append signals to ${url}`, () => {
+        const req = request({ gdpr: { gdprApplies: true, consentString } }, { params: { url } });
+        expect(req.url).to.equal(url);
+        expect(refererStub.called).to.be.false;
+      });
+    });
+
+    it('should check the actual hostname rather than a hostname in URL credentials', () => {
+      const result = unifiedIdSubmodule.getId({ params: { url: 'https://match.adsrvr.org@other.example/track/rid' } },
+        { gdpr: { gdprApplies: true, consentString } });
+      expect(result.callback).to.be.a('function');
+      expect(refererStub.called).to.be.false;
     });
 
     it('should use partner URL and the detected publisher domain', () => {
