@@ -303,8 +303,65 @@ class UnparseableResponse(ValueError):
         self.raw = raw
 
 
+def sanitize(text):
+    """Model prose may be shaped by the untrusted diff: no links, mentions or HTML."""
+    text = re.sub(r"https?://\S+|www\.\S+", "(link removed)", text)
+    # Escape backslashes first so an escaped bracket cannot be un-escaped,
+    # then brackets so no Markdown link (e.g. "[x](//host)") can render.
+    text = text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+    text = text.replace("@", "@⁠").replace("<", "&lt;").replace("```", "'''")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def code_block(text):
+    """Show model code literally: a fence longer than any backtick run inside it."""
+    longest = max((len(run) for run in re.findall(r"`+", text)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return f"{fence}\n{text.strip()}\n{fence}"
+
+
+def occurrence(file_lines, finding):
+    """Which of the file's identical added lines the finding is on (0-based).
+
+    Distinguishes the same buggy statement added in several places, while
+    staying stable when unrelated lines shift the line numbers.
+    """
+    quote = finding["quote"].strip()
+    same = [number for number, text in sorted(file_lines.items()) if text.strip() == quote]
+    return same.index(finding["line"]) if finding["line"] in same else 0
+
+
+def finding_marker(filename, finding, occurrence_index=0):
+    """Identify a finding by file, line text, fix and occurrence, not by head
+    SHA, so later pushes do not repost a finding the author has not acted on."""
+    key = "\0".join((filename, finding["quote"].strip(), finding["fix"].strip(), str(occurrence_index)))
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def build_comment(finding, marker):
+    return ("**Automated local Qwen correctness check (unverified)**\n\n"
+            + "**Issue:** " + sanitize(finding["problem"]) + "\n\n"
+            + "**Failure case:** " + sanitize(finding["failure_case"]) + "\n\n"
+            + "**Suggested fix:**\n\n" + code_block(finding["fix"]) + "\n\n"
+            + "<!-- bounded-qwen:" + marker + " -->")
+
+
+def prior_markers(comments):
+    """Markers from the workflow's own comments only: anyone can comment, and
+    a forged marker would otherwise suppress a real finding."""
+    prior = set()
+    for comment in comments:
+        if (comment.get("user") or {}).get("login") == "github-actions[bot]":
+            # Only the marker build_comment appends last: a model-written fix
+            # shown in the comment could otherwise carry a planted marker.
+            match = re.search(r"<!-- bounded-qwen:([0-9a-f]{64}) -->\s*\Z", comment.get("body") or "")
+            if match:
+                prior.add(match.group(1))
+    return prior
+
+
 def review_chunk(model, filename, patch, index, total, sha, repo, number,
-                 token, prior, report, output_path, spec_removed=()):
+                 token, prior, report, output_path, spec_removed=(), file_lines=None):
     """One independently bounded inference call; report incomplete coverage."""
     diagnostic = {"path": filename, "chunk": index, "total_chunks": total,
                   "patch": patch, "outcome": "started"}
@@ -365,15 +422,13 @@ def review_chunk(model, filename, patch, index, total, sha, repo, number,
         report["rejected"] += 1
         diagnostic["outcome"] = "rejected"
     else:
-        marker = hashlib.sha256(f"{sha}:{filename}:{finding['line']}".encode()).hexdigest()
+        # Count occurrences across the whole file's added lines, not just this chunk.
+        marker = finding_marker(filename, finding,
+                                occurrence(file_lines if file_lines is not None else added_lines(patch), finding))
         if marker in prior:
             diagnostic["outcome"] = "duplicate"
         else:
-            body = ("**Automated local Qwen correctness check (unverified)**\n\n"
-                + "**Issue:** " + finding["problem"] + "\n\n"
-                + "**Failure case:** " + finding["failure_case"] + "\n\n"
-                + "**Suggested fix:** " + finding["fix"] + "\n\n"
-                + "<!-- bounded-qwen:" + marker + " -->")
+            body = build_comment(finding, marker)
             api(f"{API}/repos/{repo}/pulls/{number}/comments", token, "POST", {
                 "body": body, "commit_id": sha, "path": filename,
                 "line": finding["line"], "side": "RIGHT"})
@@ -393,9 +448,7 @@ def main():
     report = {"model": model, "reviewed": 0, "posted": 0, "rejected": 0, "skipped": 0, "errors": [], "files": [], "skipped_files": []}
     # Save raw response per file for iteration (no secrets or code execution).
     output_path = Path(env.get("RUNNER_TEMP", "/tmp"), "bounded-qwen-result.json")
-    prior = set()
-    for comment in paged(repo, number, token, "comments"):
-        prior.update(re.findall(r"<!-- bounded-qwen:([0-9a-f]{64}) -->", comment.get("body", "")))
+    prior = prior_markers(paged(repo, number, token, "comments"))
     files, patches = [], {}
     for file in paged(repo, number, token, "files"):
         patch = file.get("patch")
@@ -445,7 +498,8 @@ def main():
             total_chunks += 1
             report["chunks_attempted"] += 1
             review_chunk(model, filename, part, chunk_index, len(chunks), sha, repo, number,
-                         token, prior, report, output_path, spec_deleted_lines(filename, patches))
+                         token, prior, report, output_path, spec_deleted_lines(filename, patches),
+                         added_lines(patch))
     output_path.write_text(json.dumps(report, indent=2) + "\n")
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a") as summary:

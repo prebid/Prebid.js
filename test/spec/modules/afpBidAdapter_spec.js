@@ -30,7 +30,7 @@ const imageHeight = 400;
 const pageUrl = IS_DEV ? TEST_PAGE_URL : 'referer';
 const sizes = [[imageWidth, imageHeight]];
 const bidderRequest = {
-  refererInfo: { referer: pageUrl },
+  refererInfo: { page: pageUrl, referer: pageUrl },
 };
 const mediaTypeBanner = { [BANNER]: { sizes: [[imageWidth, imageHeight]] } };
 const mediaTypeVideo = { [VIDEO]: { playerSize: [[imageWidth, imageHeight]] } };

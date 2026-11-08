@@ -291,11 +291,10 @@ To run the unit tests for a particular file (example for pubmaticBidAdapter_spec
 gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js" --nolint
 ```
 
-To generate and view the code coverage reports:
+To generate the code coverage reports (lcov, one file per chunk under `build/coverage/chunks`):
 
 ```bash
 gulp test-coverage
-gulp view-coverage
 ```
 
 Local end-to-end testing can be done with:
@@ -379,25 +378,29 @@ Code quality is defined by `.eslintrc` and errors are reported in the terminal.
 
 If you are contributing code, you should [configure your editor](http://eslint.org/docs/user-guide/integrations#editors) with the provided `.eslintrc` settings.
 
-### Unit Testing with Karma
+### Unit Testing
 
-        $ gulp test --watch --browsers=chrome
+The unit tests run in real browsers under [Vitest Browser Mode](https://vitest.dev/guide/browser/). See
+[test/vitest/README.md](test/vitest/README.md) for how they are run and the options.
 
-This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
+        $ gulp test-only --browsers=chrome,firefox
 
-+ To access the Karma debug page, go to `http://localhost:9876/debug.html`
+`--browsers` takes `chrome`, `firefox`, `safari` (the installed Safari, on macOS), `edge` or `webkit`.
 
-+ For test results, see the console
+To re-run the tests as you edit, use
 
-+ To set breakpoints in source code, see the developer tools
+        $ gulp serve-and-test
+
+which re-precompiles changed sources and re-runs the specs that import them (Vitest's watch mode). Vitest prints
+the results in the console.
 
 Detailed code coverage reporting can be generated explicitly with
 
-        $ gulp test --coverage
+        $ gulp test-only --coverage
 
 The results will be in
 
-        ./build/coverage
+        ./build/coverage/chunks
 
 *Note*: Starting in June 2016, all pull requests to Prebid.js need to include tests with greater than 80% code coverage before they can be merged.  For more information, see [#421](https://github.com/prebid/Prebid.js/issues/421).
 
