@@ -143,6 +143,52 @@ describe('sevioBidAdapter', function () {
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
 
+    describe('X-Adshield response header', function () {
+      const responseWithHeaders = (headers) => ({
+        body: { bids: [{ requestId: 'r1', cpm: 1, meta: { advertiserDomains: ['none.com'] } }] },
+        headers: { get: (name) => (name in headers ? headers[name] : null) }
+      });
+
+      it('sets meta.adshield to 1 when the header is present without a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 1 when the header carries a value', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': 'anything' }));
+        expect(bid.meta.adshield).to.equal(1);
+      });
+
+      it('sets meta.adshield to 0 when the header is absent', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({}));
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('keeps the existing meta fields', function () {
+        const [bid] = spec.interpretResponse(responseWithHeaders({ 'X-Adshield': '' }));
+        expect(bid.meta).to.deep.equal({ advertiserDomains: ['none.com'], adshield: 1 });
+      });
+
+      it('creates meta when the bid has none', function () {
+        const response = responseWithHeaders({});
+        delete response.body.bids[0].meta;
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta).to.deep.equal({ adshield: 0 });
+      });
+
+      it('sets meta.adshield to 0 when the response has no headers accessor', function () {
+        const [bid] = spec.interpretResponse({ body: { bids: [{ requestId: 'r1' }] } });
+        expect(bid.meta.adshield).to.equal(0);
+      });
+
+      it('sets meta.adshield to 0 when reading headers throws', function () {
+        const response = responseWithHeaders({});
+        response.headers.get = () => { throw new Error('unreadable'); };
+        const [bid] = spec.interpretResponse(response);
+        expect(bid.meta.adshield).to.equal(0);
+      });
+    });
+
     it('should get the correct bid response for the native case', function () {
       let expectedResponseNative = [{
         requestId: '36e835f6cbfca38',
@@ -303,8 +349,8 @@ describe('sevioBidAdapter', function () {
     timeout: 1200,
     refererInfo: { page: 'https://example.com/page', referer: 'https://referrer.example' },
     gdprConsent: { consentString: 'TCF-STRING' },
-    uspConsent: { uspString: '1NYN' },
-    gppConsent: { consentString: 'GPP-STRING' },
+    uspConsent: '1NYN',
+    gppConsent: { gppString: 'GPP-STRING', applicableSections: [7] },
     ortb2: { device: {}, ext: {} }
   };
 
@@ -368,49 +414,49 @@ describe('sevioBidAdapter', function () {
       }
     });
 
-    it('computeTTFB via navigation entries (top.performance) and cached within call', () => {
-      const perfTop = window.top.performance;
-
-      const original = perfTop.getEntriesByType;
-      Object.defineProperty(perfTop, 'getEntriesByType', {
-        configurable: true,
-        writable: true,
-        value: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
+    // window.top.performance is shared with every other spec on the page. `timing` and `getEntriesByType` are
+    // inherited from Performance.prototype, so an override is undone by deleting the own property it added:
+    // defining one with the saved value (or `undefined`) would leave it shadowing the real getter or method.
+    function overridePerformance(perf, props) {
+      const saved = Object.fromEntries(Object.keys(props).map(k => [k, Object.getOwnPropertyDescriptor(perf, k)]));
+      Object.entries(props).forEach(([k, value]) => Object.defineProperty(perf, k, { configurable: true, writable: true, value }));
+      return () => Object.entries(saved).forEach(([k, desc]) => {
+        if (desc) Object.defineProperty(perf, k, desc); else delete perf[k];
       });
+    }
 
-      const out = spec.buildRequests([mkBid({ bidId: 'A' }), mkBid({ bidId: 'B' })], baseBidderRequest);
-      expect(out).to.have.lengthOf(2);
-      expect(out[0].data.timeToFirstByte).to.equal('52');
-      expect(out[1].data.timeToFirstByte).to.equal('52');
-
-      Object.defineProperty(perfTop, 'getEntriesByType', { configurable: true, writable: true, value: original });
+    it('computeTTFB via navigation entries (top.performance) and cached within call', () => {
+      const restore = overridePerformance(window.top.performance, {
+        getEntriesByType: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
+      });
+      try {
+        const out = spec.buildRequests([mkBid({ bidId: 'A' }), mkBid({ bidId: 'B' })], baseBidderRequest);
+        expect(out).to.have.lengthOf(2);
+        expect(out[0].data.timeToFirstByte).to.equal('52');
+        expect(out[1].data.timeToFirstByte).to.equal('52');
+      } finally {
+        restore();
+      }
     });
 
     it('computeTTFB falls back to top.performance.timing when no navigation entries', () => {
-      const perfTop = window.top.performance;
-      const originalGetEntries = perfTop.getEntriesByType;
-      const originalTimingDesc = Object.getOwnPropertyDescriptor(perfTop, 'timing');
-
-      Object.defineProperty(perfTop, 'getEntriesByType', {
-        configurable: true, writable: true, value: () => []
+      const restore = overridePerformance(window.top.performance, {
+        getEntriesByType: () => [],
+        timing: { responseStart: 250, requestStart: 200 }
       });
-
-      Object.defineProperty(perfTop, 'timing', {
-        configurable: true,
-        value: { responseStart: 250, requestStart: 200 }
-      });
-
-      const out = spec.buildRequests([mkBid()], baseBidderRequest);
-      expect(out[0].data.timeToFirstByte).to.equal('50');
-
-      Object.defineProperty(perfTop, 'getEntriesByType', {
-        configurable: true, writable: true, value: originalGetEntries
-      });
-      if (originalTimingDesc) {
-        Object.defineProperty(perfTop, 'timing', originalTimingDesc);
-      } else {
-        Object.defineProperty(perfTop, 'timing', { configurable: true, value: undefined });
+      try {
+        const out = spec.buildRequests([mkBid()], baseBidderRequest);
+        expect(out[0].data.timeToFirstByte).to.equal('50');
+      } finally {
+        restore();
       }
+    });
+
+    it('leaves top.performance as it found it', () => {
+      const perfTop = window.top.performance;
+      expect(Object.getOwnPropertyDescriptor(perfTop, 'timing')).to.equal(undefined);
+      expect(Object.getOwnPropertyDescriptor(perfTop, 'getEntriesByType')).to.equal(undefined);
+      expect(perfTop.timing.navigationStart).to.be.a('number');
     });
 
     it('handles multiple sizes correctly', function () {
@@ -523,6 +569,104 @@ describe('sevioBidAdapter', function () {
       expect(requests).to.be.an('array').that.is.not.empty;
       expect(requests[0].data).to.have.nested.property('keywords.tokens');
       expect(requests[0].data.keywords.tokens).to.deep.equal(['play', 'games', 'fun']);
+    });
+  });
+
+  describe('Global Privacy Control', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-gpc'
+    }];
+
+    const withRegs = (regs) => ({
+      ...baseBidderRequest,
+      ortb2: { ...baseBidderRequest.ortb2, regs }
+    });
+
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      window.ethereum = {};
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      delete window.ethereum;
+    });
+
+    ['1', 1].forEach((gpc) => {
+      it(`flags the opt-out, turns syncs off and drops the wallet flag when regs.ext.gpc is ${JSON.stringify(gpc)}`, function () {
+        const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc } }))[0].data;
+
+        expect(payload.privacy).to.deep.equal({
+          gpp: 'GPP-STRING',
+          tcfeu: 'TCF-STRING',
+          usp: '1NYN',
+          gpc: 1
+        });
+        expect(payload.userSyncOption).to.equal('OFF');
+        expect(payload.wdb).to.equal(0);
+      });
+    });
+
+    it('sends no opt-out and keeps syncs and the wallet flag when GPC is absent', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+      expect(payload.wdb).to.equal(1);
+    });
+
+    it('sends no opt-out when regs.ext.gpc is not "1"', function () {
+      const payload = spec.buildRequests(bidRequests, withRegs({ ext: { gpc: '0' } }))[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('BIDDERS');
+    });
+
+    it('turns syncs off without GPC when user syncs are disabled', function () {
+      sandbox.stub(config, 'getConfig').callThrough()
+        .withArgs('userSync.syncEnabled').returns(false);
+
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy.gpc).to.equal(0);
+      expect(payload.userSyncOption).to.equal('OFF');
+    });
+  });
+
+  describe('privacy consent strings', function () {
+    const bidRequests = [{
+      bidder: 'sevio',
+      params: { zone: 'zoneId' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      bidId: 'bid-privacy'
+    }];
+
+    it('forwards the TCF, USP and GPP strings in the shapes the consent modules provide', function () {
+      const payload = spec.buildRequests(bidRequests, baseBidderRequest)[0].data;
+
+      expect(payload.privacy).to.deep.equal({
+        gpp: 'GPP-STRING',
+        tcfeu: 'TCF-STRING',
+        usp: '1NYN',
+        gpc: 0
+      });
+    });
+
+    it('sends empty strings when no consent module is active', function () {
+      const { gdprConsent, uspConsent, gppConsent, ...bidderRequest } = baseBidderRequest;
+      const payload = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+
+      expect(payload.privacy).to.deep.equal({
+        gpp: '',
+        tcfeu: '',
+        usp: '',
+        gpc: 0
+      });
     });
   });
 
@@ -846,6 +990,12 @@ describe('sevioBidAdapter', function () {
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
+      // buildRequests also reads the viewport through this accessor, which calls
+      // canAccessWindowTop whenever a value is not already cached
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        screen: { width: 1024, height: 768 },
+        visualViewport: { width: 800, height: 600 }
+      });
     });
 
     afterEach(function () {

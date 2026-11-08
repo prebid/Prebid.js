@@ -1,6 +1,5 @@
 import {
   deepAccess,
-  getWindowSelf,
   isArray,
   isStr,
   parseQueryStringParameters,
@@ -148,6 +147,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest);
+  const ua = validBidRequests[0]?.ortb2?.device?.ua;
   // Kobler, a contextual advertising provider, does not process any personal data itself, so it is not part of TCF/GVL.
   // However, it supports using select third-party creatives in its platform, some of which require certain permissions
   // in order to be shown. Kobler's bidder checks if necessary permissions are present to avoid bidding
@@ -171,8 +171,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice(),
-      ua: navigator.userAgent,
+      devicetype: getDevice(ua),
+      ua,
       sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
@@ -207,6 +207,7 @@ function buildOpenRtbImpObject(validBidRequest) {
     bidfloorcur: floorInfo.currency,
     pmp: buildPmpObject(validBidRequest),
     ext: {
+      gpid: validBidRequest.ortb2Imp?.ext?.gpid,
       prebid: {
         adunitcode: validBidRequest.adUnitCode
       }
@@ -214,10 +215,7 @@ function buildOpenRtbImpObject(validBidRequest) {
   };
 }
 
-function getDevice() {
-  const ws = getWindowSelf();
-  const ua = ws.navigator.userAgent;
-
+function getDevice(ua = '') {
   if (/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i
     .test(ua.toLowerCase())) {
     return 5; // tablet

@@ -293,8 +293,15 @@ doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
   if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
-    executeRenderer(bidResponse.renderer, bidResponse, doc);
-    emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId });
+    executeRenderer(bidResponse.renderer, bidResponse, doc).then(
+      () => emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId }),
+      (e) => emitAdRenderFail({
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: e?.message ?? 'Could not load renderer script',
+        bid: bidResponse,
+        id: bidResponse.adId
+      })
+    );
     next.bail();
   } else {
     next(args);

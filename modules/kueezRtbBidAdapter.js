@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   createBuildRequestsFn,
@@ -19,16 +19,17 @@ const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
 const BIDDER_VERSION = '1.0.0';
+const NATIVE_OPTIONS = { supportNative: true };
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
-  buildRequests: createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false),
-  interpretResponse: createInterpretResponseFn(BIDDER_CODE, false),
+  buildRequests: createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false, NATIVE_OPTIONS),
+  interpretResponse: createInterpretResponseFn(BIDDER_CODE, false, NATIVE_OPTIONS),
   getUserSyncs: createUserSyncGetter({
     iframeSyncUrl: 'https://sync.kueezrtb.com/api/sync/iframe',
     imageSyncUrl: 'https://sync.kueezrtb.com/api/sync/image'

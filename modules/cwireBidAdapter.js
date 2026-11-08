@@ -196,7 +196,7 @@ export const spec = {
     );
 
     const syncs = [];
-    if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
+    if (hasPurpose1Consent(gdprConsent) && gdprConsent?.consentString) {
       logInfo('GDPR purpose 1 consent was given, adding user-syncs');
       const type = syncOptions.pixelEnabled
         ? 'image'
@@ -206,7 +206,7 @@ export const spec = {
       if (type) {
         syncs.push({
           type,
-          url: `https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${
+          url: `https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${
             gdprConsent.gdprApplies ? 1 : 0
           }&gdpr_consent=${gdprConsent.consentString}`,
         });

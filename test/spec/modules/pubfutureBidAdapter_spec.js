@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/pubfutureBidAdapter.js';
 import 'modules/priceFloors.js';
 
-const ENDPOINT = 'https://ortb2.pubstar-ad.com/v1/bid';
+const ENDPOINT = 'https://prebid.pubfuture-ad.com/v1/bid';
 
 const BANNER_BID = {
   bidder: 'pubfuture',

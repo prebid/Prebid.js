@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js';
+import { logError, parseQueryStringParameters, parseUrl } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
@@ -14,6 +15,7 @@ import { UID1_EIDS } from '../libraries/uid1Eids/uid1Eids.js';
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../src/consentHandler.js').AllConsentData} ConsentData
  * @typedef {import('./unifiedIdSystem.d.ts').UnifiedId} UnifiedId
  */
 
@@ -43,16 +45,34 @@ export const unifiedIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId(config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
-    // use protocol relative urls for http or https
-    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    let url = configParams.url;
+    const customUrl = url && parseUrl(url, { noDecodeWholeURL: true });
+    if (!url || customUrl.hostname === 'match.adsrvr.org') {
+      const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };
+      const ridUrl = new URL(customUrl ? customUrl.href : `https://match.adsrvr.org/track/rid?${parseQueryStringParameters(queryParams)}`);
+      const gdprConsent = consentData?.gdpr;
+      // Preserve publisher-supplied parameters, including empty values.
+      if (!ridUrl.searchParams.has('gdpr') && typeof gdprConsent?.gdprApplies === 'boolean') {
+        ridUrl.searchParams.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
+      }
+      if (!ridUrl.searchParams.has('gdpr_consent') && typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
+        ridUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
+      }
+      const domain = getRefererInfo().domain;
+      if (!ridUrl.searchParams.has('domain') && domain) {
+        ridUrl.searchParams.set('domain', domain);
+      }
+      url = ridUrl.toString();
+    }
 
     const resp = function (callback) {
       const callbacks = {
