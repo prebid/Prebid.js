@@ -27,8 +27,8 @@
  * plugin's transform appears not to apply, or applies with its old semantics. It presents as a
  * bug in the plugin or in unrelated source, and no amount of reading either explains it. Run
  * `gulp clean-cache` and build again before believing it - `gulp clean` will not help, it leaves
- * the caches alone by design. CI is never exposed to this: it builds fresh and never reuses a
- * cache.
+ * the caches alone by design. CI restores these caches keyed on the build-system files listed in
+ * `.github/actions/precompile-cache`; one missing from that list exposes CI to this too.
  */
 const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
@@ -41,9 +41,10 @@ const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
 const {Transform} = require('node:stream');
-const filter = import('gulp-filter');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
+const {PUBLIC_MODULE_EXTENSIONS, getPublicModule, isOverridden} = require('./gulp.publicModules.js');
+const {tsConsumer, TS_MIN} = require('./gulp.consumerTypes.js');
 const {
   cachedPipeline,
   getDefaults,
@@ -238,23 +239,15 @@ function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
+    `${name}/**/*.d.mts`,
   ]).concat([
     '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
   ]), {base: '.', since: gulp.lastRun(copyVerbatim)})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
-/**
- * Generate "public" versions of module files (used in  package.json "exports") that
- * just import the "real" module
- *
- * This achieves two things:
- *
- *   - removes the need for awkward "index" imports, e.g. userId/index
- *   - hides their exports from NPM consumers
- */
 const generatePublicModules = _.memoize(
-  function (ext, template) {
+  function (ext) {
     const publicDir = helpers.getPrecompiledPath('public');
 
     function getNames(file) {
@@ -264,31 +257,34 @@ const generatePublicModules = _.memoize(
       const publicName = `${moduleName}.${ext}`;
       const modulePath = path.relative(publicDir, file.path);
       const publicPath = path.join(publicDir, publicName);
-      return {modulePath, publicPath}
+      return {moduleName, modulePath, publicPath}
     }
 
-    function publicVersionDoesNotExist(file) {
-      // allow manual definition of a module's public version by leaving it
-      // alone if it exists under `public`
-      return !fs.existsSync(getNames(file).publicPath)
-    }
-
-    return function (done) {
-      filter.then(({default: filter}) => {
-        gulp.src([
-          helpers.getPrecompiledPath(`modules/*.${ext}`),
-          helpers.getPrecompiledPath(`modules/**/index.${ext}`),
-          `!${publicDir}/**/*`
-        ], {since: gulp.lastRun(generatePublicModules(ext, template))})
-          .pipe(filter(publicVersionDoesNotExist))
-          .pipe(tap((file) => {
-            const {modulePath, publicPath} = getNames(file);
-            file.contents = Buffer.from(template({modulePath: toModulePath(modulePath)}));
-            file.path = publicPath;
-          }))
-          .pipe(gulp.dest(publicDir))
-          .on('end', done);
-      })
+    return function () {
+      const exts = ext === 'd.ts' ? [ext, 'js'] : [ext];
+      return gulp.src(exts.flatMap(ext => [
+        helpers.getPrecompiledPath(`modules/*.${ext}`),
+        helpers.getPrecompiledPath(`modules/**/index.${ext}`),
+      ]).concat([
+        `!${publicDir}/**/*`
+      ]), {since: gulp.lastRun(generatePublicModules(ext))})
+        .pipe(new Transform({
+          objectMode: true,
+          transform(file, enc, cb) {
+            const {moduleName, modulePath, publicPath} = getNames(file);
+            const contents = isOverridden(moduleName, ext)
+              ? null
+              : getPublicModule(ext, file.path, moduleName, toModulePath(modulePath), helpers.getPrecompiledPath());
+            if (contents == null) {
+              cb();
+            } else {
+              file.contents = Buffer.from(contents);
+              file.path = publicPath;
+              cb(null, file);
+            }
+          }
+        }))
+        .pipe(gulp.dest(publicDir));
     }
   },
 )
@@ -316,10 +312,7 @@ const generateCoreSummary = generateTypeSummary(
   helpers.getPrecompiledPath('src/types/summary/**/*')
 );
 const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
-const publicModules = gulp.parallel(Object.entries({
-  'js':  _.template(`import '<%= modulePath %>';`),
-  'd.ts': _.template(`export type * from '<%= modulePath %>'`)
-}).map(args => generatePublicModules.apply(null, args)));
+const publicModules = gulp.parallel(PUBLIC_MODULE_EXTENSIONS.map(ext => generatePublicModules(ext)));
 
 
 /**
@@ -436,17 +429,16 @@ function precompile(options = {}) {
       generateGlobalDef(options),
     ]),
   ].concat(options.dev ? [] : [
-    gulp.parallel(['ts-strict', 'check-declarations'])
+    gulp.parallel(['ts-strict', 'check-declarations', 'ts-consumer'])
   ]));
 }
 
 
 // Always incremental: tsc emits into `.cache/ts/out` and keeps its buildinfo beside it, so the two
-// agree across runs and there is nothing for a non-incremental variant to protect against. CI sees
-// no benefit - it starts from a fresh checkout with no cache - but a local build that has run
-// before does.
+// agree across runs and there is nothing for a non-incremental variant to protect against.
 gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
+gulp.task('ts-consumer', tsConsumer('link', [TS_MIN]));
 gulp.task('check-declarations', checkDeclarations);
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));

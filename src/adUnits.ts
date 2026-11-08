@@ -11,6 +11,8 @@ export interface SafeRendererConfig {
   url: string;
   config?: any; // set by the bidder adapter
   getConfig?(bidResponse: Bid): any; // set by the publisher
+  /** If true, this safeRenderer is used only when the bid adapter doesn't provide its own. */
+  backupOnly?: boolean;
   /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
   requiresVastUrl?: boolean;
 }

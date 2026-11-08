@@ -16,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        fetch-depth: 0
+        fetch-depth: 2
 
     - name: Set up Node.js
       uses: actions/setup-node@v7
@@ -42,13 +42,9 @@ jobs:
     - name: Run jscpd on entire codebase
       run: jscpd
 
-    - name: Fetch base branch for comparison
-      run: |
-        git fetch origin refs/heads/${{ github.base_ref }}
-
     - name: Get changed files
       run: |
-        git diff --name-only FETCH_HEAD...HEAD > changed_files.txt
+        git diff --name-only HEAD^1 HEAD > changed_files.txt
         cat changed_files.txt
 
     - name: List generated files (debug)

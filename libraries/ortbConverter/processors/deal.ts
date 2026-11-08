@@ -23,14 +23,17 @@ export function getDealMeta(bid: ORTBBid): DealMeta | undefined {
   if (isNonNegativeNumber(deal.cpm)) {
     dealMeta.cpm = deal.cpm;
   }
-  if (isNonNegativeNumber(deal.pacing_adjusted_cpm)) {
-    dealMeta.pacingAdjustedCpm = deal.pacing_adjusted_cpm;
+  if (isNonNegativeNumber(deal.priority_adjusted_cpm)) {
+    dealMeta.priorityAdjustedCpm = deal.priority_adjusted_cpm;
   }
   if (isNonNegativeNumber(deal.on_schedule)) {
     dealMeta.onSchedule = deal.on_schedule;
   }
   if (Number.isInteger(deal.priority)) {
     dealMeta.priority = deal.priority;
+  }
+  if (typeof deal.source === 'string' && deal.source !== '') {
+    dealMeta.source = deal.source;
   }
   return dealMeta;
 }

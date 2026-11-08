@@ -141,7 +141,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid === 'object' && !!bid.params.apiKey;
+    return !!(bid && typeof bid === 'object' && bid.params && bid.params.apiKey);
   },
 
   /**
@@ -225,7 +225,7 @@ export const spec = {
   },
 
   /**
-   * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function (bid) {

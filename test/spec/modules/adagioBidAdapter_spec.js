@@ -1607,7 +1607,7 @@ describe('Adagio bid adapter', () => {
       });
     });
 
-    describe('Response with DSA', function() {
+    it('should pass DSA through to bid meta', function() {
       const dsaResponseObj = {
         'behalf': 'Advertiser',
         'paid': 'Advertiser',
@@ -1622,7 +1622,7 @@ describe('Adagio bid adapter', () => {
       serverResponseWithDsa.body.bids[0].meta.dsa = dsaResponseObj;
 
       const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequest)[0];
-      expect(bidResponse.meta.dsa).to.to.deep.equals(dsaResponseObj);
+      expect(bidResponse.meta.dsa).to.deep.equal(dsaResponseObj);
     });
   });
 
