@@ -467,8 +467,8 @@ describe('vast trackers', () => {
     });
   });
 
-  describe('cached tracker payload', () => {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('cached tracker payload', () => {
       it('should cache each bidder tracker once after video module verification and the tracker hook', () => {
         const videoBid = { ...createBidWithTrackers(bid), adId: 'ad', adUnitCode: 'unit', vastUrl: 'https://bidder.example/vast' };
         const adUnit = {
@@ -499,8 +499,8 @@ describe('vast trackers', () => {
         expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', 'https://bidder.com/error']);
         expect(urls('Tracking[event="start"]')).to.eql(['https://bidder.com/start']);
       });
-    }
-  });
+    });
+  }
 
   // insertVastTrackers builds nodes with DOM APIs rather than by string concatenation, which is
   // what stops a tracker value from altering the structure of the document it is placed in. These
