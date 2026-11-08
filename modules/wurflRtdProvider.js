@@ -1,6 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { fetch, sendBeacon } from '../src/ajax.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { fetchExternalScript } from '../src/adloader.js';
 import {
   mergeDeep,
   prefixLog,
@@ -333,31 +333,28 @@ function loadWurflJsAsync(config, bidders) {
 
   // Helper function to load WURFL.js script
   const loadWurflJs = (scriptUrl) => {
-    try {
-      loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME, () => {
-        window.WURFLPromises.complete.then((res) => {
-          logger.logMessage('async WURFL.js data received', res);
-          if (res.wurfl_pbjs) {
-            // Create optimized cache object with only relevant device data
-            WurflDebugger.cacheWriteStart();
-            const cacheData = {
-              WURFL: res.WURFL,
-              wurfl_pbjs: res.wurfl_pbjs,
-              expire_at: Date.now() + (res.wurfl_pbjs.ttl * 1000)
-            };
-            setObjectToStorage(WURFL_RTD_STORAGE_KEY, cacheData);
-            WurflDebugger.cacheWriteStop();
-            logger.logMessage('WURFL.js device cache stored to localStorage');
-          } else {
-            logger.logError('invalid async WURFL.js for Prebid response');
-          }
-        }).catch((err) => {
-          logger.logError('async WURFL.js promise error:', err);
-        });
+    fetchExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME)
+      .then(() => window.WURFLPromises.complete)
+      .then((res) => {
+        logger.logMessage('async WURFL.js data received', res);
+        if (res.wurfl_pbjs) {
+          // Create optimized cache object with only relevant device data
+          WurflDebugger.cacheWriteStart();
+          const cacheData = {
+            WURFL: res.WURFL,
+            wurfl_pbjs: res.wurfl_pbjs,
+            expire_at: Date.now() + (res.wurfl_pbjs.ttl * 1000)
+          };
+          setObjectToStorage(WURFL_RTD_STORAGE_KEY, cacheData);
+          WurflDebugger.cacheWriteStop();
+          logger.logMessage('WURFL.js device cache stored to localStorage');
+        } else {
+          logger.logError('invalid async WURFL.js for Prebid response');
+        }
+      })
+      .catch((err) => {
+        logger.logError('async WURFL.js loading error:', err);
       });
-    } catch (err) {
-      logger.logError('async WURFL.js loading error:', err);
-    }
   };
 
   // Wait for SUA resolution (started in getBidRequestData) before loading wurfl.js, so the

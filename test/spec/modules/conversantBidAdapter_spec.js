@@ -536,57 +536,57 @@ describe('Conversant adapter tests', function() {
     }
   });
 
-  describe('Verify Native Ads', function () {
-    let request, response;
+  if (FEATURES.NATIVE) {
+    describe('Verify Native Ads', function () {
+      let request, response;
 
-    const nativeOrtbRequest = {
-      ver: '1.2',
-      assets: [
-        { id: 1, required: 1, title: { len: 80 } }]
-    };
-    const nativeBidRequests = [{
-      bidder: 'conversant',
-      params: {
-        site_id: 10806
-      },
-      adUnitCode: 'adunit',
-      mediaTypes: {
-        banner: { sizes: [[300, 250]] },
-        native: {
-          ...nativeOrtbRequest
-        },
-      },
-      nativeOrtbRequest,
-      bidId: '0',
-      bidderRequestId: 'requestId',
-    }];
-
-    const nativeMarkup = JSON.stringify({
-      native: {
+      const nativeOrtbRequest = {
+        ver: '1.2',
         assets: [
-          { id: 1, title: { text: 'TextValue!' } },
-          { id: 5, data: { value: 'Epsilon' } },
-        ],
-        link: { url: 'https://www.epsilon.com/us', },
-      }
-    });
+          { id: 1, required: 1, title: { len: 80 } }]
+      };
+      const nativeBidRequests = [{
+        bidder: 'conversant',
+        params: {
+          site_id: 10806
+        },
+        adUnitCode: 'adunit',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: {
+            ...nativeOrtbRequest
+          },
+        },
+        nativeOrtbRequest,
+        bidId: '0',
+        bidderRequestId: 'requestId',
+      }];
 
-    const nativeBidResponse = {
-      body: {
-        bidId: 'requestId',
-        seatbid: [{
-          bid: [{
-            impid: '0',
-            price: 0.25,
-            mtype: 4,
-            adm: nativeMarkup
-          }]
-        }],
-        cur: 'USD'
-      }
-    };
+      const nativeMarkup = JSON.stringify({
+        native: {
+          assets: [
+            { id: 1, title: { text: 'TextValue!' } },
+            { id: 5, data: { value: 'Epsilon' } },
+          ],
+          link: { url: 'https://www.epsilon.com/us', },
+        }
+      });
 
-    if (FEATURES.NATIVE) {
+      const nativeBidResponse = {
+        body: {
+          bidId: 'requestId',
+          seatbid: [{
+            bid: [{
+              impid: '0',
+              price: 0.25,
+              mtype: 4,
+              adm: nativeMarkup
+            }]
+          }],
+          cur: 'USD'
+        }
+      };
+
       it('Request', function () {
         request = spec.buildRequests(nativeBidRequests, {});
         const payload = request.data;
@@ -600,8 +600,8 @@ describe('Conversant adapter tests', function() {
         expect(result.mediaType).to.equal(BANNER);
         expect(result.cpm).to.equal(nativeBidResponse.body.seatbid[0].bid[0].price);
       });
-    }
-  });
+    });
+  }
 
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
