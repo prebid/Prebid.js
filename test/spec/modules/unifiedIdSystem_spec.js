@@ -215,7 +215,7 @@ describe('Unified ID', () => {
       expect(request().url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=test-partner&fmt=json');
     });
 
-    [undefined, null, {}, { params: {} }].forEach((moduleConfig, index) => {
+    [undefined, null, {}, { params: {} }, { params: { partner: '' } }, { params: { url: '' } }].forEach((moduleConfig, index) => {
       it(`should not request an ID without a partner or URL (case ${index + 1})`, () => {
         const logStub = sinon.stub(utils, 'logError');
         try {
