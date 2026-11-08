@@ -421,7 +421,7 @@ describe('gdpr enforcement', function () {
             describe(`restriction is ${restriction}`, () => {
               const restrictedExpectation = type === 'feature' ? expectation : newExpectation;
 
-              it(`shold return ${JSON.stringify(restrictedExpectation)}`, () => {
+              it(`should return ${JSON.stringify(restrictedExpectation)}`, () => {
                 consentData.vendorData.publisher.restrictions = {
                   [purpose]: {
                     [gvlid]: restriction
@@ -499,11 +499,13 @@ describe('gdpr enforcement', function () {
             }]
           }
         });
-        setupConsentData();
+        setupConsentData({
+          gdprApplies: false
+        });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
 
-      it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      it('should accept TCF 2.3 tcData (tcfPolicyVersion 3, disclosedVendors)', function () {
         gvlids.appnexus = 1;
         setEnforcementConfig({
           gdpr: {
@@ -898,7 +900,7 @@ describe('gdpr enforcement', function () {
   });
 
   describe('transmitUfpdRule', () => {
-    it('should allow when purpose 3 consent is given', () => {
+    it('should allow when purpose 4 and vendor consent are given', () => {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -917,7 +919,7 @@ describe('gdpr enforcement', function () {
       expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
-    it('should return deny by default when purpose 4 consent is withheld', () => {
+    it('should return deny by default when vendor consent is withheld', () => {
       setEnforcementConfig({});
       Object.assign(gvlids, {
         mockBidder: 123
@@ -1356,6 +1358,11 @@ describe('gdpr enforcement', function () {
                       it(`should return false (LI is irrelevant)`, () => {
                         const allowed = validateRules(rule, consentData, 'mockVendor', 123);
                         expect(allowed).to.be.false;
+                      });
+                    } else {
+                      it(`should return true (nothing is enforced)`, () => {
+                        const allowed = validateRules(rule, consentData, 'mockVendor', 123);
+                        expect(allowed).to.be.true;
                       });
                     }
                   });

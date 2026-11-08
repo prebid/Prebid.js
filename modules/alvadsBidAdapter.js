@@ -69,7 +69,7 @@ export const spec = {
         },
         imp: imps,
         device: {
-          ua: navigator.userAgent
+          ua: bidderRequest.ortb2?.device?.ua
         },
         user: {
           id: bid.params.userId || utils.generateUUID(),
