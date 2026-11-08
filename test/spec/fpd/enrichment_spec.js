@@ -207,6 +207,16 @@ describe('FPD enrichment', () => {
       });
     });
 
+    it('does not set ref when there is no referrer', () => {
+      sandbox.stub(dep, 'getRefererInfo').callsFake(() => ({
+        page: 'www.example.com',
+        ref: null
+      }));
+      return fpd().then(ortb2 => {
+        expect(ortb2.site).to.not.have.property('ref');
+      });
+    });
+
     it('respects pub-provided fpd', () => {
       return fpd({
         site: {

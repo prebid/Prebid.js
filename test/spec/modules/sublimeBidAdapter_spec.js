@@ -541,9 +541,8 @@ describe('Sublime Adapter', function () {
 
       expect(result).to.deep.equal(expectedResponse);
 
-      describe('On bid Time out', function () {
-        spec.onTimeout(result);
-      });
+      // on bid timeout
+      spec.onTimeout(result);
     });
 
     it('should add advertiserDomains', function () {

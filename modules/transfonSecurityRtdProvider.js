@@ -220,12 +220,9 @@ function scriptLoaded() {
       loading.addEventListener('error', () => resolve(false));
       return;
     }
-    // adloader calls callback.error synchronously for a load that already failed
     let script;
-    let failed = false;
     const callback = () => resolve(true);
     callback.error = () => {
-      failed = true;
       script?.setAttribute(FAILED_ATTRIBUTE, '');
       resolve(false);
     };
@@ -238,8 +235,6 @@ function scriptLoaded() {
     }
     if (!script) {
       resolve(false);
-    } else if (failed) {
-      script.setAttribute(FAILED_ATTRIBUTE, '');
     }
   });
 }
