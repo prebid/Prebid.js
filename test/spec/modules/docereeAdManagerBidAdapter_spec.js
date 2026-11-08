@@ -123,6 +123,60 @@ describe('docereeadmanager', function () {
       expect(dataItem.meta.advertiserDomains).to.be.an('array').that.is.not
         .empty;
     });
+
+    it('should return no bids for a no-bid response (cpm 0)', function () {
+      const noBid = {
+        body: {
+          requestId: '5f67c326-b056-4f32-9498-8a760dcba439',
+          cpm: 0.0,
+          width: 0,
+          height: 0,
+          ttl: 30,
+          netRevenue: false,
+          meta: {},
+          isDisplay: 0,
+        },
+      };
+      expect(spec.interpretResponse(noBid)).to.be.an('array').that.is.empty;
+    });
+
+    it('should return no bids when the creative is missing, even with a price', function () {
+      const noCreative = {
+        body: {
+          requestId: '123',
+          cpm: 2.5,
+          currency: 'USD',
+          width: 300,
+          height: 250,
+          ttl: 30,
+          creativeId: 'c-1',
+          meta: {},
+        },
+      };
+      expect(spec.interpretResponse(noCreative)).to.be.an('array').that.is.empty;
+    });
+
+    it('should return no bids for an empty response body', function () {
+      expect(spec.interpretResponse({ body: '' })).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse({})).to.be.an('array').that.is.empty;
+    });
+
+    it('should not throw when meta is missing on a valid bid', function () {
+      const bid = {
+        body: {
+          cpm: 1.5,
+          currency: 'USD',
+          width: 300,
+          height: 250,
+          ad: '<div>ad</div>',
+          creativeId: 'c-1',
+          requestId: '123',
+        },
+      };
+      const responses = spec.interpretResponse(bid);
+      expect(responses).to.have.lengthOf(1);
+      expect(responses[0].meta.advertiserDomains).to.deep.equal([]);
+    });
   });
 
   describe('getPageUrl', function () {
@@ -211,7 +265,7 @@ describe('docereeadmanager', function () {
       expect(payloadData.requestId).to.equal('testing');
       expect(payloadData.mobile).to.equal('XXXXXXXXXX');
       expect(payloadData.adunit).to.equal('DOC-19-1');
-      expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html');
+      expect(payloadData.pageurl).to.equal(window.location.href);
       expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
       expect(payloadData.consent.gdpr).to.equal(0);
     });

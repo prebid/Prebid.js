@@ -962,6 +962,10 @@ describe('E-Planning Adapter', function () {
     });
 
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
+      // the adapter reads the user agent once, when it loads: on a phone it always uses the mobile list
+      if (/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i.test(navigator.userAgent)) {
+        this.skip();
+      }
       const bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
       // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
       getWindowTopStub.returns(createWindow(1025));

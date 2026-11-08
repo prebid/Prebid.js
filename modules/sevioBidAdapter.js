@@ -366,9 +366,9 @@ export const spec = {
           )
         },
         privacy: {
-          gpp: gpp?.consentString || "",
+          gpp: gpp?.gppString || "",
           tcfeu: gdpr?.consentString || "",
-          usp: usp?.uspString || "",
+          usp: usp || "",
           gpc: gpc ? 1 : 0,
         },
         xPageUrl: pageUrl,

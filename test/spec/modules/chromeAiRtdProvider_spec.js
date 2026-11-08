@@ -6,13 +6,8 @@ import 'src/storageManager.js';
 describe('Chrome AI RTD Provider', function () {
   // Set up sandbox for all stubs
   const sandbox = sinon.createSandbox();
-  // Mock storage manager
-  const mockStorage = {
-    hasLocalStorage: sinon.stub(),
-    localStorageIsEnabled: sinon.stub(),
-    getDataFromLocalStorage: sinon.stub(),
-    setDataInLocalStorage: sinon.stub()
-  };
+  // The provider's storage manager, with its methods stubbed for each test (see beforeEach)
+  let mockStorage;
 
   // Mock page URL for testing
   const mockPageUrl = 'https://example.com/test-page';
@@ -44,8 +39,9 @@ describe('Chrome AI RTD Provider', function () {
     logMessageStub = sandbox.stub(utils, 'logMessage');
     logErrorStub = sandbox.stub(utils, 'logError');
 
-    // Stub storage manager
-    sandbox.stub(chromeAiRtdProvider, 'storage').get(() => mockStorage);
+    // Stub the storage manager's methods in place: the module's `storage` export itself can't be replaced
+    mockStorage = Object.fromEntries(['hasLocalStorage', 'localStorageIsEnabled', 'getDataFromLocalStorage', 'setDataInLocalStorage']
+      .map(method => [method, sandbox.stub(chromeAiRtdProvider.storage, method)]));
     mockStorage.hasLocalStorage.returns(true);
     mockStorage.localStorageIsEnabled.returns(true);
     mockStorage.getDataFromLocalStorage.returns(null); // Default to no data

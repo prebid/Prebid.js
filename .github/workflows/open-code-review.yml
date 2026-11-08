@@ -41,7 +41,7 @@ jobs:
           echo "NPM_CONFIG_PREFIX=$npm_prefix" >> "$GITHUB_ENV"
           echo "$npm_prefix/bin" >> "$GITHUB_PATH"
       - name: Checkout trusted base and test OCR validator
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           persist-credentials: false
@@ -99,7 +99,7 @@ jobs:
           # temperature 0 keeps the answer repeatable, so a lucky or unlucky sample
           # does not decide whether the review runs.
           curl --fail --silent --show-error --max-time 180 \
-            https://raw.githubusercontent.com/alibaba/open-code-review/375f64cd6f67a48a135da83cfcf59c52669a09cb/internal/config/toolsconfig/tools.json \
+            https://raw.githubusercontent.com/alibaba/open-code-review/abb7abcd5c5196fa0278dc87db85780fa269562f/internal/config/toolsconfig/tools.json \
             --output "$RUNNER_TEMP/ocr-tools.json"
           jq -n --slurpfile defs "$RUNNER_TEMP/ocr-tools.json" \
             --arg model "$OCR_MODEL" \
@@ -156,13 +156,13 @@ jobs:
           # and tokenization differences on a small local model.
           # The pinned action subsequently configures the same CLI and does
           # not overwrite this persisted max_tokens setting.
-          npm install -g @alibaba-group/open-code-review@1.13.3
+          npm install -g @alibaba-group/open-code-review@1.13.5
           ocr config set max_tokens 8192
           jq --exit-status '.max_tokens == 8192' "$HOME/.opencodereview/config.json"
 
       - name: Review PR and publish comments
-        # OpenCodeReview v1.13.3 (the action and installed CLI are both pinned).
-        uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb
+        # OpenCodeReview v1.13.5 (the action and installed CLI are both pinned).
+        uses: alibaba/open-code-review@abb7abcd5c5196fa0278dc87db85780fa269562f
         with:
           llm_url: http://127.0.0.1:11434/v1
           llm_auth_token: ollama
@@ -171,13 +171,14 @@ jobs:
           llm_protocol: openai
           # Default OCR extra_body targets other providers' thinking formats.
           llm_extra_body: '{"reasoning_effort":"none"}'
-          ocr_version: '1.13.3'
+          ocr_version: '1.13.5'
           language: English
           rule: .opencodereview/rule.json
           # CPU runner: do not generate multiple competing model requests.
           review_concurrency: '1'
           # Limits aggregate model tokens inside the agent loop, not just across groups.
-          # OCR v1.13.3 cannot reduce --max-tools below its 100-round template default.
+          # The CLI honors --max-tools below its 100-round default since v1.13.5 (alibaba/open-code-review#1118),
+          # but the action has no input for it yet, so rounds stay at the default.
           max_tokens_budget: '50000'
           effort: low
           # Publish agent progress to the Actions log during long CPU reviews.

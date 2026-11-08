@@ -27,8 +27,8 @@
  * plugin's transform appears not to apply, or applies with its old semantics. It presents as a
  * bug in the plugin or in unrelated source, and no amount of reading either explains it. Run
  * `gulp clean-cache` and build again before believing it - `gulp clean` will not help, it leaves
- * the caches alone by design. CI is never exposed to this: it builds fresh and never reuses a
- * cache.
+ * the caches alone by design. CI restores these caches keyed on the build-system files listed in
+ * `.github/actions/precompile-cache`; one missing from that list exposes CI to this too.
  */
 const webpackStream = require('webpack-stream');
 const gulp = require('gulp');
@@ -435,9 +435,7 @@ function precompile(options = {}) {
 
 
 // Always incremental: tsc emits into `.cache/ts/out` and keeps its buildinfo beside it, so the two
-// agree across runs and there is nothing for a non-incremental variant to protect against. CI sees
-// no benefit - it starts from a fresh checkout with no cache - but a local build that has run
-// before does.
+// agree across runs and there is nothing for a non-incremental variant to protect against.
 gulp.task('ts', helpers.execaTask('tsc --incremental'));
 gulp.task('ts-strict', helpers.execaTask('tsc -p tsconfig-strict.json'));
 gulp.task('ts-consumer', tsConsumer('link', [TS_MIN]));

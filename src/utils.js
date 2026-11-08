@@ -27,7 +27,6 @@ export const internal = {
   getWindowTop,
   canAccessWindowTop,
   getWindowLocation,
-  insertUserSyncIframe,
   insertElement,
   isFn,
   triggerPixel,
@@ -229,17 +228,19 @@ export const createIframe = (() => {
   };
 })();
 
-export function createInvisibleIframe() {
-  return createIframe(document, {
+export function createInvisibleIframe(doc = document, attrs = {}, style = {}) {
+  return createIframe(doc, {
     id: getUniqueIdentifierStr(),
     width: 0,
     height: 0,
-    src: 'about:blank'
+    src: 'about:blank',
+    ...attrs
   }, {
     display: 'none',
     height: '0px',
     width: '0px',
-    border: '0px'
+    border: '0px',
+    ...style
   });
 }
 
@@ -383,10 +384,6 @@ export function politeTriggerPixel(url, credentials = 'include') {
   runBackgroundTask(triggerSync);
 }
 
-export function politeInsertUserSyncIframe(url, done, timeout, onCleanup) {
-  runBackgroundTask(() => insertUserSyncIframe(url, done, timeout, onCleanup));
-}
-
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
@@ -429,58 +426,6 @@ export function insertHtmlIntoIframe(htmlCode) {
     doc.write(htmlCode);
     doc.close();
   })(iframe.contentWindow.document);
-}
-
-/**
- * The sync iframes inserted by this instance, tracked by element reference so that several Prebid
- * instances running on the same page do not remove each other's. Each iframe may have an associated
- * callback that releases work owned by its consumer before the iframe is removed.
- */
-const OWN_SYNC_IFRAMES = new WeakMap();
-
-/**
- * Inserts empty iframe with the specified `url` for cookie sync
- * @param  {string} url URL to be requested
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
- * @param  {function} [onCleanup] called when the iframe is removed by `removeUserSyncIframes`
- */
-export function insertUserSyncIframe(url, done, timeout, onCleanup) {
-  if (!url) return;
-  const iframe = createIframe(document, {
-    sandbox: 'allow-scripts allow-same-origin',
-    src: url,
-  }, {
-    width: '0px',
-    height: '0px',
-    display: 'none'
-  });
-  OWN_SYNC_IFRAMES.set(iframe, internal.isFn(onCleanup) ? onCleanup : null);
-  if (done && internal.isFn(done)) {
-    waitForElementToLoad(iframe, timeout).then(done);
-  }
-  internal.insertElement(iframe, document, 'html', true);
-}
-
-/**
- * Removes the user sync iframes that were inserted by this Prebid instance; iframes belonging to
- * other instances running on the same page are left alone.
- * @return {Number} the number of iframes that were removed
- */
-export function removeUserSyncIframes() {
-  const iframes = Array.from(document.querySelectorAll('iframe'))
-    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe));
-  iframes.forEach(iframe => {
-    const onCleanup = OWN_SYNC_IFRAMES.get(iframe);
-    OWN_SYNC_IFRAMES.delete(iframe);
-    try {
-      onCleanup?.();
-    } catch (error) {
-      logError('Error cleaning up user sync iframe', error);
-    }
-    iframe.parentNode?.removeChild(iframe);
-  });
-  return iframes.length;
 }
 
 /**
@@ -1110,6 +1055,9 @@ export function memoize(fn, key = function (arg) { return arg; }) {
     return cache.get(cacheKey);
   };
   memoized.clear = cache.clear.bind(cache);
+  memoized.invalidate = function () {
+    cache.delete(key.apply(this, arguments));
+  };
   return memoized;
 }
 
