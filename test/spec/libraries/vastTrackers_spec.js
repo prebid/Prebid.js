@@ -433,6 +433,23 @@ describe('vast trackers', () => {
       expect(textsOf(parse(result), 'Tracking[event="start"]')).to.deep.equal([existingUrl]);
     });
 
+    it('should not insert a url the wrapper already has when either copy has surrounding whitespace', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Impression><![CDATA[ ${existingUrl}]]></Impression><Error><![CDATA[${existingUrl}]]></Error></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [`${existingUrl} `], error: [`${existingUrl} `], trackingEvents: [] }, vastXml);
+
+      expect(textsOf(parse(result), 'Wrapper > Impression')).to.have.lengthOf(1);
+      expect(textsOf(parse(result), 'Wrapper > Error')).to.have.lengthOf(1);
+    });
+
+    it('should not insert a tracking event the linear element already has when the url has surrounding whitespace', function () {
+      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl} ]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
+
+      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'start', url: `${existingUrl} ` }] }, vastXml);
+
+      expect(textsOf(parse(result), 'Tracking[event="start"]')).to.have.lengthOf(1);
+    });
+
     it('should not duplicate the bidder vast trackers already in the wrapper built by the video module', function () {
       const bidderImpressionUrl = 'https://bidder.com/impression';
       const bidderErrorUrl = 'https://bidder.com/error';

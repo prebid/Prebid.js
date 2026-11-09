@@ -159,13 +159,17 @@ function appendTrackingElements(doc, trackingEvents, trackers) {
   });
 }
 
+function hasUrl(node, url) {
+  return node.textContent.trim() === url.trim();
+}
+
 function hasUrlChild(parent, tagName, url) {
-  return Array.from(parent.children).some(child => child.tagName === tagName && child.textContent.trim() === url);
+  return Array.from(parent.children).some(child => child.tagName === tagName && hasUrl(child, url));
 }
 
 function hasTrackingEvent(trackingEvents, event, url) {
   return Array.from(trackingEvents.children).some(child =>
-    child.tagName === 'Tracking' && child.getAttribute('event') === event && child.textContent.trim() === url
+    child.tagName === 'Tracking' && child.getAttribute('event') === event && hasUrl(child, url)
   );
 }
 
