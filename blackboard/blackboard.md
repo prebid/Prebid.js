@@ -2,44 +2,68 @@
 
 ## Objective and scope
 
-Implement `blackboard/goal.md`: replace per-slot prediction requests with GAM network/site JSON files while preserving the four string-valued slot targeting keys. Change `modules/mobianRtdProvider.js`, its exported `.d.ts` types, module documentation, and `test/spec/modules/mobianRtdProvider_spec.js`. Preserve contextual and traffic-quality behavior. No PR is requested; do not modify root Markdown or generated tracked files.
+Implement `blackboard/goal.md`: replace the per-slot viewability request with one JSON file per GAM network/site, and keep the four string slot targeting keys. Change `modules/mobianRtdProvider.js`, `modules/mobianRtdProvider.d.ts`, `modules/mobianRtdProvider.md` and `test/spec/modules/mobianRtdProvider_spec.js`. Context and traffic-quality code stays as is. No PR. Don't touch root Markdown or generated files.
+
+Reviewer1 checks for minimum code, so keep the diff small and follow the shapes already in the file (`makeMemoizedFetch`, `dep`, `viewabilityTargetingData`).
 
 ## Evidence
 
-- Both supplied live JSON files were fetched successfully with curl on this planning turn. Top-level keys are `asof`, `version`, `net`, `site`, `rows`; rows contain device-to-tuple mappings, including `o` in the Cosmopolitan file. Samples are available in `/tmp/mobian-vp-cosmopolitan.json` and `/tmp/mobian-vp-seattle.json` for inspection, not committed fixtures.
-- `libraries/gptUtils/gptUtils.js:getGptSlotForAdUnitCode` resolves current slots without the separate slot-info cache. The model's site is the second nonempty ad-unit-path segment; network is the first.
-- `libraries/userAgentUtils/detailed.js:detectDeviceType` returns desktop=2, phone=4, tablet=5, TV=3. Its mapping can cover d/m/t/o without module-to-module imports or direct navigator access. The simpler index helper has only desktop/mobile/tablet and defaults all others to desktop.
-- Current code gates VP on `viewabilityTargetingPlacementSource`, caches per page/code/source, and expects `results.viewability`; those behaviors must change. Existing context/TQ helpers and tests remain applicable.
+- Live files: `https://vp-data.themobianprebid.ai/36117602/hdm-cosmopolitan.json` (470 rows). Top-level keys `asof`, `version`, `net`, `site`, `rows`. Response has `access-control-allow-origin: *` and `cache-control: public, max-age=3600`, so the browser HTTP cache already covers reloads; the module cache only has to stop refetching within one page.
+- Rows include `/36117602/hdm-cosmopolitan/homepage/atf` (path) and `/36117602/hdm-cosmopolitan/homepage/atf/gpt_lb_a` (slot). Some devices are missing on some rows; `o` appears.
+- `libraries/gptUtils/gptUtils.js:42` `getGptSlotForAdUnitCode(code)` returns the GPT slot whose path or element id equals `code`, or `undefined` without GPT.
+- `libraries/userAgentUtils/detailed.js` `detectDeviceType()` returns ORTB device types: 2 desktop, 3 TV, 4 phone, 5 tablet. Already used by `modules/adWMGAnalyticsAdapter.js`. `libraries/userAgentUtils/index.js` `getDeviceType()` has no TV/other value, so use `detectDeviceType`.
+- Test page (`/Users/anton/mobian/dev-prebid/build/test-page.js`) defines `/19968336/header-bid-tag-0` → `div-gpt-ad-1460505748561-0` and `/19968336/header-bid-tag-1` → `div-gpt-ad-1460505748561-1`. No live file exists for those. `dev-prebid/build/` is bind-mounted, so anything placed there is served at `http://localhost:8080/build/...`.
 
-## Proposed behavior
+## Behavior
 
-1. Keep VP opt-in semantics: `advertiserTargeting: true` requires `includeViewabilityTargeting: true`; explicit `advertiserTargeting: ['vp']` enables it directly. Publisher-only VP does not initiate fetches. Remove placement-source gating. Keep its public optional parameter accepted as deprecated/ignored so existing configs still type-check; documentation must no longer instruct publishers to provide it. No replacement required publisher parameter.
-2. Resolve each requested ad-unit code using `getGptSlotForAdUnitCode`, read `getAdUnitPath`, and derive endpoint `https://vp-data.themobianprebid.ai/<network>/<site>.json`. Encode each URL component separately. Skip absent GPT/slots and structurally invalid paths without throwing or requesting. Do not derive GAM identity from the page hostname or require per-bidder params.
-3. The lookup key is the full GAM path plus `/` plus the supplied ad-unit code, as explicitly requested in the goal. Do not substitute the GPT element ID or GPID. Normalize trailing path slash only for concatenation; preserve case and internal path segments. No fallback to a path-only row, parent placement, another device, or `o` when the selected device row is absent.
-4. Select device with the shared detailed library, mapping 2->d, 4->m, 5->t, and other values->o. Document that this inherits the library's UA detection limits; do not expand device-detection scope in this migration.
-5. During `getBidRequestData`, fetch distinct network/site files needed by that auction, deduplicating simultaneous and subsequent requests by endpoint identity, independent of page URL, slot, and device. Retain bounded caching with a documented finite default and sanitized size argument. Successful empty rows are cacheable. Network failure, invalid JSON, and malformed top-level rows are retryable on a later invocation. Do not cache failures permanently. Guard failure deletion by promise identity if eviction can allow replacement before an old promise rejects.
-6. Store completed file rows for synchronous `getTargetingData`. Prefer one bounded per-file cache plus a pending-fetch cache, or an equivalent design that bounds retained results as well as promises. Resolve slot/path again when returning targeting to avoid stale values when a code is reused for another GAM path. A newly introduced slot can use an already fetched file. Missing data returns no keys; no network work in synchronous targeting hook. Prevent pending requests from associating results with a changed slot path.
-7. Validate the selected tuple before emitting targeting: array with three usable values, finite numeric probability in [0,1], finite numeric bucket in [0,100] at a multiple of five, confidence low/medium/high. Do not coerce malformed data into predictions. Emit all four strings or none: probability and server-supplied bucket unchanged via String, confidence, and `String(probability >= 0.5)`. Do not recompute or round bucket values.
-8. A file failure affects only that file. Context/TQ and other successful file targeting survive. Preserve callback-once completion and RTD auction-delay behavior; do not add an extra GPT wait that can hang the callback.
-9. Export the new JSON response/device/tuple types alongside existing public config/targeting types and annotate affected JS helpers. Correct docs to explain file caching, exact slot/device matching, missing-data behavior, obsolete placement source, and GPT slots needing to exist when the bid hook collects file identities.
+1. **Enabling VP.** Unchanged: `advertiserTargeting: true` + `includeViewabilityTargeting: true`, or `vp` listed in an `advertiserTargeting` array. Drop the `viewabilityTargetingPlacementSource` gate in `getBidRequestData`, `getTargetingData` and `storeViewabilityDataForAdUnits`. Keep the param in `MobianRtdProviderParams` marked `@deprecated` and ignored, and remove it from `getConfig` output / `MobianResolvedConfig`. Remove it from the `.md` example.
+2. **Endpoint.** `export const MOBIAN_VIEWABILITY_URL = 'https://vp-data.themobianprebid.ai'`. File URL is `${MOBIAN_VIEWABILITY_URL}/${network}/${site}.json`, where `network` and `site` are the first two segments of `slot.getAdUnitPath()` split on `/` (leading empty segment dropped). Pass each through `encodeURIComponent`. If GPT has no slot for the code, or the path has fewer than two segments, skip that code: no request, no targeting. Use the segments as they are (no special handling of MCM `parent,child` network codes; not seen in the live data).
+3. **Fetch.** In `getBidRequestData`, for each unique `adUnit.code` (same source as today: `bidReqConfig.adUnits || getGlobal().adUnits`), find the file URL, dedupe the URLs, and fetch each once through a memoized fetcher keyed by file URL. Reuse the `makeMemoizedViewabilityFetch` shape: `Map` of URL → promise, FIFO eviction at `VIEWABILITY_TARGETING_MAX_CACHE_SIZE` (lower it to 10 — one page rarely has more than a couple of sites), and `cache.delete(url)` on failure so the next auction retries. No promise-identity guard; the existing fetchers don't have one and it isn't needed for this.
+4. **Parsing.** `makeViewabilityDataFromResponse(response)` → `safeJSONParse` if string, then return `data.rows` if it is a plain object, else throw (so the failure path deletes the cache entry and retries). Store the resolved rows in `viewabilityTargetingData` keyed by file URL (replaces today's page/code/source key). Keep the existing size bound on that map.
+5. **Targeting (`getTargetingData`, sync, no network).** For each `adUnitCode`: get the slot again, build the file URL, read rows from `viewabilityTargetingData`. Key = `path` + `/` + `adUnitCode` (strip one trailing `/` from the path first). Pick `rows[key]?.[device]`. No fallback to the path-only row, another device, or `o`. Because the slot and path are looked up at targeting time, no extra code is needed for a code that moves to another path.
+6. **Device.** `const DEVICE_CODES = {2: 'd', 4: 'm', 5: 't'}`; anything else → `'o'`. Call `dep.detectDeviceType()` inside `getTargetingData` (it's a few regexes). Putting it on `dep` lets tests stub it instead of faking `navigator.userAgent`.
+7. **Tuple → targeting.** Emit keys only if `Array.isArray(tuple) && typeof tuple[0] === 'number' && tuple[1] != null && tuple[2] != null`. Values: `${prefix}_vp_likely_viewable: String(tuple[0] >= 0.5)`, `${prefix}_vp_probability: String(tuple[0])`, `${prefix}_vp_bucket_percent: String(tuple[1])`, `${prefix}_vp_confidence: String(tuple[2])`. All four or none. No range/enum/multiple-of-5 checks; this is our own server's file and the old code didn't range-check either.
+8. **Failures.** One file failing only drops targeting for slots on that file. Context/TQ results and callback-once behavior in `getBidRequestData` stay as they are (`Promise.all(...).catch().finally(callback)`).
+9. **Types.** In `.d.ts`: add `MobianViewabilityDevice = 'd' | 'm' | 't' | 'o'`, `MobianViewabilityPrediction = [probability: number, bucketPercent: number, confidence: string]`, `MobianViewabilityRows = Record<string, Partial<Record<MobianViewabilityDevice, MobianViewabilityPrediction>>>`. Keep `MobianViewabilityData` (the four strings) for the targeting values. Update JSDoc typedefs in the `.js`.
+10. **Docs (`.md`).** Replace the `vp` description: one file per GAM network/site from the slot's ad unit path, lookup key `<ad unit path>/<ad unit code>`, device from the user agent, `likely_viewable` is `probability >= 0.5`, no keys when the slot/device row is missing, GPT slots must be defined before `requestBids` so the file can be found. Mark `viewabilityTargetingPlacementSource` deprecated.
+
+Known limit to state in the `.md`: when the ad unit code *is* the GAM path (not the div id), the key becomes `path/path` and nothing matches. The goal specifies path + code, so we don't add a fallback.
 
 ## Required tests
 
-- Endpoint construction from GPT paths, dotted/hyphenated site names, component encoding, same-site slots -> one HTTP request, different sites/networks -> separate requests.
-- Exact slot selection in a file containing different path-only and slot predictions; two slots sharing a path get distinct targeting. Custom prefix and requested-code filtering preserved.
-- d/m/t/o mapping through the shared helper; absent selected-device row produces no fallback.
-- Probability 0, just below .5, exactly .5, and 1; zero bucket; server bucket retained. Invalid/missing rows, malformed tuples, null/scalar/array row containers, invalid JSON, nonfinite/out-of-range numeric values, and missing confidence produce safe behavior.
-- Missing GPT, unmatched code, short/empty path, empty ad-unit list, duplicate codes; VP disabled and publisher-only VP; old placement parameter is optional and ignored.
-- Concurrent calls share an in-flight request; successful files reused across page URLs, slots and later auctions; retry after network/parse/schema failures; cache eviction and invalid max sizes; delayed rejected evicted request cannot delete a newer entry.
-- Slot code reused with a different path does not return old targeting; newly requested slot can use cached file; no data until response completes; synchronous targeting makes no request.
-- Mixed site failures retain other site results and context/TQ; callback once; preserve global-ad-unit fallback and existing non-VP tests. Restore GPT globals, device stubs and caches so tests pass in the full suite. No nested tests/hooks.
+Replace the old viewability tests (URL with `placement_source`, `results.viewability`, per-code cache). Keep all context/TQ tests. Stub GPT with `window.googletag.pubads().getSlots()` returning fake slots (`getAdUnitPath`, `getSlotElementId`), and restore it in `afterEach`. Stub `dep.ajaxBuilder` and `dep.detectDeviceType`. Clear the fetch cache and `viewabilityTargetingData` between tests (export a small reset helper or build fresh fetchers via `makeMemoizedViewabilityFetch`).
 
-## Validation and browser acceptance
+1. URL from path: `/36117602/hnp-seattlepi.com/news/atf` → `https://vp-data.themobianprebid.ai/36117602/hnp-seattlepi.com.json`.
+2. Two codes on the same site → one request. Codes on two sites → two requests.
+3. File with both `/…/homepage/atf` and `/…/homepage/atf/gpt_lb_a` → code `gpt_lb_a` gets the slot row values, not the path row.
+4. Device mapping 2→d, 4→m, 5→t, 3→o; selected device missing from the row → no keys.
+5. `likely_viewable`: probability 0.4999 → `'false'`, 0.5 → `'true'`. All values are strings; custom `prefix` applied.
+6. No GPT / no matching slot / one-segment path → no request, no targeting, callback still called.
+7. Request failure or `rows` missing → no targeting; next `getBidRequestData` refetches. Success → next auction does not refetch.
+8. `getTargetingData` before the file resolves returns `{}` and makes no request.
+9. VP not enabled → no request; `viewabilityTargetingPlacementSource` not required.
+10. One file fails, another succeeds → the successful slot still gets keys and context data is still added.
 
-Iterate with `npx gulp test-only --file test/spec/modules/mobianRtdProvider_spec.js`. Run scoped `npx gulp lint --files modules/mobianRtdProvider.js,modules/mobianRtdProvider.d.ts,test/spec/modules/mobianRtdProvider_spec.js` and inspect fixes. Run `npx gulp ts` then `npx gulp ts-strict`. Before finishing implementation run full `npx gulp test-only` once; use full-suite coverage tooling for the 80% requirement, never infer overall file coverage from a focused spec. Follow AGENTS.md command precedence.
+No nested `it`/`describe`/hooks.
 
-For browser acceptance use the supplied narrow `npx gulp build-bundle-dev --modules=consentManagementGpp,consentManagementTcf,gppControl_usnat,gppControl_usstates,gptPreAuction,storageControl,tcfControl,mobianRtdProvider`, then copy build/dev/prebid.js to /Users/anton/mobian/dev-prebid/build/prebid.js (requires filesystem approval outside workspace). Inspect localhost:8080 using available Chrome tools and the relevant Prebid skill. First use live files with matching GPT paths/codes; verify request count, RTD map and applied GPT keys. For deterministic data prefer browser network interception with a small fixture, if supported, without editing generated bundle content or adding a production endpoint override. If Chrome cannot connect or matching slots cannot be configured, report the concrete blocker to the user as requested; do not claim end-to-end success. Never commit local dev artifacts.
+## Validation
 
-## Planning review requested
+- Iterate: `npx gulp test-only --file test/spec/modules/mobianRtdProvider_spec.js`.
+- Lint: `npx gulp lint --files modules/mobianRtdProvider.js,modules/mobianRtdProvider.d.ts,test/spec/modules/mobianRtdProvider_spec.js`, then `git diff`.
+- Types: `npx gulp ts`, then `npx gulp ts-strict`.
+- Before READY_FOR_REVIEW: full `npx gulp test-only`. Coverage check per CLAUDE.md.
 
-planner2 should scrutinize cache ownership/race behavior, deprecated placement-source compatibility, path validation (including unusual GAM network syntax), tuple validation scope and device-helper choice. Confirm the plan is sufficiently concrete for implementation and adjust any unnecessary complexity. This first turn is WORKING, not approval.
+## Browser check (coder1)
+
+1. Build and copy as in `goal.md` (`gulp build-bundle-dev --modules=…` then `cp -f build/dev/prebid.js /Users/anton/mobian/dev-prebid/build`).
+2. Fixture: write `/Users/anton/mobian/dev-prebid/build/vp/19968336/header-bid-tag-0.json` with a `rows` entry for `/19968336/header-bid-tag-0/div-gpt-ad-1460505748561-0` (all four devices), and leave `header-bid-tag-1` without a file to see the 404 path.
+3. In the copied bundle only, `sed` the `https://vp-data.themobianprebid.ai` string to `http://localhost:8080/build/vp`. Never commit that; the repo constant stays the production URL.
+4. Load `http://localhost:8080/` with Chrome tools. Check: one request per site file, `googletag.pubads().getSlots()[0].getTargeting('mobian_vp_probability')` matches the fixture, slot 1 has no `mobian_vp_*` keys, no console errors.
+5. If Chrome tools can't connect, stop and tell the user; don't claim end-to-end success.
+6. The fixture and `vp/` dir are in `dev-prebid`, outside this repo; remove them or tell the user they're there.
+
+## Open points for planner1
+
+- I cut: promise-identity guard, tuple range/enum validation, re-association guard for pending requests, and about half the test list. Push back if you think any is needed for correctness, not just defense.
+- Lowered `VIEWABILITY_TARGETING_MAX_CACHE_SIZE` to 10 since entries are now whole files (470 rows each). Fine either way.
+- Not asking the user anything yet. The `path == code` case is documented, not handled.
