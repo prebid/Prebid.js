@@ -12,10 +12,9 @@ export function getVastTrackerNodes(trackers?: VastTrackers) {
     .map(url => `<Impression>${cdata(url)}</Impression>`).join('');
   const errors = (trackers?.error || [])
     .map(url => `<Error>${cdata(url)}</Error>`).join('');
-  let creatives = '';
-  if (trackers?.trackingEvents?.length) {
-    creatives = getLinearTrackingCreativesNode(trackers.trackingEvents);
-  }
+  // VAST requires an event on every Tracking node.
+  const trackingEvents = (trackers?.trackingEvents || []).filter(({ event }) => event);
+  const creatives = trackingEvents.length ? getLinearTrackingCreativesNode(trackingEvents) : '';
   return { impressions, errors, creatives };
 }
 
@@ -25,6 +24,5 @@ export function getLinearTrackingCreativesNode(trackingEvents: NonNullable<VastT
 }
 
 export function getTrackingNode(event: string, url: string) {
-  const attribute = event ? ` event="${attributeValue(event)}"` : '';
-  return `<Tracking${attribute}>${cdata(url)}</Tracking>`;
+  return `<Tracking event="${attributeValue(event)}">${cdata(url)}</Tracking>`;
 }

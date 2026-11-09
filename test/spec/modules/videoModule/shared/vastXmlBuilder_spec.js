@@ -124,6 +124,28 @@ describe('buildVastWrapper', function () {
 
     expect(doc.querySelectorAll('Impression, Error, Creatives')).to.have.lengthOf(0);
   });
+
+  it('should drop bidder tracking events that have no event', function () {
+    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null, {
+      trackingEvents: [
+        { event: '', url: 'https://bidder.example/empty' },
+        { url: 'https://bidder.example/missing' },
+        { event: 'start', url: 'https://bidder.example/start' }
+      ]
+    });
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+    const tracking = Array.from(doc.querySelectorAll('Tracking'), node => [node.getAttribute('event'), node.textContent]);
+
+    expect(tracking).to.eql([['start', 'https://bidder.example/start']]);
+  });
+
+  it('should omit Creatives when no bidder tracking event has an event', function () {
+    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null,
+      { trackingEvents: [{ event: '', url: 'https://bidder.example/empty' }] });
+    const doc = new DOMParser().parseFromString(xml, 'text/xml');
+
+    expect(doc.querySelectorAll('Creatives')).to.have.lengthOf(0);
+  });
 });
 
 describe('getLinearTrackingCreativesNode', function () {
