@@ -7,15 +7,12 @@ const process = require('process');
 const browsersFile = process.env.BROWSERS_JSON || 'browsers.json';
 const allBrowsers = require(`./${browsersFile}`);
 
-// An explicitly requested set is used as-is; the default matrix gets filtered.
-const browsers = process.env.BROWSERS_JSON ? allBrowsers : Object.fromEntries(
-  Object.entries(allBrowsers)
-    .filter(([k, v]) => {
-      // run only on latest; exclude Safari
-      // (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
-      return v.browser_version === 'latest' && v.browser !== 'safari'
-    })
-);
+// Another file is used as-is. From browsers.json, take the BrowserStack desktop browsers on latest, except Safari
+// (Webdriver's `browser.url(...)` times out on Safari if the page loads a video; does it wait for playback to complete?)
+const browsers = Object.values(allBrowsers)
+  .map(def => def.browserstack)
+  .filter(bs => bs && (browsersFile !== 'browsers.json' ||
+    (!bs.deviceName && bs.browserVersion === 'latest' && bs.browserName !== 'safari')));
 
 /**
  * Specs that cannot pass on a given browser because of a limitation of the *creative*
@@ -49,15 +46,15 @@ function getCapabilities() {
   }
 
   let capabilities = []
-  Object.values(browsers).forEach(browser => {
-    const exclude = UNSUPPORTED_SPECS[`${browser.browser}@${browser.browser_version}`];
+  browsers.forEach(browser => {
+    const exclude = UNSUPPORTED_SPECS[`${browser.browserName}@${browser.browserVersion}`];
     capabilities.push({
-      browserName: browser.browser,
-      browserVersion: browser.browser_version,
+      browserName: browser.browserName,
+      browserVersion: browser.browserVersion,
       ...(exclude ? { exclude } : {}),
       'bstack:options': {
         os: getPlatform(browser.os),
-        osVersion: browser.os_version,
+        osVersion: browser.osVersion,
         networkLogs: true,
         consoleLogs: 'verbose',
         buildName: process.env.BROWSERSTACK_BUILD_NAME,

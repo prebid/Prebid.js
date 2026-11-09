@@ -1,6 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ttdBidAdapter';
+import { spec, withFailover } from 'modules/ttdBidAdapter';
+import * as utils from 'src/utils.js';
 import { deepClone } from 'src/utils.js';
+import adapterManager from 'src/adapterManager.js';
+import { resetFailoverState } from 'libraries/ttdUtils/ajaxFailover.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
@@ -127,68 +130,72 @@ describe('ttdBidAdapter', function () {
       });
     });
 
-    describe('video', function () {
-      if (!FEATURES.VIDEO) {
-        return;
-      }
+    if (FEATURES.VIDEO) {
+      describe('video', function () {
+        function makeBid() {
+          return {
+            'bidder': 'ttd',
+            'params': {
+              'supplySourceId': 'supplier',
+              'publisherId': '22222222',
+              'placementId': 'somePlacementId'
+            },
+            'mediaTypes': {
+              'video': {
+                'minduration': 5,
+                'maxduration': 30,
+                'playerSize': [640, 480],
+                'api': [1, 3],
+                'mimes': ['video/mp4'],
+                'protocols': [2, 3, 5, 6]
+              }
+            },
+            'adUnitCode': 'adunit-code',
+            'sizes': [
+              [300, 250]
+            ],
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+          };
+        }
 
-      function makeBid() {
-        return {
-          'bidder': 'ttd',
-          'params': {
-            'supplySourceId': 'supplier',
-            'publisherId': '22222222',
-            'placementId': 'somePlacementId'
-          },
-          'mediaTypes': {
-            'video': {
-              'minduration': 5,
-              'maxduration': 30,
-              'playerSize': [640, 480],
-              'api': [1, 3],
-              'mimes': ['video/mp4'],
-              'protocols': [2, 3, 5, 6]
-            }
-          },
-          'adUnitCode': 'adunit-code',
-          'sizes': [
-            [300, 250]
-          ],
-          'bidId': '30b31c1838de1e',
-          'bidderRequestId': '22edbae2733bf6',
-          'auctionId': '1d1a030790a475',
-        };
-      }
+        it('should return true if required parameters are passed', function () {
+          const bid = makeBid();
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
 
-      it('should return true if required parameters are passed', function () {
-        const bid = makeBid();
-        expect(spec.isBidRequestValid(bid)).to.equal(true);
+        it('should return false if maxduration is missing', function () {
+          const bid = makeBid();
+          delete bid.mediaTypes.video.maxduration;
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return true if api is missing', function () {
+          const bid = makeBid();
+          delete bid.mediaTypes.video.api;
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return true if api is an empty array', function () {
+          const bid = makeBid();
+          bid.mediaTypes.video.api = [];
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+
+        it('should return false if mimes is missing', function () {
+          const bid = makeBid();
+          delete bid.mediaTypes.video.mimes;
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+
+        it('should return false if protocols is missing', function () {
+          const bid = makeBid();
+          delete bid.mediaTypes.video.protocols;
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
       });
-
-      it('should return false if maxduration is missing', function () {
-        const bid = makeBid();
-        delete bid.mediaTypes.video.maxduration;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if api is missing', function () {
-        const bid = makeBid();
-        delete bid.mediaTypes.video.api;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if mimes is missing', function () {
-        const bid = makeBid();
-        delete bid.mediaTypes.video.mimes;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-
-      it('should return false if protocols is missing', function () {
-        const bid = makeBid();
-        delete bid.mediaTypes.video.protocols;
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
-      });
-    });
+    }
   });
 
   describe('getUserSyncs', function () {
@@ -870,233 +877,245 @@ describe('ttdBidAdapter', function () {
     });
   });
 
-  describe('buildRequests-display-video-multiformat', function () {
-    if (!FEATURES.VIDEO) {
-      return;
-    }
-
-    const baseMultiformatBidRequests = [{
-      'bidder': 'ttd',
-      'params': {
-        'supplySourceId': 'supplier',
-        'publisherId': '13144370',
-        'placementId': '1gaa015'
-      },
-      'mediaTypes': {
-        'video': {
-          'playerSize': [640, 480],
-          'api': [1, 3],
-          'mimes': ['video/mp4'],
-          'protocols': [2, 3, 5, 6],
-          'minduration': 5,
-          'maxduration': 30
+  if (FEATURES.VIDEO) {
+    describe('buildRequests-display-video-multiformat', function () {
+      const baseMultiformatBidRequests = [{
+        'bidder': 'ttd',
+        'params': {
+          'supplySourceId': 'supplier',
+          'publisherId': '13144370',
+          'placementId': '1gaa015'
         },
-        'banner': {
-          'sizes': [[300, 250], [300, 600]]
-        }
-      },
-      'ortb2Imp': {
-        'ext': {
-          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
-        }
-      },
-      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
-      'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'bidId': '243310435309b5',
-      'bidderRequestId': '18084284054531',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
-      'src': 'client',
-      'bidRequestsCount': 1
-    }];
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480],
+            'api': [1, 3],
+            'mimes': ['video/mp4'],
+            'protocols': [2, 3, 5, 6],
+            'minduration': 5,
+            'maxduration': 30
+          },
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
+        'ortb2Imp': {
+          'ext': {
+            'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+          }
+        },
+        'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'bidId': '243310435309b5',
+        'bidderRequestId': '18084284054531',
+        'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }];
 
-    const baseBidderRequest = {
-      'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
-      'bidderRequestId': '18084284054531',
-      'auctionStart': 1540945362095,
-      'timeout': 3000,
-      'refererInfo': {
-        'referer': 'https://www.example.com/test',
-        'reachedTop': true,
-        'numIframes': 0,
-        'stack': [
-          'https://www.example.com/test'
-        ]
-      },
-      'start': 1540945362099,
-      'doneCbCallCount': 0
-    };
+      const baseBidderRequest = {
+        'bidderCode': 'ttd',
+        'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'bidderRequestId': '18084284054531',
+        'auctionStart': 1540945362095,
+        'timeout': 3000,
+        'refererInfo': {
+          'referer': 'https://www.example.com/test',
+          'reachedTop': true,
+          'numIframes': 0,
+          'stack': [
+            'https://www.example.com/test'
+          ]
+        },
+        'start': 1540945362099,
+        'doneCbCallCount': 0
+      };
 
-    it('includes the video ad size in the bid request', function () {
-      const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.w).to.equal(640);
-      expect(requestBody.imp[0].video.h).to.equal(480);
+      it('includes the video ad size in the bid request', function () {
+        const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.w).to.equal(640);
+        expect(requestBody.imp[0].video.h).to.equal(480);
+      });
+
+      it('includes the banner ad size in the bid request', function () {
+        const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].banner.format[0].w).to.equal(300);
+        expect(requestBody.imp[0].banner.format[0].h).to.equal(250);
+        expect(requestBody.imp[0].banner.format[1].w).to.equal(300);
+        expect(requestBody.imp[0].banner.format[1].h).to.equal(600);
+      });
     });
+  }
 
-    it('includes the banner ad size in the bid request', function () {
-      const requestBody = testBuildRequests(baseMultiformatBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].banner.format[0].w).to.equal(300);
-      expect(requestBody.imp[0].banner.format[0].h).to.equal(250);
-      expect(requestBody.imp[0].banner.format[1].w).to.equal(300);
-      expect(requestBody.imp[0].banner.format[1].h).to.equal(600);
+  if (FEATURES.VIDEO) {
+    describe('buildRequests-video', function () {
+      const baseVideoBidRequests = [{
+        'bidder': 'ttd',
+        'params': {
+          'supplySourceId': 'supplier',
+          'publisherId': '13144370',
+          'placementId': '1gaa015'
+        },
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480],
+            'api': [1, 3],
+            'mimes': ['video/mp4'],
+            'protocols': [2, 3, 5, 6],
+            'minduration': 5,
+            'maxduration': 30
+          }
+        },
+        'ortb2Imp': {
+          'ext': {
+            'tid': '8651474f-58b1-4368-b812-84f8c937a099',
+          }
+        },
+        'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'bidId': '243310435309b5',
+        'bidderRequestId': '18084284054531',
+        'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }];
+
+      const baseBidderRequest = {
+        'bidderCode': 'ttd',
+        'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'bidderRequestId': '18084284054531',
+        'auctionStart': 1540945362095,
+        'timeout': 3000,
+        'refererInfo': {
+          'referer': 'https://www.example.com/test',
+          'reachedTop': true,
+          'numIframes': 0,
+          'stack': [
+            'https://www.example.com/test'
+          ]
+        },
+        'start': 1540945362099,
+        'doneCbCallCount': 0
+      };
+
+      it('includes the ad size in the bid request', function () {
+        const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.w).to.equal(640);
+        expect(requestBody.imp[0].video.h).to.equal(480);
+      });
+
+      it('includes the mimes in the bid request', function () {
+        const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.mimes[0]).to.equal('video/mp4');
+      });
+
+      it('includes the min and max duration in the bid request', function () {
+        const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.minduration).to.equal(5);
+        expect(requestBody.imp[0].video.maxduration).to.equal(30);
+      });
+
+      it('sets the minduration to 0 if missing', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        delete clonedVideoRequests[0].mediaTypes.video.minduration;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.minduration).to.equal(0);
+      });
+
+      it('includes the api frameworks in the bid request', function () {
+        const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.api[0]).to.equal(1);
+        expect(requestBody.imp[0].video.api[1]).to.equal(3);
+      });
+
+      it('omits the api frameworks from the bid request if api is missing', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        delete clonedVideoRequests[0].mediaTypes.video.api;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video).to.not.have.property('api');
+      });
+
+      it('omits the api frameworks from the bid request if api is an empty array', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.api = [];
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video).to.not.have.property('api');
+      });
+
+      it('includes the protocols in the bid request', function () {
+        const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.protocols[0]).to.equal(2);
+        expect(requestBody.imp[0].video.protocols[1]).to.equal(3);
+        expect(requestBody.imp[0].video.protocols[2]).to.equal(5);
+        expect(requestBody.imp[0].video.protocols[3]).to.equal(6);
+      });
+
+      it('sets skip correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.skip = 1;
+        clonedVideoRequests[0].mediaTypes.video.skipmin = 5;
+        clonedVideoRequests[0].mediaTypes.video.skipafter = 10;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.skip).to.equal(1);
+        expect(requestBody.imp[0].video.skipmin).to.equal(5);
+        expect(requestBody.imp[0].video.skipafter).to.equal(10);
+      });
+
+      it('sets bitrate correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.minbitrate = 100;
+        clonedVideoRequests[0].mediaTypes.video.maxbitrate = 500;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.minbitrate).to.equal(100);
+        expect(requestBody.imp[0].video.maxbitrate).to.equal(500);
+      });
+
+      it('sets pos correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.pos = 1;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.pos).to.equal(1);
+      });
+
+      it('sets playbackmethod correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.playbackmethod = [1];
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.playbackmethod[0]).to.equal(1);
+      });
+
+      it('sets startdelay correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.startdelay = -1;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.startdelay).to.equal(-1);
+      });
+
+      it('sets placement correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.placement = 3;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.placement).to.equal(3);
+      });
+
+      it('sets plcmt correctly if sent', function () {
+        const clonedVideoRequests = deepClone(baseVideoBidRequests);
+        clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+        const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+        expect(requestBody.imp[0].video.plcmt).to.equal(3);
+      });
     });
-  });
-
-  describe('buildRequests-video', function () {
-    if (!FEATURES.VIDEO) {
-      return;
-    }
-
-    const baseVideoBidRequests = [{
-      'bidder': 'ttd',
-      'params': {
-        'supplySourceId': 'supplier',
-        'publisherId': '13144370',
-        'placementId': '1gaa015'
-      },
-      'mediaTypes': {
-        'video': {
-          'playerSize': [640, 480],
-          'api': [1, 3],
-          'mimes': ['video/mp4'],
-          'protocols': [2, 3, 5, 6],
-          'minduration': 5,
-          'maxduration': 30
-        }
-      },
-      'ortb2Imp': {
-        'ext': {
-          'tid': '8651474f-58b1-4368-b812-84f8c937a099',
-        }
-      },
-      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
-      'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'bidId': '243310435309b5',
-      'bidderRequestId': '18084284054531',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
-      'src': 'client',
-      'bidRequestsCount': 1
-    }];
-
-    const baseBidderRequest = {
-      'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
-      'bidderRequestId': '18084284054531',
-      'auctionStart': 1540945362095,
-      'timeout': 3000,
-      'refererInfo': {
-        'referer': 'https://www.example.com/test',
-        'reachedTop': true,
-        'numIframes': 0,
-        'stack': [
-          'https://www.example.com/test'
-        ]
-      },
-      'start': 1540945362099,
-      'doneCbCallCount': 0
-    };
-
-    it('includes the ad size in the bid request', function () {
-      const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.w).to.equal(640);
-      expect(requestBody.imp[0].video.h).to.equal(480);
-    });
-
-    it('includes the mimes in the bid request', function () {
-      const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.mimes[0]).to.equal('video/mp4');
-    });
-
-    it('includes the min and max duration in the bid request', function () {
-      const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.minduration).to.equal(5);
-      expect(requestBody.imp[0].video.maxduration).to.equal(30);
-    });
-
-    it('sets the minduration to 0 if missing', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      delete clonedVideoRequests[0].mediaTypes.video.minduration;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.minduration).to.equal(0);
-    });
-
-    it('includes the api frameworks in the bid request', function () {
-      const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.api[0]).to.equal(1);
-      expect(requestBody.imp[0].video.api[1]).to.equal(3);
-    });
-
-    it('includes the protocols in the bid request', function () {
-      const requestBody = testBuildRequests(baseVideoBidRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.protocols[0]).to.equal(2);
-      expect(requestBody.imp[0].video.protocols[1]).to.equal(3);
-      expect(requestBody.imp[0].video.protocols[2]).to.equal(5);
-      expect(requestBody.imp[0].video.protocols[3]).to.equal(6);
-    });
-
-    it('sets skip correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.skip = 1;
-      clonedVideoRequests[0].mediaTypes.video.skipmin = 5;
-      clonedVideoRequests[0].mediaTypes.video.skipafter = 10;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.skip).to.equal(1);
-      expect(requestBody.imp[0].video.skipmin).to.equal(5);
-      expect(requestBody.imp[0].video.skipafter).to.equal(10);
-    });
-
-    it('sets bitrate correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.minbitrate = 100;
-      clonedVideoRequests[0].mediaTypes.video.maxbitrate = 500;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.minbitrate).to.equal(100);
-      expect(requestBody.imp[0].video.maxbitrate).to.equal(500);
-    });
-
-    it('sets pos correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.pos = 1;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.pos).to.equal(1);
-    });
-
-    it('sets playbackmethod correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.playbackmethod = [1];
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.playbackmethod[0]).to.equal(1);
-    });
-
-    it('sets startdelay correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.startdelay = -1;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.startdelay).to.equal(-1);
-    });
-
-    it('sets placement correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.placement = 3;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.placement).to.equal(3);
-    });
-
-    it('sets plcmt correctly if sent', function () {
-      const clonedVideoRequests = deepClone(baseVideoBidRequests);
-      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
-
-      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
-      expect(requestBody.imp[0].video.plcmt).to.equal(3);
-    });
-  });
+  }
 
   describe('interpretResponse-empty', function () {
     it('should handle empty response', function () {
@@ -1381,215 +1400,102 @@ describe('ttdBidAdapter', function () {
     });
   });
 
-  describe('interpretResponse-simple-video', function () {
-    if (!FEATURES.VIDEO) {
-      return;
-    }
-
-    const incoming = {
-      'body': {
-        'cur': 'USD',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'crid': 'mokivv6m',
-                'ext': {
-                  'advid': '7ieo6xk',
-                  'agid': '7q9n3s2',
-                  'deal': {
-                    'dealid': '7013542'
+  if (FEATURES.VIDEO) {
+    describe('interpretResponse-simple-video', function () {
+      const incoming = {
+        'body': {
+          'cur': 'USD',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'crid': 'mokivv6m',
+                  'ext': {
+                    'advid': '7ieo6xk',
+                    'agid': '7q9n3s2',
+                    'deal': {
+                      'dealid': '7013542'
+                    },
+                    'imptrackers': [],
+                    'viewabilityvendors': [],
+                    'mediatype': 2
                   },
-                  'imptrackers': [],
-                  'viewabilityvendors': [],
-                  'mediatype': 2
-                },
-                'h': 480,
-                'impid': '2eabb87dfbcae4',
-                'nurl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=${AUCTION_PRICE}&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
-                'price': 13.6,
-                'ttl': 500,
-                'w': 600
-              }
-            ],
-            'seat': 'supplyVendorBuyerId132'
-          }
-        ]
-      },
-      'headers': {}
-    };
+                  'h': 480,
+                  'impid': '2eabb87dfbcae4',
+                  'nurl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=${AUCTION_PRICE}&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+                  'price': 13.6,
+                  'ttl': 500,
+                  'w': 600
+                }
+              ],
+              'seat': 'supplyVendorBuyerId132'
+            }
+          ]
+        },
+        'headers': {}
+      };
 
-    const serverRequest = {
-      'method': 'POST',
-      'url': 'https://direct.bid.adsrvr.org/bid/bidder/supplier',
-      'data': {
-        'id': 'e94ec12d-ae1d-4ed7-abd1-eb3198ce3b63',
-        'imp': [
-          {
-            'id': '2eabb87dfbcae4',
-            'tagid': 'video',
-            'video': {
-              'api': [
-                1,
-                3
-              ],
-              'mimes': [
-                'video/mp4'
-              ],
-              'minduration': 5,
-              'maxduration': 30,
-              'w': 640,
-              'h': 480,
-              'protocols': [
-                2,
-                3,
-                5,
-                6
-              ]
+      const serverRequest = {
+        'method': 'POST',
+        'url': 'https://direct.bid.adsrvr.org/bid/bidder/supplier',
+        'data': {
+          'id': 'e94ec12d-ae1d-4ed7-abd1-eb3198ce3b63',
+          'imp': [
+            {
+              'id': '2eabb87dfbcae4',
+              'tagid': 'video',
+              'video': {
+                'api': [
+                  1,
+                  3
+                ],
+                'mimes': [
+                  'video/mp4'
+                ],
+                'minduration': 5,
+                'maxduration': 30,
+                'w': 640,
+                'h': 480,
+                'protocols': [
+                  2,
+                  3,
+                  5,
+                  6
+                ]
+              }
+            }
+          ],
+          'site': {
+            'page': 'http://www.test.com',
+            'publisher': {
+              'id': '111'
+            }
+          },
+          'device': {
+            'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+            'dnt': 0,
+            'language': 'en-US',
+            'connectiontype': 0
+          },
+          'user': {},
+          'at': 1,
+          'cur': [
+            'USD'
+          ],
+          'regs': {},
+          'ext': {
+            'ttdprebid': {
+              'ver': 'TTD-PREBID-2019.11.12',
+              'pbjs': '3.10.0'
             }
           }
-        ],
-        'site': {
-          'page': 'http://www.test.com',
-          'publisher': {
-            'id': '111'
-          }
         },
-        'device': {
-          'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-          'dnt': 0,
-          'language': 'en-US',
-          'connectiontype': 0
-        },
-        'user': {},
-        'at': 1,
-        'cur': [
-          'USD'
-        ],
-        'regs': {},
-        'ext': {
-          'ttdprebid': {
-            'ver': 'TTD-PREBID-2019.11.12',
-            'pbjs': '3.10.0'
-          }
+        'options': {
+          'withCredentials': true
         }
-      },
-      'options': {
-        'withCredentials': true
-      }
-    };
+      };
 
-    const expectedBid = {
-      'requestId': '2eabb87dfbcae4',
-      'cpm': 13.6,
-      'creativeId': 'mokivv6m',
-      'dealId': null,
-      'currency': 'USD',
-      'netRevenue': true,
-      'ttl': 500,
-      'width': 640,
-      'height': 480,
-      'mediaType': 'video',
-      'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
-      'meta': {}
-    };
-
-    it('should get the correct bid response if nurl is returned', function () {
-      const result = spec.interpretResponse(incoming, serverRequest);
-      expect(result.length).to.equal(1);
-      expect(result[0]).to.deep.equal(expectedBid);
-    });
-
-    it('should get the correct bid response if adm is returned', function () {
-      const vastXml = "<VAST version=\"2.0\"><Ad id=\"preroll-1\"><InLine><AdSystem>2.0</AdSystem><AdTitle>5748406</AdTitle><Impression id=\"blah\"><![CDATA[http://b.scorecardresearch.com/b?C1=1&C2=6000003&C3=0000000200500000197000000&C4=us&C7=http://www.scanscout.com&C8=scanscout.com&C9=http://www.scanscout.com&C10=xn&rn=-103217130]]></Impression><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents> </TrackingEvents><VideoClicks><ClickThrough id=\"scanscout\"><![CDATA[ http://www.target.com ]]></ClickThrough></VideoClicks><MediaFiles><MediaFile height=\"396\" width=\"600\" bitrate=\"496\" type=\"video/x-flv\" delivery=\"progressive\"><![CDATA[http://media.scanscout.com/ads/partner1_a1d1fbbc-c4d4-419f-b6c8-e9db63fd4491.flv]]></MediaFile></MediaFiles></Linear></Creative><Creative><CompanionAds><Companion height=\"250\" width=\"300\" id=\"555750\"><HTMLResource><![CDATA[<A onClick=\"var i= new Image(1,1); i.src='http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=0&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true';\" HREF=\"http://target.com\" target=\"_blank\"> <IMG SRC=\"http://media.scanscout.com/ads/target300x250Companion.jpg\" BORDER=0 WIDTH=300 HEIGHT=250 ALT=\"Click Here\"> </A> <img src=\"http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=1&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true\" height=\"1\" width=\"1\">]]></HTMLResource></Companion></CompanionAds></Creative></Creatives></InLine></Ad></VAST>";
-      const admIncoming = deepClone(incoming);
-      delete admIncoming.body.seatbid[0].bid[0].nurl;
-      admIncoming.body.seatbid[0].bid[0].adm = vastXml;
-
-      const vastXmlExpectedBid = deepClone(expectedBid);
-      delete vastXmlExpectedBid.vastUrl;
-      vastXmlExpectedBid.vastXml = vastXml;
-
-      const result = spec.interpretResponse(admIncoming, serverRequest);
-      expect(result.length).to.equal(1);
-      expect(result[0]).to.deep.equal(vastXmlExpectedBid);
-    });
-  });
-
-  describe('interpretResponse-display-and-video', function () {
-    if (!FEATURES.VIDEO) {
-      return;
-    }
-
-    const incoming = {
-      'body': {
-        'id': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
-        'seatbid': [
-          {
-            'bid': [
-              {
-                'id': 'small',
-                'impid': 'small',
-                'price': 4.25,
-                'adm': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=${AUCTION_PRICE}&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
-                'cid': 'campaignId132',
-                'crid': 'creativeId999',
-                'adomain': [
-                  'http://foo'
-                ],
-                'dealid': null,
-                'w': 300,
-                'h': 600,
-                'cat': [],
-                'ext': {
-                  'mediatype': 1
-                }
-              },
-              {
-                'crid': 'mokivv6m',
-                'ext': {
-                  'advid': '7ieo6xk',
-                  'agid': '7q9n3s2',
-                  'deal': {
-                    'dealid': '7013542'
-                  },
-                  'imptrackers': [],
-                  'viewabilityvendors': [],
-                  'mediatype': 2
-                },
-                'h': 480,
-                'impid': '2eabb87dfbcae4',
-                'nurl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=${AUCTION_PRICE}&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
-                'price': 13.6,
-                'ttl': 500,
-                'w': 600
-              }
-            ],
-            'seat': 'supplyVendorBuyerId132'
-          }
-        ],
-        'cur': 'USD'
-      }
-    };
-
-    const expectedBids = [
-      {
-        'requestId': 'small',
-        'cpm': 4.25,
-        'width': 300,
-        'height': 600,
-        'creativeId': 'creativeId999',
-        'currency': 'USD',
-        'dealId': null,
-        'netRevenue': true,
-        'ttl': 360,
-        'ad': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=4.25&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
-        'mediaType': 'banner',
-        'meta': {
-          'advertiserDomains': ['http://foo']
-        }
-      },
-      {
+      const expectedBid = {
         'requestId': '2eabb87dfbcae4',
         'cpm': 13.6,
         'creativeId': 'mokivv6m',
@@ -1602,87 +1508,519 @@ describe('ttdBidAdapter', function () {
         'mediaType': 'video',
         'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
         'meta': {}
-      }
-    ];
+      };
 
-    const serverRequest = {
-      'method': 'POST',
-      'url': 'https://direct.adsrvr.org/bid/bidder/supplier',
-      'data': {
-        'id': 'c47237df-c108-419f-9c2b-da513dc3c133',
-        'imp': [
-          {
-            'id': 'small',
-            'tagid': 'test1',
-            'banner': {
-              'w': 300,
-              'h': 600,
-              'format': [
+      it('should get the correct bid response if nurl is returned', function () {
+        const result = spec.interpretResponse(incoming, serverRequest);
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.deep.equal(expectedBid);
+      });
+
+      it('should get the correct bid response if adm is returned', function () {
+        const vastXml = "<VAST version=\"2.0\"><Ad id=\"preroll-1\"><InLine><AdSystem>2.0</AdSystem><AdTitle>5748406</AdTitle><Impression id=\"blah\"><![CDATA[http://b.scorecardresearch.com/b?C1=1&C2=6000003&C3=0000000200500000197000000&C4=us&C7=http://www.scanscout.com&C8=scanscout.com&C9=http://www.scanscout.com&C10=xn&rn=-103217130]]></Impression><Creatives><Creative><Linear><Duration>00:00:30</Duration><TrackingEvents> </TrackingEvents><VideoClicks><ClickThrough id=\"scanscout\"><![CDATA[ http://www.target.com ]]></ClickThrough></VideoClicks><MediaFiles><MediaFile height=\"396\" width=\"600\" bitrate=\"496\" type=\"video/x-flv\" delivery=\"progressive\"><![CDATA[http://media.scanscout.com/ads/partner1_a1d1fbbc-c4d4-419f-b6c8-e9db63fd4491.flv]]></MediaFile></MediaFiles></Linear></Creative><Creative><CompanionAds><Companion height=\"250\" width=\"300\" id=\"555750\"><HTMLResource><![CDATA[<A onClick=\"var i= new Image(1,1); i.src='http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=0&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true';\" HREF=\"http://target.com\" target=\"_blank\"> <IMG SRC=\"http://media.scanscout.com/ads/target300x250Companion.jpg\" BORDER=0 WIDTH=300 HEIGHT=250 ALT=\"Click Here\"> </A> <img src=\"http://app.scanscout.com/ssframework/log/log.png?a=logitemaction&RI=555750&CbC=1&CbF=true&EC=1&RC=0&SmC=2&CbM=1.0E-5&VI=736e6b13bad531dc476bc3612749bc35&admode=preroll&PRI=-4827170214961170629&RprC=0&ADsn=17&VcaI=192,197&RrC=1&VgI=736e6b13bad531dc476bc3612749bc35&AVI=142&Ust=ma&Uctry=us&CI=1223187&AC=4&PI=567&Udma=506&ADI=5748406&VclF=true\" height=\"1\" width=\"1\">]]></HTMLResource></Companion></CompanionAds></Creative></Creatives></InLine></Ad></VAST>";
+        const admIncoming = deepClone(incoming);
+        delete admIncoming.body.seatbid[0].bid[0].nurl;
+        admIncoming.body.seatbid[0].bid[0].adm = vastXml;
+
+        const vastXmlExpectedBid = deepClone(expectedBid);
+        delete vastXmlExpectedBid.vastUrl;
+        vastXmlExpectedBid.vastXml = vastXml;
+
+        const result = spec.interpretResponse(admIncoming, serverRequest);
+        expect(result.length).to.equal(1);
+        expect(result[0]).to.deep.equal(vastXmlExpectedBid);
+      });
+    });
+  }
+
+  if (FEATURES.VIDEO) {
+    describe('interpretResponse-display-and-video', function () {
+      const incoming = {
+        'body': {
+          'id': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+          'seatbid': [
+            {
+              'bid': [
                 {
+                  'id': 'small',
+                  'impid': 'small',
+                  'price': 4.25,
+                  'adm': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=${AUCTION_PRICE}&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
+                  'cid': 'campaignId132',
+                  'crid': 'creativeId999',
+                  'adomain': [
+                    'http://foo'
+                  ],
+                  'dealid': null,
                   'w': 300,
-                  'h': 600
+                  'h': 600,
+                  'cat': [],
+                  'ext': {
+                    'mediatype': 1
+                  }
+                },
+                {
+                  'crid': 'mokivv6m',
+                  'ext': {
+                    'advid': '7ieo6xk',
+                    'agid': '7q9n3s2',
+                    'deal': {
+                      'dealid': '7013542'
+                    },
+                    'imptrackers': [],
+                    'viewabilityvendors': [],
+                    'mediatype': 2
+                  },
+                  'h': 480,
+                  'impid': '2eabb87dfbcae4',
+                  'nurl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=${AUCTION_PRICE}&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+                  'price': 13.6,
+                  'ttl': 500,
+                  'w': 600
                 }
-              ]
+              ],
+              'seat': 'supplyVendorBuyerId132'
+            }
+          ],
+          'cur': 'USD'
+        }
+      };
+
+      const expectedBids = [
+        {
+          'requestId': 'small',
+          'cpm': 4.25,
+          'width': 300,
+          'height': 600,
+          'creativeId': 'creativeId999',
+          'currency': 'USD',
+          'dealId': null,
+          'netRevenue': true,
+          'ttl': 360,
+          'ad': '<img src=\"https://test.adsrvr.org/feedback/prebid?iid=a6702d4e-8d0f-4c48-b251-ce7db4150b46&crid=creativeId999&wp=4.25&aid=small&wpc=USD&sfe=f8d2db2&puid=&tdid=825c1228-ca8c-4657-b40f-2df500621527&pid=&ag=adgroupid&sig=dFthumiovXraET6E7SiXy41xVCF0HgbuBSVkvazJp-w.&cf=&fq=0&td_s=www.test.com&rcats=&mcat=&mste=&mfld=0&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=1&dt=Other&osf=&os=&br=&rlangs=en&mlang=&svpid=13144370&did=&rcxt=Other&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&bp=250.25&c=OAA.&dur=&crrelr=&ipl=bottom&vc=0&said=e7b34fa3-8654-424e-8c49-03e509e53d8c&ict=Unknown\" width=\"1\" height=\"1\" style=\"display: none;\"/>Default Test Ad Tag',
+          'mediaType': 'banner',
+          'meta': {
+            'advertiserDomains': ['http://foo']
+          }
+        },
+        {
+          'requestId': '2eabb87dfbcae4',
+          'cpm': 13.6,
+          'creativeId': 'mokivv6m',
+          'dealId': null,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 500,
+          'width': 640,
+          'height': 480,
+          'mediaType': 'video',
+          'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+          'meta': {}
+        }
+      ];
+
+      const serverRequest = {
+        'method': 'POST',
+        'url': 'https://direct.adsrvr.org/bid/bidder/supplier',
+        'data': {
+          'id': 'c47237df-c108-419f-9c2b-da513dc3c133',
+          'imp': [
+            {
+              'id': 'small',
+              'tagid': 'test1',
+              'banner': {
+                'w': 300,
+                'h': 600,
+                'format': [
+                  {
+                    'w': 300,
+                    'h': 600
+                  }
+                ]
+              },
             },
+            {
+              'id': '2eabb87dfbcae4',
+              'tagid': 'video',
+              'video': {
+                'api': [
+                  1,
+                  3
+                ],
+                'mimes': [
+                  'video/mp4'
+                ],
+                'minduration': 5,
+                'maxduration': 30,
+                'w': 640,
+                'h': 480,
+                'protocols': [
+                  2,
+                  3,
+                  5,
+                  6
+                ]
+              }
+            }
+          ],
+          'site': {
+            'page': 'http://www.test.com',
+            'publisher': {
+              'id': '111'
+            }
           },
-          {
-            'id': '2eabb87dfbcae4',
-            'tagid': 'video',
-            'video': {
-              'api': [
-                1,
-                3
-              ],
-              'mimes': [
-                'video/mp4'
-              ],
-              'minduration': 5,
-              'maxduration': 30,
-              'w': 640,
-              'h': 480,
-              'protocols': [
-                2,
-                3,
-                5,
-                6
-              ]
+          'device': {
+            'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36',
+            'dnt': 0,
+            'language': 'en-US',
+            'connectiontype': 0
+          },
+          'user': {},
+          'at': 1,
+          'cur': [
+            'USD'
+          ],
+          'regs': {},
+          'ext': {
+            'ttdprebid': {
+              'ver': 'TTD-PREBID-2019.11.12',
+              'pbjs': '2.31.0'
             }
           }
-        ],
-        'site': {
-          'page': 'http://www.test.com',
-          'publisher': {
-            'id': '111'
-          }
         },
-        'device': {
-          'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36',
-          'dnt': 0,
-          'language': 'en-US',
-          'connectiontype': 0
-        },
-        'user': {},
-        'at': 1,
-        'cur': [
-          'USD'
-        ],
-        'regs': {},
-        'ext': {
-          'ttdprebid': {
-            'ver': 'TTD-PREBID-2019.11.12',
-            'pbjs': '2.31.0'
-          }
+        'options': {
+          'withCredentials': true
         }
-      },
-      'options': {
-        'withCredentials': true
-      }
-    };
+      };
 
-    it('should get the correct bid response', function () {
-      const result = spec.interpretResponse(incoming, serverRequest);
-      expect(result.length).to.equal(2);
-      expect(result).to.deep.equal(expectedBids);
+      it('should get the correct bid response', function () {
+        const result = spec.interpretResponse(incoming, serverRequest);
+        expect(result.length).to.equal(2);
+        expect(result).to.deep.equal(expectedBids);
+      });
+    });
+  }
+
+  describe('failover', function () {
+    const PRIMARY_URL = 'https://direct.adsrvr.org/bid/bidder/supplier';
+    const DEFAULT_FAILOVER_URL = 'https://bid-openpath.ttdcdn.org/bid/bidder/supplier';
+    const NETWORK_ERROR = { status: 0, timedOut: false };
+    const PAYLOAD = '{"id":"1"}';
+    const OPTIONS = { method: 'POST', contentType: 'text/plain', withCredentials: true };
+
+    let clock;
+    let logWarnStub;
+
+    beforeEach(function () {
+      resetFailoverState();
+      clock = sinon.useFakeTimers();
+      logWarnStub = sinon.stub(utils, 'logWarn');
+    });
+
+    afterEach(function () {
+      clock.restore();
+      logWarnStub.restore();
+      resetFailoverState();
+    });
+
+    // a fake ajax whose n-th call runs the n-th behavior
+    function fakeAjax(...behaviors) {
+      const ajax = sinon.stub();
+      behaviors.forEach((behavior, i) => ajax.onCall(i).callsFake(behavior));
+      return ajax;
+    }
+
+    // behaviors for the fake ajax: fail after `elapsed` ms, or succeed
+    function fail(xhr, elapsed = 0) {
+      return (url, callbacks) => {
+        clock.tick(elapsed);
+        callbacks.error('error', xhr);
+      };
+    }
+
+    function succeed(body = 'response') {
+      return (url, callbacks) => callbacks.success(body, { status: 200, getResponseHeader: () => null });
+    }
+
+    function makeBidderRequest(params) {
+      return { bids: [{ params: Object.assign({ supplySourceId: 'supplier' }, params) }] };
+    }
+
+    function makeCallbacks() {
+      return { success: sinon.spy(), error: sinon.spy() };
+    }
+
+    function send(ajax, params, url = PRIMARY_URL) {
+      const callbacks = makeCallbacks();
+      withFailover(ajax, makeBidderRequest(params))(url, callbacks, PAYLOAD, OPTIONS);
+      return callbacks;
+    }
+
+    describe('withFailover', function () {
+      it('should retry once on the default failover domain after a network error', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed('failover response'));
+        const callbacks = send(ajax);
+        expect(ajax.calledTwice).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+        expect(ajax.secondCall.args[2]).to.equal(PAYLOAD);
+        expect(ajax.secondCall.args[3]).to.equal(OPTIONS);
+        expect(callbacks.success.calledOnceWith('failover response')).to.be.true;
+        expect(callbacks.error.called).to.be.false;
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.match(/^ttd: /);
+      });
+
+      it('should use params.failoverDomain when provided', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverDomain: 'bid.example.com' });
+        expect(ajax.secondCall.args[0]).to.equal('https://bid.example.com/bid/bidder/supplier');
+      });
+
+      it('should warn and use the default domain when params.failoverDomain is not a hostname', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverDomain: 'https://bid.example.com/' });
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+        // one warning for the invalid domain and one for the retry itself
+        expect(logWarnStub.calledTwice).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.contain('failoverDomain');
+      });
+
+      it('should not retry when params.failoverEnabled is false', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR));
+        expect(withFailover(ajax, makeBidderRequest({ failoverEnabled: false }))).to.equal(ajax);
+        const callbacks = send(ajax, { failoverEnabled: false });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+        expect(logWarnStub.called).to.be.false;
+      });
+
+      it('should retry when params.failoverEnabled is true', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { failoverEnabled: true });
+        expect(ajax.calledTwice).to.be.true;
+      });
+
+      it('should not treat setting params.failoverDomain as the switch that enables failover', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR));
+        const callbacks = send(ajax, { failoverEnabled: false, failoverDomain: 'bid.example.com' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+      });
+
+      it('should read the params of the first bid', function () {
+        const bidderRequest = {
+          bids: [
+            { params: { supplySourceId: 'supplier', failoverDomain: 'first.example.com' } },
+            { params: { supplySourceId: 'supplier', failoverEnabled: false, failoverDomain: 'second.example.com' } }
+          ]
+        };
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        withFailover(ajax, bidderRequest)(PRIMARY_URL, makeCallbacks(), PAYLOAD, OPTIONS);
+        expect(ajax.calledTwice).to.be.true;
+        expect(ajax.secondCall.args[0]).to.equal('https://first.example.com/bid/bidder/supplier');
+      });
+
+      it('should fail over with the default domain when the bidder request has no bids', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        withFailover(ajax, {})(PRIMARY_URL, makeCallbacks(), PAYLOAD, OPTIONS);
+        expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+      });
+
+      it('should use params.failoverMaxFailureMs when provided', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 150), succeed());
+        send(ajax, { failoverMaxFailureMs: 200 });
+        expect(ajax.calledTwice).to.be.true;
+      });
+
+      it('should not retry a failure slower than params.failoverMaxFailureMs', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 201));
+        const callbacks = send(ajax, { failoverMaxFailureMs: 200 });
+        expect(ajax.calledOnce).to.be.true;
+        expect(callbacks.error.calledOnce).to.be.true;
+      });
+
+      it('should use the default max failure time when params.failoverMaxFailureMs is not provided', function () {
+        let ajax = fakeAjax(fail(NETWORK_ERROR, 100), succeed());
+        send(ajax);
+        expect(ajax.calledTwice).to.be.true;
+
+        resetFailoverState();
+        ajax = fakeAjax(fail(NETWORK_ERROR, 101));
+        send(ajax);
+        expect(ajax.calledOnce).to.be.true;
+      });
+
+      it('should warn and use the default max failure time when params.failoverMaxFailureMs is invalid', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR, 101));
+        send(ajax, { failoverMaxFailureMs: '200' });
+        expect(ajax.calledOnce).to.be.true;
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(logWarnStub.firstCall.args[0]).to.contain('failoverMaxFailureMs');
+      });
+
+      it('should retry when a customBidderEndpoint was used and keep its path', function () {
+        const ajax = fakeAjax(fail(NETWORK_ERROR), succeed());
+        send(ajax, { customBidderEndpoint: 'https://custom.example.com/prefix/bid/bidder/' }, 'https://custom.example.com/prefix/bid/bidder/supplier');
+        expect(ajax.secondCall.args[0]).to.equal('https://bid-openpath.ttdcdn.org/prefix/bid/bidder/supplier');
+      });
+    });
+
+    describe('registration', function () {
+      const BID_ID = '243310435309b5';
+      const testWindow = buildWindowTree(['https://www.example.com/test'], 'https://othersite.com/', 'https://example.com/canonical/page');
+
+      function makeFullBidderRequest(bidderCode, params) {
+        return {
+          bidderCode,
+          bidderRequestId: '18084284054531',
+          auctionId: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+          timeout: 3000,
+          start: 1540945362099,
+          refererInfo: detectReferer(testWindow)(),
+          ortb2: { source: { tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c' } },
+          bids: [{
+            bidder: bidderCode,
+            params: Object.assign({ supplySourceId: 'supplier', publisherId: '13144370', placementId: '1gaa015' }, params),
+            mediaTypes: { banner: { sizes: [[300, 250]] } },
+            ortb2Imp: { ext: { tid: '8651474f-58b1-4368-b812-84f8c937a099' } },
+            adUnitCode: 'div-gpt-ad-1460505748561-0',
+            bidId: BID_ID,
+            bidderRequestId: '18084284054531',
+            auctionId: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+            src: 'client',
+            bidRequestsCount: 1
+          }]
+        };
+      }
+
+      const bidResponse = JSON.stringify({
+        id: '5e5c23a5ba71e78',
+        seatbid: [{
+          bid: [{
+            id: '6vmb3isptf',
+            crid: 'ttdscreative',
+            impid: BID_ID,
+            price: 1.22,
+            adm: '<!-- creative -->',
+            h: 250,
+            w: 300,
+            ext: { mediatype: 1 }
+          }]
+        }],
+        cur: 'USD'
+      });
+
+      // runs the registered adapter exactly as the adapter manager would
+      function callBids(bidderCode, params, ...behaviors) {
+        const ajax = fakeAjax(...behaviors);
+        const addBidResponse = Object.assign(sinon.spy(), { reject: sinon.spy() });
+        const done = sinon.spy();
+        const adapter = adapterManager.getBidAdapter(bidderCode);
+        adapter.callBids(makeFullBidderRequest(bidderCode, params), addBidResponse, done, ajax, sinon.spy(), fn => fn);
+        return { ajax, addBidResponse, done };
+      }
+
+      ['ttd', 'thetradedesk'].forEach(function (bidderCode) {
+        describe(`bidder ${bidderCode}`, function () {
+          it('should be registered', function () {
+            expect(adapterManager.getBidAdapter(bidderCode)).to.exist;
+          });
+
+          it('should retry on the failover domain and still deliver the bid', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.calledTwice).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+            expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+            expect(addBidResponse.calledOnce).to.be.true;
+            expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
+            expect(addBidResponse.firstCall.args[1].cpm).to.equal(1.22);
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should send the same request body to the failover domain', function () {
+            const { ajax } = callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.secondCall.args[2]).to.equal(ajax.firstCall.args[2]);
+            expect(ajax.secondCall.args[3]).to.deep.equal(ajax.firstCall.args[3]);
+          });
+
+          it('should use params.failoverDomain', function () {
+            const { ajax } = callBids(bidderCode, { failoverDomain: 'bid.example.com' }, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.secondCall.args[0]).to.equal('https://bid.example.com/bid/bidder/supplier');
+          });
+
+          it('should not retry when failoverEnabled is false', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, { failoverEnabled: false }, fail(NETWORK_ERROR));
+            expect(ajax.calledOnce).to.be.true;
+            expect(addBidResponse.called).to.be.false;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should not retry on a timeout', function () {
+            const { ajax, done } = callBids(bidderCode, {}, fail({ status: 0, timedOut: true }));
+            expect(ajax.calledOnce).to.be.true;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should not retry on an HTTP error', function () {
+            const { ajax, done } = callBids(bidderCode, {}, fail({ status: 500, timedOut: false }));
+            expect(ajax.calledOnce).to.be.true;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should complete the bidder without bids when the failover fails too', function () {
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, fail(NETWORK_ERROR), fail(NETWORK_ERROR));
+            expect(ajax.calledTwice).to.be.true;
+            expect(addBidResponse.called).to.be.false;
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should retry when a customBidderEndpoint was used', function () {
+            const { ajax } = callBids(bidderCode, { customBidderEndpoint: 'https://custom.example.com/bid/bidder/' }, fail(NETWORK_ERROR), succeed(bidResponse));
+            expect(ajax.firstCall.args[0]).to.equal('https://custom.example.com/bid/bidder/supplier');
+            expect(ajax.secondCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+          });
+
+          it('should send later auctions straight to the failover domain', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            const { ajax, addBidResponse, done } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+            expect(addBidResponse.calledOnce).to.be.true;
+            expect(addBidResponse.firstCall.args[1].cpm).to.equal(1.22);
+            expect(done.calledOnce).to.be.true;
+          });
+
+          it('should keep sending auctions to the failover domain even if a request to it fails', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            callBids(bidderCode, {}, fail(NETWORK_ERROR));
+            const { ajax } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+          });
+
+          it('should not use the remembered failure when failoverEnabled is false', function () {
+            callBids(bidderCode, {}, fail(NETWORK_ERROR), succeed(bidResponse));
+            const { ajax } = callBids(bidderCode, { failoverEnabled: false }, succeed(bidResponse));
+            expect(ajax.calledOnce).to.be.true;
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+          });
+
+          it('should not remember a timeout or an HTTP error', function () {
+            callBids(bidderCode, {}, fail({ status: 0, timedOut: true }));
+            callBids(bidderCode, {}, fail({ status: 500, timedOut: false }));
+            const { ajax } = callBids(bidderCode, {}, succeed(bidResponse));
+            expect(ajax.firstCall.args[0]).to.equal(PRIMARY_URL);
+          });
+        });
+      });
+
+      it('should share the remembered failure between ttd and thetradedesk', function () {
+        callBids('ttd', {}, fail(NETWORK_ERROR), succeed(bidResponse));
+        const { ajax } = callBids('thetradedesk', {}, succeed(bidResponse));
+        expect(ajax.calledOnce).to.be.true;
+        expect(ajax.firstCall.args[0]).to.equal(DEFAULT_FAILOVER_URL);
+      });
     });
   });
 });

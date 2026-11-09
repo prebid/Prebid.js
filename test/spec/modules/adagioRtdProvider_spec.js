@@ -5,6 +5,7 @@ import {
   storage,
 } from 'modules/adagioRtdProvider.js';
 import * as utils from 'src/utils.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { expect } from 'chai';
 import { getGlobalVarName } from '../../../src/buildOptions.js';
@@ -412,6 +413,24 @@ describe('Adagio Rtd Provider', function () {
 
       expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
       expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.adunit_position).to.match(/\d+x\d+/);
+    });
+
+    it('computes adunit_position from the scroll offsets of getWinDimensions', function() {
+      const bidRequest = utils.deepClone(bidReqConfig);
+      const dims = winDimensions.getWinDimensions();
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({
+        innerWidth: dims.innerWidth,
+        innerHeight: dims.innerHeight,
+        scrollX: 7,
+        scrollY: 1000,
+        document: dims.document
+      });
+      sandbox.stub(window.top.document, 'getElementById').returns(getElementByIdMock());
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
+      expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.adunit_position).to.equal('807x1300');
     });
 
     describe('update the ortb2Fragments object a SafeFrame context', function() {

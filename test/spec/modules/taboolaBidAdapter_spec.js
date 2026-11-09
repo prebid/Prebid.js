@@ -1885,8 +1885,8 @@ describe('Taboola Adapter', function () {
       });
     });
 
-    describe('interpretResponse', function () {
-      if (FEATURES.NATIVE) {
+    if (FEATURES.NATIVE) {
+      describe('interpretResponse', function () {
         it('should interpret native response correctly', function () {
           const nativeBidRequest = {
             bidder: 'taboola',
@@ -1947,8 +1947,8 @@ describe('Taboola Adapter', function () {
           expect(res[0].native.ortb).to.deep.equal(nativeAdm);
           expect(res[0]).to.not.have.property('ad');
         });
-      }
-    });
+      });
+    }
 
     if (FEATURES.NATIVE) {
       describe('multiformat support', function () {
