@@ -1,6 +1,7 @@
 <!--
   This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
-  Prebid with the Google Publisher Tag.
+  Prebid with the Google Publisher Tag (GPT), using GPT's `registerRequestHook` API so initial
+  display(), lazy loading, and slot refreshes automatically run a Prebid auction before each ad request.
   It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
   bids array inside the adUnits, and it will use your adapter to load an ad.
   NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
@@ -13,10 +14,10 @@
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
-        var FAILSAFE_TIMEOUT = 3300;
-        var PREBID_TIMEOUT = 1000;
+        const PREBID_TIMEOUT = 1000;
+        const REQUEST_HOOK_TIMEOUT = 1500;
 
-        var adUnits = [{
+        const adUnits = [{
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
@@ -34,53 +35,42 @@
 
         }];
 
-        var pbjs = pbjs || {};
+        window.pbjs = window.pbjs || {};
         pbjs.que = pbjs.que || [];
-
-    </script>
-
-    <script>
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function () {
-            googletag.pubads().disableInitialLoad();
-        });
 
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
-
-            pbjs.requestBids({
-                bidsBackHandler: sendAdserverRequest,
-                timeout: PREBID_TIMEOUT
-            });
         });
 
-        function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function () {
-                if (pbjs.libLoaded) {
-                    pbjs.que.push(function () {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
-                } else {
-                    googletag.pubads().refresh();
-                }
-            });
-        }
+        window.googletag = window.googletag || {};
+        googletag.cmd = googletag.cmd || [];
 
-        setTimeout(function () {
-            sendAdserverRequest();
-        }, FAILSAFE_TIMEOUT);
-
-    </script>
-
-    <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0')
+                .addService(googletag.pubads());
 
-            googletag.pubads().enableSingleRequest();
+            // Configure single-request mode and a failsafe hook timeout slightly above PREBID_TIMEOUT.
+            googletag.setConfig({
+                singleRequest: true,
+                requestHookTimeoutMs: REQUEST_HOOK_TIMEOUT
+            });
+
+            // Register a request hook so GPT awaits the Prebid auction and applies
+            // targeting before every outgoing ad request (initial display, lazy load, or refresh).
+            googletag.pubads().registerRequestHook(async function ({ slots }) {
+                await new Promise(function (resolve) {
+                    pbjs.que.push(resolve);
+                });
+                const adUnitCodes = slots.map(function (slot) {
+                    return slot.getSlotElementId();
+                });
+                await pbjs.requestBids({
+                    adUnitCodes,
+                    timeout: PREBID_TIMEOUT
+                });
+                pbjs.setTargetingForGPTAsync(adUnitCodes);
+            }, 'prebid-docs-request-hook');
+
             googletag.enableServices();
         });
     </script>
