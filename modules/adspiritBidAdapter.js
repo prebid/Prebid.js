@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-const { getWinDimensions } = utils;
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 const ADSPIRIT_GVLID = 6;
@@ -28,7 +27,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const { refererInfo, gdprConsent, auctionId } = bidderRequest;
     const { topmostLocation } = refererInfo;
-    const win = getWinDimensions();
+    const win = utils.getWinDimensions();
     const prebidVersion = getGlobal().version;
 
     return validBidRequests.map(bidRequest => {
