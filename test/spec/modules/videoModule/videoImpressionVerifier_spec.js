@@ -7,6 +7,7 @@ import {
   videoImpressionVerifier,
   videoImpressionVerifierFactory
 } from 'modules/videoModule/videoImpressionVerifier.js';
+import * as utils from 'src/utils.js';
 
 let trackerMock;
 
@@ -74,9 +75,18 @@ describe('video impression tracking', function () {
 
   describe('identifier lookup', function () {
     let verifier;
+    let generateUUIDStub;
 
     beforeEach(function () {
+      // Lookup precedence requires distinct IDs, independent of random collisions.
+      generateUUIDStub = sinon.stub(utils, 'generateUUID');
+      generateUUIDStub.onCall(0).returns('first-tracking-id');
+      generateUUIDStub.onCall(1).returns('second-tracking-id');
       verifier = baseImpressionVerifier(bidTracker);
+    });
+
+    afterEach(function () {
+      generateUUIDStub.restore();
     });
 
     it('stores only bid identifiers and consumes them after the first successful match', function () {
