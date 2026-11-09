@@ -1,7 +1,8 @@
 import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
+import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
+import { Uid2ApiClient } from 'libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -146,6 +147,24 @@ describe(`UID2 module`, function () {
   const configureUid2ApiSuccessResponse = (apiUrl, responseToken) => configureUid2Response(apiUrl, 200, makeSuccessResponseBody(responseToken));
   const configureUid2ApiFailResponse = (apiUrl) => configureUid2Response(apiUrl, 500, 'Error');
   const configureUid2CstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+  // A fixed 1ms timeout can fire before WebKit has queued the fetch. Respond when the request exists.
+  const respondWhenRequested = async (url, timeout = 1000) => {
+    const start = Date.now();
+    while (!server.requests.some(req => req.url === url)) {
+      if (Date.now() - start >= timeout) throw new Error(`No UID2 API request for ${url} within ${timeout}ms`);
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    server.respond();
+    // Let fetch and the UID2 promise handler process the mocked response.
+    await new Promise(resolve => setTimeout(resolve, 0));
+  };
+  const waitForStoredToken = async (expected, timeout = 1000) => {
+    const start = Date.now();
+    while (JSON.parse(getFromAppropriateStorage() || 'null')?.latestToken?.advertising_token !== expected) {
+      if (Date.now() - start >= timeout) throw new Error(`UID2 did not store ${expected} within ${timeout}ms`);
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+  };
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
   const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
@@ -161,6 +180,9 @@ describe(`UID2 module`, function () {
 
   beforeEach(function () {
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
+    // Do not inherit tokens from an earlier test if Safari deferred its cookie cleanup.
+    cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
+    coreStorage.removeDataFromLocalStorage(moduleCookieName);
     testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
@@ -183,6 +205,21 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
+    it('sets a valid 24-hour expiration on the module cookie', async function() {
+      const setCookie = testSandbox.spy(uid2Storage, 'setCookie');
+      config.setConfig(makePrebidConfig({ uid2Token: apiHelpers.makeTokenResponse(initialToken), storage: 'cookie' }));
+      await runAuction();
+
+      const write = setCookie.getCalls().find(call => call.args[0] === moduleCookieName);
+      expect(write, 'UID2 module cookie should be written').to.exist;
+      const expires = write.args[2];
+      expect(expires).to.be.a('string').and.match(/GMT$/);
+      const remainingMs = Date.parse(expires) - Date.now();
+      expect(remainingMs).to.be.greaterThan(23 * 60 * 60 * 1000);
+      expect(remainingMs).to.be.lessThan(25 * 60 * 60 * 1000);
+      expect(coreStorage.getCookie(moduleCookieName)).to.not.be.null;
+    });
+
     it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({ uid2Token }));
@@ -362,10 +399,10 @@ describe(`UID2 module`, function () {
         }, refreshApiUrl, 'it should not be refreshed before the auction runs');
 
         testApiSuccessAndFailure(async function(success) {
-          const promise = apiHelpers.respondAfterDelay(1, server);
           await runAuction();
-          await promise;
+          await respondWhenRequested(refreshApiUrl);
           if (success) {
+            await waitForStoredToken(refreshedToken);
             expectModuleStorageToContain(initialToken, refreshedToken);
           } else {
             expectModuleStorageToContain(initialToken, initialToken);
@@ -440,9 +477,11 @@ describe(`UID2 module`, function () {
 
             describe('When the token generated in time', function() {
               testApiSuccessAndFailure(async function(apiSucceeds) {
-                scenario.setConfig();
-                apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+                // Give the async CSTG crypto/fetch chain room to queue a request on Safari.
+                scenario.setConfig({ auctionDelay: 100 });
+                const response = respondWhenRequested(cstgApiUrl);
                 const bid = await runAuction();
+                await response;
 
                 if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
                 else expectNoIdentity(bid);
@@ -463,6 +502,44 @@ describe(`UID2 module`, function () {
           });
         });
       });
+      const expectRefreshRejection = async (responseBody) => {
+        const client = new Uid2ApiClient({ baseUrl: 'https://prod.uidapi.com' }, 'test-client', () => {}, () => {});
+        configureUid2Response(refreshApiUrl, 200, responseBody);
+        const response = respondWhenRequested(refreshApiUrl);
+        const promise = client.callRefreshApi(apiHelpers.makeTokenResponse(initialToken, true, true));
+        await response;
+        await promise.then(
+          () => { throw new Error('refresh promise should reject'); },
+          (error) => expect(error).to.equal('UID2 shared library - Call to UID2 API failed')
+        );
+      };
+
+      it('should reject the refresh promise when Web Crypto key import fails', async function() {
+        window.crypto.subtle.importKey.rejects(new Error('import failed'));
+        try {
+          await expectRefreshRejection(btoa('0123456789ab{}'));
+        } finally {
+          window.crypto.subtle.importKey.callsFake(() => Promise.resolve());
+        }
+      });
+
+      it('should reject the refresh promise when the decrypted response is not JSON', async function() {
+        await expectRefreshRejection(btoa('0123456789abnot json'));
+      });
+
+      it('should report a specific forbidden error for an invalid HTTP origin response', async function() {
+        testSandbox.stub(utils, 'logError');
+        const response = JSON.stringify({ status: 'invalid_http_origin', message: 'origin is not allowed' });
+        configureUid2CstgResponse(403, response);
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 100 }));
+        const responseHandled = respondWhenRequested(cstgApiUrl);
+        const bid = await runAuction();
+        await responseHandled;
+
+        expectNoIdentity(bid);
+        sinon.assert.calledWithMatch(utils.logError, sinon.match.any, /Forbidden: origin is not allowed/);
+      });
+
       it('Should receive an optout response when the user has opted out.', async function() {
         const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
         configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));

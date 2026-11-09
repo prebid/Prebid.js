@@ -477,7 +477,7 @@ export const intentIqIdSubmodule = {
     let shouldCallServer = false;
     FIRST_PARTY_KEY_FINAL = `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + configParams.partner : ''}`;
     const cmpData = getCmpData();
-    const gdprDetected = cmpData.gdprString;
+    const gdprDetected = cmpData.gdprApplies || cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage) as string);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
@@ -490,6 +490,7 @@ export const intentIqIdSubmodule = {
       actualABGroup = undefined;
     }
     let newUser = false;
+    let needsStore = false;
 
     setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
@@ -510,14 +511,22 @@ export const intentIqIdSubmodule = {
       // value is regenerated each session without overwriting persisted fields.
       firstPartyData = firstPartyData ? { ...firstPartyData, ...newObj } : newObj;
       newUser = true;
-      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      needsStore = true;
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
-      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      needsStore = true;
     }
 
+    // Must run before any storeData so identifiers are never persisted for new GDPR users
     if (gdprDetected && !('isOptedOut' in firstPartyData)) {
       firstPartyData.isOptedOut = true;
+      // Strip identifiers already on device and let the server decide the actual status
+      needsStore = true;
+      shouldCallServer = true;
+    }
+
+    if (needsStore) {
+      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     }
 
     // Read client hints from storage

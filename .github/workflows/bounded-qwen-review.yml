@@ -14,6 +14,9 @@ concurrency:
 
 jobs:
   review:
+    # Paused on regular PRs: its findings have mostly been false positives. Like OpenCodeReview
+    # (ci/ocr-agent-*), it runs only on branches that opt in by name.
+    if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/qwen-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
