@@ -168,6 +168,31 @@ describe('vast utils', () => {
       expect(textsOf(doc, 'Wrapper > Creatives > Creative > Linear > TrackingEvents > Tracking[event="start"]')).to.eql([newUrl]);
     });
 
+    describe('InLine without a Linear creative', () => {
+      const vastXml = '<VAST><Ad><InLine><Creatives><Creative><NonLinearAds><NonLinear></NonLinear></NonLinearAds></Creative></Creatives></InLine></Ad></VAST>';
+      let logWarn;
+      beforeEach(() => {
+        logWarn = sinon.stub(logging, 'logWarn');
+      });
+      afterEach(() => {
+        logWarn.restore();
+      });
+
+      it('should not add a Linear creative', () => {
+        const doc = parse(insertVastTrackers({ trackingEvents: [{ event: 'start', url: newUrl }] }, vastXml));
+        expect(doc.querySelectorAll('Creative')).to.have.lengthOf(1);
+        expect(doc.querySelectorAll('Linear, Tracking')).to.have.lengthOf(0);
+        expect(logWarn.calledOnce).to.be.true;
+      });
+
+      it('should still add impression and error trackers', () => {
+        const doc = parse(insertVastTrackers({ impression: [newUrl], error: [newUrl], trackingEvents: [{ event: 'start', url: newUrl }] }, vastXml));
+        expect(textsOf(doc, 'InLine > Impression')).to.eql([newUrl]);
+        expect(textsOf(doc, 'InLine > Error')).to.eql([newUrl]);
+        expect(doc.querySelectorAll('Linear, Tracking')).to.have.lengthOf(0);
+      });
+    });
+
     it('should not add invalid trackers', () => {
       const vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
       expect(insertVastTrackers({ impression: ['javascript:alert(1)'], trackingEvents: [{ event: '', url: newUrl }] }, vastXml))

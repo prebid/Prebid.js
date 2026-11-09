@@ -103,6 +103,9 @@ function insertLinearTrackingEvents(ad: Element, trackers: VastTrackers['trackin
       const trackingEvents = linear.querySelector('TrackingEvents') ?? linear.appendChild(createChild(linear, 'TrackingEvents'));
       appendTrackingEvents(trackingEvents, trackers);
     });
+  } else if (ad.localName !== 'Wrapper') {
+    // An InLine Linear needs Duration and MediaFiles, so one holding only tracking events would be an invalid creative.
+    logWarn('Dropping VAST tracking events: InLine ad has no Linear creative', trackers);
   } else {
     const creatives = ad.querySelector('Creatives') ?? ad.appendChild(createChild(ad, 'Creatives'));
     const creative = creatives.appendChild(createChild(creatives, 'Creative'));
