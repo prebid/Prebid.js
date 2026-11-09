@@ -6,7 +6,7 @@
 import { getAllAssetsMessage, getAssetMessage } from './native.js';
 import { BID_STATUS, MESSAGES } from './constants.js';
 import { isApnGetTagDefined, isGptPubadsDefined, logError, logWarn } from './utils.js';
-import { deferRendering, handleCreativeEvent, handleNativeMessage, handleRender, markWinner } from './adRendering.js';
+import { deferRendering, getRenderedBid, handleCreativeEvent, handleNativeMessage, handleRender, markWinner } from './adRendering.js';
 import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
@@ -81,10 +81,10 @@ function getResizer(adId, bidResponse) {
 }
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
-    renderFn(adData) {
+    renderFn(adData, renderedBid = bidResponse) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse),
+        renderer: getCreativeRendererSource(renderedBid),
         rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
@@ -123,6 +123,8 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
+  // the creative only knows the requested adId, which may belong to an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
+  adObject = getRenderedBid(adObject);
   if (adObject.status !== BID_STATUS.RENDERED) {
     logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;

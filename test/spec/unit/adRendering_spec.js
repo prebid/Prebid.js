@@ -8,6 +8,7 @@ import {
   handleCreativeEvent,
   handleNativeMessage,
   handleRender, markWinningBid, renderAdDirect, renderIfDeferred,
+  getRenderedBid, markWinner,
 } from '../../../src/adRendering.js';
 import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
@@ -299,6 +300,24 @@ describe('adRendering', () => {
         sinon.assert.calledOnce(creativeRender);
       });
 
+      it('renders the replacement of an expired bid', async () => {
+        const replacement = {
+          adId: 'replacement',
+          ad: '<div>replacement</div>',
+          creativeId: bid.creativeId,
+          responseTimestamp: Date.now(),
+          ttl: 300
+        };
+        bid.responseTimestamp = Date.now() - 10000;
+        bid.ttl = 1;
+        config.setConfig({ auctionOptions: { legacyRender: true, replaceExpiredBid: () => replacement } });
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.calledWith(doc.write, replacement.ad);
+        sinon.assert.neverCalledWith(doc.write, bid.ad);
+        sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ adId: replacement.adId, bid: replacement }));
+      });
+
       if (FEATURES.VIDEO) {
         it('does not write a video bid that safeRenderer.url exempted from the guard', async () => {
           bid.mediaType = VIDEO;
@@ -492,6 +511,145 @@ describe('adRendering', () => {
           config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
           handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
+        });
+
+        describe('and replaceExpiredBid is set', () => {
+          const settled = () => new PbPromise((resolve) => setTimeout(resolve));
+          let replaceExpiredBid, replacement;
+          beforeEach(() => {
+            replacement = { adId: 'replacement' };
+            isBidNotExpiredStub.callsFake((bid) => bid !== bidResponse);
+            replaceExpiredBid = sinon.stub().callsFake(() => PbPromise.resolve(replacement));
+            config.setConfig({ auctionOptions: { replaceExpiredBid } });
+          });
+          afterEach(() => {
+            config.resetConfig();
+          });
+
+          it('should pass the expired bid to replaceExpiredBid', async () => {
+            handleRender({ adId, bidResponse });
+            await settled();
+            sinon.assert.calledWith(replaceExpiredBid, bidResponse);
+          });
+
+          it('should not render anything before the replacement is available', async () => {
+            handleRender({ adId, bidResponse });
+            sinon.assert.notCalled(doRenderStub);
+            // let the replacement render before the next test starts, so that it does not show up there
+            await settled();
+          });
+
+          it('should render the replacement instead of the expired bid', async () => {
+            handleRender({ adId, bidResponse, options: { viewUrl: 'https://view.example.com' } });
+            await settled();
+            sinon.assert.calledOnce(doRenderStub);
+            sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse: replacement }));
+            expect(replacement.status).to.eql(BID_STATUS.RENDERED);
+            expect(replacement.viewUrl).to.eql('https://view.example.com');
+          });
+
+          it('should accept a replacement returned synchronously', async () => {
+            replaceExpiredBid.returns(replacement);
+            handleRender({ adId, bidResponse });
+            await settled();
+            sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse: replacement }));
+          });
+
+          it('should emit BID_WON for the replacement, and not for the expired bid', async () => {
+            handleRender({ adId, bidResponse });
+            await settled();
+            sinon.assert.calledWith(events.emit, EVENTS.BID_WON, replacement);
+            sinon.assert.neverCalledWith(events.emit, EVENTS.BID_WON, bidResponse);
+          });
+
+          it('should emit EXPIRED_RENDER once for the expired bid', async () => {
+            handleRender({ adId, bidResponse });
+            await settled();
+            expect(events.emit.getCalls().filter(call => call.args[0] === EVENTS.EXPIRED_RENDER).map(call => call.args[1])).to.eql([bidResponse]);
+          });
+
+          it('should not ask for a replacement when the bid has not expired', async () => {
+            isBidNotExpiredStub.returns(true);
+            handleRender({ adId, bidResponse });
+            await settled();
+            sinon.assert.notCalled(replaceExpiredBid);
+            sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse }));
+          });
+
+          it('should remember which bid was rendered in place of the expired one', async () => {
+            expect(getRenderedBid(bidResponse)).to.equal(bidResponse);
+            handleRender({ adId, bidResponse });
+            await settled();
+            expect(getRenderedBid(bidResponse)).to.equal(replacement);
+          });
+
+          describe('when the expired bid was already rendered', () => {
+            beforeEach(() => {
+              bidResponse.status = BID_STATUS.RENDERED;
+            });
+
+            it('should not ask for a replacement, and emit STALE_RENDER', async () => {
+              handleRender({ adId, bidResponse });
+              await settled();
+              sinon.assert.notCalled(replaceExpiredBid);
+              sinon.assert.calledWith(events.emit, EVENTS.STALE_RENDER, bidResponse);
+              sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse }));
+            });
+
+            it('should honor suppressStaleRender', async () => {
+              config.setConfig({ auctionOptions: { replaceExpiredBid, suppressStaleRender: true } });
+              handleRender({ adId, bidResponse });
+              await settled();
+              sinon.assert.notCalled(replaceExpiredBid);
+              sinon.assert.notCalled(doRenderStub);
+            });
+          });
+
+          it('should emit AD_RENDER_FAILED if rendering the replacement throws', async () => {
+            auctionManager.addWinningBid.throws(new Error('failure'));
+            handleRender({ adId, bidResponse });
+            await settled();
+            sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+              adId,
+              reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+              message: 'failure',
+              bid: replacement
+            }));
+          });
+
+          Object.entries({
+            'returns nothing': () => replaceExpiredBid.returns(PbPromise.resolve(null)),
+            'throws': () => replaceExpiredBid.throws(new Error()),
+            'rejects': () => replaceExpiredBid.returns(PbPromise.reject(new Error())),
+            'returns an expired bid': () => isBidNotExpiredStub.returns(false),
+            'returns a bid that was already rendered': () => { replacement.status = BID_STATUS.RENDERED; },
+            'returns a bid that already won': () => markWinner(replacement),
+            'returns a bid with deferRendering': () => { replacement.deferRendering = true; },
+          }).forEach(([t, setup]) => {
+            describe(`when replaceExpiredBid ${t}`, () => {
+              beforeEach(setup);
+
+              it('should render the expired bid', async () => {
+                handleRender({ adId, bidResponse });
+                await settled();
+                sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse }));
+                sinon.assert.neverCalledWith(doRenderStub, sinon.match({ bidResponse: replacement }));
+              });
+
+              it('should not emit EXPIRED_RENDER twice', async () => {
+                handleRender({ adId, bidResponse });
+                await settled();
+                expect(events.emit.getCalls().filter(call => call.args[0] === EVENTS.EXPIRED_RENDER).length).to.eql(1);
+              });
+
+              it('should skip rendering if suppressExpiredRender', async () => {
+                config.setConfig({ auctionOptions: { replaceExpiredBid, suppressExpiredRender: true } });
+                handleRender({ adId, bidResponse });
+                await settled();
+                sinon.assert.notCalled(doRenderStub);
+              });
+            });
+          });
         });
       });
     });

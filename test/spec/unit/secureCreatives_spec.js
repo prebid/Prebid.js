@@ -299,6 +299,70 @@ describe('secureCreatives', () => {
         });
       });
 
+      describe('when the bid has expired and replaceExpiredBid is set', () => {
+        let replacement;
+        beforeEach(() => {
+          replacement = {
+            adId: 'replacement',
+            ad: 'replacement-ad',
+            width: 320,
+            height: 50,
+            responseTimestamp: Date.now(),
+            ttl: 300
+          };
+          configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => Promise.resolve(replacement) } });
+          sandbox.stub(creativeRenderers, 'getCreativeRendererSource').callsFake((bid) => `${bid.adId}-renderer`);
+        });
+        afterEach(() => {
+          configObj.resetConfig();
+        });
+
+        it('should reply with the replacement, under the requested adId', () => {
+          pushBidResponseToAuction({ responseTimestamp: Date.now() - 10000, ttl: 1 });
+          const ev = makeEvent({
+            source: {
+              postMessage: sinon.stub()
+            },
+            data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
+          });
+          return receive(ev).then(() => new Promise((resolve) => setTimeout(resolve))).then(() => {
+            sinon.assert.calledOnce(ev.source.postMessage);
+            const data = JSON.parse(ev.source.postMessage.args[0][0]);
+            sinon.assert.match(data, {
+              adId: bidId,
+              ad: 'replacement-ad',
+              renderer: 'replacement-renderer'
+            });
+            sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, replacement);
+            sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          });
+        });
+
+        it('should attribute events from the creative, sent under the requested adId, to the replacement', () => {
+          pushBidResponseToAuction({ responseTimestamp: Date.now() - 10000, ttl: 1 });
+          const renderRequest = makeEvent({
+            source: {
+              postMessage: sinon.stub()
+            },
+            data: JSON.stringify({ adId: bidId, message: 'Prebid Request' })
+          });
+          return receive(renderRequest).then(() => new Promise((resolve) => setTimeout(resolve))).then(() => {
+            return receive(makeEvent({
+              data: JSON.stringify({
+                message: 'Prebid Event',
+                event: EVENTS.AD_RENDER_SUCCEEDED,
+                adId: bidId,
+              })
+            }));
+          }).then(() => {
+            sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+              adId: replacement.adId,
+              bid: replacement
+            }));
+          });
+        });
+      });
+
       if (FEATURES.NATIVE) {
         it('should include native rendering data in responses', () => {
           const bid = {

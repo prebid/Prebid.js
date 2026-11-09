@@ -282,7 +282,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
     return;
   }
   const data = prepareRenderingData(bidResponse, options, safeRenderer);
-  renderFn(Object.assign({ adId: bidResponse.adId }, data));
+  renderFn(Object.assign({ adId: bidResponse.adId }, data), bidResponse);
   const { width, height } = data;
   if ((width ?? height) != null) {
     resizeFn(width, height);
@@ -301,7 +301,16 @@ doRender.before(function (next, args) {
   }
 }, 100);
 
-export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
+export function handleRender(args) {
+  const replaceExpiredBid = config.getConfig('auctionOptions')?.replaceExpiredBid;
+  if (typeof replaceExpiredBid === 'function' && canReplaceExpiredBid(args.bidResponse)) {
+    renderReplacementOfExpiredBid(args, replaceExpiredBid);
+  } else {
+    renderBid(args);
+  }
+}
+
+function renderBid({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   if (bidResponse != null && options?.viewUrl != null) {
     bidResponse.viewUrl = options.viewUrl;
   }
@@ -340,6 +349,79 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
       });
     }
   });
+}
+
+/**
+ * Maps an expired bid to the bid that was rendered in its place (see `auctionOptions.replaceExpiredBid`).
+ */
+const REPLACEMENTS = new WeakMap<Bid, Bid>();
+
+/**
+ * @returns the bid that was rendered in place of `bidResponse`, or `bidResponse` itself if it was not replaced.
+ */
+export function getRenderedBid<T extends Bid>(bidResponse: T): T {
+  return (bidResponse != null && REPLACEMENTS.get(bidResponse) as T) || bidResponse;
+}
+
+function canReplaceExpiredBid(bidResponse) {
+  // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply
+  return bidResponse != null &&
+    bidResponse.status !== BID_STATUS.RENDERED &&
+    !bidFilters.isBidNotExpired(bidResponse);
+}
+
+function isValidReplacement(bid) {
+  // a bid that already won (e.g. one waiting for `triggerBilling`) belongs to some other slot;
+  // a bid that would defer rendering could only be released with an adId the publisher does not know about
+  return bid != null &&
+    !bid.deferRendering &&
+    !WINNERS.has(bid) &&
+    bidFilters.isBidNotExpired(bid) &&
+    bidFilters.isUnusedBid(bid);
+}
+
+/**
+ * Ask `auctionOptions.replaceExpiredBid` for a bid to render instead of an expired one, then render
+ * whichever is appropriate. This has to happen before the expired bid is marked as winner, so that
+ * BID_WON is emitted only for what is actually rendered.
+ * EXPIRED_RENDER is emitted once the outcome is known, so that it is not emitted twice when falling back to the expired bid.
+ */
+function renderReplacementOfExpiredBid(args, replaceExpiredBid) {
+  const { adId, bidResponse } = args;
+  let renderedBid = bidResponse;
+  PbPromise.resolve()
+    .then(() => replaceExpiredBid(bidResponse))
+    .then((replacement) => {
+      if (isValidReplacement(replacement)) {
+        return replacement;
+      }
+      if (replacement != null) {
+        logWarn(`Replacement for expired ad id ${adId} is expired, already used, or defers rendering; ignoring it`);
+      }
+    }, (e) => {
+      logError(`Could not replace expired ad id ${adId}`, e);
+    })
+    .then((replacement: Bid) => {
+      if (replacement == null) {
+        // render the expired bid as usual; that emits EXPIRED_RENDER and honors `suppressExpiredRender`
+        renderBid(args);
+      } else {
+        logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
+        renderedBid = replacement;
+        REPLACEMENTS.set(bidResponse, replacement);
+        events.emit(EXPIRED_RENDER, bidResponse);
+        renderBid({ ...args, bidResponse: replacement });
+      }
+    })
+    .catch((e) => {
+      logError(`Could not render expired ad id ${adId}`, e);
+      emitAdRenderFail({
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: e?.message,
+        id: adId,
+        bid: renderedBid
+      });
+    });
 }
 
 export function markBidAsRendered(bidResponse) {
@@ -418,7 +500,9 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     });
   }
 
-  function renderFn(adData) {
+  function renderFn(adData, renderedBid = bid) {
+    // may differ from the requested bid when an expired bid was replaced (see `auctionOptions.replaceExpiredBid`)
+    bid = renderedBid;
     // This condition was authored by a bot (Claude Code).
     // `legacyRender` is meant for creatives that break on the extra iframe added in 10.12; a safe
     // renderer's script is written against the `pbRenderInFrame` contract and expects to run inside

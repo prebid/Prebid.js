@@ -372,6 +372,25 @@ describe('config API', function () {
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
+  it('sets auctionOptions replaceExpiredBid', function () {
+    const auctionOptionsConfig = {
+      replaceExpiredBid: () => null
+    };
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('should log warning for invalid auctionOptions replaceExpiredBid', function () {
+    setConfig({
+      auctionOptions: {
+        replaceExpiredBid: true,
+      }
+    });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options replaceExpiredBid must be a function';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
   it('should log warning for the wrong value passed to auctionOptions', function () {
     setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);

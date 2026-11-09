@@ -140,6 +140,18 @@ export interface AuctionOptionsConfig {
    * When true, prevent bids from being rendered if TTL is reached. Default is false.
    */
   suppressExpiredRender?: boolean;
+  /**
+   * Called when a bid that is about to be rendered has expired; it may return (a promise to) another bid to render
+   * in its place, for example from a fresh auction. This is useful for slots that cannot be refreshed in the ad server,
+   * such as interstitials. If it returns nothing, an expired bid, a bid that already won or was rendered, or a bid
+   * with `deferRendering`, the expired bid is handled as usual (see `suppressExpiredRender`).
+   *
+   * The returned bid should not be used anywhere else: if two expired bids are being rendered at the same time,
+   * returning the same bid for both may render it twice.
+   *
+   * Note that the ad server's targeting cannot be updated at this point, so it will still reflect the expired bid.
+   */
+  replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | Promise<Bid | null | undefined>;
 
   /**
    * If true, use legacy rendering logic.
