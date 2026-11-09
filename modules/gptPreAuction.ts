@@ -3,21 +3,31 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 import { getHook } from '../src/hook.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import {
   deepAccess,
   deepSetValue,
   isAdUnitCodeMatchingSlot,
   isGptPubadsDefined,
+  logError,
   logInfo,
   logWarn,
   pick,
   uniques
 } from '../src/utils.js';
 import type { AdUnit } from '../src/adUnits.ts';
+import type { GptSlot } from '../src/types/gpt.d.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
+const REQUEST_HOOK_ID = 'gpt-pre-auction-v$prebid.version$';
+const REQUEST_BIDS_STUB_PRIORITY = 100;
+export const INTERNAL_REQUEST_SYM = Symbol('gptPreAuctionInternalRequest');
+
 export let _currentConfig: any = {};
 let hooksAdded = false;
+let unregisterGptRequestHook: (() => void) | null = null;
+let requestHookQueued = false;
+let requestBidsStubAdded = false;
 
 export function getSegments(fpd, sections, segtax) {
   return getSegmentsFn(fpd, sections, segtax);
@@ -162,7 +172,16 @@ const setPpsConfigFromTargetingSet = (next, targetingSet) => {
   next(targetingSet);
 };
 
-type GPTPreAuctionConfig = {
+export type GPTPreAuctionRequestHookConfig = {
+  /**
+   * Controls GPT Request Hook integration:
+   * - 'disabled' (default): Does not register a GPT request hook.
+   * - 'test': Registers the GPT request hook and stubs external pbjs.requestBids() calls.
+   */
+  mode?: 'disabled' | 'test';
+};
+
+export type GPTPreAuctionConfig = {
   /**
    * allows turning off of module. Default value is true
    */
@@ -182,6 +201,10 @@ type GPTPreAuctionConfig = {
    * Removes extra network IDs when Multiple Customer Management is active. Default is false.
    */
   mcmEnabled?: boolean;
+  /**
+   * Optional GPT Request Hook integration settings.
+   */
+  requestHook?: GPTPreAuctionRequestHookConfig;
 };
 
 declare module '../src/config' {
@@ -190,11 +213,115 @@ declare module '../src/config' {
   }
 }
 
+const isRequestHookTestMode = () =>
+  Boolean(_currentConfig.enabled && _currentConfig.requestHook?.mode === 'test');
+
+export const gptRequestHook = async ({ slots }: { slots: GptSlot[] }) => {
+  const pbjs: any = getGlobal();
+  if (typeof pbjs.requestBids !== 'function') {
+    return;
+  }
+
+  const configuredCodes = (pbjs.adUnits || []).map(adUnit => adUnit.code);
+  const adUnitCodes = (slots || [])
+    .flatMap(slot => configuredCodes.filter(isAdUnitCodeMatchingSlot(slot)))
+    .filter(uniques);
+
+  if (adUnitCodes.length === 0) {
+    return;
+  }
+
+  await pbjs.requestBids({
+    adUnitCodes,
+    [INTERNAL_REQUEST_SYM]: true
+  });
+
+  if (typeof pbjs.setTargetingForGPTAsync === 'function') {
+    pbjs.setTargetingForGPTAsync(adUnitCodes);
+  }
+};
+
+export const requestBidsStub = (next, reqBidOptions) => {
+  if (reqBidOptions?.[INTERNAL_REQUEST_SYM]) {
+    return next(reqBidOptions);
+  }
+
+  logWarn(`${MODULE_NAME}: External pbjs.requestBids() call intercepted because requestHook.mode is 'test'.`);
+
+  if (typeof reqBidOptions?.bidsBackHandler === 'function') {
+    try {
+      reqBidOptions.bidsBackHandler();
+    } catch (e) {
+      logError(`${MODULE_NAME}: Error executing bidsBackHandler in requestBids stub`, e);
+    }
+  }
+
+  reqBidOptions?.defer?.resolve({
+    bids: {},
+    timedOut: false,
+    auctionId: undefined
+  });
+
+  return next.bail(undefined);
+};
+
+const registerGptRequestHookSync = () => {
+  if (unregisterGptRequestHook || !isGptPubadsDefined()) {
+    return false;
+  }
+  const pubads = window.googletag.pubads();
+  if (typeof pubads.registerRequestHook !== 'function') {
+    return false;
+  }
+  unregisterGptRequestHook = pubads.registerRequestHook(gptRequestHook, REQUEST_HOOK_ID);
+  return true;
+};
+
+const enableRequestHookTestMode = () => {
+  if (!requestBidsStubAdded) {
+    getHook('requestBids').before(requestBidsStub, REQUEST_BIDS_STUB_PRIORITY);
+    requestBidsStubAdded = true;
+  }
+
+  if (unregisterGptRequestHook || registerGptRequestHookSync() || requestHookQueued) {
+    return;
+  }
+
+  const googletagBootstrap: any = (window.googletag = window.googletag || ({ cmd: [] } as any));
+  const cmdQueue = (googletagBootstrap.cmd = googletagBootstrap.cmd || []);
+  requestHookQueued = true;
+
+  const registerWhenReady = () => {
+    requestHookQueued = false;
+    if (isRequestHookTestMode()) {
+      registerGptRequestHookSync();
+    }
+  };
+
+  if (Array.isArray(cmdQueue)) {
+    cmdQueue.unshift(registerWhenReady);
+  } else {
+    cmdQueue.push(registerWhenReady);
+  }
+};
+
+const disableRequestHookTestMode = () => {
+  if (unregisterGptRequestHook) {
+    unregisterGptRequestHook();
+    unregisterGptRequestHook = null;
+  }
+  if (requestBidsStubAdded) {
+    getHook('requestBids').getHooks({ hook: requestBidsStub }).remove();
+    requestBidsStubAdded = false;
+  }
+};
+
 const handleSetGptConfig = moduleConfig => {
   _currentConfig = pick(moduleConfig, [
     'enabled', enabled => enabled !== false,
     'customPreAuction', customPreAuction => typeof customPreAuction === 'function' && customPreAuction,
     'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction ?? true,
+    'requestHook', requestHook => requestHook?.mode === 'test' ? { mode: 'test' } : undefined
   ]);
 
   if (_currentConfig.enabled) {
@@ -203,12 +330,18 @@ const handleSetGptConfig = moduleConfig => {
       getHook('targetingDone').after(setPpsConfigFromTargetingSet);
       hooksAdded = true;
     }
+    if (isRequestHookTestMode()) {
+      enableRequestHookTestMode();
+    } else {
+      disableRequestHookTestMode();
+    }
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
     getHook('makeBidRequests').getHooks({ hook: makeBidRequestsHook }).remove();
     getHook('targetingDone').getHooks({ hook: setPpsConfigFromTargetingSet }).remove();
     hooksAdded = false;
+    disableRequestHookTestMode();
   }
 };
 
