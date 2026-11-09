@@ -1,5 +1,5 @@
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
+import { AUDIO, BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { isPlainObject, isStr, logWarn } from '../src/utils.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
@@ -9,6 +9,7 @@ const GVLID = 1409;
 const AD_REQUEST_URL = 'https://lb-east.motorik.io/pjs';
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
+const IMP_FORMATS = [BANNER, VIDEO, NATIVE, AUDIO];
 
 export type MotorikBidderParams = {
   /**
@@ -65,6 +66,17 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: DEFAULT_TTL,
     currency: DEFAULT_CURRENCY,
+  },
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    // ortb2Imp (merged into imp as is) may carry objects of other formats, e.g. synced from mediaTypes
+    IMP_FORMATS.forEach((format) => {
+      if (format !== context.mediaType) delete imp[format];
+    });
+
+    return imp;
   },
 
   request(buildRequest, imps, bidderRequest, context) {
