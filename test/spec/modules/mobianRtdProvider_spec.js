@@ -1062,6 +1062,33 @@ describe('Mobian RTD Submodule', function () {
       }
     });
 
+    it('should request the file from ortb2Imp adslot before GPT loads', async function () {
+      window.googletag = undefined;
+      bidReqConfig.adUnits = [{ code: 'gpt_lb_a', ortb2Imp: { ext: { data: { adserver: { name: 'gam', adslot: ATF } } } } }];
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(requestedUrls).to.deep.equal([COSMO_URL]);
+      expect(callback.calledOnce).to.equal(true);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '6' },
+      }, 'targeting still needs the GPT slot');
+
+      window.googletag = { pubads: () => ({ getSlots: () => slots }) };
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: prediction('3', [0.4291, 40, 'high']),
+      });
+    });
+
+    it('should prefer ortb2Imp adslot over the GPT slot path for the file', async function () {
+      bidReqConfig.adUnits = [{ code: 'gpt_lb_a', ortb2Imp: { ext: { data: { adserver: { adslot: '/36117602/hnp-seattlepi.com/news/atf' } } } } }];
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(requestedUrls).to.deep.equal([SEATTLE_URL]);
+    });
+
     it('should look up slots at targeting time when a code moves or is added', async function () {
       setSlots([ATF, 'gpt_lb_a']);
       await runAuction(['gpt_lb_a']);

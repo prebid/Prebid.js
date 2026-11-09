@@ -205,14 +205,16 @@ export async function fetchViewabilityData(fileUrl) {
 }
 
 /**
- * Find the GPT slot for an ad unit code, and from its ad unit path the
- * viewability file for its GAM network and site.
+ * Find the GAM ad unit path for an ad unit code, and from it the viewability
+ * file for its GAM network and site. The path is the ad unit's
+ * `ortb2Imp.ext.data.adserver.adslot` when given, else its GPT slot's path.
  *
  * @param {string} adUnitCode
+ * @param {Object} [adUnit] Prebid ad unit; lets the file be found before GPT loads
  * @returns {{fileUrl: string, path: string}|undefined}
  */
-export function getViewabilitySlotInfo(adUnitCode) {
-  const path = getGptSlotForAdUnitCode(adUnitCode)?.getAdUnitPath().replace(/\/$/, '');
+export function getViewabilitySlotInfo(adUnitCode, adUnit) {
+  const path = (adUnit?.ortb2Imp?.ext?.data?.adserver?.adslot || getGptSlotForAdUnitCode(adUnitCode)?.getAdUnitPath())?.replace(/\/$/, '');
   const [network, site] = path?.replace(/^\//, '').split('/') || [];
   if (!network || !site) {
     return undefined;
@@ -422,7 +424,7 @@ export function getTargetingData(adUnitCodes, rawConfig) {
  * @returns {Promise<void[]>}
  */
 export function storeViewabilityDataForAdUnits(adUnits) {
-  const fileUrls = new Set(adUnits.map((adUnit) => adUnit.code && getViewabilitySlotInfo(adUnit.code)?.fileUrl).filter(Boolean));
+  const fileUrls = new Set(adUnits.map((adUnit) => adUnit.code && getViewabilitySlotInfo(adUnit.code, adUnit)?.fileUrl).filter(Boolean));
   return Promise.all([...fileUrls].map((fileUrl) => dep.getViewabilityData(fileUrl)
     .then((rows) => {
       if (rows !== undefined) {
