@@ -4,8 +4,6 @@ import {
   deepAccess,
   deepClone,
   getBidRequest,
-  isArray,
-  isArrayOfNums,
   isEmpty,
   isStr,
   logError,
@@ -17,6 +15,12 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import {
+  buildNativeRequest,
+  getRtbBid,
+  handleOutstreamRendererEvents,
+  parseMediaType
+} from '../libraries/appnexusUtils/anUtils.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { hasUserInfo, hasAppDeviceInfo, hasAppId } from '../libraries/adrelevantisUtils/bidderUtils.js';
@@ -36,24 +40,6 @@ const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'languag
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-
-const NATIVE_MAPPING = {
-  body: 'description',
-  body2: 'desc2',
-  cta: 'ctatext',
-  image: {
-    serverName: 'main_image',
-    requiredParams: { required: true }
-  },
-  icon: {
-    serverName: 'icon',
-    requiredParams: { required: true }
-  },
-  sponsoredBy: 'sponsored_by',
-  privacyLink: 'privacy_link',
-  salePrice: 'saleprice',
-  displayUrl: 'displayurl'
-};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -272,10 +258,6 @@ function outstreamRender(bid) {
       rendererOptions: bid.renderer.getConfig()
     }, handleOutstreamRendererEvents.bind(null, bid));
   });
-}
-
-function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 /**
@@ -501,57 +483,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
-}
-
-function buildNativeRequest(params) {
-  const request = {};
-
-  // map standard prebid native asset identifier to /ut parameters
-  // e.g., tag specifies `body` but /ut only knows `description`.
-  // mapping may be in form {tag: '<server name>'} or
-  // {tag: {serverName: '<server name>', requiredParams: {...}}}
-  Object.keys(params).forEach(key => {
-    // check if one of the <server name> forms is used, otherwise
-    // a mapping wasn't specified so pass the key straight through
-    const requestKey =
-      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-      NATIVE_MAPPING[key] ||
-      key;
-
-    // required params are always passed on request
-    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
-    request[requestKey] = Object.assign({}, requiredParams, params[key]);
-
-    // convert the sizes of image/icon assets to proper format (if needed)
-    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
-    if (isImageAsset && request[requestKey].sizes) {
-      const sizes = request[requestKey].sizes;
-      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
-        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
-      }
-    }
-
-    if (requestKey === NATIVE_MAPPING.privacyLink) {
-      request.privacy_supported = true;
-    }
-  });
-
-  return request;
-}
-
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
-    return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
-  } else {
-    return BANNER;
-  }
 }
 
 registerBidder(spec);

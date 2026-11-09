@@ -13,7 +13,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
-import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { convertCamelToUnderscore, getRtbBid, hasMemberId } from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
@@ -468,20 +468,12 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
-}
-
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType !== BANNER) {
     return false;
   }
   return BANNER;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
 }
 
 registerBidder(spec);
