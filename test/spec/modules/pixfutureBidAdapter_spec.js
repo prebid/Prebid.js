@@ -62,7 +62,7 @@ describe('PixFutureAdapter', function () {
 
     // Test of buildRequest method
 
-    describe('Test of buildRequest method', function () {
+    it('buildRequests should include sizes, params and ad unit code', function () {
       const validBidRequests = [{
         'labelAny': ['display'],
         'bidder': 'pixfuture',

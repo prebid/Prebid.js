@@ -4,6 +4,7 @@ const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const chaiFriendly = require('eslint-plugin-chai-friendly');
+const mochaPlugin = require('eslint-plugin-mocha').default;
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
@@ -155,7 +156,7 @@ module.exports = [
         'error',
         {
           selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
@@ -298,7 +299,13 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
@@ -311,9 +318,27 @@ module.exports = [
     }
   },
   {
+    files: [
+      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
+      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
+      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/adagioRtdProvider.js',
+      'modules/contxtfulRtdProvider.js'
+    ],
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/no-synchronous-layout-read': 'error',
+    }
+  },
+  {
     files: sourcePattern('test'),
     plugins: {
-      'chai-friendly': chaiFriendly
+      'chai-friendly': chaiFriendly,
+      'mocha': mochaPlugin
     },
     languageOptions: {
       globals: {
@@ -326,6 +351,10 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
+      // Mocha silently ignores it()/describe()/hooks called while a test or hook is running: their
+      // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
+      // (e.g. after()) registered inside a test; see AGENTS.md.
+      'mocha/no-nested-tests': 'error',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-useless-escape': 'off',
@@ -364,6 +393,8 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
           patterns: []
         }
       ],

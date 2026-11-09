@@ -35,13 +35,11 @@ var prebid = require('./package.json');
 var port = 9999;
 const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
-const { spawn, fork } = require('child_process');
+const { spawn } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile} = require('./gulp.precompilation.js');
 const {tsConsumer, TS_MIN, TS_CURRENT} = require('./gulp.consumerTypes.js');
-
-const TEST_CHUNKS = 8;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -360,14 +358,17 @@ function setupDist() {
     .pipe(gulp.dest('dist/chunks'))
 }
 
-// Run the unit tests.
+// Run the unit tests, under Vitest Browser Mode (test/vitest/README.md).
 //
-// By default, this runs in headless chrome.
+// By default, this runs every spec in headless Chromium.
 //
-// If --watch is given, the task will re-run unit tests whenever the source code changes
-// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
-// If --browserstack is given, it will run the full suite of currently supported browsers.
-// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
+// If --watch is given, the task will re-run unit tests whenever the source code changes (Vitest's watch mode;
+//   with `gulp serve-and-test`, sources are re-precompiled as they change).
+// If --file "<path-to-test-file>" is given, the task will only run tests in the specified file(s), comma separated.
+// If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,safari,edge,webkit
+// If --browserstack is given, it will run once on each browsers.json entry that has `browserstack`, or with --browsers
+//   on the entries named, e.g. --browserstack --browsers=iphone_14,chrome; an entry with `vitest.specsMatching` runs
+//   only the spec files matching it, unless --file is given
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
@@ -379,8 +380,65 @@ function testTaskMaker(options = {}) {
     if (options.notest) {
       done();
     } else {
-      runKarma(options, done)
+      runVitest(options).then(() => done(), done);
     }
+  }
+}
+
+// --browsers names, as Karma's launchers knew them, to Vitest's browser settings (vitest.config.mjs)
+const VITEST_BROWSERS = {
+  chrome: {VITEST_BROWSER: 'chromium'},
+  chromium: {VITEST_BROWSER: 'chromium'},
+  chromeheadless: {VITEST_BROWSER: 'chromium'},
+  firefox: {VITEST_BROWSER: 'firefox'},
+  firefoxheadless: {VITEST_BROWSER: 'firefox'},
+  safari: {VITEST_BROWSER: 'safari'},
+  safarinative: {VITEST_BROWSER: 'safari'},
+  webkit: {VITEST_BROWSER: 'webkit'},
+  edge: {VITEST_CHANNEL: 'msedge'},
+  edgeheadless: {VITEST_CHANNEL: 'msedge'},
+};
+
+function npmRun(script, env, args = []) {
+  return execaCmd('npm', ['run', script, ...(args.length ? ['--', ...args] : [])], {
+    stdio: 'inherit',
+    env: Object.assign({FORCE_COLOR: '1'}, process.env, env),
+  });
+}
+
+function localBrowsers(names) {
+  return names.length ? names.map(name => {
+    const browser = VITEST_BROWSERS[name.toLowerCase()];
+    if (!browser) throw new Error(`Unknown browser "${name}"; one of ${Object.keys(VITEST_BROWSERS).join(', ')}`);
+    return browser;
+  }) : [{}];
+}
+
+async function runVitest(options) {
+  // a task's own `browsers` choose local browsers; on BrowserStack only --browsers selects
+  const variants = options.browserstack
+    ? helpers.browserstackTargets(helpers.parseBrowserArgs(argv)).flatMap(({key, env, shards, files}) => {
+      if (files && !options.file) {
+        if (!files.length) console.warn(`No spec files match ${key}'s vitest.specsMatching; skipping it`);
+        return files.length ? [{env, files}] : [];
+      }
+      // a BrowserStack session can only take so many spec files (see browsers.json), so one session per shard
+      return options.file || options.watch || shards === 1
+        ? [{env}]
+        : Array.from({length: shards}, (_, i) => ({env, shard: `--shard=${i + 1}/${shards}`}));
+    })
+    : localBrowsers(options.browsers ?? helpers.parseBrowserArgs(argv)).map(env => ({env}));
+  for (const {env: browserEnv, shard, files: entryFiles} of variants) {
+    // TEST_CHUNKS, TEST_CHUNK and TEST_PAT from the caller's environment pass through (specs.js), except with files;
+    // set to undefined rather than left out, as execa merges process.env back in
+    const env = Object.assign({}, options.env, browserEnv,
+      options.coverage ? {VITEST_COVERAGE: '1'} : {},
+      options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {},
+      options.file || entryFiles ? {TEST_CHUNKS: undefined, TEST_CHUNK: undefined, TEST_PAT: undefined} : {});
+    // --file, or the entry's specsMatching, narrows the run to those specs (as Vitest file filters); else every spec runs
+    const files = options.file ? options.file.split(',') : entryFiles ?? [];
+    // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
+    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
   }
 }
 
@@ -433,39 +491,16 @@ function runWebdriver({file}) {
   });
 }
 
-function runKarma(options, done) {
-  // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
-  // here we run it in a separate process to bypass the problem
-  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const env = Object.assign({}, options.env, process.env);
-  if (!env.TEST_CHUNKS) {
-    env.TEST_CHUNKS = TEST_CHUNKS;
-  }
-  const child = fork('./karmaRunner.js', null, {
-    env
-  });
-  child.on('exit', (exitCode) => {
-    if (exitCode) {
-      done(new Error('Karma tests failed with exit code ' + exitCode));
-    } else {
-      done();
-    }
-  })
-  child.send(options);
-}
-
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
+// Writes lcov to build/coverage/chunks/ (see test/vitest/README.md, "Coverage").
 function testCoverage(done) {
-  runKarma({
+  runVitest({
     coverage: true,
     browserstack: false,
     watch: false,
     file: argv.file,
-    env: {
-      NODE_OPTIONS: '--max-old-space-size=8096',
-      TEST_CHUNKS
-    }
-  }, done);
+    env: {NODE_OPTIONS: '--max-old-space-size=8096'}
+  }).then(() => done(), done);
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
@@ -606,7 +641,8 @@ gulp.task('test-only-nobuild', gulp.series(testTaskMaker({coverage: argv.coverag
 // neither slows down iterating on that spec nor stops it when one of its own tests fails
 gulp.task('test-only', gulp.series(...(argv.file ? [] : ['test-build-logic']), 'precompile', test));
 
-gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: helpers.getTestDisableFeatures(), oneBrowser: 'chrome', watch: false}));
+// tests whatever variant is in dist/src, which test-all-features-disabled precompiles first
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({browsers: ['chrome'], watch: false}));
 gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
 
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));

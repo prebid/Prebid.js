@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adhashBidAdapter.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 
 describe('adhashBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -81,6 +82,23 @@ describe('adhashBidAdapter', function () {
         }
       }
     };
+    it('preserves page dimensions used for ad density, including offset measurements', function () {
+      const dimensions = sinon.stub(winDimensions, 'getWinDimensions').returns({
+        document: {
+          body: { scrollHeight: 100, offsetHeight: 500, scrollWidth: 200, offsetWidth: 600 },
+          documentElement: { clientHeight: 200, scrollHeight: 300, offsetHeight: 400, clientWidth: 300, scrollWidth: 400, offsetWidth: 500 }
+        }
+      });
+      try {
+        const [request] = spec.buildRequests([bidRequest], { gdprConsent: {} });
+        expect(request.data.pageHeight).to.equal(500);
+        expect(request.data.pageWidth).to.equal(600);
+        sinon.assert.calledWithExactly(dimensions, window);
+      } finally {
+        dimensions.restore();
+      }
+    });
+
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [bidRequest],
