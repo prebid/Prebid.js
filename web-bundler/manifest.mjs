@@ -59,6 +59,24 @@ export function cleanDependencies(dependencies, requiresMeta = requiresMetadata)
 }
 
 
+/**
+ * Split a manifest's checksums into those of the .metadata.js chunks, which only modules that need metadata
+ * (storageControl) load, and the rest; the loader only fetches the metadata manifest when it needs it.
+ * @returns {{manifest: Object, metadata: {checksums: Object}}}
+ */
+export function splitMetadataManifest(manifest) {
+  const entries = Object.entries(manifest.checksums);
+  return {
+    manifest: {
+      ...manifest,
+      checksums: Object.fromEntries(entries.filter(([file]) => !isMetadataFile(file)))
+    },
+    metadata: {
+      checksums: Object.fromEntries(entries.filter(([file]) => isMetadataFile(file)))
+    }
+  };
+}
+
 export function getManifest(dependencies, chunkFiles) {
   return Promise.all(
     chunkFiles
