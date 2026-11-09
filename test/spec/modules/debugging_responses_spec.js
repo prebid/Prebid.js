@@ -25,9 +25,12 @@ describe('debugging response resolvers', () => {
 
         const doc = new DOMParser().parseFromString(response.ad, 'text/html');
         const style = doc.querySelector('div').style;
+        const expectedStyle = doc.createElement('div').style;
+        // Browsers may include the implicit auto height when serializing background-size.
+        expectedStyle.backgroundSize = size;
         expect(style.width).to.equal(dimensions.width == null ? '100%' : `${dimensions.width}px`);
         expect(style.height).to.equal(dimensions.height == null ? '100%' : `${dimensions.height}px`);
-        expect(style.backgroundSize).to.equal(size);
+        expect(style.backgroundSize).to.equal(expectedStyle.backgroundSize);
         expect(style.backgroundRepeat).to.equal(repeat);
         expect(style.backgroundImage).to.contain('https://vcdn.adnxs.com/');
       });
