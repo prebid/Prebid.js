@@ -45,6 +45,14 @@ describe('Generic analytics', () => {
         expect(adapter.enabled).to.be.true;
       });
 
+      it('should still validate options after being disabled', () => {
+        adapter.enableAnalytics({ options: {} });
+        expect(adapter.enabled).to.be.false;
+        adapter.disableAnalytics();
+        adapter.enableAnalytics({ options: {} });
+        expect(adapter.enabled).to.be.false;
+      });
+
       [123, [123, 456]].forEach(gvlid => {
         it(`should accept gvlid ${JSON.stringify(gvlid)}`, () => {
           const config = { options: { url: 'mock', gvlid } };
@@ -241,49 +249,79 @@ describe('Generic analytics', () => {
         sinon.assert.notCalled(handler);
       });
 
-      describe('with the analytics debounce delay', () => {
-        before(() => setDebounceDelay(100));
-        after(() => setDebounceDelay(0));
+      describe('with production event handling (debounce delay and real event history)', () => {
+        let previousDelay;
+        before(() => {
+          previousDelay = setDebounceDelay(100);
+        });
+        after(() => setDebounceDelay(previousDelay));
 
-        it('does not send events still queued by the base adapter after being disabled', () => {
+        beforeEach(() => {
+          events.clearEvents();
+          events.getEvents.resetBehavior();
+          events.getEvents.callThrough();
+        });
+
+        function enable(eventHandler = handler) {
           adapter.enableAnalytics({
             options: {
               batchDelay: 100,
               batchSize: 10,
-              handler
+              handler: eventHandler
             }
           });
+        }
+
+        const sentIds = (stub) => stub.getCalls().flatMap(call => call.args[0].map(event => event.args.i));
+
+        it('does not send events still queued by the base adapter after being disabled', () => {
+          enable();
           events.emit(BID_RESPONSE, { i: 0 });
           adapter.disableAnalytics();
           clock.tick(500);
           sinon.assert.notCalled(handler);
         });
-      });
 
-      it('does not send events queued before being disabled once re-enabled', () => {
-        adapter.enableAnalytics({
-          options: {
-            batchDelay: 100,
-            batchSize: 10,
-            handler
-          }
+        it('does not send events queued before being disabled once re-enabled', () => {
+          enable();
+          events.emit(BID_RESPONSE, { i: 0 });
+          expect(events.getEvents().length).to.equal(1); // re-enabling replays from the real history
+          adapter.disableAnalytics();
+          const newHandler = sinon.stub();
+          enable(newHandler);
+          events.emit(BID_RESPONSE, { i: 1 });
+          clock.tick(500);
+          sinon.assert.notCalled(handler);
+          expect(sentIds(newHandler)).to.eql([1]);
         });
-        events.emit(BID_RESPONSE, { i: 0 });
-        adapter.disableAnalytics();
-        const newHandler = sinon.stub();
-        adapter.enableAnalytics({
-          options: {
-            batchDelay: 100,
-            batchSize: 10,
-            handler: newHandler
-          }
+
+        it('discards batched and queued events alike when disabled', () => {
+          enable();
+          events.emit(BID_RESPONSE, { i: 'batched' });
+          clock.tick(100); // the base adapter hands it to track(), which adds it to the batch
+          events.emit(BID_RESPONSE, { i: 'queued' }); // still waiting in the base adapter's queue
+          clock.tick(50);
+          adapter.disableAnalytics();
+          const newHandler = sinon.stub();
+          enable(newHandler);
+          events.emit(BID_RESPONSE, { i: 'new' });
+          clock.tick(500);
+          sinon.assert.notCalled(handler);
+          expect(sentIds(newHandler)).to.eql(['new']);
         });
-        events.emit(BID_RESPONSE, { i: 1 });
-        clock.tick(100);
-        sinon.assert.notCalled(handler);
-        sinon.assert.calledOnce(newHandler);
-        sinon.assert.calledWith(newHandler, sinon.match((arg) =>
-          arg.length === 1 && sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } }).test(arg[0])));
+
+        it('does not send an event whose own dispatch disabled the adapter', () => {
+          const disable = () => adapter.disableAnalytics();
+          events.on(BID_RESPONSE, disable); // registered first, so it runs before the adapter's listener
+          try {
+            enable();
+            events.emit(BID_RESPONSE, { i: 0 });
+          } finally {
+            events.off(BID_RESPONSE, disable);
+          }
+          clock.tick(500);
+          sinon.assert.notCalled(handler);
+        });
       });
 
       describe('and options.events is specified', () => {
