@@ -27,7 +27,12 @@ describe('Base Impression Verifier', function() {
       const baseVerifier = baseImpressionVerifier(trackerMock);
       const uuid = baseVerifier.trackBid({});
       expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
-      expect(uuid.length).to.be.lessThan(16);
+    });
+
+    it('should generate a distinct uuid for each bid', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const uuids = new Set(Array.from({ length: 100 }, () => baseVerifier.trackBid({})));
+      expect(uuids.size).to.equal(100);
     });
   });
 
@@ -132,6 +137,14 @@ describe('Cached Video Impression Verifier', function () {
   beforeEach(function () {
     resetTrackerMock();
     verifier = cachedVideoImpressionVerifier(vastXmlEditorFactory(), trackerMock);
+  });
+
+  it('should not track a bid without vast', function () {
+    const bid = { adId: 'a1', adUnitCode, ad: '<div></div>' };
+
+    expect(verifier.trackBid(bid)).to.be.undefined;
+    expect(trackerMock.store.called).to.be.false;
+    expect(bid).to.not.have.property('vastXml');
   });
 
   it('should replace the Ad id of the vast xml with the tracking uuid', function () {

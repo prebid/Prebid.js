@@ -1,5 +1,5 @@
 import { vastXmlEditorFactory } from '../../libraries/video/shared/vastXmlEditor.js';
-import { generateUUID } from '../../src/utils.js';
+import { getUniqueIdentifierStr } from '../../src/utils.js';
 
 export const PB_PREFIX = 'pb_';
 export const UUID_MARKER = PB_PREFIX + 'uuid';
@@ -82,8 +82,12 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   const vastXmlEditor = vastXmlEditor_;
 
   verifier.trackBid = function (bid, adUnit) {
-    const adIdOverride = superTrackBid(bid);
     let { vastXml, vastUrl, adId } = bid;
+    if (!vastXml && !vastUrl) {
+      return;
+    }
+
+    const adIdOverride = superTrackBid(bid);
     const trackingConfig = adUnit?.video?.adServer?.tracking;
     let impressionUrl;
     let impressionId;
@@ -143,7 +147,7 @@ export function baseImpressionVerifier(bidTracker_) {
 
   function trackBid(bid) {
     const { adId, adUnitCode, requestId, auctionId } = bid;
-    const trackingId = PB_PREFIX + generateUUID(10 ** 13);
+    const trackingId = PB_PREFIX + getUniqueIdentifierStr();
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
   }
