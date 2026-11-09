@@ -253,6 +253,11 @@ export interface Config {
    */
   disableAjaxTimeout?: boolean;
   /**
+   * If true, never gzip outgoing requests, overriding any bidder's `endpointCompression`,
+   * `s2sConfig.endpointCompression`, and analytics adapters that compress.
+   */
+  disableGzipCompression?: boolean;
+  /**
    * Prebid ensures that the bid response price doesn’t exceed the maximum bid.
    * If the CPM (after currency conversion) is higher than the maxBid, the bid is rejected.
    * The default maxBid value is 5000.
