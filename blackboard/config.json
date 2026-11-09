@@ -1,0 +1,17 @@
+{
+  "goal": "/Users/anton/mobian/Prebid.js/blackboard/goal.md",
+  "ledger": "/Users/anton/mobian/Prebid.js/blackboard/ledger.jsonl",
+  "user_inbox": "/Users/anton/mobian/Prebid.js/blackboard/user_inbox.jsonl",
+  "blackboard": "/Users/anton/mobian/Prebid.js/blackboard/blackboard.md",
+  "repo": "/Users/anton/mobian/Prebid.js",
+  "max_turns": 20,
+  "minimum_turns": {"planner": 2, "coder": 1, "reviewer": 1},
+  "lock_lifetime_seconds": 1800,
+  "turn_order": ["planner1", "planner2", "coder1", "reviewer1"],
+  "roles": [
+    {"name": "planner1", "role": "planner", "description": "plans the work based on goal.md"},
+    {"name": "planner2", "role": "planner", "description": "reviews planner1's work with a critical eye, challenges assumptions and verifies logic correctness."},
+    {"name": "coder1", "role": "coder", "description": "implements the approved plan"},
+    {"name": "reviewer1", "role": "reviewer", "description": "reviews coder1's commits. makes sure code fits in with existing pattern. makes sure there is no unecessary code and everything added is the minimum required to achieve the goal."}
+  ]
+}
