@@ -17,7 +17,7 @@ Reviewer1 checks for minimum code, so keep the diff small and follow the shapes 
 ## Behavior
 
 1. **Enabling VP.** Unchanged: `advertiserTargeting: true` + `includeViewabilityTargeting: true`, or `vp` listed in an `advertiserTargeting` array. Drop the `viewabilityTargetingPlacementSource` gate in `getBidRequestData`, `getTargetingData` and `storeViewabilityDataForAdUnits`. Keep the param in `MobianRtdProviderParams` marked `@deprecated` and ignored, and remove it from `getConfig` output / `MobianResolvedConfig`. Remove it from the `.md` example.
-2. **Endpoint.** `export const MOBIAN_VIEWABILITY_URL = 'https://vp-data.themobianprebid.ai'`. File URL is `${MOBIAN_VIEWABILITY_URL}/${network}/${site}.json`, where `network` and `site` are the first two segments of `slot.getAdUnitPath()` split on `/` (leading empty segment dropped). Pass each through `encodeURIComponent`. If GPT has no slot for the code, or the path has fewer than two segments, skip that code: no request, no targeting. Use the segments as they are (no special handling of MCM `parent,child` network codes; not seen in the live data).
+2. **Endpoint.** `export const MOBIAN_VIEWABILITY_URL = 'https://vp-data.themobianprebid.ai'`. File URL is `${MOBIAN_VIEWABILITY_URL}/${network}/${site}.json`, where `network` and `site` are the first two segments of `slot.getAdUnitPath()` split on `/` (leading empty segment dropped). Pass each through `encodeURIComponent`. If GPT has no slot for the code, or the path has fewer than two nonempty leading network/site segments, skip that code: no request, no targeting. Use the segments as they are (no special handling of MCM `parent,child` network codes; not seen in the live data).
 3. **Fetch.** In `getBidRequestData`, for each unique `adUnit.code` (same source as today: `bidReqConfig.adUnits || getGlobal().adUnits`), find the file URL, dedupe the URLs, and fetch each once through a memoized fetcher keyed by file URL. Reuse the `makeMemoizedViewabilityFetch` shape: `Map` of URL → promise, FIFO eviction at `VIEWABILITY_TARGETING_MAX_CACHE_SIZE` (lower it to 10 — one page rarely has more than a couple of sites), and `cache.delete(url)` on failure so the next auction retries. No promise-identity guard; the existing fetchers don't have one and it isn't needed for this.
 4. **Parsing.** `makeViewabilityDataFromResponse(response)` → `safeJSONParse` if string, then return `data.rows` if it is a plain object, else throw (so the failure path deletes the cache entry and retries). Store the resolved rows in `viewabilityTargetingData` keyed by file URL (replaces today's page/code/source key). Keep the existing size bound on that map.
 5. **Targeting (`getTargetingData`, sync, no network).** For each `adUnitCode`: get the slot again, build the file URL, read rows from `viewabilityTargetingData`. Key = `path` + `/` + `adUnitCode` (strip one trailing `/` from the path first). Pick `rows[key]?.[device]`. No fallback to the path-only row, another device, or `o`. Because the slot and path are looked up at targeting time, no extra code is needed for a code that moves to another path.
@@ -37,12 +37,15 @@ Replace the old viewability tests (URL with `placement_source`, `results.viewabi
 2. Two codes on the same site → one request. Codes on two sites → two requests.
 3. File with both `/…/homepage/atf` and `/…/homepage/atf/gpt_lb_a` → code `gpt_lb_a` gets the slot row values, not the path row.
 4. Device mapping 2→d, 4→m, 5→t, 3→o; selected device missing from the row → no keys.
-5. `likely_viewable`: probability 0.4999 → `'false'`, 0.5 → `'true'`. All values are strings; custom `prefix` applied.
+5. `likely_viewable`: probability 0 and bucket 0 remain valid; probability 0.4999 → `'false'`, 0.5 → `'true'`. All values are strings; custom `prefix` applied.
 6. No GPT / no matching slot / one-segment path → no request, no targeting, callback still called.
 7. Request failure or `rows` missing → no targeting; next `getBidRequestData` refetches. Success → next auction does not refetch.
 8. `getTargetingData` before the file resolves returns `{}` and makes no request.
 9. VP not enabled → no request; `viewabilityTargetingPlacementSource` not required.
 10. One file fails, another succeeds → the successful slot still gets keys and context data is still added.
+
+11. Keep/adapt existing FIFO eviction and invalid-cache-size tests; add two concurrent fetch calls sharing the same promise/request. Empty `rows: {}` is successful and cached; invalid JSON and null/array `rows` retry. Missing/incomplete selected tuples emit no keys.
+12. Reuse one code with a different GPT path and verify it does not receive the old path's prediction. A new code in an already fetched file can use its own row. These verify the main correctness reason for resolving paths at targeting time, without introducing extra cache machinery.
 
 No nested `it`/`describe`/hooks.
 
@@ -51,7 +54,7 @@ No nested `it`/`describe`/hooks.
 - Iterate: `npx gulp test-only --file test/spec/modules/mobianRtdProvider_spec.js`.
 - Lint: `npx gulp lint --files modules/mobianRtdProvider.js,modules/mobianRtdProvider.d.ts,test/spec/modules/mobianRtdProvider_spec.js`, then `git diff`.
 - Types: `npx gulp ts`, then `npx gulp ts-strict`.
-- Before READY_FOR_REVIEW: full `npx gulp test-only`. Coverage check per CLAUDE.md.
+- Before READY_FOR_REVIEW: full `npx gulp test-only`. Coverage check per AGENTS.md: changed code needs at least 80% coverage; use whole-suite coverage rather than a focused-spec report for file totals.
 
 ## Browser check (coder1)
 
@@ -60,10 +63,8 @@ No nested `it`/`describe`/hooks.
 3. In the copied bundle only, `sed` the `https://vp-data.themobianprebid.ai` string to `http://localhost:8080/build/vp`. Never commit that; the repo constant stays the production URL.
 4. Load `http://localhost:8080/` with Chrome tools. Check: one request per site file, `googletag.pubads().getSlots()[0].getTargeting('mobian_vp_probability')` matches the fixture, slot 1 has no `mobian_vp_*` keys, no console errors.
 5. If Chrome tools can't connect, stop and tell the user; don't claim end-to-end success.
-6. The fixture and `vp/` dir are in `dev-prebid`, outside this repo; remove them or tell the user they're there.
+6. The fixture and copied bundle are outside the writable workspace; use the required filesystem escalation for writes. Restore the copied bundle to the production URL after testing. Remove only fixtures created for this task, or tell the user what remains. The expected fixture 404 may appear in the console; distinguish it from module exceptions.
 
-## Open points for planner1
+## Planning decisions
 
-- I cut: promise-identity guard, tuple range/enum validation, re-association guard for pending requests, and about half the test list. Push back if you think any is needed for correctness, not just defense.
-- Lowered `VIEWABILITY_TARGETING_MAX_CACHE_SIZE` to 10 since entries are now whole files (470 rows each). Fine either way.
-- Not asking the user anything yet. The `path == code` case is documented, not handled.
+planner1 accepts the simplified implementation: reuse existing bounded caches, retain light tuple validation consistent with the old contract, and avoid additional race/re-association machinery. A late failed evicted request may cause an extra retry in the extreme cache-churn case; this migration does not promise exact-once requests under eviction. Lowering the file cache cap to 10 is appropriate. Tests above retain regression checks for the cache behavior we do promise. The code-equals-path case stays documented per the goal's explicit key construction. No unresolved product decision remains.
