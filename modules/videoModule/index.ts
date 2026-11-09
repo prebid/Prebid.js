@@ -91,13 +91,16 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
   let mainContentDivId;
   let contentEnrichmentEnabled = true;
   const videoImpressionVerifierFactory = videoImpressionVerifierFactory_;
-  let videoImpressionVerifier;
+  let cachedImpressionVerifier;
+  let uncachedImpressionVerifier;
+
+  function getImpressionVerifier() {
+    return getConfig('cache') ? cachedImpressionVerifier : uncachedImpressionVerifier;
+  }
 
   function init() {
-    videoImpressionVerifier = videoImpressionVerifierFactory(!!getConfig('cache'), bidTracker);
-    getConfig('cache', ({ cache }) => {
-      videoImpressionVerifier = videoImpressionVerifierFactory(!!cache, bidTracker);
-    });
+    cachedImpressionVerifier = videoImpressionVerifierFactory(true, bidTracker);
+    uncachedImpressionVerifier = videoImpressionVerifierFactory(false, bidTracker);
     getConfig(videoKey, ({ video }) => {
       video.providers.forEach(provider => {
         const divId = provider.divId;
@@ -120,7 +123,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     requestBids.before(beforeBidsRequested, 40);
 
     pbEvents.on(EVENTS.BID_ADJUSTMENT, function (bid) {
-      videoImpressionVerifier.trackBid(bid, auctionManager.index.getAdUnit(bid));
+      getImpressionVerifier().trackBid(bid, auctionManager.index.getAdUnit(bid));
     });
 
     pbEvents.on(getExternalVideoEventName(AD_IMPRESSION), function (payload) {
@@ -318,7 +321,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
 
   function getBid(adPayload) {
     const { adId, adTagUrl, wrapperAdIds } = adPayload;
-    const bidIdentifiers = videoImpressionVerifier.getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
+    const bidIdentifiers = getImpressionVerifier().getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
     if (!bidIdentifiers) {
       return;
     }

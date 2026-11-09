@@ -367,34 +367,39 @@ describe('Prebid Video', function () {
       emit: sinon.spy()
     };
 
-    it('should use the cached Impression Verifier once cache is configured after init', function () {
-      let cacheConfigCb;
-      const getConfig = (topic, cb) => {
-        if (topic === 'cache' && cb) {
-          cacheConfigCb = cb;
-        }
-      };
-      const cachedVerifier = { trackBid: sinon.spy(), getBidIdentifiers: sinon.spy() };
-      const verifierFactory = sinon.spy(isCacheUsed => isCacheUsed ? cachedVerifier : videoImpressionVerifierMock);
-      const bid = {};
-      pbVideoFactory(null, getConfig, null, null, pbEvents, null, null, verifierFactory);
+    describe('Impression Verifier selection', function () {
+      let cache, cachedVerifier;
+      const getConfig = topic => topic === 'cache' ? cache : undefined;
 
-      cacheConfigCb({ cache: { url: 'https://cache.example.com' } });
-      bidAdjustmentCb(bid);
+      beforeEach(function () {
+        cache = undefined;
+        cachedVerifier = { trackBid: sinon.spy(), getBidIdentifiers: sinon.spy() };
+        pbVideoFactory(null, getConfig, null, null, pbEvents, null, null, isCacheUsed => isCacheUsed ? cachedVerifier : videoImpressionVerifierMock);
+      });
 
-      expect(verifierFactory.lastCall.args[0]).to.be.true;
-      expect(cachedVerifier.trackBid.calledOnce).to.be.true;
-      expect(videoImpressionVerifierMock.trackBid.called).to.be.false;
+      it('should use the cached Impression Verifier once cache is configured after init', function () {
+        cache = { url: 'https://cache.example.com' };
+        bidAdjustmentCb({});
+
+        expect(cachedVerifier.trackBid.calledOnce).to.be.true;
+        expect(videoImpressionVerifierMock.trackBid.called).to.be.false;
+      });
+
+      it('should revert to the uncached Impression Verifier once cache is unset', function () {
+        cache = { url: 'https://cache.example.com' };
+        bidAdjustmentCb({});
+        cache = undefined;
+        bidAdjustmentCb({});
+
+        expect(cachedVerifier.trackBid.calledOnce).to.be.true;
+        expect(videoImpressionVerifierMock.trackBid.calledOnce).to.be.true;
+      });
     });
 
     it('should match a bid tracked before the cache config was updated', function () {
       pbEvents.emit.resetHistory();
-      let cacheConfigCb;
-      const getConfig = (topic, cb) => {
-        if (topic === 'cache' && cb) {
-          cacheConfigCb = cb;
-        }
-      };
+      let cache;
+      const getConfig = topic => topic === 'cache' ? cache : undefined;
       const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1', vastUrl: 'https://vast.example.com/tag' };
       const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [bid] }) });
       const bidTracker = tracker();
@@ -403,7 +408,7 @@ describe('Prebid Video', function () {
       bidAdjustmentCb(bid);
       const trackingId = storeSpy.firstCall.args[0];
 
-      cacheConfigCb({ cache: { url: 'https://cache.example.com' } });
+      cache = { url: 'https://cache.example.com' };
       adImpressionCb({ adId: trackingId });
 
       expect(pbEvents.emit.calledOnce).to.be.true;
