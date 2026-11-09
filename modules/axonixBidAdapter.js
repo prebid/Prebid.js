@@ -11,10 +11,10 @@ const BIDDER_VERSION = '2.1.0';
 const GVLID = 141;
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
-const deletionEndpoints = new Map();
+const deletionEndpoints = new Set();
 
-function rememberDeletionEndpoint({ supplyId, region = DEFAULT_REGION }) {
-  deletionEndpoints.set(`${region}/${supplyId}`, { supplyId, region });
+function rememberDeletionEndpoint(params) {
+  deletionEndpoints.add(getSignalURL(params, 'data-deletion/v2'));
 }
 
 export const _internal = {
@@ -272,8 +272,8 @@ export const spec = {
       });
     });
 
-    deletionEndpoints.forEach(params => {
-      ajax(getSignalURL(params, 'data-deletion/v2'), null, JSON.stringify({ bidderRequests }), {
+    deletionEndpoints.forEach(url => {
+      ajax(url, null, JSON.stringify({ bidderRequests }), {
         method: 'POST',
         withCredentials: false,
         contentType: 'application/json',

@@ -455,5 +455,11 @@ describe('Axonix Bid Adapter', function () {
         'https://openrtb-eu-west-1.axonix.com/supply/prebid-js/data-deletion/v2/other-supply',
       ]);
     });
+
+    it('should treat an empty region as the default region', function () {
+      spec.onDataDeletionRequest([{ bids: [buildBidRequest(), buildBidRequest({ params: { supplyId: SUPPLY_ID, region: '' } })] }]);
+
+      expect(server.requests.map(request => request.url)).to.eql([DATA_DELETION_URL]);
+    });
   });
 });
