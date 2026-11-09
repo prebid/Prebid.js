@@ -5,8 +5,9 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
-import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { isPlainObject, safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
+import { getGptSlotForAdUnitCode, setKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { detectDeviceType } from '../libraries/userAgentUtils/detailed.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -14,12 +15,14 @@ import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
  * @typedef {import('./mobianRtdProvider.d.ts').MobianResolvedConfig} MobianResolvedConfig
  * @typedef {import('./mobianRtdProvider.d.ts').MobianTargetingKey} MobianTargetingKey
  * @typedef {import('./mobianRtdProvider.d.ts').MobianContextData} MobianContextData
- * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityData} MobianViewabilityData
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityRows} MobianViewabilityRows
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityPrediction} MobianViewabilityPrediction
+ * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityResult} MobianViewabilityResult
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
 export const MOBIAN_QUALITY_URL = 'https://quality.outcomes.net/api/prebid/v1/ivt';
-export const MOBIAN_VIEWABILITY_URL = 'https://quality.outcomes.net/api/prebid/v1/viewability';
+export const MOBIAN_VIEWABILITY_URL = 'https://vp-data.themobianprebid.ai';
 const MOBIAN_TCF_ID = 1348;
 export const AP_VALUES = 'apValues';
 export const CATEGORIES = 'categories';
@@ -33,7 +36,8 @@ export const VP = 'vp';
 export const THEMES = 'themes';
 export const TONES = 'tones';
 export const dep = {
-  ajaxBuilder
+  ajaxBuilder,
+  detectDeviceType
 };
 
 export const CONTEXT_KEYS = [
@@ -52,11 +56,12 @@ export const TRAFFIC_QUALITY_KEYS = [TQ];
 export const VIEWABILITY_KEYS = [VP];
 const ALL_TARGETING_KEYS = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS, ...VIEWABILITY_KEYS];
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
-const VIEWABILITY_FIELDS = ['likely_viewable', 'probability', 'bucket_percent', 'confidence'];
-const viewabilityTargetingData = new Map();
+// ORTB device types from detectDeviceType; anything else is 'o' (other)
+const DEVICE_CODES = { 2: 'd', 4: 'm', 5: 't' };
+export const viewabilityTargetingData = new Map();
 
 export const MAX_CACHE_SIZE = 10;
-export const VIEWABILITY_TARGETING_MAX_CACHE_SIZE = 100;
+export const VIEWABILITY_TARGETING_MAX_CACHE_SIZE = 10;
 
 function setViewabilityTargetingData(key, value) {
   if (
@@ -124,24 +129,21 @@ export const getTrafficQualityData = makeMemoizedTrafficQualityFetch();
 export function makeMemoizedViewabilityFetch(maxSize = VIEWABILITY_TARGETING_MAX_CACHE_SIZE) {
   const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : VIEWABILITY_TARGETING_MAX_CACHE_SIZE;
   const cache = new Map();
-  return function (pageUrl, adUnitCode, viewabilityTargetingPlacementSource) {
-    const cacheKey = JSON.stringify([pageUrl, adUnitCode, viewabilityTargetingPlacementSource]);
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey);
+  return function (fileUrl) {
+    if (cache.has(fileUrl)) {
+      return cache.get(fileUrl);
     }
     if (cache.size >= sanitizedMaxSize) {
       cache.delete(cache.keys().next().value);
     }
-    const pending = fetchViewabilityData(pageUrl, adUnitCode, viewabilityTargetingPlacementSource)
-      .then((response) => {
-        return makeViewabilityDataFromResponse(response);
-      })
+    const pending = fetchViewabilityData(fileUrl)
+      .then((response) => makeViewabilityDataFromResponse(response))
       .catch((error) => {
         logMessage('error', error);
-        cache.delete(cacheKey);
-        return {};
+        cache.delete(fileUrl);
+        return undefined;
       });
-    cache.set(cacheKey, pending);
+    cache.set(fileUrl, pending);
     return pending;
   };
 }
@@ -194,14 +196,31 @@ export async function fetchTrafficQualityData() {
   });
 }
 
-export async function fetchViewabilityData(pageUrl, adUnitCode, viewabilityTargetingPlacementSource) {
-  const encodedPageUrl = encodeURIComponent(pageUrl);
-  const requestUrl = `${MOBIAN_VIEWABILITY_URL}?url=${encodedPageUrl}&placement_source=${encodeURIComponent(viewabilityTargetingPlacementSource)}&placement_id=${encodeURIComponent(adUnitCode)}`;
+export async function fetchViewabilityData(fileUrl) {
   const request = dep.ajaxBuilder();
 
   return new Promise((resolve, reject) => {
-    request(requestUrl, { success: resolve, error: reject });
+    request(fileUrl, { success: resolve, error: reject });
   });
+}
+
+/**
+ * Find the GPT slot for an ad unit code, and from its ad unit path the
+ * viewability file for its GAM network and site.
+ *
+ * @param {string} adUnitCode
+ * @returns {{fileUrl: string, path: string}|undefined}
+ */
+export function getViewabilitySlotInfo(adUnitCode) {
+  const path = getGptSlotForAdUnitCode(adUnitCode)?.getAdUnitPath().replace(/\/$/, '');
+  const [network, site] = path?.replace(/^\//, '').split('/') || [];
+  if (!network || !site) {
+    return undefined;
+  }
+  return {
+    fileUrl: `${MOBIAN_VIEWABILITY_URL}/${encodeURIComponent(network)}/${encodeURIComponent(site)}.json`,
+    path
+  };
 }
 
 /**
@@ -228,12 +247,10 @@ export function getConfig(config) {
   });
 
   const prefix = config?.params?.prefix || 'mobian';
-  const viewabilityTargetingPlacementSource = config?.params?.viewabilityTargetingPlacementSource;
   return {
     advertiserTargeting,
     prefix,
-    publisherTargeting,
-    ...(viewabilityTargetingPlacementSource ? { viewabilityTargetingPlacementSource } : {})
+    publisherTargeting
   };
 }
 
@@ -286,19 +303,15 @@ export function makeTrafficQualityDataFromResponse(trafficQualityData) {
 
 /**
  * @param {Object|string} viewabilityData
- * @returns {MobianViewabilityData}
+ * @returns {MobianViewabilityRows}
  */
 export function makeViewabilityDataFromResponse(viewabilityData) {
   const data = typeof viewabilityData === 'string' ? safeJSONParse(viewabilityData) : viewabilityData;
-  // access `results` without optional chaining so an unparseable response throws and is retried
-  const viewability = data.results?.viewability;
-  if (viewability?.status !== 'known' || VIEWABILITY_FIELDS.some((field) => viewability[field] == null)) {
-    return {};
+  // throw on a response without `rows` so it is retried
+  if (!isPlainObject(data?.rows)) {
+    throw new Error('viewability response has no rows');
   }
-  return VIEWABILITY_FIELDS.reduce((data, field) => {
-    data[field] = String(viewability[field]);
-    return data;
-  }, {});
+  return data.rows;
 }
 
 /**
@@ -343,26 +356,32 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
   return bidReqConfig;
 }
 
-function makeViewabilityTargetingKey(pageUrl, adUnitCode, viewabilityTargetingPlacementSource) {
-  return JSON.stringify([pageUrl, adUnitCode, viewabilityTargetingPlacementSource]);
+function isValidTuple(tuple) {
+  return Array.isArray(tuple) && typeof tuple[0] === 'number' && tuple[1] != null && tuple[2] != null;
 }
 
 /**
- * @param {MobianResolvedConfig} config
- * @param {MobianViewabilityData} viewabilityData
- * @returns {Object}
+ * Pick the prediction for an ad unit code: the `<ad unit path>/<ad unit code>`
+ * row first, then the `<ad unit path>` row, for the same device only.
+ *
+ * @param {string} adUnitCode
+ * @param {string} device
+ * @returns {[MobianViewabilityResult, MobianViewabilityPrediction?]}
  */
-function makeViewabilityTargetingMap(config, viewabilityData) {
-  if (!viewabilityData || VIEWABILITY_FIELDS.some((field) => viewabilityData[field] == null)) {
-    return {};
+function getViewabilityPrediction(adUnitCode, device) {
+  const slotInfo = getViewabilitySlotInfo(adUnitCode);
+  if (!slotInfo) {
+    return ['6'];
   }
-
-  return {
-    [`${config.prefix}_vp_likely_viewable`]: viewabilityData.likely_viewable,
-    [`${config.prefix}_vp_probability`]: viewabilityData.probability,
-    [`${config.prefix}_vp_bucket_percent`]: viewabilityData.bucket_percent,
-    [`${config.prefix}_vp_confidence`]: viewabilityData.confidence,
-  };
+  const rows = viewabilityTargetingData.get(slotInfo.fileUrl);
+  if (!rows) {
+    return ['1'];
+  }
+  const slotRow = rows[`${slotInfo.path}/${adUnitCode}`];
+  const [result, tuple] = slotRow?.[device] != null
+    ? ['3', slotRow[device]]
+    : [slotRow ? '4' : '2', rows[slotInfo.path]?.[device]];
+  return isValidTuple(tuple) ? [result, tuple] : ['5'];
 }
 
 /**
@@ -375,48 +394,40 @@ function makeViewabilityTargetingMap(config, viewabilityData) {
  * @returns {Object}
  */
 export function getTargetingData(adUnitCodes, rawConfig) {
-  const config = getConfig(rawConfig);
-  if (!config.advertiserTargeting.includes(VP) || !config.viewabilityTargetingPlacementSource) {
+  const { advertiserTargeting, prefix } = getConfig(rawConfig);
+  if (!advertiserTargeting.includes(VP)) {
     return {};
   }
 
-  const pageUrl = getPageUrl();
+  const device = DEVICE_CODES[dep.detectDeviceType()] || 'o';
   return adUnitCodes.reduce((targeting, adUnitCode) => {
-    const viewabilityTargetingKey = makeViewabilityTargetingKey(
-      pageUrl,
-      adUnitCode,
-      config.viewabilityTargetingPlacementSource
-    );
-    const viewabilityData = viewabilityTargetingData.get(viewabilityTargetingKey);
-    const keyValues = makeViewabilityTargetingMap(config, viewabilityData);
-    if (Object.keys(keyValues).length) {
-      targeting[adUnitCode] = keyValues;
-    }
+    const [result, tuple] = getViewabilityPrediction(adUnitCode, device);
+    targeting[adUnitCode] = {
+      [`${prefix}_vp_result`]: result,
+      ...(tuple ? {
+        [`${prefix}_vp_likely_viewable`]: String(tuple[0] >= 0.5),
+        [`${prefix}_vp_probability`]: String(tuple[0]),
+        [`${prefix}_vp_bucket_percent`]: String(tuple[1]),
+        [`${prefix}_vp_confidence`]: String(tuple[2]),
+      } : {})
+    };
     return targeting;
   }, {});
 }
 
 /**
+ * Fetch the viewability file for each ad unit's GAM network and site once.
+ *
  * @param {Object[]} adUnits
- * @param {MobianResolvedConfig} config
  * @returns {Promise<void[]>}
  */
-export function storeViewabilityDataForAdUnits(adUnits, config) {
-  if (!config.viewabilityTargetingPlacementSource) {
-    return Promise.resolve([]);
-  }
-  const pageUrl = getPageUrl();
-  const adUnitCodes = [...new Set(adUnits.map((adUnit) => adUnit.code).filter(Boolean))];
-  return Promise.all(adUnitCodes.map((adUnitCode) => dep.getViewabilityData(pageUrl, adUnitCode, config.viewabilityTargetingPlacementSource)
-    .catch((error) => {
-      logMessage('error', error);
-      return {};
-    })
-    .then((viewabilityData) => {
-      setViewabilityTargetingData(
-        makeViewabilityTargetingKey(pageUrl, adUnitCode, config.viewabilityTargetingPlacementSource),
-        viewabilityData
-      );
+export function storeViewabilityDataForAdUnits(adUnits) {
+  const fileUrls = new Set(adUnits.map((adUnit) => adUnit.code && getViewabilitySlotInfo(adUnit.code)?.fileUrl).filter(Boolean));
+  return Promise.all([...fileUrls].map((fileUrl) => dep.getViewabilityData(fileUrl)
+    .then((rows) => {
+      if (rows !== undefined) {
+        setViewabilityTargetingData(fileUrl, rows);
+      }
     })));
 }
 
@@ -444,8 +455,7 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
 
   const config = getConfig(rawConfig);
   const { advertiserTargeting } = config;
-  const shouldRequestViewabilityData = advertiserTargeting.some((key) => VIEWABILITY_KEYS.includes(key)) &&
-    Boolean(config.viewabilityTargetingPlacementSource);
+  const shouldRequestViewabilityData = advertiserTargeting.some((key) => VIEWABILITY_KEYS.includes(key));
 
   if (!advertiserTargeting.length) {
     callback();
@@ -465,7 +475,7 @@ function getBidRequestData(bidReqConfig, callback, rawConfig) {
   // their viewability data here for the RTD getTargetingData hook.
   if (shouldRequestViewabilityData) {
     const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
-    requests.push(storeViewabilityDataForAdUnits(adUnits, config));
+    requests.push(storeViewabilityDataForAdUnits(adUnits));
   }
 
   Promise.all(requests)

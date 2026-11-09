@@ -61,7 +61,7 @@ export interface MobianRtdProviderParams {
    */
   includeViewabilityTargeting?: boolean;
   /**
-   * Placement source sent to the viewability endpoint.
+   * @deprecated Ignored. The viewability file is chosen from each slot's GAM ad unit path.
    */
   viewabilityTargetingPlacementSource?: string;
 }
@@ -89,7 +89,6 @@ export interface MobianResolvedConfig {
   prefix: string;
   publisherTargeting: MobianTargetingKey[];
   advertiserTargeting: MobianTargetingKey[];
-  viewabilityTargetingPlacementSource?: string;
 }
 
 /**
@@ -120,10 +119,35 @@ export interface MobianContextData {
 }
 
 /**
- * Viewability targeting values returned by the viewability endpoint after
- * conversion to strings for GPT.
+ * Device codes in the viewability file: desktop, phone, tablet, other.
+ */
+export type MobianViewabilityDevice = 'd' | 'm' | 't' | 'o';
+
+export type MobianViewabilityPrediction = [probability: number, bucketPercent: number, confidence: string];
+
+/**
+ * `rows` from the viewability file, keyed by `<ad unit path>` or
+ * `<ad unit path>/<ad unit code>`.
+ */
+export type MobianViewabilityRows = Record<string, Partial<Record<MobianViewabilityDevice, MobianViewabilityPrediction>>>;
+
+/**
+ * `<prefix>_vp_result`:
+ * - `'1'` file data not available yet, or the request failed
+ * - `'2'` no slot row; prediction from the ad unit path row
+ * - `'3'` prediction from the slot row
+ * - `'4'` slot row has no entry for the device; prediction from the ad unit path row
+ * - `'5'` file loaded, but no prediction for the device
+ * - `'6'` no GPT slot for the ad unit code, or its path has no network/site
+ */
+export type MobianViewabilityResult = '1' | '2' | '3' | '4' | '5' | '6';
+
+/**
+ * Viewability targeting for one ad unit, before the prefix is added. The four
+ * prediction values are set together, only with results `'2'`, `'3'` and `'4'`.
  */
 export interface MobianViewabilityData {
+  result: MobianViewabilityResult;
   likely_viewable?: string;
   probability?: string;
   bucket_percent?: string;

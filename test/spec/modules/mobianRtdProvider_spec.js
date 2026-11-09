@@ -21,7 +21,6 @@ import {
   VP,
   extendBidRequestConfig,
   fetchContextData,
-  fetchViewabilityData,
   getPageUrl,
   getConfig,
   getContextData,
@@ -32,6 +31,7 @@ import {
   makeViewabilityDataFromResponse,
   mobianBrandSafetySubmodule,
   setTargeting,
+  viewabilityTargetingData,
   dep,
 } from 'modules/mobianRtdProvider.js';
 
@@ -73,29 +73,6 @@ describe('Mobian RTD Submodule', function () {
 
   const mockTrafficQualityData = {
     [TQ]: 1,
-  };
-
-  const mockViewabilityResponse = JSON.stringify({
-    results: {
-      viewability: {
-        status: 'known',
-        level: 'placement',
-        likely_viewable: true,
-        probability: 0.72,
-        bucket_percent: 70,
-        sample_count: 42,
-        effective_samples: 38.5,
-        confidence: 'medium',
-        updated_at: '2026-09-17T14:30:00Z'
-      }
-    }
-  });
-
-  const mockViewabilityData = {
-    likely_viewable: 'true',
-    probability: '0.72',
-    bucket_percent: '70',
-    confidence: 'medium',
   };
 
   const trafficTargetingKeys = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS];
@@ -191,21 +168,6 @@ describe('Mobian RTD Submodule', function () {
     });
   });
 
-  describe('fetchViewabilityData', function () {
-    it('should request viewability using the full page URL, placement source, and ad unit code', async function () {
-      const pageUrl = 'https://example.com/viewability-page?ignored=true#ignored';
-      let requestedUrl;
-      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function(url, callbacks) {
-        requestedUrl = url;
-        callbacks.success(mockViewabilityResponse);
-      });
-
-      const viewabilityData = await fetchViewabilityData(pageUrl, 'ad-unit-1', 'gam_ad_unit');
-      expect(viewabilityData).to.equal(mockViewabilityResponse);
-      expect(requestedUrl).to.equal(`https://quality.outcomes.net/api/prebid/v1/viewability?url=${encodeURIComponent(pageUrl)}&placement_source=gam_ad_unit&placement_id=ad-unit-1`);
-    });
-  });
-
   describe('makeDataFromResponse', function () {
     it('should format context data response', async function () {
       const data = makeDataFromResponse(mockResponse);
@@ -242,24 +204,25 @@ describe('Mobian RTD Submodule', function () {
   });
 
   describe('makeViewabilityDataFromResponse', function () {
+    const rows = { '/1/site/atf': { d: [0.3, 30, 'high'] } };
+
     [
-      { response: mockViewabilityResponse, description: 'JSON text' },
-      { response: JSON.parse(mockViewabilityResponse), description: 'an object' },
+      { response: JSON.stringify({ rows }), description: 'JSON text' },
+      { response: { rows }, description: 'an object' },
     ].forEach(({ response, description }) => {
-      it(`should format viewability data from ${description}`, function () {
-        const data = makeViewabilityDataFromResponse(response);
-        expect(data).to.deep.equal(mockViewabilityData);
+      it(`should return rows from ${description}`, function () {
+        expect(makeViewabilityDataFromResponse(response)).to.deep.equal(rows);
       });
     });
 
     [
-      { response: { results: { viewability: { status: 'unknown' } } }, description: 'an unknown response' },
-      { response: { results: { viewability: { status: 'known', likely_viewable: true } } }, description: 'a known response missing fields' },
-      { response: { results: {} }, description: 'a response without viewability' },
+      { response: '{invalid', description: 'invalid JSON' },
+      { response: {}, description: 'a response without rows' },
+      { response: { rows: null }, description: 'null rows' },
+      { response: { rows: [] }, description: 'array rows' },
     ].forEach(({ response, description }) => {
-      it(`should return no targeting data for ${description}`, function () {
-        const data = makeViewabilityDataFromResponse(response);
-        expect(data).to.deep.equal({});
+      it(`should throw for ${description}`, function () {
+        expect(() => makeViewabilityDataFromResponse(response)).to.throw();
       });
     });
   });
@@ -452,7 +415,6 @@ describe('Mobian RTD Submodule', function () {
         prefix: 'mobian',
         publisherTargeting: CONTEXT_KEYS,
         advertiserTargeting: [...CONTEXT_KEYS, ...VIEWABILITY_KEYS],
-        viewabilityTargetingPlacementSource: 'gam_ad_unit',
       });
     });
 
@@ -701,18 +663,15 @@ describe('Mobian RTD Submodule', function () {
   describe('RTD lifecycle', function () {
     let getContextDataStub;
     let getTrafficQualityDataStub;
-    let getViewabilityDataStub;
 
     beforeEach(function () {
       getContextDataStub = sinon.stub(dep, 'getContextData');
       getTrafficQualityDataStub = sinon.stub(dep, 'getTrafficQualityData');
-      getViewabilityDataStub = sinon.stub(dep, 'getViewabilityData');
     });
 
     afterEach(function () {
       getContextDataStub.restore();
       getTrafficQualityDataStub.restore();
-      getViewabilityDataStub.restore();
     });
 
     it('should make no requests when publisher and advertiser targeting are disabled', async function () {
@@ -733,137 +692,6 @@ describe('Mobian RTD Submodule', function () {
       expect(getTrafficQualityDataStub.called).to.equal(false);
       expect(setKeyValueSpy.called).to.equal(false);
       expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.equal({});
-      expect(callback.calledOnce).to.equal(true);
-    });
-
-    it('should request viewability once per unique ad unit and expose targeting through RTD', async function () {
-      getViewabilityDataStub.resolves(mockViewabilityData);
-      const callback = sinon.spy();
-      const rawConfig = {
-        params: {
-          includeViewabilityTargeting: true,
-          viewabilityTargetingPlacementSource: 'gam_ad_unit',
-          publisherTargeting: false,
-          advertiserTargeting: true,
-        }
-      };
-      bidReqConfig.adUnits = [
-        { code: 'ad-unit-1' },
-        { code: 'ad-unit-1' },
-        { code: 'ad-unit-2' },
-      ];
-
-      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(getViewabilityDataStub.callCount).to.equal(2);
-      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.equal(true);
-      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-2', 'gam_ad_unit')).to.equal(true);
-      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
-        'ad-unit-1': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-        'ad-unit-2': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-      });
-      expect(setKeyValueSpy.called).to.equal(false);
-      expect(callback.calledOnce).to.equal(true);
-      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
-        'ad-unit-1': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-        'ad-unit-2': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-      });
-    });
-
-    it('should skip viewability requests when viewabilityTargetingPlacementSource is missing', async function () {
-      const callback = sinon.spy();
-      const rawConfig = {
-        params: {
-          includeViewabilityTargeting: true,
-          publisherTargeting: false,
-          advertiserTargeting: true,
-        }
-      };
-      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }];
-
-      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(getViewabilityDataStub.called).to.equal(false);
-      expect(callback.calledOnce).to.equal(true);
-    });
-
-    it('should discard failed viewability requests without discarding successful targeting', async function () {
-      getViewabilityDataStub.callsFake((pageUrl, adUnitCode) => adUnitCode === 'ad-unit-1'
-        ? Promise.reject(new Error('viewability failure'))
-        : Promise.resolve(mockViewabilityData));
-      const callback = sinon.spy();
-      const rawConfig = {
-        params: {
-          includeViewabilityTargeting: true,
-          viewabilityTargetingPlacementSource: 'gam_ad_unit',
-          publisherTargeting: false,
-          advertiserTargeting: true,
-        }
-      };
-      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }, { code: 'ad-unit-2' }];
-
-      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1', 'ad-unit-2'], rawConfig)).to.deep.equal({
-        'ad-unit-2': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-      });
-      expect(setKeyValueSpy.called).to.equal(false);
-      expect(callback.calledOnce).to.equal(true);
-    });
-
-    it('should request explicitly targeted viewability without the include flag', async function () {
-      const callback = sinon.spy();
-      const rawConfig = {
-        params: {
-          viewabilityTargetingPlacementSource: 'gam_ad_unit',
-          publisherTargeting: false,
-          advertiserTargeting: [VP],
-        }
-      };
-      bidReqConfig.adUnits = [{ code: 'ad-unit-1' }];
-
-      getViewabilityDataStub.resolves(mockViewabilityData);
-      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, rawConfig);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(getViewabilityDataStub.calledWith(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.equal(true);
-      expect(mobianBrandSafetySubmodule.getTargetingData(['ad-unit-1'], rawConfig)).to.deep.equal({
-        'ad-unit-1': {
-          mobian_vp_likely_viewable: 'true',
-          mobian_vp_probability: '0.72',
-          mobian_vp_bucket_percent: '70',
-          mobian_vp_confidence: 'medium',
-        },
-      });
-      expect(setKeyValueSpy.called).to.equal(false);
       expect(callback.calledOnce).to.equal(true);
     });
 
@@ -923,66 +751,328 @@ describe('Mobian RTD Submodule', function () {
   });
 
   describe('makeMemoizedViewabilityFetch', function () {
-    it('should evict the oldest entry at the configured viewability cache size', async function () {
+    const response = JSON.stringify({ rows: {} });
+    const fileUrl = (suffix) => `https://vp-data.themobianprebid.ai/1/site-${suffix}.json`;
+
+    it('should evict the oldest file at the configured cache size', async function () {
       let fetchCount = 0;
       ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
-        callbacks.success(mockViewabilityResponse);
+        callbacks.success(response);
       });
       const maxSize = 3;
       const memoizedFetch = makeMemoizedViewabilityFetch(maxSize);
-      const pageUrl = (suffix) => `https://example.com/viewability-cache-size-${suffix}`;
 
       for (let i = 0; i < maxSize; i++) {
-        await memoizedFetch(pageUrl(i), 'ad-unit-1', 'gam_ad_unit');
+        await memoizedFetch(fileUrl(i));
       }
+      await memoizedFetch(fileUrl(0));
       expect(fetchCount).to.equal(maxSize);
 
-      await memoizedFetch(pageUrl('overflow'), 'ad-unit-1', 'gam_ad_unit');
-      expect(fetchCount).to.equal(maxSize + 1);
-
-      await memoizedFetch(pageUrl(0), 'ad-unit-1', 'gam_ad_unit');
+      await memoizedFetch(fileUrl('overflow'));
+      await memoizedFetch(fileUrl(0));
       expect(fetchCount).to.equal(maxSize + 2);
     });
 
-    it('should cache by full page URL, ad unit code, and placement source', async function () {
+    it('should share one request between concurrent calls for the same file', async function () {
       let fetchCount = 0;
       ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
-        callbacks.success(mockViewabilityResponse);
+        setTimeout(() => callbacks.success(response), 0);
       });
       const memoizedFetch = makeMemoizedViewabilityFetch();
-      const pageUrl = 'https://example.com/viewability-cache-page';
 
-      await memoizedFetch(pageUrl, 'ad-unit-1', 'gam_ad_unit');
-      await memoizedFetch(pageUrl, 'ad-unit-1', 'gam_ad_unit');
-      expect(fetchCount).to.equal(1, 'the same URL and ad unit should use the cached response');
-
-      await memoizedFetch(pageUrl, 'ad-unit-2', 'gam_ad_unit');
-      expect(fetchCount).to.equal(2, 'a different ad unit should trigger a fetch');
-
-      await memoizedFetch(pageUrl, 'ad-unit-1', 'other_source');
-      expect(fetchCount).to.equal(3, 'a different placement source should trigger a fetch');
-
-      await memoizedFetch(`${pageUrl}-next`, 'ad-unit-1', 'gam_ad_unit');
-      expect(fetchCount).to.equal(4, 'a different URL should trigger a fetch');
+      const first = memoizedFetch(fileUrl(1));
+      const second = memoizedFetch(fileUrl(1));
+      expect(second).to.equal(first);
+      expect(await first).to.deep.equal({});
+      expect(fetchCount).to.equal(1);
     });
 
-    it('should retry a failed viewability request on a later invocation', async function () {
+    it('should resolve undefined for a failed request and retry on the next call', async function () {
       let fetchCount = 0;
       ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
         fetchCount++;
         if (fetchCount === 1) {
           callbacks.error(new Error('viewability failure'));
         } else {
-          callbacks.success(mockViewabilityResponse);
+          callbacks.success(response);
         }
       });
       const memoizedFetch = makeMemoizedViewabilityFetch();
 
-      expect(await memoizedFetch(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.deep.equal({});
-      expect(await memoizedFetch(getPageUrl(), 'ad-unit-1', 'gam_ad_unit')).to.deep.equal(mockViewabilityData);
+      expect(await memoizedFetch(fileUrl(1))).to.equal(undefined);
+      expect(await memoizedFetch(fileUrl(1))).to.deep.equal({});
       expect(fetchCount).to.equal(2);
+    });
+  });
+
+  describe('viewability targeting', function () {
+    const COSMO_URL = 'https://vp-data.themobianprebid.ai/36117602/hdm-cosmopolitan.json';
+    const SEATTLE_URL = 'https://vp-data.themobianprebid.ai/36117602/hnp-seattlepi.com.json';
+    const ATF = '/36117602/hdm-cosmopolitan/homepage/atf';
+    const COSMO_ROWS = {
+      [ATF]: { d: [0.3041, 30, 'high'], m: [0.2453, 20, 'high'] },
+      [`${ATF}/gpt_lb_a`]: { d: [0.4291, 40, 'high'] },
+    };
+    const SEATTLE_ROWS = {
+      '/36117602/hnp-seattlepi.com/news/atf/gpt_x': { d: [0.6, 60, 'low'] },
+    };
+    const rawConfig = { params: { advertiserTargeting: [VP] } };
+
+    let originalGoogletag;
+    let slots;
+    let responses;
+    let requestedUrls;
+    let detectDeviceTypeStub;
+    let getViewabilityDataStub;
+    let callback;
+
+    function setSlots(...paths) {
+      slots = paths.map(([path, elementId]) => ({ getAdUnitPath: () => path, getSlotElementId: () => elementId }));
+    }
+
+    async function runAuction(adUnitCodes, config = rawConfig) {
+      bidReqConfig.adUnits = adUnitCodes.map((code) => ({ code }));
+      mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, callback, config);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    function prediction(result, [probability, bucketPercent, confidence], prefix = 'mobian') {
+      return {
+        [`${prefix}_vp_result`]: result,
+        [`${prefix}_vp_likely_viewable`]: String(probability >= 0.5),
+        [`${prefix}_vp_probability`]: String(probability),
+        [`${prefix}_vp_bucket_percent`]: String(bucketPercent),
+        [`${prefix}_vp_confidence`]: confidence,
+      };
+    }
+
+    beforeEach(function () {
+      originalGoogletag = window.googletag;
+      window.googletag = { pubads: () => ({ getSlots: () => slots }) };
+      setSlots([ATF, 'gpt_lb_a'], [ATF, 'gpt_gal_a'], ['/36117602/hnp-seattlepi.com/news/atf', 'gpt_x']);
+      responses = {
+        [COSMO_URL]: JSON.stringify({ rows: COSMO_ROWS }),
+        [SEATTLE_URL]: JSON.stringify({ rows: SEATTLE_ROWS }),
+      };
+      requestedUrls = [];
+      // a URL missing from `responses` stays pending
+      ajaxStub = sinon.stub(dep, 'ajaxBuilder').returns(function (url, callbacks) {
+        requestedUrls.push(url);
+        const response = responses[url];
+        if (response instanceof Error) {
+          callbacks.error(response);
+        } else if (response !== undefined) {
+          callbacks.success(response);
+        }
+      });
+      detectDeviceTypeStub = sinon.stub(dep, 'detectDeviceType').returns(2);
+      getViewabilityDataStub = sinon.stub(dep, 'getViewabilityData').callsFake(makeMemoizedViewabilityFetch());
+      viewabilityTargetingData.clear();
+      callback = sinon.spy();
+    });
+
+    afterEach(function () {
+      window.googletag = originalGoogletag;
+      detectDeviceTypeStub.restore();
+      getViewabilityDataStub.restore();
+      viewabilityTargetingData.clear();
+    });
+
+    it('should request one file per GAM network and site', async function () {
+      await runAuction(['gpt_lb_a', 'gpt_gal_a', 'gpt_lb_a', 'gpt_x']);
+
+      expect(requestedUrls).to.deep.equal([COSMO_URL, SEATTLE_URL]);
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should set string targeting from the slot row', async function () {
+      await runAuction(['gpt_lb_a']);
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: {
+          mobian_vp_result: '3',
+          mobian_vp_likely_viewable: 'false',
+          mobian_vp_probability: '0.4291',
+          mobian_vp_bucket_percent: '40',
+          mobian_vp_confidence: 'high',
+        },
+      });
+      expect(setKeyValueSpy.called).to.equal(false);
+    });
+
+    [
+      { code: 'gpt_lb_a', device: 2, expected: prediction('3', [0.4291, 40, 'high']), description: 'slot row has the device' },
+      { code: 'gpt_gal_a', device: 2, expected: prediction('2', [0.3041, 30, 'high']), description: 'no slot row, path row has the device' },
+      { code: 'gpt_lb_a', device: 4, expected: prediction('4', [0.2453, 20, 'high']), description: 'slot row lacks the device, path row has it' },
+      { code: 'gpt_lb_a', device: 5, expected: { mobian_vp_result: '5' }, description: 'slot row exists, neither row has the device' },
+      { code: 'gpt_gal_a', device: 5, expected: { mobian_vp_result: '5' }, description: 'no slot row, path row lacks the device' },
+      { code: 'gpt_gal_a', device: 3, expected: { mobian_vp_result: '5' }, description: 'other device with no o predictions' },
+    ].forEach(({ code, device, expected, description }) => {
+      it(`should return result ${expected.mobian_vp_result} when ${description}`, async function () {
+        detectDeviceTypeStub.returns(device);
+        await runAuction([code]);
+
+        expect(mobianBrandSafetySubmodule.getTargetingData([code], rawConfig)).to.deep.equal({ [code]: expected });
+      });
+    });
+
+    it('should return result 5 when neither row exists', async function () {
+      setSlots(['/36117602/hdm-cosmopolitan/article/atf', 'gpt_lb_a']);
+      await runAuction(['gpt_lb_a']);
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '5' },
+      });
+    });
+
+    [[2, 'd'], [4, 'm'], [5, 't'], [3, 'o']].forEach(([deviceType, device]) => {
+      it(`should map device type ${deviceType} to ${device}`, async function () {
+        const rows = { [ATF]: { d: [0.1, 10, 'd'], m: [0.2, 20, 'm'], t: [0.3, 30, 't'], o: [0.4, 40, 'o'] } };
+        responses[COSMO_URL] = JSON.stringify({ rows });
+        detectDeviceTypeStub.returns(deviceType);
+        await runAuction(['gpt_gal_a']);
+
+        expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_gal_a'], rawConfig)).to.deep.equal({
+          gpt_gal_a: prediction('2', rows[ATF][device]),
+        });
+      });
+    });
+
+    [
+      { tuple: [0, 0, 'low'], likelyViewable: 'false' },
+      { tuple: [0.4999, 45, 'low'], likelyViewable: 'false' },
+      { tuple: [0.5, 50, 'low'], likelyViewable: 'true' },
+    ].forEach(({ tuple, likelyViewable }) => {
+      it(`should set likely_viewable to ${likelyViewable} for probability ${tuple[0]} with a custom prefix`, async function () {
+        const config = { params: { prefix: 'custom', advertiserTargeting: [VP] } };
+        responses[COSMO_URL] = JSON.stringify({ rows: { [ATF]: { d: tuple } } });
+        await runAuction(['gpt_gal_a'], config);
+
+        const targeting = mobianBrandSafetySubmodule.getTargetingData(['gpt_gal_a'], config);
+        expect(targeting).to.deep.equal({ gpt_gal_a: prediction('2', tuple, 'custom') });
+        expect(targeting.gpt_gal_a.custom_vp_likely_viewable).to.equal(likelyViewable);
+      });
+    });
+
+    [
+      { setup: () => { window.googletag = undefined; }, description: 'GPT is unavailable' },
+      { setup: () => setSlots(), description: 'no slot matches the code' },
+      { setup: () => setSlots(['/36117602', 'gpt_lb_a']), description: 'the path has no site' },
+    ].forEach(({ setup, description }) => {
+      it(`should make no request and return result 6 when ${description}`, async function () {
+        setup();
+        await runAuction(['gpt_lb_a']);
+
+        expect(requestedUrls).to.deep.equal([]);
+        expect(callback.calledOnce).to.equal(true);
+        expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+          gpt_lb_a: { mobian_vp_result: '6' },
+        });
+      });
+    });
+
+    [
+      { response: new Error('viewability failure'), description: 'a failed request' },
+      { response: '{invalid', description: 'invalid JSON' },
+      { response: JSON.stringify({}), description: 'a response without rows' },
+    ].forEach(({ response, description }) => {
+      it(`should return result 1 after ${description} and refetch on the next auction`, async function () {
+        responses[COSMO_URL] = response;
+        await runAuction(['gpt_lb_a']);
+
+        expect(callback.calledOnce).to.equal(true);
+        expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+          gpt_lb_a: { mobian_vp_result: '1' },
+        });
+
+        responses[COSMO_URL] = JSON.stringify({ rows: COSMO_ROWS });
+        await runAuction(['gpt_lb_a']);
+
+        expect(requestedUrls).to.deep.equal([COSMO_URL, COSMO_URL]);
+        expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+          gpt_lb_a: prediction('3', [0.4291, 40, 'high']),
+        });
+      });
+    });
+
+    it('should cache empty rows and return result 5', async function () {
+      responses[COSMO_URL] = JSON.stringify({ rows: {} });
+      await runAuction(['gpt_lb_a']);
+      await runAuction(['gpt_lb_a']);
+
+      expect(requestedUrls).to.deep.equal([COSMO_URL]);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '5' },
+      });
+    });
+
+    it('should return result 1 while the file is pending and not request it from getTargetingData', async function () {
+      delete responses[COSMO_URL];
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a', 'gpt_gal_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '1' },
+        gpt_gal_a: { mobian_vp_result: '1' },
+      });
+      expect(requestedUrls).to.deep.equal([]);
+
+      await runAuction(['gpt_lb_a']);
+
+      expect(requestedUrls).to.deep.equal([COSMO_URL]);
+      expect(callback.called).to.equal(false);
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '1' },
+      });
+    });
+
+    [
+      { params: { advertiserTargeting: true }, description: 'includeViewabilityTargeting is not set' },
+      { params: { advertiserTargeting: [RISK] }, description: 'vp is not in the targeting array' },
+    ].forEach(({ params, description }) => {
+      it(`should make no request and return no targeting when ${description}`, async function () {
+        const getContextDataStub = sinon.stub(dep, 'getContextData').resolves({});
+        try {
+          await runAuction(['gpt_lb_a'], { params });
+
+          expect(requestedUrls).to.deep.equal([]);
+          expect(callback.calledOnce).to.equal(true);
+          expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a'], { params })).to.deep.equal({});
+        } finally {
+          getContextDataStub.restore();
+        }
+      });
+    });
+
+    it('should keep targeting and context data from other requests when one file fails', async function () {
+      const getContextDataStub = sinon.stub(dep, 'getContextData').resolves(mockContextData);
+      try {
+        const config = { params: { includeViewabilityTargeting: true, advertiserTargeting: true } };
+        responses[COSMO_URL] = new Error('viewability failure');
+        await runAuction(['gpt_lb_a', 'gpt_x'], config);
+
+        expect(callback.calledOnce).to.equal(true);
+        expect(bidReqConfig.ortb2Fragments.global.site.ext.data).to.deep.equal(mockContextKeyValues);
+        expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a', 'gpt_x'], config)).to.deep.equal({
+          gpt_lb_a: { mobian_vp_result: '1' },
+          gpt_x: prediction('3', [0.6, 60, 'low']),
+        });
+      } finally {
+        getContextDataStub.restore();
+      }
+    });
+
+    it('should look up slots at targeting time when a code moves or is added', async function () {
+      setSlots([ATF, 'gpt_lb_a']);
+      await runAuction(['gpt_lb_a']);
+
+      setSlots(['/36117602/hdm-cosmopolitan/article/atf', 'gpt_lb_a'], [ATF, 'gpt_gal_a']);
+
+      expect(mobianBrandSafetySubmodule.getTargetingData(['gpt_lb_a', 'gpt_gal_a'], rawConfig)).to.deep.equal({
+        gpt_lb_a: { mobian_vp_result: '5' },
+        gpt_gal_a: prediction('2', [0.3041, 30, 'high']),
+      });
+      expect(requestedUrls).to.deep.equal([COSMO_URL]);
     });
   });
 
