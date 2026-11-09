@@ -1,5 +1,6 @@
 import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, videoImpressionVerifierFactory, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
+import { updateVast } from 'src/videoCache.js';
 
 let trackerMock;
 
@@ -200,7 +201,7 @@ describe('Cached Video Impression Verifier', function () {
     expect(bid.vastUrl).to.equal(expectedVastUrl);
   });
 
-  it('should keep the bidder vast trackers in the vast wrapper built from the vast url', function () {
+  it('should leave the bidder vast trackers for core to add to the vast wrapper built from the vast url', function () {
     const bidderImpressionUrl = 'https://bidder.example.com/impression';
     const bidderErrorUrl = 'https://bidder.example.com/error';
     const bidderStartUrl = 'https://bidder.example.com/start';
@@ -214,16 +215,20 @@ describe('Cached Video Impression Verifier', function () {
         trackingEvents: [{ event: 'start', url: bidderStartUrl }]
       }
     };
+    const adUnit = adUnitWithTracking({
+      impression: { getUrl: () => impressionUrl, id: 'impression_id' },
+      error: { getUrl: () => errorUrl }
+    });
 
-    verifier.trackBid(bid);
+    verifier.trackBid(bid, adUnit);
+    expect(parseVast(bid.vastXml).querySelectorAll('Wrapper > Impression')).to.have.lengthOf(1);
+    updateVast(bid);
 
     const vastDoc = parseVast(bid.vastXml);
-    const impressionUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Impression')).map(node => node.textContent);
-    const errorUrls = Array.from(vastDoc.querySelectorAll('Wrapper > Error')).map(node => node.textContent);
-    const startTracker = vastDoc.querySelector('Wrapper Creatives Creative Linear TrackingEvents Tracking[event="start"]');
-    expect(impressionUrls).to.deep.equal([bidderImpressionUrl]);
-    expect(errorUrls).to.deep.equal([bidderErrorUrl]);
-    expect(startTracker?.textContent).to.equal(bidderStartUrl);
+    const urls = selector => Array.from(vastDoc.querySelectorAll(selector), node => node.textContent);
+    expect(urls('Wrapper > Impression')).to.deep.equal([impressionUrl, bidderImpressionUrl]);
+    expect(urls('Wrapper > Error')).to.deep.equal([errorUrl, bidderErrorUrl]);
+    expect(urls('Wrapper Creatives Creative Linear TrackingEvents Tracking[event="start"]')).to.deep.equal([bidderStartUrl]);
   });
 
   it('should append the impression and error trackers from the ad unit tracking config', function () {

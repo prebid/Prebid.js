@@ -1,11 +1,7 @@
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { attributeValue, cdata } from '../../../src/utils/xml.js';
-import { getVastTrackerNodes } from '../../../src/utils/vast.js';
 
-export { getLinearTrackingCreativesNode, getTrackingNode } from '../../../src/utils/vast.js';
-
-export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl, bidderVastTrackers) {
-  const { impressions, errors, creatives } = getVastTrackerNodes(bidderVastTrackers);
+export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
   let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);
 
   if (adTagUrl) {
@@ -16,13 +12,9 @@ export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, er
     wrapperBody += getImpressionNode(impressionUrl, impressionId);
   }
 
-  wrapperBody += impressions;
-
   if (errorUrl) {
     wrapperBody += getErrorNode(errorUrl);
   }
-
-  wrapperBody += errors + creatives;
 
   return getVastNode(getAdNode(getWrapperNode(wrapperBody), adId), '4.2');
 }

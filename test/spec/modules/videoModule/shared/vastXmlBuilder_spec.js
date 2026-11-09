@@ -1,13 +1,9 @@
 import {
   buildVastWrapper, getVastNode, getAdNode, getWrapperNode, getAdSystemNode,
-  getAdTagUriNode, getErrorNode, getImpressionNode, getLinearTrackingCreativesNode, getTrackingNode
+  getAdTagUriNode, getErrorNode, getImpressionNode
 } from 'libraries/video/shared/vastXmlBuilder.js';
 import { expect } from 'chai';
 import { getGlobal } from '../../../../../src/prebidGlobal.js';
-
-function compactXml(indentedXml) {
-  return indentedXml.trim().replace(/>\s+</g, '><');
-}
 
 describe('buildVastWrapper', function () {
   it('should include impression and error nodes when requested', function () {
@@ -37,142 +33,6 @@ describe('buildVastWrapper', function () {
       'http://wwww.testUrl.com/redirectUrl.xml',
     );
     expect(vastXml).to.be.equal(`<VAST version="4.2"><Ad id="adId123"><Wrapper><AdSystem version="${getGlobal().version}">Prebid org</AdSystem><VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI></Wrapper></Ad></VAST>`);
-  });
-  it('should include the bidder\'s vast trackers', function () {
-    const vastXml = buildVastWrapper(
-      'adId123',
-      'http://wwww.testUrl.com/redirectUrl.xml',
-      'http://wwww.testUrl.com/impression.jpg',
-      'impressionId123',
-      'http://wwww.testUrl.com/error.jpg',
-      {
-        impression: ['http://wwww.testUrl.com/bidderImpression.jpg'],
-        error: ['http://wwww.testUrl.com/bidderError.jpg'],
-        trackingEvents: [{ event: 'start', url: 'http://wwww.testUrl.com/start.jpg' }]
-      }
-    );
-    expect(vastXml).to.be.equal(compactXml(`
-      <VAST version="4.2">
-        <Ad id="adId123">
-          <Wrapper>
-            <AdSystem version="${getGlobal().version}">Prebid org</AdSystem>
-            <VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI>
-            <Impression id="impressionId123"><![CDATA[http://wwww.testUrl.com/impression.jpg]]></Impression>
-            <Impression><![CDATA[http://wwww.testUrl.com/bidderImpression.jpg]]></Impression>
-            <Error><![CDATA[http://wwww.testUrl.com/error.jpg]]></Error>
-            <Error><![CDATA[http://wwww.testUrl.com/bidderError.jpg]]></Error>
-            <Creatives>
-              <Creative>
-                <Linear>
-                  <TrackingEvents>
-                    <Tracking event="start"><![CDATA[http://wwww.testUrl.com/start.jpg]]></Tracking>
-                  </TrackingEvents>
-                </Linear>
-              </Creative>
-            </Creatives>
-          </Wrapper>
-        </Ad>
-      </VAST>
-    `));
-  });
-
-  it('should omit the tracker nodes when the vast trackers are empty', function () {
-    const vastXml = buildVastWrapper(
-      'adId123',
-      'http://wwww.testUrl.com/redirectUrl.xml',
-      undefined,
-      undefined,
-      undefined,
-      { impression: [], error: [], trackingEvents: [] }
-    );
-    expect(vastXml).to.be.equal(compactXml(`
-      <VAST version="4.2">
-        <Ad id="adId123">
-          <Wrapper>
-            <AdSystem version="${getGlobal().version}">Prebid org</AdSystem>
-            <VASTAdTagURI><![CDATA[http://wwww.testUrl.com/redirectUrl.xml]]></VASTAdTagURI>
-          </Wrapper>
-        </Ad>
-      </VAST>
-    `));
-  });
-  it('should include bidder trackers alongside the ad server trackers', function () {
-    const trackers = {
-      impression: ['https://bidder.example/impression1', 'https://bidder.example/impression2'],
-      error: ['https://bidder.example/error'],
-      trackingEvents: [
-        { event: 'start', url: 'https://bidder.example/start' },
-        { event: 'complete', url: 'https://bidder.example/complete' }
-      ]
-    };
-    const xml = buildVastWrapper('ad', 'https://bidder.example/vast',
-      'https://publisher.example/impression', 'imp-id', 'https://publisher.example/error', trackers);
-    const doc = new DOMParser().parseFromString(xml, 'text/xml');
-    const urls = selector => Array.from(doc.querySelectorAll(selector), node => node.textContent);
-
-    expect(urls('Wrapper > Impression')).to.eql(['https://publisher.example/impression', ...trackers.impression]);
-    expect(doc.querySelector('Impression').getAttribute('id')).to.equal('imp-id');
-    expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', ...trackers.error]);
-    expect(urls('Creatives > Creative > Linear > TrackingEvents > Tracking')).to.eql(trackers.trackingEvents.map(t => t.url));
-    expect(Array.from(doc.querySelectorAll('Tracking'), node => node.getAttribute('event'))).to.eql(['start', 'complete']);
-  });
-
-  it('should omit empty bidder tracker nodes', function () {
-    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null,
-      { impression: [], error: [], trackingEvents: [] });
-    const doc = new DOMParser().parseFromString(xml, 'text/xml');
-
-    expect(doc.querySelectorAll('Impression, Error, Creatives')).to.have.lengthOf(0);
-  });
-
-  it('should drop bidder tracking events that have no event', function () {
-    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null, {
-      trackingEvents: [
-        { event: '', url: 'https://bidder.example/empty' },
-        { url: 'https://bidder.example/missing' },
-        { event: 'start', url: 'https://bidder.example/start' }
-      ]
-    });
-    const doc = new DOMParser().parseFromString(xml, 'text/xml');
-    const tracking = Array.from(doc.querySelectorAll('Tracking'), node => [node.getAttribute('event'), node.textContent]);
-
-    expect(tracking).to.eql([['start', 'https://bidder.example/start']]);
-  });
-
-  it('should omit Creatives when no bidder tracking event has an event', function () {
-    const xml = buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null,
-      { trackingEvents: [{ event: '', url: 'https://bidder.example/empty' }] });
-    const doc = new DOMParser().parseFromString(xml, 'text/xml');
-
-    expect(doc.querySelectorAll('Creatives')).to.have.lengthOf(0);
-  });
-});
-
-describe('getLinearTrackingCreativesNode', function () {
-  it('should return well formed Creatives node with one Tracking node per tracking event', function () {
-    const creativesNode = getLinearTrackingCreativesNode([
-      { event: 'start', url: 'http://wwww.testUrl.com/start.jpg' },
-      { event: 'complete', url: 'http://wwww.testUrl.com/complete.jpg' }
-    ]);
-    expect(creativesNode).to.be.equal(compactXml(`
-      <Creatives>
-        <Creative>
-          <Linear>
-            <TrackingEvents>
-              <Tracking event="start"><![CDATA[http://wwww.testUrl.com/start.jpg]]></Tracking>
-              <Tracking event="complete"><![CDATA[http://wwww.testUrl.com/complete.jpg]]></Tracking>
-            </TrackingEvents>
-          </Linear>
-        </Creative>
-      </Creatives>
-    `));
-  });
-});
-
-describe('getTrackingNode', function () {
-  it('should return well formed Tracking node', function () {
-    const trackingNode = getTrackingNode('midpoint', 'http://wwww.testUrl.com/midpoint.jpg');
-    expect(trackingNode).to.be.equal('<Tracking event="midpoint"><![CDATA[http://wwww.testUrl.com/midpoint.jpg]]></Tracking>');
   });
 });
 
@@ -283,13 +143,6 @@ describe('values containing XML syntax', function () {
     expect(ad.getAttribute('id')).to.equal(adId);
   });
 
-  it('does not let a tracking event add attributes to the Tracking node', function () {
-    const event = 'start" foo="bar';
-    const tracking = parse(getTrackingNode(event, 'http://wwww.testUrl.com/t.jpg')).getElementsByTagName('Tracking')[0];
-    expect(tracking.getAttributeNames()).to.eql(['event']);
-    expect(tracking.getAttribute('event')).to.equal(event);
-  });
-
   it('keeps the ad tag uri in a single VASTAdTagURI element', function () {
     const uri = 'http://wwww.testUrl.com/r.xml]]></VASTAdTagURI><Impression><![CDATA[http://evil.example/x';
     const doc = parse(buildVastWrapper('adId123', uri));
@@ -297,23 +150,5 @@ describe('values containing XML syntax', function () {
     expect(uris).to.have.lengthOf(1);
     expect(uris[0].textContent).to.equal(uri);
     expect(doc.getElementsByTagName('Impression')).to.have.lengthOf(0);
-  });
-
-  it('keeps bidder tracker URLs and event names as text', function () {
-    const event = 'start" foo="bar&<';
-    const doc = parse(buildVastWrapper('ad', 'https://bidder.example/vast', null, null, null, {
-      impression: [BREAKOUT],
-      error: [BREAKOUT],
-      trackingEvents: [{ event, url: BREAKOUT }]
-    }));
-
-    ['Impression', 'Error', 'Tracking'].forEach(tag => {
-      const nodes = doc.getElementsByTagName(tag);
-      expect(nodes).to.have.lengthOf(1);
-      expect(nodes[0].textContent).to.equal(BREAKOUT);
-    });
-    const tracking = doc.querySelector('Tracking');
-    expect(tracking.getAttributeNames()).to.eql(['event']);
-    expect(tracking.getAttribute('event')).to.equal(event);
   });
 });

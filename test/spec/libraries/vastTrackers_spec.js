@@ -1,14 +1,14 @@
 import {
   getVastTrackers,
-  insertVastTrackers,
   registerVastTrackers,
   reset, updateVastHook,
-  disable,
-  getTrackersFromBidResponse
+  enable,
+  disable
 } from 'libraries/vastTrackers/vastTrackers.js';
+import { insertVastTrackers } from '../../../src/utils/vast.js';
 import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { store } from '../../../src/videoCache.js';
+import { store, updateVast } from '../../../src/videoCache.js';
 import { cachedVideoImpressionVerifier, tracker as bidTracker } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
@@ -237,93 +237,9 @@ describe('vast trackers', () => {
     });
   });
 
-  describe('vastImpUrl fallback support', () => {
-    beforeEach(() => {
-      reset();
-    });
-
-    it('should include vastImpUrl from bid response as string', function () {
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'emptyTest', createEmptyTracker());
-
-      const bidWithImpUrl = {
-        ...bid,
-        vastImpUrl: 'https://bidder.com/impression'
-      };
-
-      const trackers = getVastTrackers(bidWithImpUrl, { index });
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.include('https://bidder.com/impression');
-    });
-
-    it('should include vastImpUrl from bid response as array', function () {
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'emptyTest', createEmptyTracker());
-
-      const bidWithImpUrls = {
-        ...bid,
-        vastImpUrl: ['https://bidder1.com/impression', 'https://bidder2.com/impression']
-      };
-
-      const trackers = getVastTrackers(bidWithImpUrls, { index });
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.include('https://bidder1.com/impression');
-      expect(trackers.impression).to.include('https://bidder2.com/impression');
-    });
-
-    it('should ignore empty vastImpUrl', function () {
-      const emptyTracker = sinon.stub().callsFake(function () {
-        return {
-          impression: ['https://analytics.com/impression'],
-          error: [],
-          trackingEvents: []
-        };
-      });
-      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'emptyImpTest', emptyTracker);
-
-      const bidWithEmptyImpUrl = {
-        ...bid,
-        vastImpUrl: ''
-      };
-
-      const trackers = getVastTrackers(bidWithEmptyImpUrl, { index });
-      expect(trackers.impression).to.have.lengthOf(1);
-      expect(trackers.impression).to.include('https://analytics.com/impression');
-    });
-
-    it('getTrackersFromBidResponse should include string vastImpUrl in impression', function () {
-      const trackers = getTrackersFromBidResponse({ vastImpUrl: 'https://bidder.com/impression' });
-
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.have.lengthOf(1);
-      expect(trackers.impression).to.include('https://bidder.com/impression');
-    });
-
-    it('getTrackersFromBidResponse should include array vastImpUrl in impression', function () {
-      const trackers = getTrackersFromBidResponse({ vastImpUrl: ['https://bidder1.com/imp', 'https://bidder2.com/imp'] });
-
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.have.lengthOf(2);
-      expect(trackers.impression).to.include('https://bidder1.com/imp');
-      expect(trackers.impression).to.include('https://bidder2.com/imp');
-    });
-
-    it('getTrackersFromBidResponse should return null when no trackers present', function () {
-      const trackers = getTrackersFromBidResponse({});
-
-      expect(trackers).to.be.null;
-    });
-
-    it('getTrackersFromBidResponse should merge vastTrackers and vastImpUrl', function () {
-      const trackers = getTrackersFromBidResponse({
-        vastTrackers: {
-          impression: ['https://tracker.com/imp']
-        },
-        vastImpUrl: 'https://bidder.com/imp'
-      });
-
-      expect(trackers.impression).to.have.lengthOf(2);
-      expect(trackers.impression).to.include('https://tracker.com/imp');
-      expect(trackers.impression).to.include('https://bidder.com/imp');
-    });
+  it('should leave vastImpUrl for core to add', function () {
+    const trackers = getVastTrackers({ ...bid, vastImpUrl: 'https://bidder.com/impression' }, { index });
+    expect(trackers.impression).to.not.include('https://bidder.com/impression');
   });
 
   describe('vastTrackers from bid response support', () => {
@@ -359,134 +275,28 @@ describe('vast trackers', () => {
       expect(trackers.error).to.have.lengthOf(2);
       expect(trackers.trackingEvents).to.have.lengthOf(2);
     });
-
-    it('getTrackersFromBidResponse should return normalized object', function () {
-      const bidWithTrackers = {
-        vastTrackers: {
-          impression: ['https://imp1.com', 'https://imp2.com'],
-          error: ['https://error.com'],
-          trackingEvents: [{ event: 'start', url: 'https://start.com' }]
-        }
-      };
-
-      const trackers = getTrackersFromBidResponse(bidWithTrackers);
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.have.lengthOf(2);
-      expect(trackers.error).to.have.lengthOf(1);
-      expect(trackers.trackingEvents).to.have.lengthOf(1);
-    });
-
-    it('getTrackersFromBidResponse should return null when no vastTrackers', function () {
-      const trackers = getTrackersFromBidResponse({});
-      expect(trackers).to.be.null;
-    });
-
-    it('getTrackersFromBidResponse should handle partial vastTrackers object', function () {
-      const bidWithPartialTrackers = {
-        vastTrackers: {
-          impression: ['https://imp.com']
-          // error and trackingEvents not provided
-        }
-      };
-
-      const trackers = getTrackersFromBidResponse(bidWithPartialTrackers);
-      expect(trackers).to.be.an('object');
-      expect(trackers.impression).to.have.lengthOf(1);
-      expect(trackers.error).to.be.an('array').that.is.empty;
-      expect(trackers.trackingEvents).to.be.an('array').that.is.empty;
-    });
-  });
-
-  describe('trackers already in the vastXml', () => {
-    const existingUrl = 'https://bidder.com/existing';
-    const newUrl = 'https://bidder.com/new';
-
-    function parse(vastXml) {
-      return new DOMParser().parseFromString(vastXml, 'text/xml');
-    }
-
-    function textsOf(doc, selector) {
-      return Array.from(doc.querySelectorAll(selector)).map(node => node.textContent);
-    }
-
-    it('should not insert an impression url the wrapper already has', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Impression><![CDATA[${existingUrl}]]></Impression></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [existingUrl, newUrl], error: [], trackingEvents: [] }, vastXml);
-
-      expect(textsOf(parse(result), 'Wrapper > Impression')).to.deep.equal([existingUrl, newUrl]);
-    });
-
-    it('should not insert an error url the wrapper already has', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Error><![CDATA[${existingUrl}]]></Error></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [], error: [existingUrl, newUrl], trackingEvents: [] }, vastXml);
-
-      expect(textsOf(parse(result), 'Wrapper > Error')).to.deep.equal([existingUrl, newUrl]);
-    });
-
-    it('should not insert a tracking event the linear element already has', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl}]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'start', url: existingUrl }] }, vastXml);
-
-      expect(textsOf(parse(result), 'Tracking[event="start"]')).to.deep.equal([existingUrl]);
-    });
-
-    it('should not insert a url the wrapper already has when either copy has surrounding whitespace', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Impression><![CDATA[ ${existingUrl}]]></Impression><Error><![CDATA[${existingUrl}]]></Error></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [`${existingUrl} `], error: [`${existingUrl} `], trackingEvents: [] }, vastXml);
-
-      expect(textsOf(parse(result), 'Wrapper > Impression')).to.have.lengthOf(1);
-      expect(textsOf(parse(result), 'Wrapper > Error')).to.have.lengthOf(1);
-    });
-
-    it('should not insert a tracking event the linear element already has when the url has surrounding whitespace', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl} ]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'start', url: `${existingUrl} ` }] }, vastXml);
-
-      expect(textsOf(parse(result), 'Tracking[event="start"]')).to.have.lengthOf(1);
-    });
-
-    it('should not duplicate the bidder vast trackers already in the wrapper built by the video module', function () {
-      const bidderImpressionUrl = 'https://bidder.com/impression';
-      const bidderErrorUrl = 'https://bidder.com/error';
-      const bidderStartUrl = 'https://bidder.com/start';
-      const videoBid = {
-        ...bid,
-        adId: 'a1',
-        vastUrl: 'https://vast.example.com/tag',
-        vastTrackers: {
-          impression: [bidderImpressionUrl],
-          error: [bidderErrorUrl],
-          trackingEvents: [{ event: 'start', url: bidderStartUrl }]
-        }
-      };
-      cachedVideoImpressionVerifier(vastXmlEditorFactory(), bidTracker()).trackBid(videoBid);
-
-      updateVastHook({ index })(sinon.stub(), videoBid);
-
-      const doc = parse(videoBid.vastXml);
-      const countOf = (selector, url) => textsOf(doc, selector).filter(text => text === url).length;
-      expect(countOf('Wrapper > Impression', bidderImpressionUrl)).to.equal(1);
-      expect(countOf('Wrapper > Error', bidderErrorUrl)).to.equal(1);
-      expect(countOf('Tracking[event="start"]', bidderStartUrl)).to.equal(1);
-    });
-
-    it('should insert a tracking event whose url exists under a different event', function () {
-      const vastXml = `<VAST><Ad><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[${existingUrl}]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>`;
-
-      const result = insertVastTrackers({ impression: [], error: [], trackingEvents: [{ event: 'complete', url: existingUrl }] }, vastXml);
-
-      expect(textsOf(parse(result), 'Tracking[event="complete"]')).to.deep.equal([existingUrl]);
-    });
   });
 
   if (FEATURES.VIDEO) {
-    describe('cached tracker payload', () => {
-      it('should cache each bidder tracker once after video module verification and the tracker hook', () => {
+    it('should not modify vastXml', () => {
+      const vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
+      const videoBid = { ...bid, vastXml };
+      updateVastHook({ index })(sinon.stub(), videoBid);
+      expect(videoBid.vastXml).to.equal(vastXml);
+      expect(videoBid.vastTrackers.impression).to.eql(['https://vasttracking.mydomain.com/vast?cpm=1']);
+    });
+
+    describe('with core and the video module', () => {
+      function runUpdateVast(videoBid) {
+        disable();
+        try {
+          updateVastHook({ index })(updateVast, videoBid);
+        } finally {
+          enable();
+        }
+      }
+
+      it('should cache each tracker once', () => {
         const videoBid = { ...createBidWithTrackers(bid), adId: 'ad', adUnitCode: 'unit', vastUrl: 'https://bidder.example/vast' };
         const adUnit = {
           code: 'unit',
@@ -500,7 +310,7 @@ describe('vast trackers', () => {
           }
         };
         cachedVideoImpressionVerifier(vastXmlEditorFactory(), bidTracker()).trackBid(videoBid, adUnit);
-        updateVastHook({ index })(sinon.stub(), videoBid);
+        runUpdateVast(videoBid);
         const ajax = sinon.stub();
 
         store([videoBid], sinon.stub(), () => ajax);
@@ -510,72 +320,21 @@ describe('vast trackers', () => {
         expect(doc.querySelectorAll('parsererror')).to.have.lengthOf(0);
         const urls = selector => Array.from(doc.querySelectorAll(selector), node => node.textContent);
         expect(urls('Wrapper > Impression')).to.eql([
-          'https://publisher.example/impression', 'https://bidder.com/impression', 'https://vasttracking.mydomain.com/vast?cpm=1'
+          'https://publisher.example/impression', 'https://vasttracking.mydomain.com/vast?cpm=1', 'https://bidder.com/impression'
         ]);
         expect(doc.querySelector('Impression').getAttribute('id')).to.equal('imp-id');
         expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', 'https://bidder.com/error']);
         expect(urls('Tracking[event="start"]')).to.eql(['https://bidder.com/start']);
       });
+
+      it('should add vastImpUrl once', () => {
+        const videoBid = { ...bid, vastUrl: 'https://bidder.example/vast', vastImpUrl: 'https://bidder.com/legacy' };
+        runUpdateVast(videoBid);
+        const doc = new DOMParser().parseFromString(videoBid.vastXml, 'text/xml');
+        expect(Array.from(doc.querySelectorAll('Impression'), node => node.textContent)).to.eql([
+          'https://vasttracking.mydomain.com/vast?cpm=1', 'https://bidder.com/legacy'
+        ]);
+      });
     });
   }
-
-  // insertVastTrackers builds nodes with DOM APIs rather than by string concatenation, which is
-  // what stops a tracker value from altering the structure of the document it is placed in. These
-  // assert the resulting structure, so they hold for any implementation that keeps that property.
-  describe('tracker values containing XML syntax', () => {
-    const WRAPPER = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
-    // ']]>' ends a CDATA section; the text after it would otherwise be parsed as markup.
-    const BREAKOUT = 'https://tracking.mydomain.com/a]]></Impression><Impression><![CDATA[https://evil.example/pwn';
-
-    function insert(trackers, vastXml = WRAPPER) {
-      const doc = new DOMParser().parseFromString(
-        insertVastTrackers({ impression: [], error: [], trackingEvents: [], ...trackers }, vastXml),
-        'text/xml'
-      );
-      expect(doc.getElementsByTagName('parsererror')).to.have.lengthOf(0);
-      return doc;
-    }
-
-    // A value that cannot be represented is allowed to be left out, but must never appear as
-    // extra structure - hence `at.most` rather than an exact count.
-    function expectNoExtra(doc, tagName, value) {
-      const elements = Array.from(doc.getElementsByTagName(tagName));
-      expect(elements).to.have.lengthOf.at.most(1);
-      elements.forEach(el => expect(el.textContent).to.equal(value));
-    }
-
-    it('does not let an impression url add an Impression element', () => {
-      expectNoExtra(insert({ impression: [BREAKOUT] }), 'Impression', BREAKOUT);
-    });
-
-    it('does not let an error url add an Error element', () => {
-      expectNoExtra(insert({ error: [BREAKOUT] }), 'Error', BREAKOUT);
-    });
-
-    it('does not let a tracking event url add a Tracking element', () => {
-      const doc = insert({ trackingEvents: [{ event: 'start', url: BREAKOUT }] });
-      expectNoExtra(doc, 'Tracking', BREAKOUT);
-    });
-
-    it('does not let a tracking event name add attributes to Tracking', () => {
-      const event = 'complete" onload="x';
-      const doc = insert({ trackingEvents: [{ event, url: 'https://tracking.mydomain.com/c' }] });
-      const tracking = doc.getElementsByTagName('Tracking');
-      expect(tracking).to.have.lengthOf(1);
-      expect(tracking[0].getAttributeNames()).to.eql(['event']);
-      expect(tracking[0].getAttribute('event')).to.equal(event);
-    });
-
-    it('returns the vastXml unchanged when it has no Wrapper or InLine element', () => {
-      const noWrapper = '<VAST><Ad></Ad></VAST>';
-      const trackers = { impression: ['https://tracking.mydomain.com/i'], error: [], trackingEvents: [] };
-      expect(insertVastTrackers(trackers, noWrapper)).to.equal(noWrapper);
-    });
-
-    it('returns the vastXml unchanged when it cannot be parsed', () => {
-      const malformed = 'not xml at all <<<';
-      const trackers = { impression: ['https://tracking.mydomain.com/i'], error: [], trackingEvents: [] };
-      expect(insertVastTrackers(trackers, malformed)).to.equal(malformed);
-    });
-  });
 });

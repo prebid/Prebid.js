@@ -14,7 +14,7 @@ import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
 import { cdata } from './utils/xml.js';
-import { getVastTrackerNodes, type VastTrackers } from './utils/vast.js';
+import { getBidVastTrackers, insertVastTrackers, type VastTrackers } from './utils/vast.js';
 import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
@@ -36,20 +36,15 @@ export type { VastTrackers } from './utils/vast.js';
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param uri The URI where the VAST content can be found.
- * @param trackers VAST trackers object containing impression, error, and trackingEvents
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri: string, trackers?: VastTrackers) {
-  const { impressions, errors, creatives } = getVastTrackerNodes(trackers);
-
+function wrapURI(uri: string) {
   return '<VAST version="3.0">' +
     '<Ad>' +
     '<Wrapper>' +
     '<AdSystem>prebid.org wrapper</AdSystem>' +
     '<VASTAdTagURI>' + cdata(uri) + '</VASTAdTagURI>' +
-    impressions +
-    errors +
-    (creatives || '<Creatives></Creatives>') +
+    '<Creatives></Creatives>' +
     '</Wrapper>' +
     '</Ad>' +
     '</VAST>';
@@ -305,7 +300,10 @@ export function handleVideoBidCaching({
 
 export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
   if (!bidResponse.vastXml && bidResponse.vastUrl) {
-    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers);
+    bidResponse.vastXml = wrapURI(bidResponse.vastUrl);
+  }
+  if (bidResponse.vastXml) {
+    bidResponse.vastXml = insertVastTrackers(getBidVastTrackers(bidResponse as VideoBidResponse), bidResponse.vastXml);
   }
 }, 'updateVast');
 
