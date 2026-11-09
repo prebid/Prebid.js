@@ -132,7 +132,7 @@ function getBidFloors(bid) {
 }
 
 function getEids(bid) {
-  const eids = bid.ortb2?.user?.ext?.eids;
+  const eids = Array.isArray(bid.userIdAsEids) ? bid.userIdAsEids : bid.ortb2?.user?.ext?.eids;
   return Array.isArray(eids) ? eids : [];
 }
 

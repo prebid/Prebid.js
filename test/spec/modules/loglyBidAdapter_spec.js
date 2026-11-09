@@ -281,6 +281,20 @@ describe('loglyBidAdapter', function () {
         expect(data.eids).to.deep.equal(eids);
       });
 
+      it('should send userIdAsEids instead of ortb2.user.ext.eids when both are present', function () {
+        const userIdAsEids = [{ source: 'intimatemerger.com', uids: [{ id: 'user-id-as-eids-imuid', atype: 1 }] }];
+        const bidRequest = {
+          ...utils.deepClone(bannerBidRequest),
+          userIdAsEids,
+          ortb2: { user: { ext: { eids: [{ source: 'intimatemerger.com', uids: [{ id: 'ortb2-imuid', atype: 1 }] }] } } }
+        };
+
+        const data = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+
+        expect(data.eids).to.deep.equal(userIdAsEids);
+        expect(data.im_uid).to.equal('user-id-as-eids-imuid');
+      });
+
       it('should send empty eids when ortb2 has no eids', function () {
         const data = JSON.parse(spec.buildRequests([bannerBidRequest], bidderRequest)[0].data);
 
