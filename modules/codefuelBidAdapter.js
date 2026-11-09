@@ -98,7 +98,8 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     }
-    const { seatbid, cur } = serverResponse.body;
+    // a no-bid response may have no seatbid
+    const { seatbid = [], cur } = serverResponse.body;
 
     const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid - 1] = bid;
@@ -119,7 +120,7 @@ export const spec = {
           ad: bidResponse.adm,
           width: bidResponse.w,
           height: bidResponse.h,
-          meta: { advertiserDomains: bid.adomain ? bid.adomain : [] }
+          meta: { advertiserDomains: bidResponse.adomain ? bidResponse.adomain : [] }
         };
         return bidObject;
       }
