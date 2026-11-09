@@ -292,7 +292,10 @@ function disclosureSummary(modules, summaryFileName) {
     })
     stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
     stream.push(null);
-  })
+  }).catch((err) => {
+    // fail the bundle task with the error, instead of leaving it waiting on a stream that never ends
+    stream.destroy(err);
+  });
   return stream;
 }
 
