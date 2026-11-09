@@ -1869,21 +1869,36 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
     });
 
-    it('should NOT gzip when disableGzipCompression is set', async () => {
+    Object.entries({
+      'standard': 'standard',
+      'this bidder': CODE,
+    }).forEach(([t, scope]) => {
+      it(`should NOT gzip when bidderSettings.${t}.disableGzipCompression is set`, async () => {
+        isGzipSupportedStub.resolves(true);
+        getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+        debugTurnedOnStub.returns(false);
+        getGlobal().bidderSettings = { [scope]: { disableGzipCompression: true } };
+
+        await runRequest({ ...MOCK_BIDS_REQUEST, bidderCode: CODE });
+
+        expect(gzipStub.called).to.be.false;
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
+        expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+      });
+    });
+
+    it('should still gzip when disableGzipCompression is set for a different bidder', async () => {
       isGzipSupportedStub.resolves(true);
+      gzipStub.resolves('compressedData');
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
-      config.setConfig({ disableGzipCompression: true });
-      try {
-        await runRequest();
-      } finally {
-        config.resetConfig();
-      }
+      getGlobal().bidderSettings = { otherBidder: { disableGzipCompression: true } };
 
-      expect(gzipStub.called).to.be.false;
-      expect(ajaxStub.calledOnce).to.be.true;
-      expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
-      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+      await runRequest({ ...MOCK_BIDS_REQUEST, bidderCode: CODE });
+
+      expect(gzipStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.include('gzip=1');
     });
 
     it('should NOT gzip when debugMode is enabled', async () => {

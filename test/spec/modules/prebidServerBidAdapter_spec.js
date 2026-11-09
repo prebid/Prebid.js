@@ -1093,24 +1093,6 @@ describe('S2S Adapter', function () {
         });
       });
 
-      it('should not gzip when disableGzipCompression is set', function(done) {
-        const s2sCfg = Object.assign({}, CONFIG, { endpointCompression: true });
-        config.setConfig({ s2sConfig: s2sCfg, disableGzipCompression: true });
-        const req = utils.deepClone(REQUEST);
-        req.s2sConfig = s2sCfg;
-        gzipSupportStub.resolves(true);
-        getParamStub.withArgs(DEBUG_MODE).returns('false');
-        debugStub.returns(false);
-
-        adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-
-        setTimeout(() => {
-          expect(gzipStub.called).to.be.false;
-          expect(server.requests[0].url).to.not.include('gzip=1');
-          done();
-        });
-      });
-
       it('should send the uncompressed payload when gzip compression rejects', function(done) {
         const s2sCfg = Object.assign({}, CONFIG, { endpointCompression: true });
         config.setConfig({ s2sConfig: s2sCfg });
