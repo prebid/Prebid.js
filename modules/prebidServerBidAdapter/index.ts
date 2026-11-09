@@ -641,7 +641,9 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       );
     };
 
-    const enableGZipCompression = s2sBidRequest.s2sConfig.endpointCompression && !requestData.customHeaders['Content-Encoding'];
+    const enableGZipCompression = s2sBidRequest.s2sConfig.endpointCompression &&
+      !config.getConfig('disableGzipCompression') &&
+      !requestData.customHeaders['Content-Encoding'];
     const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
     if (enableGZipCompression && debugMode) {
       logWarn('Skipping GZIP compression for PBS as debug mode is enabled');

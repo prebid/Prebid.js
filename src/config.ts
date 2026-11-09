@@ -253,8 +253,8 @@ export interface Config {
    */
   disableAjaxTimeout?: boolean;
   /**
-   * If true, never gzip outgoing requests, overriding any bidder's `endpointCompression`,
-   * `s2sConfig.endpointCompression`, and analytics adapters that compress.
+   * If true, never gzip bid requests, overriding any bidder's `endpointCompression` and
+   * `s2sConfig.endpointCompression`. Analytics adapters are not affected.
    */
   disableGzipCompression?: boolean;
   /**

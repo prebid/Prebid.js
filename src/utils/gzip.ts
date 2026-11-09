@@ -1,32 +1,21 @@
-import { config } from '../config.js';
-
-let probeResult: Promise<boolean>;
-
-async function probeGzipSupport() {
-  try {
-    if (typeof window.CompressionStream === 'undefined' || typeof window.DecompressionStream === 'undefined') {
+export const isGzipCompressionSupported: () => Promise<boolean> = (function () {
+  const result = (async () => {
+    try {
+      if (typeof window.CompressionStream === 'undefined' || typeof window.DecompressionStream === 'undefined') {
+        return false;
+      }
+      const probe = 'prebid-gzip-probe';
+      const compressed = await compressDataWithGZip(probe);
+      const decompressed = new Blob([compressed])
+        .stream()
+        .pipeThrough(new window.DecompressionStream('gzip'));
+      return await new Response(decompressed).text() === probe;
+    } catch (error) {
       return false;
     }
-    const probe = 'prebid-gzip-probe';
-    const compressed = await compressDataWithGZip(probe);
-    const decompressed = new Blob([compressed])
-      .stream()
-      .pipeThrough(new window.DecompressionStream('gzip'));
-    return await new Response(decompressed).text() === probe;
-  } catch (error) {
-    return false;
-  }
-}
-
-// Every compressing caller gates on this, so `disableGzipCompression` turns gzip off everywhere;
-// the probe is deferred so that, when disabled, CompressionStream is never touched.
-export function isGzipCompressionSupported(): Promise<boolean> {
-  if (config.getConfig('disableGzipCompression')) {
-    return Promise.resolve(false);
-  }
-  probeResult = probeResult ?? probeGzipSupport();
-  return probeResult;
-}
+  })();
+  return () => result;
+})();
 
 // Make sure to use isGzipCompressionSupported before calling this function
 export async function compressDataWithGZip(data) {

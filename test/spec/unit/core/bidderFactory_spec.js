@@ -1869,6 +1869,23 @@ describe('bidderFactory', () => {
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
     });
 
+    it('should NOT gzip when disableGzipCompression is set', async () => {
+      isGzipSupportedStub.resolves(true);
+      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+      debugTurnedOnStub.returns(false);
+      config.setConfig({ disableGzipCompression: true });
+      try {
+        await runRequest();
+      } finally {
+        config.resetConfig();
+      }
+
+      expect(gzipStub.called).to.be.false;
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
+      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+    });
+
     it('should NOT gzip when debugMode is enabled', async () => {
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('true');
       debugTurnedOnStub.returns(true);

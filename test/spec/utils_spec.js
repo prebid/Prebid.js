@@ -15,7 +15,6 @@ import { convertCamelToUnderscore } from '../../libraries/appnexusUtils/anUtils.
 import * as winDimensions from '../../src/utils/winDimensions.js';
 import * as layoutEpoch from '../../src/utils/layoutEpoch.js';
 import { compressDataWithGZip, isGzipCompressionSupported } from '../../src/utils/gzip.js';
-import { config } from '../../src/config.js';
 
 var assert = require('assert');
 
@@ -1492,15 +1491,6 @@ describe('Utils', function () {
       const secondCall = isGzipCompressionSupported();
 
       expect(firstCall).to.equal(secondCall);
-    });
-
-    it('should resolve false when disableGzipCompression is set', async () => {
-      config.setConfig({ disableGzipCompression: true });
-      try {
-        expect(await isGzipCompressionSupported()).to.be.false;
-      } finally {
-        config.resetConfig();
-      }
     });
   });
 
