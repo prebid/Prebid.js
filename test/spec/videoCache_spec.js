@@ -453,6 +453,13 @@ describe('The video cache', function () {
       expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://bidder.example/own]]></Impression><Impression><![CDATA[https://imptracker.com]]></Impression></InLine></Ad></VAST>');
     });
 
+    it('should insert trackers for audio bids', () => {
+      bidResponse.mediaType = 'audio';
+      bidResponse.vastTrackers = { impression: ['https://imptracker.com'] };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
+    });
+
     it('should insert vastImpUrl', () => {
       bidResponse.vastImpUrl = 'https://imptracker.com';
       updateVast(bidResponse);

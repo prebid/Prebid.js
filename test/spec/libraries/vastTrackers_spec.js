@@ -8,7 +8,9 @@ import {
 import { insertVastTrackers } from '../../../src/utils/vast.js';
 import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
 import { AuctionIndex } from '../../../src/auctionIndex.js';
-import { store, updateVast } from '../../../src/videoCache.js';
+import { handleVideoBidCaching, store, updateVast } from '../../../src/videoCache.js';
+import { auctionManager } from '../../../src/auctionManager.js';
+import { config } from '../../../src/config.js';
 import { cachedVideoImpressionVerifier, tracker as bidTracker } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 
@@ -325,6 +327,30 @@ describe('vast trackers', () => {
         expect(doc.querySelector('Impression').getAttribute('id')).to.equal('imp-id');
         expect(urls('Wrapper > Error')).to.eql(['https://publisher.example/error', 'https://bidder.com/error']);
         expect(urls('Tracking[event="start"]')).to.eql(['https://bidder.com/start']);
+      });
+
+      it('should add each tracker once when the bid goes through handleVideoBidCaching', () => {
+        sandbox.stub(auctionManager.index, 'getAuction').returns(auction);
+        sandbox.stub(auctionManager.index, 'getBidRequest').returns(bidRequest);
+        config.setConfig({ cache: { useLocal: true } });
+        try {
+          const videoBid = { ...createBidWithTrackers(bid), vastUrl: 'https://bidder.example/vast', vastImpUrl: 'https://bidder.com/legacy' };
+          handleVideoBidCaching({
+            bidResponse: videoBid,
+            auctionInstance: { addBidReceived: sinon.stub() },
+            afterBidAdded: sinon.stub(),
+            videoMediaType: { context: 'instream' }
+          });
+          const doc = new DOMParser().parseFromString(videoBid.vastXml, 'text/xml');
+          const urls = selector => Array.from(doc.querySelectorAll(selector), node => node.textContent);
+          expect(urls('Wrapper > Impression')).to.eql([
+            'https://vasttracking.mydomain.com/vast?cpm=1', 'https://bidder.com/impression', 'https://bidder.com/legacy'
+          ]);
+          expect(urls('Wrapper > Error')).to.eql(['https://bidder.com/error']);
+          expect(urls('Tracking[event="start"]')).to.eql(['https://bidder.com/start']);
+        } finally {
+          config.resetConfig();
+        }
       });
 
       it('should add vastImpUrl once', () => {

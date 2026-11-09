@@ -168,6 +168,34 @@ describe('vast utils', () => {
       expect(textsOf(doc, 'Wrapper > Creatives > Creative > Linear > TrackingEvents > Tracking[event="start"]')).to.eql([newUrl]);
     });
 
+    describe('XML inside Extensions', () => {
+      it('should not add trackers to a VAST nested in Extensions', () => {
+        const doc = parse(insertVastTrackers({ impression: [newUrl] },
+          '<VAST><Ad><Wrapper><Extensions><Extension><VAST><Ad><InLine></InLine></Ad></VAST></Extension></Extensions></Wrapper></Ad></VAST>'));
+        expect(textsOf(doc, 'VAST > Ad > Wrapper > Impression')).to.eql([newUrl]);
+        expect(doc.querySelectorAll('InLine > Impression')).to.have.lengthOf(0);
+      });
+
+      it('should not add tracking events to a Linear in Extensions', () => {
+        const doc = parse(insertVastTrackers({ trackingEvents: [{ event: 'start', url: newUrl }] },
+          '<VAST><Ad><Wrapper><Extensions><Extension><Creatives><Creative><Linear></Linear></Creative></Creatives></Extension></Extensions></Wrapper></Ad></VAST>'));
+        expect(doc.querySelectorAll('Extensions Tracking')).to.have.lengthOf(0);
+        expect(textsOf(doc, 'Wrapper > Creatives > Creative > Linear > TrackingEvents > Tracking')).to.eql([newUrl]);
+      });
+
+      it('should not add tracking events to TrackingEvents nested below a Linear', () => {
+        const doc = parse(insertVastTrackers({ trackingEvents: [{ event: 'start', url: newUrl }] },
+          '<VAST><Ad><InLine><Creatives><Creative><Linear><Icons><Icon><TrackingEvents></TrackingEvents></Icon></Icons></Linear></Creative></Creatives></InLine></Ad></VAST>'));
+        expect(doc.querySelectorAll('Icon Tracking')).to.have.lengthOf(0);
+        expect(textsOf(doc, 'Linear > TrackingEvents > Tracking')).to.eql([newUrl]);
+      });
+    });
+
+    it('should return the vastXml unchanged when the root is not VAST', () => {
+      const vastXml = '<Other><VAST><Ad><Wrapper></Wrapper></Ad></VAST></Other>';
+      expect(insertVastTrackers({ impression: [newUrl] }, vastXml)).to.equal(vastXml);
+    });
+
     describe('InLine without a Linear creative', () => {
       const vastXml = '<VAST><Ad><InLine><Creatives><Creative><NonLinearAds><NonLinear></NonLinear></NonLinearAds></Creative></Creatives></InLine></Ad></VAST>';
       let logWarn;

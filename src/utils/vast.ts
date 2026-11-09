@@ -70,6 +70,10 @@ function createChild(parent: Element, localName: string) {
   return parent.ownerDocument.createElementNS(parent.namespaceURI, localName);
 }
 
+function childrenNamed(parent: Element, ...localNames: string[]) {
+  return Array.from(parent.children).filter(child => localNames.includes(child.localName));
+}
+
 /**
  * Inserts `node` after the last sibling with the same name or, failing that, before `Creatives` or `Extensions`,
  * which follow tracking URLs in VAST's element order.
@@ -97,17 +101,19 @@ function appendTrackingEvents(trackingEvents: Element, trackers: VastTrackers['t
 }
 
 function insertLinearTrackingEvents(ad: Element, trackers: VastTrackers['trackingEvents']) {
-  const linears = ad.querySelectorAll('Creatives Creative Linear');
+  const linears = childrenNamed(ad, 'Creatives')
+    .flatMap(creatives => childrenNamed(creatives, 'Creative'))
+    .flatMap(creative => childrenNamed(creative, 'Linear'));
   if (linears.length) {
     linears.forEach(linear => {
-      const trackingEvents = linear.querySelector('TrackingEvents') ?? linear.appendChild(createChild(linear, 'TrackingEvents'));
+      const trackingEvents = childrenNamed(linear, 'TrackingEvents')[0] ?? linear.appendChild(createChild(linear, 'TrackingEvents'));
       appendTrackingEvents(trackingEvents, trackers);
     });
   } else if (ad.localName !== 'Wrapper') {
     // An InLine Linear needs Duration and MediaFiles, so one holding only tracking events would be an invalid creative.
     logWarn('Dropping VAST tracking events: InLine ad has no Linear creative', trackers);
   } else {
-    const creatives = ad.querySelector('Creatives') ?? ad.appendChild(createChild(ad, 'Creatives'));
+    const creatives = childrenNamed(ad, 'Creatives')[0] ?? ad.appendChild(createChild(ad, 'Creatives'));
     const creative = creatives.appendChild(createChild(creatives, 'Creative'));
     const linear = creative.appendChild(createChild(creative, 'Linear'));
     appendTrackingEvents(linear.appendChild(createChild(linear, 'TrackingEvents')), trackers);
@@ -129,7 +135,11 @@ export function insertVastTrackers(trackers: VastTrackers, vastXml: string): str
     if (doc.getElementsByTagName('parsererror').length) {
       return vastXml;
     }
-    const ads = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
+    // Only the top-level ads: Extensions can hold arbitrary XML, including other VAST documents.
+    const root = doc.documentElement;
+    const ads = root.localName === 'VAST'
+      ? childrenNamed(root, 'Ad').flatMap(ad => childrenNamed(ad, 'Wrapper', 'InLine'))
+      : [];
     if (!ads.length) {
       return vastXml;
     }
