@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/playgamaBidAdapter.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import { internal, resetWinDimensions } from 'src/utils.js';
 
 const PRODUCTION_ENDPOINT = 'https://ssp.playgama.com/v2/auction';
 const STAGING_ENDPOINT = 'https://ssp-staging.playgama.com/v2/auction';
@@ -204,12 +205,23 @@ describe('playgamaBidAdapter', function () {
     });
 
     it('sizes a GAM-delivered h5 interstitial to the viewport minus the SSP gap', function () {
-      const [bid] = interpretResponse({
-        bids: [sspBid({ width: 1, height: 1, render: { mode: 'h5_gam', viewportGapPx: 160 } })],
+      const getWindowTop = sinon.stub(internal, 'getWindowTop').returns({
+        location: { href: 'https://example.com/' },
+        innerWidth: 1000,
+        innerHeight: 800,
       });
+      resetWinDimensions();
+      try {
+        const [bid] = interpretResponse({
+          bids: [sspBid({ width: 1, height: 1, render: { mode: 'h5_gam', viewportGapPx: 160 } })],
+        });
 
-      expect(bid.width).to.equal(window.innerWidth - 160);
-      expect(bid.height).to.equal(window.innerHeight - 160);
+        expect(bid.width).to.equal(840);
+        expect(bid.height).to.equal(640);
+      } finally {
+        getWindowTop.restore();
+        resetWinDimensions();
+      }
     });
 
     it('keeps the bid size of a GAM-delivered h5 interstitial without a gap', function () {
