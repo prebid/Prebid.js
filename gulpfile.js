@@ -385,7 +385,8 @@ function testTaskMaker(options = {}) {
   }
 }
 
-// --browsers names, as Karma's launchers knew them, to Vitest's browser settings (vitest.config.mjs)
+// --browsers names to Vitest's browser settings (vitest.config.mjs). The Karma-era launcher names
+// (chromeheadless, firefoxheadless, safarinative, edgeheadless, ...) are still accepted for compatibility.
 const VITEST_BROWSERS = {
   chrome: {VITEST_BROWSER: 'chromium'},
   chromium: {VITEST_BROWSER: 'chromium'},
