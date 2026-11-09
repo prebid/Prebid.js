@@ -1,11 +1,16 @@
 import { expect } from 'chai';
+import * as utils from 'src/utils.js';
 import {
   buildNativeRequest,
   convertCamelToUnderscore,
+  convertUserParams,
   fill,
+  getAppDeviceObj,
+  getAppIdObj,
   getRtbBid,
   handleOutstreamRendererEvents,
   hasMemberId,
+  isErrorResponse,
   NATIVE_MAPPING,
   parseMediaType
 } from '../../../../libraries/appnexusUtils/anUtils.js';
@@ -31,6 +36,80 @@ describe('appnexusUtils/anUtils', () => {
     it('fills an array with a primitive value', () => {
       expect(fill('x', 3)).to.deep.equal(['x', 'x', 'x']);
       expect(fill('x', 0)).to.deep.equal([]);
+    });
+  });
+
+  describe('convertUserParams', () => {
+    it('converts names to snake case and segments to objects', () => {
+      expect(convertUserParams({
+        externalUid: 'abc',
+        age: 30,
+        segments: [1, { id: 2, value: 'x' }, 'ignored'],
+        other: true
+      })).to.deep.equal({
+        external_uid: 'abc',
+        age: 30,
+        segments: [{ id: 1 }, { id: 2, value: 'x' }],
+        other: true
+      });
+    });
+
+    it('passes only the allowed params', () => {
+      expect(convertUserParams({ age: 30, other: true }, ['age'])).to.deep.equal({ age: 30 });
+    });
+
+    it('drops segments that are not an array', () => {
+      expect(convertUserParams({ segments: 'x', age: 1 })).to.deep.equal({ age: 1 });
+    });
+  });
+
+  describe('getAppDeviceObj', () => {
+    it("returns the bid's allowed app params", () => {
+      expect(getAppDeviceObj({ params: { app: { geo: { lat: 1 }, device_id: { idfa: 'x' }, id: 'app' } } }, ['geo', 'device_id']))
+        .to.deep.equal({ geo: { lat: 1 }, device_id: { idfa: 'x' } });
+    });
+
+    it('returns undefined without an app bid', () => {
+      expect(getAppDeviceObj(undefined, ['geo'])).to.equal(undefined);
+      expect(getAppDeviceObj({ params: {} }, ['geo'])).to.equal(undefined);
+    });
+  });
+
+  describe('getAppIdObj', () => {
+    it('returns the app id', () => {
+      const bid = { params: { app: { id: 'app' } } };
+      expect(getAppIdObj(bid, bid)).to.deep.equal({ appid: 'app' });
+    });
+
+    it('returns undefined without an app id', () => {
+      const bid = { params: { app: {} } };
+      expect(getAppIdObj(undefined, bid)).to.equal(undefined);
+      expect(getAppIdObj(bid, bid)).to.equal(undefined);
+    });
+  });
+
+  describe('isErrorResponse', () => {
+    let logError;
+    beforeEach(() => {
+      logError = sinon.stub(utils, 'logError');
+    });
+    afterEach(() => {
+      logError.restore();
+    });
+
+    it('is false for a response body', () => {
+      expect(isErrorResponse({ tags: [] }, { bidderCode: 'appnexus' })).to.equal(false);
+      sinon.assert.notCalled(logError);
+    });
+
+    it('logs and is true for a missing body', () => {
+      expect(isErrorResponse(undefined, { bidderCode: 'appnexus' })).to.equal(true);
+      sinon.assert.calledWith(logError, 'in response for appnexus adapter');
+    });
+
+    it('logs the error of an error response', () => {
+      expect(isErrorResponse({ error: 'bad' }, { bidderCode: 'appnexus' })).to.equal(true);
+      sinon.assert.calledWith(logError, 'in response for appnexus adapter: bad');
     });
   });
 

@@ -17,8 +17,11 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
 import {
   buildNativeRequest,
+  getAppDeviceObj,
+  getAppIdObj,
   getRtbBid,
   handleOutstreamRendererEvents,
+  isErrorResponse,
   parseMediaType
 } from '../libraries/appnexusUtils/anUtils.js';
 import { chunk } from '../libraries/chunk/chunk.js';
@@ -82,23 +85,9 @@ export const spec = {
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     const payload = {
       tags: [...tags],
@@ -156,10 +145,7 @@ export const spec = {
   interpretResponse: function(serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 

@@ -35,9 +35,13 @@ import {
   appnexusAliases,
   buildNativeRequest,
   convertCamelToUnderscore,
+  convertUserParams,
+  getAppDeviceObj,
+  getAppIdObj,
   getRtbBid,
   handleOutstreamRendererEvents,
   hasMemberId,
+  isErrorResponse,
   parseMediaType
 } from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
@@ -152,44 +156,13 @@ export const spec = {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {
-      Object.keys(userObjBid.params.user)
-        .filter(param => USER_PARAMS.includes(param))
-        .forEach((param) => {
-          const uparam = convertCamelToUnderscore(param);
-          if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-            const segs = [];
-            userObjBid.params.user[param].forEach(val => {
-              if (isNumber(val)) {
-                segs.push({ 'id': val });
-              } else if (isPlainObject(val)) {
-                segs.push(val);
-              }
-            });
-            userObj[uparam] = segs;
-          } else if (param !== 'segments') {
-            userObj[uparam] = userObjBid.params.user[param];
-          }
-        });
+      Object.assign(userObj, convertUserParams(userObjBid.params.user, USER_PARAMS));
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     let debugObj = {};
     const debugObjParams = {};
@@ -403,10 +376,7 @@ export const spec = {
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 

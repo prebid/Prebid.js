@@ -2,7 +2,7 @@
  * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
  * @param {string} value string value to convert
  */
-import { deepClone, isArray, isArrayOfNums, isPlainObject } from '../../src/utils.js';
+import { deepClone, isArray, isArrayOfNums, isNumber, isPlainObject, logError } from '../../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { transformSizes } from '../sizeUtils/tranformSize.js';
 
@@ -38,6 +38,76 @@ export function fill(value, length) {
   }
 
   return newArray;
+}
+
+/**
+ * The /ut `user` fields for a bid's `params.user`: names in snake case, and `segments` as `{id}` objects (numbers)
+ * or objects as given.
+ * @param {Object} user the bid's `params.user`
+ * @param {string[]} [allowedParams] the params to pass on; all if not given
+ */
+export function convertUserParams(user, allowedParams) {
+  const userObj = {};
+  Object.keys(user)
+    .filter(param => !allowedParams || allowedParams.includes(param))
+    .forEach(param => {
+      const uparam = convertCamelToUnderscore(param);
+      if (param === 'segments' && isArray(user[param])) {
+        const segs = [];
+        user[param].forEach(val => {
+          if (isNumber(val)) {
+            segs.push({ id: val });
+          } else if (isPlainObject(val)) {
+            segs.push(val);
+          }
+        });
+        userObj[uparam] = segs;
+      } else if (param !== 'segments') {
+        userObj[uparam] = user[param];
+      }
+    });
+  return userObj;
+}
+
+/**
+ * The /ut `app` object for the first bid with `params.app`: its allowed params, if there is such a bid.
+ */
+export function getAppDeviceObj(appDeviceObjBid, allowedParams) {
+  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+    const appDeviceObj = {};
+    Object.keys(appDeviceObjBid.params.app)
+      .filter(param => allowedParams.includes(param))
+      .forEach(param => {
+        appDeviceObj[param] = appDeviceObjBid.params.app[param];
+      });
+    return appDeviceObj;
+  }
+}
+
+/**
+ * The /ut `app` id object for the first bid with `params.app.id`, if there is one (and the app bid has an id too).
+ */
+export function getAppIdObj(appIdObjBid, appDeviceObjBid) {
+  if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+    return {
+      appid: appIdObjBid.params.app.id
+    };
+  }
+}
+
+/**
+ * Whether a /ut response body is missing or an error, logging it if so.
+ */
+export function isErrorResponse(body, bidderRequest) {
+  if (!body || body.error) {
+    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+    if (body && body.error) {
+      errorMessage += `: ${body.error}`;
+    }
+    logError(errorMessage);
+    return true;
+  }
+  return false;
 }
 
 /**
