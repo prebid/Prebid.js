@@ -33,7 +33,7 @@ describe('Truvid Bid Adapter', function () {
     });
 
     it('declares its GVL id', function () {
-      expect(spec.gvlid).to.equal(100);
+      expect(spec.gvlid).to.equal(862);
     });
 
     it('supports banner and video', function () {
