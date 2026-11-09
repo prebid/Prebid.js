@@ -459,7 +459,13 @@ describe('The video cache', function () {
       expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
     });
 
-    it('should skip trackers that are not http(s) urls', () => {
+    it('should insert protocol-relative trackers', () => {
+      bidResponse.vastTrackers = { impression: ['//imptracker.com/i'] };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[//imptracker.com/i]]></Impression><Creatives/></Wrapper></Ad></VAST>');
+    });
+
+    it('should skip trackers that are not http(s) or protocol-relative urls', () => {
       bidResponse.vastTrackers = {
         impression: ['imptracker.com', 'javascript:alert(1)'],
         trackingEvents: [{ event: 'start', url: 'tracker.com/start' }]

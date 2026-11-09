@@ -1,4 +1,5 @@
 import { getBidVastTrackers, insertVastTrackers, mergeVastTrackers } from '../../../src/utils/vast.js';
+import * as logging from '../../../src/utils/logging.js';
 
 function parse(vastXml) {
   return new DOMParser().parseFromString(vastXml, 'text/xml');
@@ -30,11 +31,37 @@ describe('vast utils', () => {
         .to.eql({ impression: [], error: [], trackingEvents: [] });
     });
 
-    it('should drop urls that are not safe http(s) urls', () => {
-      const urls = [null, undefined, 1, '', 'a.com/i', 'javascript:alert(1)', 'https://a.com/]]>', 'HTTP://a.com/ok', 'https://a.com/ok'];
+    it('should keep only http(s) and protocol-relative urls', () => {
+      const urls = [null, undefined, 1, '', 'a.com/i', '/a.com/i', 'ftp://a.com/i', 'javascript:alert(1)', 'https://a.com/]]>',
+        'HTTP://a.com/ok', 'https://a.com/ok', '//a.com/ok'];
       const merged = mergeVastTrackers({ impression: urls, error: urls });
-      expect(merged.impression).to.eql(['HTTP://a.com/ok', 'https://a.com/ok']);
-      expect(merged.error).to.eql(['HTTP://a.com/ok', 'https://a.com/ok']);
+      expect(merged.impression).to.eql(['HTTP://a.com/ok', 'https://a.com/ok', '//a.com/ok']);
+      expect(merged.error).to.eql(['HTTP://a.com/ok', 'https://a.com/ok', '//a.com/ok']);
+    });
+
+    describe('when dropping trackers', () => {
+      let logWarn;
+      beforeEach(() => {
+        logWarn = sinon.stub(logging, 'logWarn');
+      });
+      afterEach(() => {
+        logWarn.restore();
+      });
+
+      it('should warn once for each dropped tracker', () => {
+        const badEvent = { event: '', url: 'https://a.com/s' };
+        mergeVastTrackers({
+          impression: ['https://a.com/i', 'javascript:alert(1)'],
+          error: ['a.com/e'],
+          trackingEvents: [badEvent, { event: 'start', url: 'https://a.com/s' }]
+        });
+        expect(logWarn.args.map(args => args[1])).to.eql(['javascript:alert(1)', 'a.com/e', badEvent]);
+      });
+
+      it('should not warn when every tracker is valid', () => {
+        mergeVastTrackers({ impression: ['https://a.com/i', '//a.com/i'], trackingEvents: [{ event: 'start', url: 'https://a.com/s' }] });
+        expect(logWarn.called).to.be.false;
+      });
     });
 
     it('should drop tracking events without an event or a safe url', () => {

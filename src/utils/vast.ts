@@ -8,10 +8,24 @@ export interface VastTrackers {
 }
 
 /**
- * Rejects anything but http(s) URLs. ']]>' is rejected because DOM CDATA sections cannot hold it.
+ * Accepts only http(s) and protocol-relative URLs. ']]>' is rejected because DOM CDATA sections cannot hold it.
  */
 function isSafeTrackingUrl(url): url is string {
-  return isStr(url) && !url.includes(']]>') && /^https?:\/\//i.test(url);
+  return isStr(url) && !url.includes(']]>') && /^(https?:)?\/\//i.test(url);
+}
+
+function isValidTrackingEvent(tracker): tracker is { event: string; url: string } {
+  return isPlainObject(tracker) && isStr(tracker.event) && tracker.event !== '' && isSafeTrackingUrl(tracker.url);
+}
+
+function keepValid<T>(items: unknown[], isValid: (item) => item is T): T[] {
+  return items.filter((item): item is T => {
+    if (isValid(item)) {
+      return true;
+    }
+    logWarn('Dropping invalid VAST tracker', item);
+    return false;
+  });
 }
 
 /**
@@ -22,13 +36,11 @@ export function mergeVastTrackers(...sources: unknown[]): Required<VastTrackers>
   sources.filter(isPlainObject).forEach((source: VastTrackers) => {
     (['impression', 'error'] as const).forEach(type => {
       if (isArray(source[type])) {
-        merged[type].push(...source[type].filter(isSafeTrackingUrl));
+        merged[type].push(...keepValid(source[type], isSafeTrackingUrl));
       }
     });
     if (isArray(source.trackingEvents)) {
-      merged.trackingEvents.push(...source.trackingEvents.filter(tracker =>
-        isPlainObject(tracker) && isStr(tracker.event) && tracker.event !== '' && isSafeTrackingUrl(tracker.url)
-      ));
+      merged.trackingEvents.push(...keepValid(source.trackingEvents, isValidTrackingEvent));
     }
   });
   return merged;
