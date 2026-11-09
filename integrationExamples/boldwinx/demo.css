@@ -80,6 +80,10 @@ article p { margin: 0 0 16px; }
 
 .ad-label { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
 
+.leaderboard { max-width: 1200px; margin: 0 auto; padding: 24px 24px 0; }
+.banner { max-width: 100%; overflow: hidden; margin-bottom: 16px; }
+.banner iframe { display: block; border: 0; }
+
 .outstream { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; margin-bottom: 16px; }
 .outstream video, .outstream .ad-container { position: absolute; inset: 0; width: 100%; height: 100%; }
 .outstream .sound { position: absolute; right: 8px; bottom: 8px; z-index: 2; }

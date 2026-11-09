@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BoldwinX several ad units demo</title>
+  <link rel="stylesheet" href="demo.css">
+  <script async src="../../build/dev/prebid.js"></script>
+  <script src="demo.js"></script>
+</head>
+<body>
+  <header>
+    <h1>BoldwinX: two banners and a video</h1>
+    <p>One page with three ad units. Prebid asks Boldwin for all three in one auction. epid: <code id="epid"></code></p>
+    <form id="epid-form" hidden><input name="epid" placeholder="epid from Boldwin" aria-label="epid"><button>Load</button></form>
+    <nav><a href="instream.html">Instream</a><a href="outstream.html">Outstream</a><a href="multi.html" aria-current="page">Banners and video</a></nav>
+  </header>
+  <div class="leaderboard">
+    <p class="ad-label" id="banner-top-label">Advertisement</p>
+    <div id="banner-top" class="banner"></div>
+  </div>
+  <main>
+    <article>
+      <p>This is a sample article. The page has a 728x90 banner at the top, an outstream video in the middle and a 300x250 banner at the end.</p>
+      <p>The log on the right shows each step for each ad unit.</p>
+      <p class="ad-label" id="video-label">Advertisement</p>
+      <div id="video" class="outstream"></div>
+      <p>The article goes on after the video. When the video finishes, the block closes.</p>
+      <p>To see the pixels themselves, open DevTools, then Network, and filter by <code>algotoro</code>.</p>
+      <p class="ad-label" id="banner-article-label">Advertisement</p>
+      <div id="banner-article" class="banner"></div>
+    </article>
+    <aside>
+      <div class="panel">
+        <h2>What happens</h2>
+        <ol id="log"></ol>
+      </div>
+      <div class="panel">
+        <h2>Impression pixels in the video VAST</h2>
+        <p class="hint">The player opens these when the video starts: Boldwin's own pixel, then burl and nurl.</p>
+        <ul id="pixels"></ul>
+      </div>
+    </aside>
+  </main>
+  <script>
+    var BANNERS = { 'banner-top': [728, 90], 'banner-article': [300, 250] };
+    var VIDEO = 'video';
+    var pbjs = window.pbjs = window.pbjs || { que: [] };
+
+    if (demo.requireEpid()) {
+      demo.log('Prebid asks Boldwin for 3 bids', 'One POST to pbjs.algotoro.com/bid?epid=' + demo.epid + ' for each ad unit');
+      pbjs.que.push(function () {
+        pbjs.onEvent('bidWon', function (bid) {
+          if (bid.mediaType === 'banner') {
+            demo.log('Banner ' + bid.adUnitCode + ' is shown', 'Prebid fires burl; Boldwin pixel and nurl are in the ad markup', 'ok');
+          }
+        });
+        var bids = [{ bidder: 'boldwinx', params: { epid: demo.epid } }];
+        var adUnits = Object.keys(BANNERS).map(function (code) {
+          return { code: code, mediaTypes: { banner: { sizes: [BANNERS[code]] } }, bids: bids };
+        });
+        adUnits.push({
+          code: VIDEO,
+          mediaTypes: {
+            video: { context: 'outstream', playerSize: [640, 360], mimes: ['video/mp4'], protocols: [2, 3, 5, 6], plcmt: 4 }
+          },
+          // BoldwinX has no player of its own, so the site gives Prebid one. Here it is Google IMA.
+          renderer: {
+            url: 'https://imasdk.googleapis.com/js/sdkloader/ima3.js',
+            render: demo.renderOutstream
+          },
+          bids: bids
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          timeout: 3000,
+          bidsBackHandler: function () {
+            adUnits.forEach(function (adUnit) {
+              var bid = pbjs.getHighestCpmBids(adUnit.code)[0];
+              if (!bid) {
+                demo.log('No bid for ' + adUnit.code, 'Check that the Boldwin test mode is on.', 'error');
+                demo.hideSlot(adUnit.code);
+                return;
+              }
+              if (bid.mediaType === 'video') {
+                var count = demo.showVastPixels(bid.vastXml);
+                demo.log('Bid for ' + adUnit.code + ' received', bid.cpm + ' ' + bid.currency + ', VAST with ' + count + ' impression pixels');
+                pbjs.renderAd(document, bid.adId);
+              } else {
+                demo.log('Bid for ' + adUnit.code + ' received', bid.cpm + ' ' + bid.currency + ', ' + bid.width + 'x' + bid.height + ' banner');
+                renderBanner(bid);
+              }
+            });
+          }
+        });
+      });
+    }
+
+    function renderBanner(bid) {
+      var iframe = document.createElement('iframe');
+      iframe.width = bid.width;
+      iframe.height = bid.height;
+      iframe.title = 'Advertisement';
+      iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('scrolling', 'no');
+      document.getElementById(bid.adUnitCode).appendChild(iframe);
+      pbjs.renderAd(iframe.contentWindow.document, bid.adId);
+    }
+  </script>
+</body>
+</html>
