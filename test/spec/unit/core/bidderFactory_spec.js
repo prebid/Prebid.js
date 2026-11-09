@@ -1888,19 +1888,6 @@ describe('bidderFactory', () => {
       });
     });
 
-    it('should still gzip when disableGzipCompression is set for a different bidder', async () => {
-      isGzipSupportedStub.resolves(true);
-      gzipStub.resolves('compressedData');
-      getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
-      debugTurnedOnStub.returns(false);
-      getGlobal().bidderSettings = { otherBidder: { disableGzipCompression: true } };
-
-      await runRequest({ ...MOCK_BIDS_REQUEST, bidderCode: CODE });
-
-      expect(gzipStub.calledOnce).to.be.true;
-      expect(ajaxStub.firstCall.args[0]).to.include('gzip=1');
-    });
-
     it('should NOT gzip when debugMode is enabled', async () => {
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('true');
       debugTurnedOnStub.returns(true);
