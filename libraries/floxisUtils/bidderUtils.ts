@@ -90,13 +90,12 @@ export interface FloxisSpecConfig<B extends 'floxis' | 'adapex'> {
   getSyncOrigin(region: string): string | null;
   telemetryOrigin: string;
   isTelemetryEnabled?(): boolean;
-  pinSyncOrigin?: boolean;
   syncHeader?: string;
 }
 
 export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSpecConfig<B>): BidderSpec<B> {
   const {
-    code, gvlid, storage, storageKey, fallbackIdField, resolveRoute, getBidHost, getSyncOrigin, telemetryOrigin, isTelemetryEnabled = () => true, pinSyncOrigin, syncHeader
+    code, gvlid, storage, storageKey, fallbackIdField, resolveRoute, getBidHost, getSyncOrigin, telemetryOrigin, isTelemetryEnabled = () => true, syncHeader
   } = config;
 
   function normalizeBidParams(params: Partial<FloxisBaseBidParams & FloxisRoute> = {}) {
@@ -117,15 +116,9 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     return base + (extraParams ? '&' + extraParams : '') + consentSuffix;
   }
 
-  // The server bakes its own sync host into body.ext.sync; a branded adapter keeps the browser on its
-  // own sync origin so the sync cookie lands on the same site as its bid host.
   function bodySyncUrl(url: string): string | null {
-    if (!pinSyncOrigin) return url;
-    const origin = getSyncOrigin(resolveRoute({}).region);
     try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:') return null;
-      return origin ? `${origin}${parsed.pathname}${parsed.search}` : null;
+      return new URL(url).protocol === 'https:' ? url : null;
     } catch (e) {
       return null;
     }

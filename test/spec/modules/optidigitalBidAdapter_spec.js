@@ -252,7 +252,7 @@ describe('optidigitalAdapterTests', function () {
       });
     });
 
-    it('should add adContainerWidth and adContainerHeight to payload if divId exsists in parameter', function () {
+    it('omits container dimensions when divId does not resolve to an element', function () {
       const validBidRequestsWithDivId = [
         {
           'bidder': 'optidigital',
@@ -260,7 +260,7 @@ describe('optidigitalAdapterTests', function () {
           'params': {
             'publisherId': 's123',
             'placementId': 'Billboard_Top',
-            'divId': 'div-gpt-ad-1460505748561-0'
+            'divId': 'od-missing-container'
           },
           'adUnitCode': 'div-gpt-ad-1460505748561-0',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -276,10 +276,8 @@ describe('optidigitalAdapterTests', function () {
       ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
       const payload = JSON.parse(request.data);
-      payload.imp[0].adContainerWidth = 1920;
-      payload.imp[0].adContainerHeight = 1080;
-      expect(payload.imp[0].adContainerWidth).to.exist;
-      expect(payload.imp[0].adContainerHeight).to.exist;
+      expect(payload.imp[0]).not.to.have.property('adContainerWidth');
+      expect(payload.imp[0]).not.to.have.property('adContainerHeight');
     });
 
     it('should read container size from DOM when divId exists', function () {
@@ -288,6 +286,7 @@ describe('optidigitalAdapterTests', function () {
       el.id = containerId;
       el.style.width = '321px';
       el.style.height = '111px';
+      el.style.transform = 'scale(0.5)';
       el.style.position = 'absolute';
       el.style.left = '0';
       el.style.top = '0';
