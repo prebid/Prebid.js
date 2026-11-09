@@ -97,8 +97,8 @@ jobs:
         run: |
           npx eslint
 
-  # The unit test gate (#16007), in place of Karma: every browser, both feature variants, and coverage.
-  # Like Karma's jobs, it tests the PR's head commit.
+  # The unit test gate (Vitest): every browser, both feature variants, and coverage.
+  # It tests the PR's head commit.
   # Chromium first; the other browsers and base branch coverage start only if it passes.
   vitest:
     name: "Unit tests (Chromium)"
@@ -201,8 +201,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ runner.temp }}/coverage.info
-          # "vitest" keeps Karma's earlier coverage (cached as coverage-<commit>) from being compared
-          # with Vitest's
+          # "vitest" in the key: older coverage-<commit> entries were produced by the previous (Karma)
+          # runner and must not be compared with this coverage
           key: coverage-vitest-${{ needs.checkout.outputs.base-commit }}
       - name: Rename restored file
         if: ${{ steps.restore.outputs.cache-hit == 'true' }}
