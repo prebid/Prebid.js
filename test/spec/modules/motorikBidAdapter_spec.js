@@ -205,6 +205,32 @@ describe('motorikBidAdapter', function () {
       });
     }
 
+    if (FEATURES.VIDEO) {
+      it('should keep a single format per imp when ortb2Imp carries other formats', function () {
+        const bid = makeBid({
+          banner: BANNER_BID.mediaTypes.banner,
+          video: VIDEO_BID.mediaTypes.video,
+        }, {
+          // core syncs mediaTypes fields into ortb2Imp
+          ortb2Imp: {
+            banner: { pos: 1 },
+            video: { mimes: ['video/mp4'] },
+            audio: { mimes: ['audio/mp4'] },
+          },
+        });
+        const requests = spec.buildRequests([bid], deepClone(BIDDER_REQUEST));
+
+        expect(requests).to.have.lengthOf(2);
+        const [bannerImp, videoImp] = requests.map((request) => request.data.imp[0]);
+        expect(bannerImp.banner.pos).to.equal(1);
+        expect(bannerImp.video).to.be.undefined;
+        expect(bannerImp.audio).to.be.undefined;
+        expect(videoImp.video.mimes).to.deep.equal(['video/mp4']);
+        expect(videoImp.banner).to.be.undefined;
+        expect(videoImp.audio).to.be.undefined;
+      });
+    }
+
     if (FEATURES.NATIVE) {
       it('should not send native request when native request assets were not derived', function () {
         const bid = makeBid({
