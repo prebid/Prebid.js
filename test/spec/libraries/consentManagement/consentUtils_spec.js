@@ -1,8 +1,20 @@
 import { expect } from 'chai';
-import { hasAddtlConsent, hasVendorPurposeConsent, parseAddtlConsent } from '../../../../libraries/consentManagement/consentUtils.js';
+import {
+  hasAddtlConsent,
+  hasVendorPurposeConsent,
+  parseAddtlConsent,
+  setGvlLegalBasisMapping
+} from '../../../../libraries/consentManagement/consentUtils.js';
 
 describe('consentUtils', function () {
   const HOST_GVLID = '52';
+  // Magnite's (GVL 52) declaration on the GVL, as registered by the magnite/rubicon modules' metadata
+  const HOST_PURPOSES = {
+    purposes: [1, 3, 4],
+    legIntPurposes: [2, 7, 10],
+    flexiblePurposes: [2, 7, 10],
+    specialFeatures: [1, 2]
+  };
 
   function mockConsent({ purposeConsent = true, vendorConsent = true, restriction, gdprApplies = true } = {}) {
     const consent = {
@@ -27,6 +39,18 @@ describe('consentUtils', function () {
   }
 
   describe('hasVendorPurposeConsent', function () {
+    // GVL 52's purposes reach GVL_PURPOSES only when a module declaring them (magnite/rubicon) is
+    // loaded, which this spec doesn't do; it then falls back to the module-wide default declaration,
+    // which other specs can change (tcfControl sets it). Declare the legal bases explicitly so the
+    // result does not depend on what else was loaded or configured.
+    beforeEach(() => {
+      setGvlLegalBasisMapping({ [HOST_GVLID]: HOST_PURPOSES });
+    });
+
+    afterEach(() => {
+      setGvlLegalBasisMapping({});
+    });
+
     it('returns true when purpose and vendor consent are granted', function () {
       expect(hasVendorPurposeConsent(mockConsent(), 1, HOST_GVLID)).to.be.true;
     });

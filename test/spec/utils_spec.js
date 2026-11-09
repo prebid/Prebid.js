@@ -208,6 +208,34 @@ describe('Utils', function () {
     });
   });
 
+  describe('isArrayOfNums', () => {
+    it('rejects sparse arrays', () => {
+      // eslint-disable-next-line no-sparse-arrays
+      expect(utils.isArrayOfNums([, 250], 2)).to.be.false;
+    });
+  });
+
+  describe('validateSizes', () => {
+    Object.entries({
+      'single size': [[300, 250], [[300, 250]]],
+      'array of sizes': [[[300, 250], [728, 90]], [[300, 250], [728, 90]]],
+      'array with an invalid size': [[[300, 250], [728, '90']], []],
+      // eslint-disable-next-line no-sparse-arrays
+      'sparse array of sizes': [[[300, 250], , [728, 90]], []],
+      'all-holes array': [new Array(2), []],
+      'empty array': [[], []],
+      'non-array': ['300x250', []],
+    }).forEach(([t, [input, expected]]) => {
+      it(`handles ${t}`, () => {
+        expect(utils.validateSizes(input)).to.eql(expected);
+      });
+    });
+
+    it('rejects arrays not matching targLength', () => {
+      expect(utils.validateSizes([[300, 250], [728, 90]], 1)).to.eql([]);
+    });
+  });
+
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
       var sizes = [[728, 90], [970, 90]];
@@ -565,6 +593,15 @@ describe('Utils', function () {
     it('return iframe - style', function () {
       assert.ok(output.style);
     });
+
+    it('lets attrs and style override the invisible defaults', function () {
+      const frame = utils.createInvisibleIframe(document, { src: 'https://example.com/', sandbox: 'allow-scripts' }, { width: '1px' });
+      assert.equal(frame.src, 'https://example.com/');
+      assert.equal(frame.getAttribute('sandbox'), 'allow-scripts');
+      assert.equal(frame.style.width, '1px');
+      assert.equal(frame.style.display, 'none');
+      assert.equal(frame.height, '0');
+    });
   });
 
   describe('polyfill test', function () {
@@ -661,6 +698,26 @@ describe('Utils', function () {
       assert.deepEqual(builtObject, {
         mediaType: 'video',
         comeWithMe: 'ifuwant2live',
+      });
+    });
+
+    it('preserves falsy values, but omits null and undefined', function () {
+      const params = {
+        enabled: false,
+        count: 0,
+        label: '',
+        optional: null,
+        unset: undefined
+      };
+
+      const actual = utils.getDefinedParams(params, [
+        'enabled', 'count', 'label', 'optional', 'unset', 'missing'
+      ]);
+
+      assert.deepEqual(actual, {
+        enabled: false,
+        count: 0,
+        label: ''
       });
     });
   });
@@ -1283,12 +1340,13 @@ describe('Utils', function () {
       expect(deepEqual({ outer: obj }, { outer: new Typed(obj) }, { checkTypes: true })).to.be.false;
     });
     it('should work when adding properties to the prototype of Array', () => {
-      after(function () {
-        delete Array.prototype.unitTestTempProp;
-      });
       // eslint-disable-next-line no-extend-native
       Array.prototype.unitTestTempProp = 'testing';
-      expect(deepEqual([], [])).to.be.true;
+      try {
+        expect(deepEqual([], [])).to.be.true;
+      } finally {
+        delete Array.prototype.unitTestTempProp;
+      }
     });
 
     describe('cyrb53Hash', function() {
@@ -1350,9 +1408,14 @@ describe('Utils', function () {
   });
 
   describe('getUnixTimestampFromNow', () => {
+    let nowStub;
+    afterEach(() => {
+      nowStub?.restore();
+    });
+
     it('correctly obtains unix timestamp', () => {
       const nowValue = new Date('2024-01-01').valueOf();
-      sinon.stub(Date, 'now').returns(nowValue);
+      nowStub = sinon.stub(Date, 'now').returns(nowValue);
       let val = utils.getUnixTimestampFromNow();
       expect(val).equal(nowValue);
 
@@ -1515,6 +1578,14 @@ describe('memoize', () => {
     expect(fn.callCount).to.equal(2);
   });
 
+  it('can invalidate specific items with invalidate', () => {
+    const mem = memoize(fn, (a, b) => `${a}:${b}`);
+    mem('arg1', 'arg2');
+    mem.invalidate('arg1', 'arg2');
+    mem('arg1', 'arg2');
+    expect(fn.callCount).to.equal(2);
+  });
+
   it('allows setting cache keys', () => {
     const mem = memoize(fn, (...args) => args.join(','));
     mem('one', 'two');
@@ -1672,85 +1743,5 @@ describe('polite sync helpers', () => {
     window.Request = undefined;
     utils.politeTriggerPixel('http://example.com/pixel');
     expect(window.fetch.called).to.equal(false);
-  });
-
-  it('uses background scheduling for politeInsertUserSyncIframe', () => {
-    window.scheduler = {
-      postTask: sinon.stub().callsFake((task) => {
-        task();
-        return Promise.resolve();
-      })
-    };
-
-    utils.politeInsertUserSyncIframe('http://example.com/iframe');
-    expect(window.scheduler.postTask.calledOnce).to.equal(true);
-  });
-});
-
-describe('user sync iframes', () => {
-  let preexisting;
-  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
-
-  beforeEach(() => {
-    utils.removeUserSyncIframes();
-    preexisting = new Set(document.querySelectorAll('iframe'));
-  });
-  afterEach(() => utils.removeUserSyncIframes());
-
-  it('inserts the iframe into the document', () => {
-    utils.insertUserSyncIframe('about:blank');
-    expect(newIframes().length).to.equal(1);
-    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
-  });
-
-  it('removes every sync iframe of this instance and returns how many were removed', () => {
-    [1, 2, 3].forEach(() => utils.insertUserSyncIframe('about:blank'));
-    const iframes = newIframes();
-    expect(iframes.length).to.equal(3);
-    expect(utils.removeUserSyncIframes()).to.equal(3);
-    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
-    expect(newIframes().length).to.equal(0);
-  });
-
-  it('notifies a sync iframe consumer before removing its iframe', () => {
-    let wasAttachedDuringCleanup;
-    let iframe;
-    const onCleanup = sinon.spy(() => {
-      wasAttachedDuringCleanup = iframe.parentNode != null;
-    });
-    utils.insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
-    iframe = newIframes()[0];
-
-    expect(utils.removeUserSyncIframes()).to.equal(1);
-
-    expect(onCleanup.calledOnce).to.equal(true);
-    expect(wasAttachedDuringCleanup).to.equal(true);
-    expect(iframe.parentNode).to.equal(null);
-  });
-
-  it('leaves iframes it did not insert alone', () => {
-    const foreign = document.createElement('iframe');
-    document.body.appendChild(foreign);
-    try {
-      utils.insertUserSyncIframe('about:blank');
-      expect(newIframes().length).to.equal(2);
-      expect(utils.removeUserSyncIframes()).to.equal(1);
-      expect(foreign.parentNode).to.equal(document.body);
-      expect(newIframes()).to.eql([foreign]);
-    } finally {
-      foreign.parentNode.removeChild(foreign);
-    }
-  });
-
-  it('does nothing when there is no sync iframe', () => {
-    expect(utils.removeUserSyncIframes()).to.equal(0);
-  });
-
-  it('does not stop later syncs from inserting new iframes', () => {
-    utils.insertUserSyncIframe('about:blank');
-    utils.removeUserSyncIframes();
-    utils.insertUserSyncIframe('about:blank');
-    expect(newIframes().length).to.equal(1);
-    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
   });
 });

@@ -149,6 +149,11 @@ describe('Codefuel Adapter', function () {
         refererInfo: {
           page: 'https://example.com/',
           domain: 'example.com'
+        },
+        ortb2: {
+          device: {
+            ua: USER_AGENT
+          }
         }
       };
 

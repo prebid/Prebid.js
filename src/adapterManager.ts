@@ -1,4 +1,4 @@
-/** @module adaptermanger */
+/** @module adapterManager */
 
 import {
   deepClone,
@@ -41,7 +41,7 @@ import {
   incrementRequestsCounter
 } from './adUnits.js';
 import { getRefererInfo, type RefererInfo } from './refererDetection.js';
-import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import { allConsent, GDPR_ACPIDS, GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, type GVLIDs } from './consentHandler.js';
 import * as events from './events.js';
 import { EVENTS, S2S } from './constants.js';
 import { type Metrics, useMetrics } from './utils/perfMetrics.js';
@@ -63,6 +63,7 @@ import type {
   Size, StorageDisclosure
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
+import type { AnyFunction } from "./types/functions.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
@@ -88,7 +89,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: GVLIDs, enabled?: boolean, config?: SomeAnalyticsConfig } } = {};
 
 let _s2sConfigs : any[] | any = [];
 config.getConfig('s2sConfig', config => {
@@ -113,7 +114,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -227,8 +228,12 @@ export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderReques
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
-  'renderer',
   'element',
+] as const;
+
+const RENDERER_PROPERTIES = [
+  'renderer',
+  'safeRenderer',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
@@ -243,9 +248,9 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
 
 export type AliasBidderOptions = {
   /**
-   * IAB Global Vendor List ID for this alias for use with the TCF control module.
+   * IAB Global Vendor List ID (or IDs) for this alias for use with the TCF control module.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Google Additional Consent provider ID for this alias for use with the TCF control module.
    */
@@ -264,7 +269,7 @@ export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & 
   code?: P;
   enableAnalytics(config: AnalyticsConfig<P>): void;
   disableAnalytics?: () => void;
-  gvlid?: number | ((config: AnalyticsConfig<P>) => number);
+  gvlid?: GVLIDs | ((config: AnalyticsConfig<P>) => GVLIDs);
 };
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidderCode, auctionId, bidderRequestId, adUnits, src, metrics, getTid }: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
@@ -276,7 +281,9 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
-        bid = Object.assign({}, bid,
+        bid = Object.assign({},
+          getDefinedParams(adUnit, RENDERER_PROPERTIES),
+          bid,
           {
             ortb2Imp: mergeDeep(
               {},
@@ -804,7 +811,7 @@ const adapterManager = {
             // make bid requests
             s2sAdapter.callBids(
               s2sBidRequest,
-              serverBidderRequests,
+              uniqueServerRequests,
               addBidResponse,
               (timedOut) => doneCbs.forEach(done => done(timedOut)),
               s2sAjax
@@ -941,7 +948,7 @@ const adapterManager = {
   registerAnalyticsAdapter<P extends AnalyticsProvider>({ adapter, code, gvlid, acpId }: {
     adapter: AnalyticsAdapter<P>,
     code: P,
-    gvlid?: number,
+    gvlid?: GVLIDs,
     /**
      * Google Additional Consent provider ID, for vendors that are not on the GVL.
      */
@@ -1097,7 +1104,7 @@ function getSupportedMediaTypes(bidderCode) {
   return supportedMediaTypes;
 }
 
-function getBidderMethod(bidder, method): [string, string] {
+function getBidderMethod(bidder, method): [Record<string, any>, AnyFunction] | undefined {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {

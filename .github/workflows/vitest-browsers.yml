@@ -1,0 +1,200 @@
+name: Vitest unit tests (browsers)
+
+# Stage 2 of the unit test gate (#16007), called from test.yml once the Chromium stage (vitest-chromium.yml) has
+# passed: the browsers.json entries that have `vitest`. Today that is Firefox, Safari (macOS, through safaridriver),
+# Edge (Windows) and Chrome 113 on runners, in shards (Vitest's `--shard`), and through BrowserStack
+# where the secrets are available (not on fork PRs, as with Karma's BrowserStack job; their changes are tested there by
+# the master run after merge): a real iPhone on iOS 16, and desktop Safari 16 for the specs that need a secure context.
+# See test/vitest/README.md, "CI".
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to test (default the triggering ref)
+        type: string
+        default: ''
+        required: false
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: BrowserStack user name
+      BROWSERSTACK_ACCESS_KEY:
+        description: BrowserStack access key
+
+permissions:
+  contents: read
+
+jobs:
+
+  define:
+    name: Define browser matrices
+    runs-on: ubuntu-latest
+    outputs:
+      runners: ${{ toJSON(fromJSON(steps.define.outputs.result).runners) }}
+      browserstack: ${{ toJSON(fromJSON(steps.define.outputs.result).browserstack) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+          # test/spec for browsers.json's `specsMatching`
+          sparse-checkout: |
+            browsers.json
+            browsers-es5.json
+            .github/workflows/scripts/browserMatrices.js
+            test/spec/
+          sparse-checkout-cone-mode: false
+      - id: define
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const m = require('./.github/workflows/scripts/browserMatrices.js');
+            const browsers = require('./browsers.json');
+            return {
+              runners: m.vitestRunners(browsers),
+              browserstack: m.vitestBrowserstack(browsers, require('./browsers-es5.json')),
+            };
+
+
+  # The runner entries of browsers.json that have `vitest`, on the same runner OS as their Karma jobs, default variant
+  # only. Each job runs its share of the specs (Vitest's `--shard`), several pages at once (a page per CPU core but
+  # one) where Playwright drives the browser; Safari (WebdriverIO) runs one at a time whatever VITEST_PARALLEL says. Shard counts follow each
+  # browser's speed: about two minutes of tests per job.
+  browsers:
+    name: Vitest ${{ matrix.name }} (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    needs: define
+    if: ${{ needs.define.outputs.runners != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.define.outputs.runners) }}
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      VITEST_BROWSER: ${{ matrix.browser }}
+      VITEST_CHANNEL: ${{ matrix.channel }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Install browser
+        if: ${{ matrix.playwright }}
+        run: npx playwright install --with-deps ${{ matrix.playwright }}
+      - name: Install Chrome ${{ matrix.chromeVersion }}
+        if: ${{ matrix.chromeVersion }}
+        env:
+          CHROME_VERSION: ${{ matrix.chromeVersion }}
+        run: |
+          out=($(npx @puppeteer/browsers install "chrome@$CHROME_VERSION"))
+          echo "VITEST_EXECUTABLE_PATH=${out[1]}" >> "$GITHUB_ENV"
+      # as Karma's "Configure Safari" step (run-tests.yml)
+      - name: Configure Safari
+        if: ${{ matrix.safari }}
+        run: |
+          defaults write com.apple.Safari IncludeDevelopMenu YES
+          defaults write com.apple.Safari AllowRemoteAutomation 1
+          sudo safaridriver --enable
+      # what the Chromium stage's default variant just saved; Linux only, since the caches hold Linux paths
+      - name: Restore precompile cache
+        if: ${{ runner.os == 'Linux' }}
+        uses: ./.github/actions/precompile-cache
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Precompile
+        run: npx gulp precompile
+      - name: Run specs, shard ${{ matrix.shard }} of ${{ matrix.shards }}
+        run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
+
+
+  # The BrowserStack entries of browsers.json that have `vitest`: Safari on a real iPhone on iOS 16, the WebKit floor
+  # browserslist resolves to (ios_saf 16.6), through @vitest/browser-webdriverio and BrowserStack Local (#16006).
+  # Karma's BrowserStack job ran desktop Safari 16.5 in its place, because karma-browserstack-launcher can't drive
+  # real iOS devices. The iPhone's page (http://bs-local.com) isn't a secure context, so desktop Safari 16.5, served
+  # from http://localhost, runs the specs that guard tests on one (`specsMatching`).
+  browserstack-check:
+    name: Check for BrowserStack credentials
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+        run: echo "available=${BROWSERSTACK_USER_NAME:+true}" >> "$GITHUB_OUTPUT"
+
+
+  browserstack:
+    name: Vitest BrowserStack ${{ matrix.name }} (${{ matrix.label }})
+    needs: [define, browserstack-check]
+    if: ${{ needs.browserstack-check.outputs.available == 'true' && needs.define.outputs.browserstack != '[]' }}
+    strategy:
+      fail-fast: false
+      # vitest.config.mjs keeps each session alive past BrowserStack's 300s idle limit, but iOS Safari's page process
+      # still dies partway through a long session, so the iPhone's suite is split into 6 shards.
+      matrix:
+        include: ${{ fromJSON(needs.define.outputs.browserstack) }}
+    # One BrowserStack session per job, at most one job per lane across all workflow runs: the lowest `maxParallel` in
+    # browsers.json (two for the iPhone; one took 25 minutes), capped by the sessions the ES5 e2e job leaves free.
+    concurrency:
+      group: browserstack-vitest-lane-${{ matrix.lane }}
+      queue: max
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      # sets up Node and restores node_modules (about 10s) in place of npm ci (about 70s)
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      # what the Chromium stage's default variant just saved
+      - name: Restore precompile cache
+        uses: ./.github/actions/precompile-cache
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Precompile
+        run: npx gulp precompile
+      - name: BrowserStack env setup
+        uses: browserstack/github-actions/setup-env@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+          build-name: Vitest run ${{ github.run_id }}, attempt ${{ github.run_attempt }}, ${{ matrix.name }}, ${{ matrix.label }}, ${{ github.ref }}
+      - name: BrowserStack Local setup
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          local-testing: start
+          local-identifier: random
+      # Up to 4 attempts (retry-vitest.sh), each a new session. A retry waits a few minutes first only when BrowserStack
+      # refused the session as over its queue limit.
+      - name: Run specs (${{ matrix.label }})
+        timeout-minutes: 40
+        env:
+          VITEST_BROWSERSTACK: '1'
+          VITEST_BROWSER: ${{ matrix.browser }}
+          VITEST_DEVICE: ${{ matrix.device }}
+          VITEST_OS: ${{ matrix.os }}
+          VITEST_OS_VERSION: ${{ matrix.osVersion }}
+          VITEST_BROWSER_VERSION: ${{ matrix.browserVersion }}
+          SPEC_FILES: ${{ matrix.files }}
+          SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
+        run: |
+          if [[ -n "$SPEC_FILES" ]]; then
+            read -ra files <<< "$SPEC_FILES"
+            set -- "${files[@]}"
+          else
+            set -- "--shard=$SHARD"
+          fi
+          bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- "$@"
+      - name: BrowserStack Local stop
+        if: ${{ always() }}
+        uses: browserstack/github-actions/setup-local@1fad39ae4755588f7fc6854da6c3efba2bf5d08f # v1.0.6
+        with:
+          local-testing: stop
