@@ -208,6 +208,52 @@ describe('vast utils', () => {
       expect(insertVastTrackers({ impression: [newUrl] }, malformed)).to.equal(malformed);
     });
 
+    it('should return the vastXml unchanged when only part of it can be parsed', () => {
+      [
+        '<VAST><Ad><InLine><AdSystem>x</AdSystem><Impression>https://a.com/?a=1&b=2</Impression><Creatives></Creatives></InLine></Ad></VAST>',
+        '<VAST><Ad><InLine></InLine></Ad></VAST>junk<'
+      ].forEach(malformed => {
+        expect(insertVastTrackers({ impression: [newUrl] }, malformed)).to.equal(malformed);
+      });
+    });
+
+    describe('namespaced VAST', () => {
+      const VAST_NS = 'http://www.iab.com/VAST';
+
+      function insertedNamespaces(vastXml) {
+        const doc = parse(insertVastTrackers({
+          impression: [newUrl],
+          error: [newUrl],
+          trackingEvents: [{ event: 'start', url: newUrl }]
+        }, vastXml));
+        return Array.from(doc.querySelectorAll('Impression, Error, Creatives, Creative, Linear, TrackingEvents, Tracking'),
+          node => [node.localName, node.namespaceURI]);
+      }
+
+      it('should create elements in the default VAST namespace', () => {
+        expect(insertedNamespaces(`<VAST xmlns="${VAST_NS}"><Ad><Wrapper></Wrapper></Ad></VAST>`)).to.eql(
+          ['Impression', 'Error', 'Creatives', 'Creative', 'Linear', 'TrackingEvents', 'Tracking'].map(name => [name, VAST_NS])
+        );
+      });
+
+      it('should add tracking events to an existing Linear in the VAST namespace', () => {
+        const vastXml = `<VAST xmlns="${VAST_NS}"><Ad><InLine><Creatives><Creative><Linear></Linear></Creative></Creatives></InLine></Ad></VAST>`;
+        const doc = parse(insertVastTrackers({ trackingEvents: [{ event: 'start', url: newUrl }] }, vastXml));
+        expect(doc.getElementsByTagNameNS(VAST_NS, 'Tracking')).to.have.lengthOf(1);
+        expect(doc.getElementsByTagNameNS(VAST_NS, 'TrackingEvents')).to.have.lengthOf(1);
+      });
+
+      it('should recognize trackers already present in the VAST namespace', () => {
+        const vastXml = `<VAST xmlns="${VAST_NS}"><Ad><Wrapper><Impression><![CDATA[${existingUrl}]]></Impression></Wrapper></Ad></VAST>`;
+        const doc = parse(insertVastTrackers({ impression: [existingUrl] }, vastXml));
+        expect(doc.getElementsByTagNameNS(VAST_NS, 'Impression')).to.have.lengthOf(1);
+      });
+
+      it('should leave a VAST with no namespace without one', () => {
+        expect(insertedNamespaces('<VAST><Ad><Wrapper></Wrapper></Ad></VAST>').every(([, ns]) => ns === null)).to.be.true;
+      });
+    });
+
     describe('tracker values containing XML syntax', () => {
       // ']]>' ends a CDATA section; the text after it would otherwise be parsed as markup.
       const BREAKOUT = 'https://tracking.mydomain.com/a]]></Impression><Impression><![CDATA[https://evil.example/pwn';

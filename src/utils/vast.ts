@@ -51,48 +51,51 @@ function hasUrl(node: Element, url: string) {
 }
 
 /**
- * Inserts `node` after the last sibling with the same tag or, failing that, before `Creatives` or `Extensions`,
+ * Creates an element in `parent`'s namespace; without it, nodes added to a namespaced VAST
+ * fall outside the VAST namespace.
+ */
+function createChild(parent: Element, localName: string) {
+  return parent.ownerDocument.createElementNS(parent.namespaceURI, localName);
+}
+
+/**
+ * Inserts `node` after the last sibling with the same name or, failing that, before `Creatives` or `Extensions`,
  * which follow tracking URLs in VAST's element order.
  */
 function insertTrackingNode(parent: Element, node: Element) {
   const children = Array.from(parent.children);
-  const lastSameTag = children.filter(child => child.tagName === node.tagName).pop();
-  const next = lastSameTag
-    ? lastSameTag.nextSibling
-    : children.find(child => child.tagName === 'Creatives' || child.tagName === 'Extensions') ?? null;
+  const lastSameName = children.filter(child => child.localName === node.localName).pop();
+  const next = lastSameName
+    ? lastSameName.nextSibling
+    : children.find(child => child.localName === 'Creatives' || child.localName === 'Extensions') ?? null;
   parent.insertBefore(node, next);
 }
 
-function appendTrackingEvents(doc: Document, trackingEvents: Element, trackers: VastTrackers['trackingEvents']) {
+function appendTrackingEvents(trackingEvents: Element, trackers: VastTrackers['trackingEvents']) {
   trackers.forEach(({ event, url }) => {
     if (Array.from(trackingEvents.children).some(child =>
-      child.tagName === 'Tracking' && child.getAttribute('event') === event && hasUrl(child, url))) {
+      child.localName === 'Tracking' && child.getAttribute('event') === event && hasUrl(child, url))) {
       return;
     }
-    const tracking = doc.createElement('Tracking');
+    const tracking = createChild(trackingEvents, 'Tracking');
     tracking.setAttribute('event', event);
-    tracking.appendChild(doc.createCDATASection(url));
+    tracking.appendChild(trackingEvents.ownerDocument.createCDATASection(url));
     trackingEvents.appendChild(tracking);
   });
 }
 
-function insertLinearTrackingEvents(doc: Document, ad: Element, trackers: VastTrackers['trackingEvents']) {
+function insertLinearTrackingEvents(ad: Element, trackers: VastTrackers['trackingEvents']) {
   const linears = ad.querySelectorAll('Creatives Creative Linear');
   if (linears.length) {
     linears.forEach(linear => {
-      let trackingEvents = linear.querySelector('TrackingEvents');
-      if (!trackingEvents) {
-        trackingEvents = linear.appendChild(doc.createElement('TrackingEvents'));
-      }
-      appendTrackingEvents(doc, trackingEvents, trackers);
+      const trackingEvents = linear.querySelector('TrackingEvents') ?? linear.appendChild(createChild(linear, 'TrackingEvents'));
+      appendTrackingEvents(trackingEvents, trackers);
     });
   } else {
-    const creatives = ad.querySelector('Creatives') ?? ad.appendChild(doc.createElement('Creatives'));
-    const trackingEvents = creatives
-      .appendChild(doc.createElement('Creative'))
-      .appendChild(doc.createElement('Linear'))
-      .appendChild(doc.createElement('TrackingEvents'));
-    appendTrackingEvents(doc, trackingEvents, trackers);
+    const creatives = ad.querySelector('Creatives') ?? ad.appendChild(createChild(ad, 'Creatives'));
+    const creative = creatives.appendChild(createChild(creatives, 'Creative'));
+    const linear = creative.appendChild(createChild(creative, 'Linear'));
+    appendTrackingEvents(linear.appendChild(createChild(linear, 'TrackingEvents')), trackers);
   }
 }
 
@@ -107,6 +110,10 @@ export function insertVastTrackers(trackers: VastTrackers, vastXml: string): str
   }
   try {
     const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
+    // DOMParser does not throw on malformed XML; some browsers return what parsed before the error plus a parsererror element.
+    if (doc.getElementsByTagName('parsererror').length) {
+      return vastXml;
+    }
     const ads = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
     if (!ads.length) {
       return vastXml;
@@ -114,16 +121,16 @@ export function insertVastTrackers(trackers: VastTrackers, vastXml: string): str
     ads.forEach(ad => {
       ([['Impression', impression], ['Error', error]] as const).forEach(([tagName, urls]) => {
         urls.forEach(url => {
-          if (Array.from(ad.children).some(child => child.tagName === tagName && hasUrl(child, url))) {
+          if (Array.from(ad.children).some(child => child.localName === tagName && hasUrl(child, url))) {
             return;
           }
-          const node = doc.createElement(tagName);
+          const node = createChild(ad, tagName);
           node.appendChild(doc.createCDATASection(url));
           insertTrackingNode(ad, node);
         });
       });
       if (trackingEvents.length) {
-        insertLinearTrackingEvents(doc, ad, trackingEvents);
+        insertLinearTrackingEvents(ad, trackingEvents);
       }
     });
     return new XMLSerializer().serializeToString(doc);
