@@ -347,6 +347,16 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         });
       });
 
+      it('keeps the native nurl as the win notice when there is no win event', function () {
+        const bids = [nativeBid()];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const adm = JSON.stringify({ ver: '1.2', assets, link: { url: 'https://adv' } });
+        const [bid] = spec.interpretResponse({
+          body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'adf', bid: [{ id: 'n1', impid: req.data.imp[0].id, price: 1, adm, nurl: 'https://partner/win', crid: 'c', mtype: 4 }] }] },
+        }, req);
+        expect(bid.winUrl).to.equal('https://partner/win');
+      });
+
       it('strips prototype keys from the native response', function () {
         const bids = [nativeBid()];
         const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
@@ -417,6 +427,25 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
 
     it('does nothing without a win url', function () {
       spec.onBidWon({});
+      expect(server.requests.length).to.equal(0);
+    });
+
+    it('puts the clearing price into the ${AUCTION_PRICE} macro', function () {
+      spec.onBidWon({ winUrl: 'https://partner/win?p=${AUCTION_PRICE}', originalCpm: 1.25, cpm: 1 });
+      expect(server.requests.map((req) => req.url)).to.deep.equal(['https://partner/win?p=1.25']);
+    });
+  });
+
+  describe('onBidBillable', function () {
+    it('fires the partner\'s burl with the price, as a keepalive GET', function () {
+      spec.onBidBillable({ burl: 'https://partner/bill?p=${AUCTION_PRICE}', cpm: 0.8 });
+      expect(server.requests).to.have.length(1);
+      expect(server.requests[0].url).to.equal('https://partner/bill?p=0.8');
+      expect(server.requests[0].fetch.request.keepalive).to.equal(true);
+    });
+
+    it('does nothing without a burl', function () {
+      spec.onBidBillable({ winUrl: 'https://api.imanego.com/event?t=win' });
       expect(server.requests.length).to.equal(0);
     });
   });

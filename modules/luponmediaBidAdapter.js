@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, isStr, logWarn } from '../src/utils.js';
+import { deepAccess, deepSetValue, isStr, logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -91,9 +91,10 @@ export const converter = ortbConverter({
         bidResponse.meta.billingAccount = bid.ext.imanego.account;
       }
     }
-    // The video nurl is not used as a VAST URL above, so it serves as the win notice when there is
-    // no win event.
-    const winUrl = bid.ext?.prebid?.events?.win ?? (bidResponse.mediaType === VIDEO ? bid.nurl : undefined);
+    // The video and native nurl is not markup (video VAST is in adm, native assets too), so it serves
+    // as the win notice when there is no win event.
+    const nurlIsNotice = bidResponse.mediaType === VIDEO || bidResponse.mediaType === NATIVE;
+    const winUrl = bid.ext?.prebid?.events?.win ?? (nurlIsNotice ? bid.nurl : undefined);
     if (isStr(winUrl)) {
       bidResponse.winUrl = winUrl;
     }
@@ -181,10 +182,24 @@ export const spec = {
 
   onBidWon(bid) {
     if (isStr(bid?.winUrl)) {
-      ajax(bid.winUrl, null, undefined, { method: 'GET', keepalive: true });
+      notify(bid.winUrl, bid);
+    }
+  },
+  // The partner's billing notice (bid.burl), when the ad is billable (rendered, or as the ad unit's
+  // deferred billing says). The impression event of our server is already in the creative, so it is
+  // not sent from here.
+  onBidBillable(bid) {
+    if (isStr(bid?.burl)) {
+      notify(bid.burl, bid);
     }
   },
 };
+
+// notify requests a win or billing notice with the clearing price in its ${AUCTION_PRICE} macro;
+// keepalive so it survives the page being left.
+function notify(url, bid) {
+  ajax(replaceAuctionPrice(url, bid.originalCpm ?? bid.cpm), null, undefined, { method: 'GET', keepalive: true });
+}
 
 // User sync runs once per page.
 let hasSynced = false;
