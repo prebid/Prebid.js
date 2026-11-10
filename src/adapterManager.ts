@@ -319,7 +319,6 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           incrementBidderRequestsCounter(adUnit.code, bidderCode);
         }
 
-
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
@@ -339,13 +338,15 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
             Object.entries(mediaTypes).map(([mediaType, mediaTypeDef]) => {
               const rendererAllowed = isRendererAllowed('renderer', bid.bidder, mediaType as MediaType, adUnit);
               const safeRendererAllowed = isRendererAllowed('safeRenderer', bid.bidder, mediaType as MediaType, adUnit);
-              const hasPubRenderer = getRendererDef('renderer', false, bid, mediaTypeDef, adUnit) != null;
-              const hasAnyPubSafeRenderer = getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) != null;
               return [
                 mediaType,
                 {
-                  renderer: rendererAllowed && !hasPubRenderer && !hasAnyPubSafeRenderer,
-                  safeRenderer: safeRendererAllowed && getRendererDef('safeRenderer', false, bid, mediaTypeDef, adUnit) == null,
+                  renderer: rendererAllowed &&
+                    getRendererDef('renderer', false, bid, mediaTypeDef, adUnit) == null &&
+                    // any safeRenderer will be used over a bidder-provided renderer
+                    getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) == null,
+                  safeRenderer: safeRendererAllowed &&
+                    getRendererDef('safeRenderer', false, bid, mediaTypeDef, adUnit) == null,
                 }
               ];
             })

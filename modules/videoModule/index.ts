@@ -353,7 +353,7 @@ function isRendererAllowedHook(next, type, bidder, mediaType, adUnit, bidRespons
     }
     next.bail(false);
   } else {
-    next(type, bidder, mediaType, adUnit);
+    next(type, bidder, mediaType, adUnit, bidResponse);
   }
 }
 
