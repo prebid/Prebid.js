@@ -31,6 +31,7 @@ import type { DeepPartial } from "../../src/types/objects.d.ts";
 import type { AdServerVendor } from "../../libraries/video/constants/vendorCodes.ts";
 import type { VideoEvent } from "../../libraries/video/constants/events.ts";
 import { isRendererAllowed } from "../../src/utils/renderers.ts";
+import { videoBidRequiresRenderer } from "../../src/video.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 
@@ -436,6 +437,14 @@ function isRendererAllowedHook(next, type, bidder, mediaType, adUnit, bidRespons
   }
 }
 
+function videoBidRequiresRendererHook(next, adUnit) {
+  if (adUnit?.video) {
+    next.bail(false);
+  } else {
+    next(adUnit);
+  }
+}
+
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
@@ -445,6 +454,7 @@ export function pbVideoFactory() {
   pbGlobal.videoModule = pbVideo;
   doRender.before(videoRenderHook);
   isRendererAllowed.before(isRendererAllowedHook);
+  videoBidRequiresRenderer.before(videoBidRequiresRendererHook);
   return pbVideo;
 }
 
