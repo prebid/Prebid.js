@@ -105,12 +105,13 @@ function isValidBannerSize(size: unknown): size is Size {
 function getPrivacy(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): LinaRequest['privacy'] {
   const gdprConsent = bidderRequest.gdprConsent;
   const gppConsent = bidderRequest.gppConsent;
+  const coppa = bidderRequest.ortb2?.regs?.coppa;
   return {
     ...(typeof gdprConsent?.gdprApplies === 'boolean' ? { gdprApplies: gdprConsent.gdprApplies } : {}),
     consentString: gdprConsent?.consentString ?? null,
     gppString: gppConsent?.gppString ?? null,
     gppSections: gppConsent?.applicableSections ?? [],
-    coppa: coppaDataHandler.getCoppa(),
+    coppa: coppa === 0 || coppa === 1 ? coppa === 1 : coppaDataHandler.getCoppa(),
   };
 }
 

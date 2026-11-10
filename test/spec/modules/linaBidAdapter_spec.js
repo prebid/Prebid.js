@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/linaBidAdapter';
 import { config } from 'src/config';
+import { coppaDataHandler } from 'src/consentHandler';
 import sinon from 'sinon';
 
 const BID_REQUEST = {
@@ -305,6 +306,50 @@ describe('linaBidAdapter', function () {
       gdprConsent: { gdprApplies: false },
     });
     expect(requestWithExplicitFalse.data.privacy.gdprApplies).to.equal(false);
+  });
+
+  it('uses explicit request COPPA ahead of the global setting without mutating input', function () {
+    const getCoppa = sandbox.stub(coppaDataHandler, 'getCoppa');
+    for (const globalCoppa of [false, true]) {
+      getCoppa.returns(globalCoppa);
+      for (const coppa of [0, 1]) {
+        const ortb2 = { ...BIDDER_REQUEST.ortb2, regs: { coppa, gdpr: 1 } };
+        const bidderRequest = { ...BIDDER_REQUEST, ortb2 };
+        const before = JSON.stringify(bidderRequest);
+        const request = spec.buildRequests([BID_REQUEST], bidderRequest);
+
+        expect(request.data.privacy.coppa).to.equal(coppa === 1);
+        expect(request.data.ortb2).to.deep.equal(ortb2);
+        expect(JSON.stringify(bidderRequest)).to.equal(before);
+      }
+    }
+    expect(getCoppa.called).to.equal(false);
+  });
+
+  it('uses global COPPA when the request flag is absent', function () {
+    const getCoppa = sandbox.stub(coppaDataHandler, 'getCoppa');
+    for (const globalCoppa of [false, true]) {
+      getCoppa.returns(globalCoppa);
+      for (const ortb2 of [undefined, {}, { regs: {} }]) {
+        const request = spec.buildRequests([BID_REQUEST], { ...BIDDER_REQUEST, ortb2 });
+        expect(request.data.privacy.coppa).to.equal(globalCoppa);
+      }
+    }
+    expect(getCoppa.callCount).to.equal(6);
+  });
+
+  it('falls back to global COPPA rather than coercing malformed request values', function () {
+    const getCoppa = sandbox.stub(coppaDataHandler, 'getCoppa');
+    for (const globalCoppa of [false, true]) {
+      getCoppa.returns(globalCoppa);
+      for (const coppa of [null, false, true, '0', '1', -1, 2]) {
+        const ortb2 = { ...BIDDER_REQUEST.ortb2, regs: { coppa } };
+        const request = spec.buildRequests([BID_REQUEST], { ...BIDDER_REQUEST, ortb2 });
+        expect(request.data.privacy.coppa).to.equal(globalCoppa);
+        expect(request.data.ortb2.regs.coppa).to.equal(coppa);
+      }
+    }
+    expect(getCoppa.callCount).to.equal(14);
   });
 
   it('uses the top-level publisher ID and OpenRTB tag ID as canonical identifiers', function () {
