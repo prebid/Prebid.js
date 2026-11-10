@@ -16,6 +16,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').bidderRequest} bidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ * @typedef {import('./seedtagBidAdapter.d.ts').SeedtagBidParams} SeedtagBidParams
  */
 
 const BIDDER_CODE = 'seedtag';
