@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   # Two shards per feature variant. Each runs half of the specs (Vitest's `--shard`, balanced by file) with several
-  # pages at once (Vitest's default: a page per CPU core but one): each spec file runs in its own page, so there is no Karma-style chunk to keep together, and the whole
+  # pages at once (Vitest's default: a page per CPU core but one): each spec file runs in its own page, so specs need not stay grouped together, and the whole
   # suite takes about a minute that way.
   chromium:
     name: Vitest Chromium (${{ matrix.variant }}, shard ${{ matrix.shard }}/2)
@@ -34,8 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2]
-        # Like Karma's "Unit tests (all features disabled)" job: the variant is whatever tree the precompile
-        # step leaves in dist/src. Coverage comes from the default variant, as it did with Karma.
+        # The variant is whatever tree the precompile step leaves in dist/src ("all-features-disabled"
+        # precompiles with every feature flag but logging off). Coverage comes from the default variant.
         variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30

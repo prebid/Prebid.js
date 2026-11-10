@@ -2061,6 +2061,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "motorik",
+      "aliasOf": null,
+      "gvlid": 1409,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "msft",
       "aliasOf": null,
       "gvlid": 32,
@@ -2098,6 +2105,13 @@
       "componentType": "bidder",
       "componentName": "ntv",
       "aliasOf": "nativo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "nbads",
+      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -2418,20 +2432,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "h12media",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "h12",
-      "aliasOf": "h12media",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "mantis",
       "aliasOf": null,
       "gvlid": null,
@@ -2553,20 +2553,6 @@
       "componentType": "bidder",
       "componentName": "imp",
       "aliasOf": "impactify",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "unicorn",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "uncn",
-      "aliasOf": "unicorn",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -4647,13 +4633,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "panxo",
-      "aliasOf": null,
-      "gvlid": 1527,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pwbid",
       "aliasOf": null,
       "gvlid": null,
@@ -4836,6 +4815,48 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "amlimedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "freedomadnetwork",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "improvedigital",
+      "aliasOf": null,
+      "gvlid": 253,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "id",
+      "aliasOf": "improvedigital",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "panxo",
+      "aliasOf": null,
+      "gvlid": 1527,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smaato",
+      "aliasOf": null,
+      "gvlid": 82,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "appnexus",
       "aliasOf": null,
       "gvlid": 32,
@@ -4972,6 +4993,13 @@
       "componentName": "targetVideo",
       "aliasOf": null,
       "gvlid": 786,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "prebidServer",
+      "aliasOf": null,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5123,20 +5151,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "yandex",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ya",
-      "aliasOf": "yandex",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "sovrn",
       "aliasOf": null,
       "gvlid": 13,
@@ -5224,41 +5238,6 @@
       "componentName": "vistars",
       "aliasOf": null,
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "freedomadnetwork",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "improvedigital",
-      "aliasOf": null,
-      "gvlid": 253,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "id",
-      "aliasOf": "improvedigital",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "prebidServer",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "smaato",
-      "aliasOf": null,
-      "gvlid": 82,
       "disclosureURL": null
     },
     {
@@ -5434,6 +5413,48 @@
       "componentName": "visx",
       "aliasOf": null,
       "gvlid": 154,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "h12media",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "h12",
+      "aliasOf": "h12media",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "unicorn",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "uncn",
+      "aliasOf": "unicorn",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "yandex",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ya",
+      "aliasOf": "yandex",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
