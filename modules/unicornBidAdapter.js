@@ -1,3 +1,4 @@
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
 import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -68,7 +69,7 @@ function fixedOrSticky(el) {
   let fixed = false;
   let sticky = false;
   while (node && node.nodeType === 1) {
-    const position = win.getComputedStyle(node).position;
+    const position = getElementStyle(node, win).position;
     if (position === 'fixed') fixed = true;
     else if (position === 'sticky') sticky = true;
     node = node.parentElement;
