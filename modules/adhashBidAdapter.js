@@ -127,7 +127,9 @@ function brandSafety(badWords, maxScore) {
     const regexp = new RegExp('[\\p{L}]+', 'gu');
     const wordsMatched = content.match(regexp);
     const words = wordsMatched.join(`${delimiter}${delimiter}`);
-    const wordsInUrl = wordsAndNumbersInUrl.match(regexp).join(`${delimiter}${delimiter}`);
+    // a URL path with no letters (such as a home page, `/`) has no words to check, rather than skipping the content
+    // checks below
+    const wordsInUrl = (wordsAndNumbersInUrl.match(regexp) || []).join(`${delimiter}${delimiter}`);
 
     for (const [word, rule, points] of badWords) {
       const decodedWord = rot13(word.toLowerCase());
