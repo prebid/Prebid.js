@@ -150,6 +150,8 @@ export interface AuctionOptionsConfig {
    * returning the same bid for both may render it twice.
    *
    * Note that the ad server's targeting cannot be updated at this point, so it will still reflect the expired bid.
+   * Returning a promise delays rendering until it resolves; with `legacyRender`, which writes the creative using
+   * `document.write`, return the replacement synchronously instead.
    */
   replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | Promise<Bid | null | undefined>;
 

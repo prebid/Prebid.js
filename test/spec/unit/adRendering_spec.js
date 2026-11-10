@@ -300,7 +300,7 @@ describe('adRendering', () => {
         sinon.assert.calledOnce(creativeRender);
       });
 
-      it('renders the replacement of an expired bid', async () => {
+      it('renders the replacement of an expired bid synchronously, when legacyRender is set', () => {
         const replacement = {
           adId: 'replacement',
           ad: '<div>replacement</div>',
@@ -312,7 +312,7 @@ describe('adRendering', () => {
         bid.ttl = 1;
         config.setConfig({ auctionOptions: { legacyRender: true, replaceExpiredBid: () => replacement } });
         renderAdDirect(doc, bid.adId);
-        await settled();
+        // legacyRender uses document.write, which only works before the calling script returns
         sinon.assert.calledWith(doc.write, replacement.ad);
         sinon.assert.neverCalledWith(doc.write, bid.ad);
         sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ adId: replacement.adId, bid: replacement }));
@@ -548,11 +548,21 @@ describe('adRendering', () => {
             expect(replacement.viewUrl).to.eql('https://view.example.com');
           });
 
-          it('should accept a replacement returned synchronously', async () => {
+          it('should render a replacement returned synchronously right away', () => {
             replaceExpiredBid.returns(replacement);
             handleRender({ adId, bidResponse });
-            await settled();
             sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse: replacement }));
+          });
+
+          Object.entries({
+            'returns nothing': () => replaceExpiredBid.returns(null),
+            'throws': () => replaceExpiredBid.throws(new Error()),
+          }).forEach(([t, setup]) => {
+            it(`should render the expired bid right away when replaceExpiredBid synchronously ${t}`, () => {
+              setup();
+              handleRender({ adId, bidResponse });
+              sinon.assert.calledWith(doRenderStub, sinon.match({ bidResponse }));
+            });
           });
 
           it('should emit BID_WON for the replacement, and not for the expired bid', async () => {
@@ -581,6 +591,14 @@ describe('adRendering', () => {
             handleRender({ adId, bidResponse });
             await settled();
             expect(getRenderedBid(bidResponse)).to.equal(replacement);
+          });
+
+          it('should forget an earlier replacement when the expired bid is rendered again without one', async () => {
+            handleRender({ adId, bidResponse });
+            await settled();
+            replaceExpiredBid.returns(null);
+            handleRender({ adId, bidResponse });
+            expect(getRenderedBid(bidResponse)).to.equal(bidResponse);
           });
 
           describe('when the expired bid was already rendered', () => {

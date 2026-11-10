@@ -385,35 +385,36 @@ function isValidReplacement(bid) {
  * whichever is appropriate. This has to happen before the expired bid is marked as winner, so that
  * BID_WON is emitted only for what is actually rendered.
  * EXPIRED_RENDER is emitted once the outcome is known, so that it is not emitted twice when falling back to the expired bid.
+ *
+ * If `replaceExpiredBid` does not return a promise, rendering stays synchronous: `legacyRender` writes the creative
+ * with `document.write`, which only works while the calling script is still running.
  */
 function renderReplacementOfExpiredBid(args, replaceExpiredBid) {
   const { adId, bidResponse } = args;
-  let renderedBid = bidResponse;
-  PbPromise.resolve()
-    .then(() => replaceExpiredBid(bidResponse))
-    .then((replacement) => {
+  // drop the outcome of any earlier attempt, so that creative events are not attributed to a previous replacement
+  REPLACEMENTS.delete(bidResponse);
+
+  function onError(e) {
+    logError(`Could not replace expired ad id ${adId}`, e);
+  }
+
+  function render(replacement) {
+    let renderedBid = bidResponse;
+    try {
       if (isValidReplacement(replacement)) {
-        return replacement;
-      }
-      if (replacement != null) {
-        logWarn(`Replacement for expired ad id ${adId} is expired, already used, or defers rendering; ignoring it`);
-      }
-    }, (e) => {
-      logError(`Could not replace expired ad id ${adId}`, e);
-    })
-    .then((replacement: Bid) => {
-      if (replacement == null) {
-        // render the expired bid as usual; that emits EXPIRED_RENDER and honors `suppressExpiredRender`
-        renderBid(args);
-      } else {
         logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
         renderedBid = replacement;
         REPLACEMENTS.set(bidResponse, replacement);
         events.emit(EXPIRED_RENDER, bidResponse);
         renderBid({ ...args, bidResponse: replacement });
+      } else {
+        if (replacement != null) {
+          logWarn(`Replacement for expired ad id ${adId} is expired, already used, or defers rendering; ignoring it`);
+        }
+        // render the expired bid as usual; that emits EXPIRED_RENDER and honors `suppressExpiredRender`
+        renderBid(args);
       }
-    })
-    .catch((e) => {
+    } catch (e) {
       logError(`Could not render expired ad id ${adId}`, e);
       emitAdRenderFail({
         reason: AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -421,7 +422,24 @@ function renderReplacementOfExpiredBid(args, replaceExpiredBid) {
         id: adId,
         bid: renderedBid
       });
+    }
+  }
+
+  let result;
+  try {
+    result = replaceExpiredBid(bidResponse);
+  } catch (e) {
+    onError(e);
+    result = null;
+  }
+  if (typeof result?.then === 'function') {
+    PbPromise.resolve(result).then(render, (e) => {
+      onError(e);
+      render(null);
     });
+  } else {
+    render(result);
+  }
 }
 
 export function markBidAsRendered(bidResponse) {
