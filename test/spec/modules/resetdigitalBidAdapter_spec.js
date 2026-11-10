@@ -183,15 +183,41 @@ describe('resetdigitalBidAdapter', function () {
     it('should return iframe sync', function () {
       const sync = spec.getUserSyncs({ iframeEnabled: true }, [br]);
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'iframe');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('iframe');
+      expect(sync[0].url).to.be.a('string');
     });
 
     it('should return pixel sync', function () {
       const sync = spec.getUserSyncs({ pixelEnabled: true }, [br]);
       expect(sync.length).to.equal(1);
-      expect(sync[0].type === 'image');
-      expect(typeof sync[0].url === 'string');
+      expect(sync[0].type).to.equal('image');
+      expect(sync[0].url).to.be.a('string');
+    });
+
+    it('should return a sync on a no-bid (204, empty body)', function () {
+      const sync = spec.getUserSyncs({ iframeEnabled: true }, [{ body: '' }]);
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type).to.equal('iframe');
+    });
+
+    it('should return a sync when there are no server responses', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, []);
+      expect(sync.length).to.equal(1);
+      expect(sync[0].type).to.equal('image');
+    });
+
+    it('should return no syncs when iframe and pixel syncs are disabled', function () {
+      const sync = spec.getUserSyncs({}, [br]);
+      expect(sync).to.deep.equal([]);
+    });
+
+    it('should pass gdpr params in the sync url', function () {
+      const sync = spec.getUserSyncs(
+        { pixelEnabled: true },
+        [{ body: '' }],
+        { gdprApplies: true, consentString: 'abc' }
+      );
+      expect(sync[0].url).to.equal('https://meta.resetdigital.co/pchain?gdpr=1&gdpr_consent=abc');
     });
   });
 
