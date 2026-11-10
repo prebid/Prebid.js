@@ -61,8 +61,8 @@ const converter = ortbConverter({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (!Number.isFinite(bid.price) || bid.price <= 0 ||
-        !(bid.w > 0 && bid.h > 0) || (!bid.adm && !bid.nurl) ||
+    // no size check: core fills in a missing banner size from the ad unit, or rejects the bid
+    if (!Number.isFinite(bid.price) || bid.price <= 0 || (!bid.adm && !bid.nurl) ||
         (bid.exp !== undefined && (!Number.isFinite(bid.exp) || bid.exp <= 0))) return;
     const response = buildBidResponse(bid, context);
     response.meta = { ...deepClone(deepAccess(bid, 'ext.prebid.meta', {})), ...response.meta };

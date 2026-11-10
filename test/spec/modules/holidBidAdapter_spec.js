@@ -219,8 +219,13 @@ describe('Holid adapter', () => {
     it('ignores bids for other impressions', () => {
       expect(interpret([serverBid({ impid: 'unknown' })])).to.deep.equal([]);
     });
-    [{ price: -1 }, { price: NaN }, { price: 0 }, { adm: '' }, { w: 0 }, { exp: -1 }, { exp: 0 }].forEach(overrides => {
+    [{ price: -1 }, { price: NaN }, { price: 0 }, { adm: '' }, { exp: -1 }, { exp: 0 }].forEach(overrides => {
       it(`rejects unusable bid ${JSON.stringify(overrides)}`, () => expect(interpret([serverBid(overrides)])).to.deep.equal([]));
+    });
+    it('returns bids without a size, so core can fill it in from the ad unit', () => {
+      const bids = interpret([serverBid({ w: undefined, h: undefined })]);
+      expect(bids).to.have.length(1);
+      expect(bids[0].cpm).to.be.above(0);
     });
     it('accepts empty/no-bid and malformed seats without throwing', () => {
       for (const body of [null, {}, { seatbid: null }, { seatbid: [] }, { seatbid: [null, {}, { bid: [null] }] }]) {
