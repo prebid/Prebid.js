@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { resetUserSync, spec, storage } from 'modules/luponmediaBidAdapter.js';
+import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -43,6 +43,12 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
 
   describe('buildRequests', function () {
     afterEach(function () { config.resetConfig(); });
+
+    it('keeps a generated request id when the auction id is not shared (TIDs disabled)', function () {
+      const bids = [bidRequest({ key: 'acme' }, { auctionId: null })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, auctionId: null, bids });
+      expect(req.data.id).to.be.a('string').and.not.empty;
+    });
 
     it('sends the key per slot and its prefix in the url', function () {
       const bids = [
@@ -413,41 +419,12 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.imanego.com/sync' }]);
     });
 
-    describe('image syncs (no iframe allowed)', function () {
-      let stored;
-      beforeEach(function () {
-        stored = null;
-        sinon.stub(storage, 'localStorageIsEnabled').returns(true);
-        sinon.stub(storage, 'getDataFromLocalStorage').callsFake(() => stored);
-        sinon.stub(storage, 'setDataInLocalStorage').callsFake((k, v) => { stored = v; });
-      });
-      afterEach(function () { sinon.restore(); });
-
-      it('returns one image per partner slot with consent params', function () {
-        const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies: true, consentString: 'CONSENT' });
-        expect(syncs).to.have.length(5);
-        expect(syncs[0]).to.deep.equal({ type: 'image', url: 'https://sync.imanego.com/px?n=0&gdpr=1&gdpr_consent=CONSENT' });
-        expect(syncs[4].url).to.equal('https://sync.imanego.com/px?n=4&gdpr=1&gdpr_consent=CONSENT');
-      });
-
-      it('runs at most once an hour for the same consent', function () {
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(5);
-        resetUserSync();
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.deep.equal([]);
-        resetUserSync();
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies: true, consentString: 'NEW' })).to.have.length(5);
-        resetUserSync();
-        stored = `${Date.now() - 3601e3}|${stored.split('|')[1]}`;
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies: true, consentString: 'NEW' })).to.have.length(5);
-      });
-
-      it('runs every time without storage', function () {
-        storage.localStorageIsEnabled.returns(false);
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(5);
-        resetUserSync();
-        expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(5);
-        expect(storage.setDataInLocalStorage.called).to.equal(false);
-      });
+    it('returns one image per partner slot with consent params when iframes are not allowed', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies: true, consentString: 'CONSENT' });
+      expect(syncs).to.have.length(5);
+      expect(syncs[0]).to.deep.equal({ type: 'image', url: 'https://sync.imanego.com/px?n=0&gdpr=1&gdpr_consent=CONSENT' });
+      expect(syncs[4].url).to.equal('https://sync.imanego.com/px?n=4&gdpr=1&gdpr_consent=CONSENT');
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.deep.equal([]);
     });
 
     it('allows a localhost sync endpoint for development only', function () {

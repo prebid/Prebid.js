@@ -6,7 +6,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('./luponmediaBidAdapter.d.ts').LuponmediaBidderParams} LuponmediaBidderParams
@@ -18,11 +17,9 @@ const GVLID = 1132;
 const DEFAULT_HOST = 'https://api.imanego.com';
 const SYNC_HOST = 'https://sync.imanego.com';
 // Image syncs when the page allows no iframe: one image per partner slot (Prebid keeps 5 syncs per
-// bidder by default), at most once an hour per browser for the same consent.
+// bidder by default). The sync server answers a slot with nothing to sync with a 1x1 GIF that the
+// browser keeps for an hour, so synced browsers mostly do not reach it again.
 const PIXEL_SYNCS = 5;
-const PIXEL_SYNC_EVERY = 3600e3;
-const PIXEL_SYNC_KEY = 'lupon_px';
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 // OpenRTB 2.6 seatbid.bid[].mtype by bid type.
 const MTYPES = { banner: 1, video: 2, audio: 3, native: 4 };
 const LOCAL_ENDPOINT = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
@@ -58,8 +55,11 @@ export const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    // request.id is the Prebid auctionId.
-    request.id = bidderRequest.auctionId;
+    // request.id is the Prebid auctionId when the page shares it (enableTIDs); otherwise the
+    // converter's generated id stays.
+    if (bidderRequest.auctionId) {
+      request.id = bidderRequest.auctionId;
+    }
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -190,9 +190,6 @@ export const spec = {
       return [{ type: 'iframe', url: query ? `${host}/sync?${query}` : `${host}/sync` }];
     }
     // Image n: the sync server redirects it to the n-th partner without a user id (1x1 GIF if none).
-    if (pixelSyncedRecently(query)) {
-      return [];
-    }
     const syncs = [];
     for (let n = 0; n < PIXEL_SYNCS; n++) {
       syncs.push({ type: 'image', url: `${host}/px?n=${n}${query ? '&' + query : ''}` });
@@ -226,31 +223,6 @@ let hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
-}
-
-// pixelSyncedRecently tells whether image syncs ran within the hour for the same consent, and if not,
-// records this run. Without storage (not allowed or not available) images run on every page view;
-// the server answers a synced browser with a GIF that the browser keeps for an hour.
-function pixelSyncedRecently(query) {
-  try {
-    if (!storage.localStorageIsEnabled()) {
-      return false;
-    }
-    const [at, last] = (storage.getDataFromLocalStorage(PIXEL_SYNC_KEY) || '').split('|');
-    if (last === String(hash(query)) && Date.now() - Number(at) < PIXEL_SYNC_EVERY) {
-      return true;
-    }
-    storage.setDataInLocalStorage(PIXEL_SYNC_KEY, `${Date.now()}|${hash(query)}`);
-  } catch (e) {}
-  return false;
-}
-
-function hash(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h * 31 + s.charCodeAt(i)) | 0;
-  }
-  return h;
 }
 
 // Event trackers and placement type are required downstream; Prebid leaves them out of the native
