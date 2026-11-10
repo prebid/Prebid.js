@@ -562,7 +562,7 @@ export const spec = {
       return {
         A: timeout.bidder,
         mid: params.tagId,
-        a: params.adunitId || timeout.adUnitCode,
+        a: params.adUnitId || timeout.adUnitCode,
         bid: timeout.bidId,
         n: 'g_pbto',
         aud: timeout.transactionId,
