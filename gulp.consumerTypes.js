@@ -141,55 +141,62 @@ import type {BidRequest, BidderScopedSettings, BidderSettings, BidderSettingsMap
 import 'prebid.js/modules/adapexBidAdapter';
 import 'prebid.js/modules/appnexusBidAdapter';
 import 'prebid.js/modules/priceFloors';
+declare function expectType<T>(value: T): void;
 const defaults: BidderSettings<string> = {storageAllowed: false};
 const scoped: BidderScopedSettings<'adapex'> = {
   bidCpmAdjustment(cpm, _bid, request) {
-    const code: 'adapex' = request.bidder;
-    const seat: string = request.params.seat;
+    expectType<'adapex'>(request.bidder);
+    expectType<string>(request.params.seat);
     // @ts-expect-error - callback params remain specific to the bidder
-    request.params.placementId;
-    return code && seat ? cpm : 0;
+    expectType<unknown>(request.params.placementId);
+    return cpm;
   }
 };
 const settings = {
   standard: defaults,
   adapex: {
     ...scoped,
-    bidDesirabilityAdjustment(cpm, _bid, request) { return request.params.seat ? cpm : 0; },
-    inverseBidAdjustment(floor, request) { const seat: string = request.params.seat; return seat ? floor : 0; },
+    bidDesirabilityAdjustment(cpm, _bid, request) { expectType<string>(request.params.seat); return cpm; },
+    inverseBidAdjustment(floor, request) { expectType<string>(request.params.seat); return floor; },
     adserverTargeting: [{key: 'seat', val: (_bid, request) => request.params.seat}]
   },
   custom: {
     bidCpmAdjustment(cpm, _bid, request) {
-      const bidder: string = request.bidder;
-      const anything: unknown = request.params.anything;
+      expectType<string>(request.bidder);
+      expectType<unknown>(request.params.anything);
       // @ts-expect-error - custom params retain unknown rather than any
-      const wrong: string = request.params.anything;
-      return bidder && anything !== wrong ? cpm : 0;
+      expectType<string>(request.params.anything);
+      return cpm;
     }
   }
 } satisfies BidderSettingsMap;
-pbjs.bidderSettings = settings;
-pbjs.bidderSettings = {
-  appnexus: {bidCpmAdjustment(cpm, _bid, request) {
-    const code: 'appnexus' = request.bidder;
-    const placement: number | string | undefined = request.params.placementId;
-    // @ts-expect-error - whole-object assignment keeps callback parameter checking
-    request.params.seat;
-    return code && placement ? cpm : 0;
-  }}
-};
-pbjs.bidderSettings.adapex = scoped;
+export function assignSettings(owner: typeof pbjs) {
+  owner.bidderSettings = settings;
+}
+export function assignInlineSettings(owner: typeof pbjs) {
+  owner.bidderSettings = {
+    appnexus: {bidCpmAdjustment(cpm, _bid, request) {
+      expectType<'appnexus'>(request.bidder);
+      expectType<number | string | undefined>(request.params.placementId);
+      // @ts-expect-error - whole-object assignment keeps callback parameter checking
+      expectType<unknown>(request.params.seat);
+      return cpm;
+    }}
+  };
+}
+export function assignScopedSettings(owner: typeof pbjs) {
+  owner.bidderSettings.adapex = scoped;
+}
 // @ts-expect-error - a callback for a different bidder is rejected
-pbjs.bidderSettings.adapex = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'appnexus'>) => cpm};
+export const mismatchedBidder: NonNullable<typeof pbjs.bidderSettings.adapex> = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'appnexus'>) => cpm};
 // @ts-expect-error - a named bidder's callback must accept all of that bidder's requests
-pbjs.bidderSettings.adapex = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'adapex'> & {extraRequiredField: string}) => cpm};
+export const narrowCallback: NonNullable<typeof pbjs.bidderSettings.adapex> = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'adapex'> & {extraRequiredField: string}) => cpm};
 // @ts-expect-error - known settings values stay typed
-pbjs.bidderSettings = {adapex: {allowZeroCpmBids: 'invalid'}};
+export const invalidZeroCpm: typeof pbjs.bidderSettings = {adapex: {allowZeroCpmBids: 'invalid'}};
 // @ts-expect-error - custom bidders still use the shared settings types
-pbjs.bidderSettings = {custom: {storageAllowed: 'invalid'}};
+export const invalidStorageAllowed: typeof pbjs.bidderSettings = {custom: {storageAllowed: 'invalid'}};
 // @ts-expect-error - excess setting keys are rejected
-pbjs.bidderSettings = {adapex: {bogus: true}};
+export const invalidSetting: typeof pbjs.bidderSettings = {adapex: {bogus: true}};
 `,
 };
 
