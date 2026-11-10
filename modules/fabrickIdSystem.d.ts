@@ -60,10 +60,10 @@ export interface FabrickIdParams {
    */
   ifa_type?: FabrickIdParamValue;
   /**
-   * Limit ad tracking: `1` when the user has opted out of ad tracking and measurement.
-   * Booleans are not sent; use `0`/`1` or `'0'`/`'1'`.
+   * Limit ad tracking: `1` (or `true`) when the user has opted out of ad tracking and measurement.
+   * Booleans are sent as `1`/`0`.
    */
-  lmt?: 0 | 1 | '0' | '1';
+  lmt?: boolean | 0 | 1 | '0' | '1';
   /**
    * IAB Tech Lab Content Taxonomy v3.0 tier 1 category (URL-encoded).
    */

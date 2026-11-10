@@ -66,7 +66,11 @@ export const fabrickIdSubmodule = {
           if (k === 'url' || k === 'refererInfo' || (k.length > 3 && k.substring(0, 3) === 'max')) {
             continue;
           }
-          const v = configParams[k];
+          let v = configParams[k];
+          if (k === 'lmt' && typeof v === 'boolean') {
+            // the docs list lmt as a Boolean; send it as the 0/1 the endpoint expects instead of dropping it
+            v = v ? 1 : 0;
+          }
           if (Array.isArray(v)) {
             for (const j in v) {
               if (typeof v[j] === 'string' || typeof v[j] === 'number') {
