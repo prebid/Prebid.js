@@ -435,10 +435,10 @@ describe('boldwinx bid adapter', function () {
     });
 
     if (FEATURES.VIDEO) {
-      it('keeps nurl as the VAST URL when there is no markup and wraps burl around it', function () {
+      it('keeps nurl, with the price filled in, as the VAST URL when there is no markup and wraps burl around it', function () {
         [undefined, ''].forEach((adm) => {
-          const bid = interpret({ video: VIDEO_PARAMS }, { adm, nurl: 'https://cdn.example.com/vast.xml', burl: BURL, mtype: 2 });
-          expect(bid.vastUrl, String(adm)).to.equal('https://cdn.example.com/vast.xml');
+          const bid = interpret({ video: VIDEO_PARAMS }, { adm, nurl: NURL, burl: BURL, mtype: 2 });
+          expect(bid.vastUrl, String(adm)).to.equal(WIN.url);
           expect(bid.vastTrackers, String(adm)).to.deep.equal({ impression: [BILL.url] });
           expect(bid.eventtrackers, String(adm)).to.equal(undefined);
         });

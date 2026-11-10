@@ -79,16 +79,19 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   },
   bidResponse(buildBidResponse, bid, context) {
     // The endpoint puts ${AUCTION_PRICE} into its own trackers inside VAST and native markup too,
-    // and Prebid core fills the macro in only for banner markup.
-    if (isStr(bid.adm)) {
-      bid.adm = replaceAuctionPrice(bid.adm, bid.price);
-    }
+    // and Prebid core fills the macro in only for banner markup. The notices change in the bid itself,
+    // because core takes nurl from there when it is the VAST URL.
+    ['adm', 'nurl', 'burl'].forEach((field) => {
+      if (isStr(bid[field])) {
+        bid[field] = replaceAuctionPrice(bid[field], bid.price);
+      }
+    });
     // Core hands the same context to every bid on the impression, so a guess must not stay in it.
     const bidResponse = ORTB_MTYPES.hasOwnProperty(bid.mtype)
       ? buildBidResponse(bid, context)
       : buildBidResponse(bid, { ...context, mediaType: guessMediaType(bid, context.imp) });
-    const burl = isStr(bid.burl) && bid.burl !== '' ? replaceAuctionPrice(bid.burl, bid.price) : null;
-    const nurl = isStr(bid.nurl) && bid.nurl !== '' ? replaceAuctionPrice(bid.nurl, bid.price) : null;
+    const burl = isStr(bid.burl) && bid.burl !== '' ? bid.burl : null;
+    const nurl = isStr(bid.nurl) && bid.nurl !== '' ? bid.nurl : null;
     if (bidResponse.mediaType === VIDEO) {
       // The publisher's player, not Prebid, shows instream video, so the notices go into the VAST as
       // impression pixels. Next to VAST markup nurl is the win notice; without markup it is the VAST URL.
@@ -104,7 +107,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       return bidResponse;
     }
     // Prebid core fires image event trackers of the ads it renders: win trackers when the bid wins,
-    // impression trackers when it becomes billable. Banner markup already fires nurl as a pixel.
+    // impression trackers when it becomes billable. For banners core adds nurl to the markup as a pixel.
     const trackers = [];
     if (burl) {
       trackers.push({ event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: burl });
