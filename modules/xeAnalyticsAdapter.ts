@@ -449,7 +449,7 @@ const xeAnalytics = Object.assign(adapter<'xe'>({ analyticsType: 'endpoint' }), 
     try {
       handler(args);
     } catch (e) {
-      logError(`xe analytics: ${eventType} failed`, e);
+      logError(`Xeworks analytics: ${eventType} failed`, e);
     }
   }
 });

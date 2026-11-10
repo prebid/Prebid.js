@@ -1,6 +1,6 @@
 # Overview
 
-Module Name: xe Analytics Adapter
+Module Name: Xeworks Analytics Adapter
 Module Type: Analytics Adapter
 Maintainer: dima@xe.works
 
