@@ -1765,6 +1765,16 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
+        it('should use the answered bid\'s params.ttl when the response is for the whole bidder request (singleRequestMode)', () => {
+          // earlier tests leave a global yahooAds.ttl, which would take precedence
+          config.resetConfig();
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          bidderRequest.bids[0].bidId = serverResponse.body.seatbid[0].bid[0].impid;
+          bidderRequest.bids[0].params.ttl = 900;
+          const response = spec.interpretResponse(serverResponse, { bidderRequest });
+          expect(response[0].ttl).to.equal(900);
+        });
+
         it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
@@ -1801,6 +1811,24 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.equal('outstream');
         expect(bidderRequest.renderer).to.be.undefined;
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].renderer).to.not.be.undefined;
+      });
+
+      it('should create a renderer from the answered bid\'s outstream context when the response is for the whole bidder request (singleRequestMode)', () => {
+        config.setConfig({
+          yahooAds: {
+            mode: VIDEO
+          }
+        });
+        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
+        bidderRequest.bids[0].bidId = serverResponse.body.seatbid[0].bid[0].impid;
+        bidderRequest.bids[0].mediaTypes = {
+          video: {
+            context: 'outstream'
+          }
+        };
+        const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].mediaType).to.equal('video');
         expect(response[0].renderer).to.not.be.undefined;
       });
