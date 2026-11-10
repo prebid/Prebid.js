@@ -1299,9 +1299,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
 
       it('should return the proper mediaType', function () {
-        it('should return a creativeId', function () {
-          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-        });
+        expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
       });
     });
 

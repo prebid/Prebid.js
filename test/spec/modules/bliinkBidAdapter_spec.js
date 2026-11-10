@@ -238,7 +238,16 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
         <VASTAdTagURI>https://vast.bliink.io/p/508379d0-9f65-4198-8ba5-f61f2b51224f.xml</VASTAdTagURI>
         <Error>https://e.api.bliink.io/e?name=vast-error&token=${SAMPLE_VAST_EVENT_TOKEN}</Error>
         <Impression>https://e.api.bliink.io/e?name=impression&token=${SAMPLE_VAST_EVENT_TOKEN}</Impression>
-        <Extensions><Price>1</Price><Currency>EUR</Currency>
+        <Extensions><Price>1</Price><Currency>EUR</Currency></Extensions>
+        <Creatives>
+          <Creative>
+            <Linear>
+              <TrackingEvents>
+                <Tracking event="start">https://e.api.bliink.io/e?name=start&token=${SAMPLE_VAST_EVENT_TOKEN}</Tracking>
+              </TrackingEvents>
+            </Linear>
+          </Creative>
+        </Creatives>
       </Wrapper>
     </Ad>
   </VAST>
@@ -525,10 +534,7 @@ describe('BLIINK Adapter interpretResponse', function () {
   for (const test of testsInterpretResponse) {
     it(test.title, () => {
       const res = test.args.fn;
-
-      if (res) {
-        expect(res).to.eql(test.want);
-      }
+      expect(res).to.eql(test.want);
     });
   }
 });
@@ -1195,10 +1201,11 @@ describe('getEffectiveConnectionType', () => {
       navigatorStub.restore();
     }
   });
-  if (navigatorStub) {
-    it('should return "unsupported" when effective connection type is undefined', () => {
-      const result = getEffectiveConnectionType();
-      expect(result).to.equal('unsupported');
-    });
-  }
+  it('should return "unsupported" when effective connection type is undefined', function () {
+    if (!('connection' in navigator)) {
+      this.skip();
+    }
+    const result = getEffectiveConnectionType();
+    expect(result).to.equal('unsupported');
+  });
 });

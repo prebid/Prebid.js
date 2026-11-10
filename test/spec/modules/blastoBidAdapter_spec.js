@@ -253,6 +253,7 @@ describe('blastoAdapter', function () {
     beforeEach(function () {
       bidRequests = [{
         'bidId': '28ffdk2B952532',
+        'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
         'bidder': 'blasto',
         'userId': {
           'freepassId': {
@@ -276,13 +277,14 @@ describe('blastoAdapter', function () {
       expect(response).to.be.an('array').that.is.empty;
     });
 
-    it('Should interpret banner response', function () {
+    it('Should interpret banner response', async function () {
       const serverResponse = {
         body: {
           'cur': 'USD',
           'seatbid': [{
             'bid': [{
               'impid': '28ffdk2B952532',
+              'mtype': 1,
               'price': 97,
               'adm': '<iframe src=\'http://127.0.0.1:8081/banner.html?w=300&h=250&cr=0\' width=\'300\' height=\'250\' style=\'border:none;\'></iframe>',
               'w': 300,
@@ -292,19 +294,17 @@ describe('blastoAdapter', function () {
           }]
         }
       };
-      it('should interpret server response', async function () {
-        const bidRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse(serverResponse, bidRequest);
-        expect(bids).to.be.an('array');
-        const bid = bids[0];
-        expect(bid).to.be.an('object');
-        expect(bid.currency).to.equal('USD');
-        expect(bid.cpm).to.equal(97);
-        expect(bid.ad).to.equal(ad);
-        expect(bid.width).to.equal(300);
-        expect(bid.height).to.equal(250);
-        expect(bid.creativeId).to.equal('creative0');
-      });
+      const bidRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const bids = spec.interpretResponse(serverResponse, bidRequest);
+      expect(bids).to.be.an('array');
+      const bid = bids[0];
+      expect(bid).to.be.an('object');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.cpm).to.equal(97);
+      expect(bid.ad).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('creative0');
     });
   });
 });

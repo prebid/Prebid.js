@@ -1,7 +1,4 @@
 import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
-import Base64 from 'crypto-js/enc-base64';
-import hmacSHA512 from 'crypto-js/hmac-sha512';
-import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
@@ -24,6 +21,7 @@ const MODULE_CODE = 'bydata';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
 let initOptions = {};
+let visitorDataPromise;
 var payload = {};
 var winPayload = {};
 var isDataSend = window.asc_data || false;
@@ -57,14 +55,14 @@ function onAuctionStart(t) {
 
 /* EVENT: bid timeout */
 function onBidTimeout(t) {
-  if (payload['visitor_data'] && t && t.length > 0) {
+  if (t && t.length > 0) {
     bdNbTo['to'] = t;
   }
 }
 
 /* EVENT: no bid */
 function onNoBidData(t) {
-  if (payload['visitor_data'] && t) {
+  if (t) {
     bdNbTo['nb'].push(t);
   }
 }
@@ -118,7 +116,8 @@ ascAdapter.originEnableAnalytics = ascAdapter.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 ascAdapter.enableAnalytics = function (config) {
   if (this.initConfig(config)) {
-    initOptions.isCorrectOption && ascAdapter.getVisitorData();
+    // Register listeners immediately, while native Web Crypto signs the visitor token.
+    ascAdapter.getVisitorData().catch(error => _logError('Failed to sign visitor data: ' + error));
     ascAdapter.originEnableAnalytics(config);
   }
 };
@@ -185,27 +184,28 @@ ascAdapter.getVisitorData = function (data = {}) {
       return '';
     }
   }
-  function base64url(source) {
-    var encodedSource = Base64.stringify(source);
-    encodedSource = encodedSource.replace(/=+$/, '');
-    encodedSource = encodedSource.replace(/\+/g, '-');
-    encodedSource = encodedSource.replace(/\//g, '_');
-    return encodedSource;
+  function base64url(bytes) {
+    let binary = '';
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
   }
-  function getJWToken(data) {
-    var header = {
-      'alg': 'HS256',
-      'typ': 'JWT'
-    };
-    var stringifiedHeader = enc.parse(JSON.stringify(header));
-    var encodedHeader = base64url(stringifiedHeader);
-    var stringifiedData = enc.parse(JSON.stringify(data));
-    var encodedData = base64url(stringifiedData);
-    var token = encodedHeader + '.' + encodedData;
-    var signature = hmacSHA512(token, secretKey);
-    signature = base64url(signature);
-    var signedToken = token + '.' + signature;
-    return signedToken;
+  async function getJWToken(data) {
+    const subtle = getSubtle();
+    if (!subtle) {
+      throw new Error('ByData requires Web Crypto in a secure context');
+    }
+    const encoder = new TextEncoder();
+    // Keep the existing HS256 header despite the SHA-512 signature for wire compatibility.
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const token = base64url(encoder.encode(JSON.stringify(header))) + '.' +
+      base64url(encoder.encode(JSON.stringify(data)));
+    const key = await subtle.importKey(
+      'raw', encoder.encode(secretKey), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']
+    );
+    const signature = await subtle.sign('HMAC', key, encoder.encode(token));
+    return token + '.' + base64url(new Uint8Array(signature));
   }
   function detectWidth() {
     const { width: viewportWidth } = getViewportSize();
@@ -237,11 +237,20 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua['de'] = deviceType;
     ua['tz'] = getTimeZone();
   }
-  var signedToken = getJWToken(ua);
-  payload['visitor_data'] = signedToken;
-  winPayload['visitor_data'] = signedToken;
-  return signedToken;
+  const signing = getJWToken(ua).catch(error => {
+    // retry on the next send, unless Web Crypto is missing - that is permanent
+    if (visitorDataPromise === signing && getSubtle()) {
+      visitorDataPromise = null;
+    }
+    throw error;
+  });
+  visitorDataPromise = signing;
+  return signing;
 };
+
+function getSubtle() {
+  return window.crypto && window.crypto.subtle;
+}
 
 ascAdapter.dataProcess = function (t) {
   if (isBydata) { payload['bydata_debug'] = 'true'; }
@@ -320,9 +329,14 @@ ascAdapter.dataProcess = function (t) {
 };
 
 ascAdapter.sendPayload = function (data) {
-  var obj = { 'records': [{ 'value': data }] };
-  const strJSON = JSON.stringify(obj);
-  sendDataOnKf(strJSON);
+  // Snapshot auction data now; other events can update the shared payload while
+  // the visitor signature is pending.
+  const snapshot = deepClone(data);
+  const signing = visitorDataPromise || ascAdapter.getVisitorData();
+  return signing.then(signedToken => {
+    snapshot['visitor_data'] = signedToken;
+    sendDataOnKf(JSON.stringify({ records: [{ value: snapshot }] }));
+  }).catch(error => _logError('Failed to send signed visitor data: ' + error));
 };
 
 function sendDataOnKf(dataObj) {

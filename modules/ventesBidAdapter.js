@@ -2,7 +2,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { convertUserParams } from '../libraries/appnexusUtils/anUtils.js';
 import { hasUserInfo } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const BID_METHOD = 'POST';
@@ -103,28 +103,7 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
 
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = ((bidRequests) || []).find(hasUserInfo);
-  const userObj = {};
-  if (userObjBid) {
-    Object.keys(userObjBid.params.user)
-      .forEach((param) => {
-        const uparam = convertCamelToUnderscore(param);
-        if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-          const segs = [];
-          userObjBid.params.user[param].forEach(val => {
-            if (isNumber(val)) {
-              segs.push({
-                'id': val
-              });
-            } else if (isPlainObject(val)) {
-              segs.push(val);
-            }
-          });
-          userObj[uparam] = segs;
-        } else if (param !== 'segments') {
-          userObj[uparam] = userObjBid.params.user[param];
-        }
-      });
-  }
+  const userObj = userObjBid ? convertUserParams(userObjBid.params.user) : {};
 
   const deviceObjBid = ((bidRequests) || []).find(hasDeviceInfo);
   let deviceObj;
