@@ -68,6 +68,11 @@ export const grid: BidderParams['grid'] = {
   }
 };
 export const gridSecid: BidderParams['gridNM'] = { secid: '1', bidFloor: 0.5 };
+// params.video.playerSize overrides mediaTypes.video.playerSize (createVideoRequest)
+export const gridPlayerSize: BidderParams['grid'] = { uid: 11, video: { playerSize: [[640, 480]] } };
+export const gridSinglePlayerSize: BidderParams['grid'] = { uid: 11, video: { playerSize: [640, 480] } };
+// @ts-expect-error - playerSize is [width, height] numbers
+export const gridBadPlayerSize: BidderParams['grid'] = { uid: 11, video: { playerSize: '640x480' } };
 // @ts-expect-error - uid or secid is required
 export const gridMissingUid: BidderParams['grid'] = { bidFloor: 0.5 };
 

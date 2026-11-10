@@ -1,4 +1,5 @@
 import type { ORTBImp, ORTBRequest } from '../src/types/ortb/request.d.ts';
+import type { Size } from '../src/types/common.d.ts';
 
 type ORTBVideo = NonNullable<ORTBImp['video']>;
 
@@ -10,6 +11,11 @@ export type GridVideoParams = Partial<ORTBVideo> & {
   maxd?: number;
   /** Player size as a `'WIDTHxHEIGHT'` string, e.g. `'640x480'`. */
   size?: string;
+  /**
+   * Player size, overriding `mediaTypes.video.playerSize`; `[width, height]` or a list of them (the first is used).
+   * Sets `w`/`h` when they aren't given.
+   */
+  playerSize?: Size | Size[];
   /** `[minduration, maxduration]` in seconds. */
   durationRangeSec?: number[];
 };
