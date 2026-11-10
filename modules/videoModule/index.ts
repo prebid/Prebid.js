@@ -29,6 +29,7 @@ import type { ORTBImp, ORTBRequest } from "../../src/types/ortb/request.d.ts";
 import type { DeepPartial } from "../../src/types/objects.d.ts";
 import type { AdServerVendor } from "../../libraries/video/constants/vendorCodes.ts";
 import type { VideoEvent } from "../../libraries/video/constants/events.ts";
+import { isRendererAllowed } from "../../src/utils/renderers.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 
@@ -345,6 +346,17 @@ function videoRenderHook(next, args) {
   next(args);
 }
 
+function isRendererAllowedHook(next, type, bidder, mediaType, adUnit, bidResponse) {
+  if (mediaType === VIDEO && adUnit.video) {
+    if (bidResponse?.[type] != null) {
+      logWarn(`Ignoring bidder-provided ${type}: rendering is managed by the video module (adUnit.video is set)`, { bidResponse, adUnit });
+    }
+    next.bail(false);
+  } else {
+    next(type, bidder, mediaType, adUnit);
+  }
+}
+
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
@@ -353,6 +365,7 @@ export function pbVideoFactory() {
   pbVideo.init();
   pbGlobal.videoModule = pbVideo;
   doRender.before(videoRenderHook);
+  isRendererAllowed.before(isRendererAllowedHook);
   return pbVideo;
 }
 

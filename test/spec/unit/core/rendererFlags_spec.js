@@ -56,9 +56,7 @@ const CASES = [
   { name: 'allowTopWindowRenderers: false, for this bidder', bidderConfig: { allowTopWindowRenderers: false }, expected: { renderer: false, safeRenderer: true } },
   { name: 'allowTopWindowRenderers: false, overridden for this bidder', config: { allowTopWindowRenderers: false }, bidderConfig: { allowTopWindowRenderers: true }, expected: { renderer: true, safeRenderer: true } },
 
-  // TODO: what should the video module do for bids with either type of renderer?
-  // .renderer skips it, probably by accident
-  // { name: 'videoModule (adUnit.video)', only: 'video', adUnit: { video: { divId: 'player' } }, expected: { renderer: true, safeRenderer: false } },
+  { name: 'videoModule (adUnit.video)', only: 'video', adUnit: { video: { divId: 'player' } }, expected: { renderer: false, safeRenderer: false } },
 ];
 
 describe('bidder renderer flags', () => {

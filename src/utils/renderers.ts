@@ -1,6 +1,10 @@
 import { config } from "../config.ts";
-import type { AdUnitDefinition } from "../adUnits.ts";
+import type { AdUnit, AdUnitDefinition } from "../adUnits.ts";
 import type { BidderCode } from "../types/common";
+import { hook } from "../hook.ts";
+import type { MediaType } from "../mediaTypes.ts";
+import type { Bid } from "../bidfactory.ts";
+import { logWarn } from "../utils.js";
 
 export const RENDERER_TYPES = [
   'renderer',
@@ -8,9 +12,15 @@ export const RENDERER_TYPES = [
 ] as const;
 export type RendererType = typeof RENDERER_TYPES[number];
 
-export function isRendererAllowed(bidder: BidderCode, type: RendererType) {
-  return !(type === 'renderer' && !(config.runWithBidder(bidder, () => config.getConfig('allowTopWindowRenderers')) ?? true));
-}
+export const isRendererAllowed = hook('sync', (type: RendererType, bidder: BidderCode, mediaType: MediaType, adUnit: AdUnit, bidResponse?: Partial<Bid>) => {
+  if (type === 'renderer' && !(config.runWithBidder(bidder, () => config.getConfig('allowTopWindowRenderers')) ?? true)) {
+    if (bidResponse?.renderer != null) {
+      logWarn(`Ignoring bidder-provided renderer: \`allowTopWindowRenderers\` is false for bidder "${bidder}"`, { bidResponse });
+    }
+    return false;
+  }
+  return true;
+});
 
 const VALIDATE = {
   'renderer': (candidate) => candidate?.render,
