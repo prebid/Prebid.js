@@ -180,16 +180,17 @@ describe('xe analytics adapter', function () {
   it('takes the pid from the bidders option and from aliases of the XE adapters', function () {
     const resolveAlias = sinon.stub(adapterManager, 'resolveAlias').callsFake(code => (code === 'mySsp' ? 'xe' : code));
     try {
-      enable({ bidders: ['adipolo', 42] });
+      enable({ bidders: ['myXeAlias', 42] });
       init();
       request('mySsp', [{ pid: PID }]);
       request('adipolo', { placement: 'adipolo-unit' });
+      request('myXeAlias', { pid: 'custom-unit' });
       request('appnexus', { pid: 'not-ours' });
       events.emit(EVENTS.BID_WON, bid('mySsp', 2));
       end();
       clock.tick(3000);
       const [auction, won] = sent();
-      expect(auction.req.map(r => r[2])).to.eql([PID, 'adipolo-unit', '']);
+      expect(auction.req.map(r => r[2])).to.eql([PID, 'adipolo-unit', 'custom-unit', '']);
       expect(won).to.deep.include({ pid: PID, ours: 1 });
     } finally {
       resolveAlias.restore();
