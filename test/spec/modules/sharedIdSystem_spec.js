@@ -91,6 +91,23 @@ describe('SharedId System', function () {
         expect(callbackSpy.firstCall.args[0]).to.be.undefined;
       });
 
+      it('should adopt the id the server generated when create is false and getId returned none', function () {
+        const noCreate = { ...config, params: { ...config.params, create: false } };
+        const result = sharedIdSystemSubmodule.getId(noCreate, undefined);
+        expect(result.id).to.be.undefined;
+        result.callback(callbackSpy, () => 'server-generated-id');
+        pixelDone();
+        sinon.assert.calledOnce(callbackSpy);
+        expect(callbackSpy.firstCall.args[0]).to.equal('server-generated-id');
+      });
+
+      it('should adopt a different id the server set, for example one it restored', function () {
+        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
+        pixelDone();
+        sinon.assert.calledOnce(callbackSpy);
+        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+      });
+
       it('should complete with the new id when storage is empty after the pixel', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
         pixelDone();
