@@ -18,6 +18,7 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('./connectIdSystem.d.ts').ConnectIdParams} ConnectIdParams
  */
 
 const MODULE_NAME = 'connectId';

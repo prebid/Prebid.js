@@ -15,6 +15,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('./fabrickIdSystem.d.ts').FabrickIdParams} FabrickIdParams
  */
 
 /** @type {Submodule} */
