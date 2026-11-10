@@ -5,6 +5,10 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
+/**
+ * @typedef {import('./yahooAdsBidAdapter.d.ts').YahooAdsBidParams} YahooAdsBidParams
+ */
+
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
 const GVLID = 25;
