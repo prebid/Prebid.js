@@ -369,10 +369,11 @@ function setupDist() {
 // If --browserstack is given, it will run once on each browsers.json entry that has `browserstack`, or with --browsers
 //   on the entries named, e.g. --browserstack --browsers=iphone_14,chrome; an entry with `vitest.specsMatching` runs
 //   only the spec files matching it, unless --file is given
+// If --debug is given, no browser is launched: open the debug.html page it prints in any browser to run the tests there.
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
-  ['watch', 'file', 'browserstack', 'notest'].forEach(opt => {
+  ['watch', 'file', 'browserstack', 'debug', 'notest'].forEach(opt => {
     options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
   })
 
@@ -435,6 +436,7 @@ async function runVitest(options) {
     const env = Object.assign({}, options.env, browserEnv,
       options.coverage ? {VITEST_COVERAGE: '1'} : {},
       options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {},
+      options.debug ? {VITEST_DEBUG: '1'} : {},
       options.file || entryFiles ? {TEST_CHUNKS: undefined, TEST_CHUNK: undefined, TEST_PAT: undefined} : {});
     // --file, or the entry's specsMatching, narrows the run to those specs (as Vitest file filters); else every spec runs
     const files = options.file ? options.file.split(',') : entryFiles ?? [];

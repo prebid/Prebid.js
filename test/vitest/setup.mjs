@@ -173,7 +173,8 @@ function runNow(fn, { suite, timeout, title, vctx, kind }) {
     function arm() {
       realClearTimeout(timer);
       const ms = runnable.timeout;
-      if (ms > 0 && ms < NO_TIMEOUT) {
+      // a test paused at a breakpoint would time out
+      if (ms > 0 && ms < NO_TIMEOUT && !(typeof __VITEST_DEBUG__ !== 'undefined' && __VITEST_DEBUG__)) {
         timer = realSetTimeout(() => finish(new Error(
           `Timeout of ${ms}ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves. (${title})`
         )), ms);
