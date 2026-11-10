@@ -77,7 +77,7 @@ describe('One Bid Tech Bid Adapter', function () {
 
     it('carries the original bids through for interpretResponse matching', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.bids).to.equal(bidRequests);
+      expect(request.bids).to.deep.equal(bidRequests);
     });
 
     it('forwards GDPR and USP consent', function () {
@@ -806,6 +806,110 @@ describe('One Bid Tech Bid Adapter', function () {
 
       expect(payload).to.not.have.property('bcat');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+  });
+
+  describe('bids with different placementIds', function () {
+    const PLACEMENT_B = '0b9d3e6a41c7f258e1a4d96c3b70f85e';
+    const bidderRequest = {
+      bidderRequestId: 'req1',
+      refererInfo: { page: 'https://example.com', domain: 'example.com' }
+    };
+
+    function bid(bidId, placementId, sizes = [[300, 250]]) {
+      return {
+        bidder: 'onebidtech',
+        bidId,
+        params: { placementId },
+        mediaTypes: { banner: { sizes } }
+      };
+    }
+
+    it('returns one request per placementId, each routed by its own id', function () {
+      const requests = spec.buildRequests([bid('a', PLACEMENT_ID), bid('b', PLACEMENT_B)], bidderRequest);
+
+      expect(requests).to.be.an('array').with.lengthOf(2);
+      expect(requests[0].url).to.equal(`https://r.one-bid.com/ssp/${PLACEMENT_ID}`);
+      expect(requests[1].url).to.equal(`https://r.one-bid.com/ssp/${PLACEMENT_B}`);
+    });
+
+    it('puts only the matching impressions and bids in each request', function () {
+      const a = bid('a', PLACEMENT_ID);
+      const b = bid('b', PLACEMENT_B);
+      const requests = spec.buildRequests([a, b], bidderRequest);
+
+      expect(JSON.parse(requests[0].data).imp.map((imp) => imp.id)).to.deep.equal(['a']);
+      expect(JSON.parse(requests[1].data).imp.map((imp) => imp.id)).to.deep.equal(['b']);
+      expect(requests[0].bids).to.deep.equal([a]);
+      expect(requests[1].bids).to.deep.equal([b]);
+    });
+
+    it('keeps bids that share a placementId together in one request', function () {
+      const requests = spec.buildRequests([
+        bid('a', PLACEMENT_ID),
+        bid('b', PLACEMENT_B),
+        bid('c', PLACEMENT_ID, [[728, 90]])
+      ], bidderRequest);
+
+      expect(requests).to.have.lengthOf(2);
+      expect(JSON.parse(requests[0].data).imp.map((imp) => imp.id)).to.deep.equal(['a', 'c']);
+      expect(requests[0].bids.map((b) => b.bidId)).to.deep.equal(['a', 'c']);
+      expect(JSON.parse(requests[1].data).imp.map((imp) => imp.id)).to.deep.equal(['b']);
+    });
+
+    it('orders requests by first appearance of each placementId', function () {
+      const requests = spec.buildRequests([
+        bid('a', PLACEMENT_B),
+        bid('b', PLACEMENT_ID),
+        bid('c', PLACEMENT_B)
+      ], bidderRequest);
+
+      expect(requests.map((r) => r.url)).to.deep.equal([
+        `https://r.one-bid.com/ssp/${PLACEMENT_B}`,
+        `https://r.one-bid.com/ssp/${PLACEMENT_ID}`
+      ]);
+    });
+
+    it('still returns a single request object when there is one placementId', function () {
+      const request = spec.buildRequests([bid('a', PLACEMENT_ID), bid('b', PLACEMENT_ID)], bidderRequest);
+
+      expect(request).to.not.be.an('array');
+      expect(JSON.parse(request.data).imp).to.have.lengthOf(2);
+    });
+
+    it('sends the same consent, site and schain signals with every request', function () {
+      const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'example.com', sid: '1', hp: 1 }] };
+      const requests = spec.buildRequests([bid('a', PLACEMENT_ID), bid('b', PLACEMENT_B)], {
+        ...bidderRequest,
+        gdprConsent: { gdprApplies: true, consentString: 'CONSENT' },
+        ortb2: { source: { ext: { schain } } }
+      });
+
+      requests.forEach((request) => {
+        const payload = JSON.parse(request.data);
+        expect(payload.user.gdprConsentString).to.equal('CONSENT');
+        expect(payload.site.page).to.equal('https://example.com');
+        expect(payload.source.ext.schain).to.deep.equal(schain);
+      });
+    });
+
+    it('interprets each response against the bids of its own request', function () {
+      const requests = spec.buildRequests([
+        bid('a', PLACEMENT_ID, [[300, 250]]),
+        bid('b', PLACEMENT_B, [[728, 90]])
+      ], bidderRequest);
+      const response = (impid) => ({
+        body: { cur: 'USD', seatbid: [{ bid: [{ impid, price: 1, adm: '<div></div>', crid: impid, mtype: 1 }] }] }
+      });
+
+      const [first] = spec.interpretResponse(response('a'), requests[0]);
+      const [second] = spec.interpretResponse(response('b'), requests[1]);
+
+      expect(first.requestId).to.equal('a');
+      expect(first.width).to.equal(300);
+      expect(second.requestId).to.equal('b');
+      expect(second.width).to.equal(728);
+      expect(second.height).to.equal(90);
     });
   });
 
