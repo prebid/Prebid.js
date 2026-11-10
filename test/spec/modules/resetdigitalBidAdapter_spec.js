@@ -211,13 +211,23 @@ describe('resetdigitalBidAdapter', function () {
       expect(sync).to.deep.equal([]);
     });
 
-    it('should pass gdpr params in the sync url', function () {
-      const sync = spec.getUserSyncs(
-        { pixelEnabled: true },
-        [{ body: '' }],
-        { gdprApplies: true, consentString: 'abc' }
-      );
-      expect(sync[0].url).to.equal('https://meta.resetdigital.co/pchain?gdpr=1&gdpr_consent=abc');
+    [
+      { syncOptions: { pixelEnabled: true }, type: 'image', origin: 'https://meta.resetdigital.co', pathname: '/pchain' },
+      { syncOptions: { iframeEnabled: true }, type: 'iframe', origin: 'https://async.resetdigital.co', pathname: '/async_usersync.html' },
+    ].forEach(({ syncOptions, type, origin, pathname }) => {
+      it(`should pass gdpr params in the ${type} sync url`, function () {
+        const sync = spec.getUserSyncs(
+          syncOptions,
+          [{ body: '' }],
+          { gdprApplies: true, consentString: 'abc' }
+        );
+        expect(sync[0].type).to.equal(type);
+        const url = new URL(sync[0].url);
+        expect(url.origin).to.equal(origin);
+        expect(url.pathname).to.equal(pathname);
+        expect(url.searchParams.get('gdpr')).to.equal('1');
+        expect(url.searchParams.get('gdpr_consent')).to.equal('abc');
+      });
     });
   });
 
