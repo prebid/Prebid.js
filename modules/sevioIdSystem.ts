@@ -87,9 +87,13 @@ function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
 }
 
 // Only a non-empty string is a valid ID: anything else is neither stored from a response, nor
-// provided to bidders, nor sent back to the Identity service.
+// provided to bidders, nor sent back to the Identity service. The ID is stored as a bare string and
+// the userId core parses any stored string that starts with '{' as JSON, so such a string is not a
+// valid ID either: it could be read back as an object, or as the revocation marker.
 function isSevioId(value): value is string {
-  return typeof value === 'string' && value.trim() !== '';
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  return trimmed !== '' && trimmed.charAt(0) !== '{';
 }
 
 function buildIds(storedId, emailHash: string | undefined) {

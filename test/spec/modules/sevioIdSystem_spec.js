@@ -86,6 +86,8 @@ describe('Sevio ID System', function () {
       expect(sevioIdSubmodule.decode(undefined)).to.be.undefined;
       expect(sevioIdSubmodule.decode('')).to.be.undefined;
       expect(sevioIdSubmodule.decode('   ')).to.be.undefined;
+      expect(sevioIdSubmodule.decode('{"revoked":true}')).to.be.undefined;
+      expect(sevioIdSubmodule.decode(' {not json')).to.be.undefined;
       expect(sevioIdSubmodule.decode(123)).to.be.undefined;
       expect(sevioIdSubmodule.decode({})).to.be.undefined;
       expect(sevioIdSubmodule.decode({ revoked: true })).to.be.undefined;
@@ -212,7 +214,7 @@ describe('Sevio ID System', function () {
       expect(requestBody(server.requests[0]).ids).to.deep.equal(['sevio:stored-id']);
     });
 
-    ['', '   ', 123, { id: ENVELOPE }].forEach(storedId => {
+    ['', '   ', 123, '{"a":1}', { id: ENVELOPE }].forEach(storedId => {
       it(`does not present a stored ID that is not a non-empty string: ${JSON.stringify(storedId)}`, function () {
         sevioIdSubmodule.getId(validConfig, consentData, storedId).callback(sinon.spy());
         expect(requestBody(server.requests[0])).to.not.have.property('ids');
@@ -307,6 +309,11 @@ describe('Sevio ID System', function () {
 
       it('fires no sync when the Identity service answers a null sevio_id', function () {
         resolveWith({ sevio_id: null, syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('fires no sync when the sevio_id starts with {', function () {
+        resolveWith({ sevio_id: '{"a":1}', syncs: [{ url: SYNC_URL }] });
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
@@ -412,6 +419,8 @@ describe('Sevio ID System', function () {
       ['an empty sevio_id', { sevio_id: '' }],
       ['a non-string sevio_id', { sevio_id: 123 }],
       ['a blank sevio_id', { sevio_id: '   ' }],
+      ['a sevio_id that is JSON object text', { sevio_id: '{"revoked":true}' }],
+      ['a sevio_id that starts with {', { sevio_id: ' {not json' }],
       ['an object sevio_id', { sevio_id: { id: ENVELOPE } }],
       ['invalid JSON', 'not json']
     ].forEach(([desc, body]) => {
@@ -505,6 +514,22 @@ describe('Sevio ID System', function () {
       expect(sevioEids()).to.deep.equal([{ source: 'adx.ws', uids: [{ id: ENVELOPE, atype: 1 }] }]);
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
       expect(server.requests.length).to.equal(0);
+    });
+
+    it('stores nothing and keeps the stored ID when the sevio_id starts with {', async function () {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
+      seedCookie(ENVELOPE, twoDaysAgo);
+      seedLocalStorage(ENVELOPE, twoDaysAgo);
+      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+
+      respondWith(server.requests[0], { sevio_id: '{"revoked":true}', changed: true });
+      await ids;
+
+      expect(getGlobal().getUserIds().sevioId).to.equal(ENVELOPE);
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal(ENVELOPE);
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(ENVELOPE);
     });
 
     it('uses the localStorage ID when the cookie is missing, without a request or a cookie write', async function () {
