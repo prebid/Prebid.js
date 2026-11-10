@@ -214,7 +214,7 @@ Viewability (`vp`)
 
 Targeting keys: `mobian_vp_likely_viewable`, `mobian_vp_probability`, `mobian_vp_bucket_percent`, `mobian_vp_confidence` and `mobian_vp_result`
 
-Description: Predictions come from one file per GAM network and site, e.g. `https://vp-data.themobianprebid.ai/36117602/hdm-cosmopolitan.json` for the ad unit path `/36117602/hdm-cosmopolitan/homepage/atf`. The file is found from the ad unit's `ortb2Imp.ext.data.adserver.adslot`, or from its GPT slot when `adslot` is not set. Set `adslot` in the ad unit config (or define GPT slots before `requestBids`) so the file is requested on the first auction. The targeting values are looked up from the GPT slot, so the slot must exist by the end of the auction. Each file is requested once per page; a failed request is retried by a later bid request.
+Description: Predictions come from one file per GAM network and site, e.g. `https://vp-data.themobianprebid.ai/36117602/hdm-cosmopolitan.json` for the ad unit path `/36117602/hdm-cosmopolitan/homepage/atf`. The file and the targeting values are found from the ad unit's `ortb2Imp.ext.data.adserver.adslot`, or from its GPT slot when `adslot` is not set. Set `adslot` in the ad unit config (or define GPT slots before `requestBids`) so the file is requested on the first auction. Without `adslot`, the GPT slot must exist by the end of the auction. Each file is requested once per page; a failed request is retried by a later bid request.
 
 For an ad unit with code `gpt_lb_a` on the slot `/36117602/hdm-cosmopolitan/homepage/atf`, the module reads the row `/36117602/hdm-cosmopolitan/homepage/atf/gpt_lb_a`, then falls back to the row `/36117602/hdm-cosmopolitan/homepage/atf`. It uses the prediction for the device from the user agent (desktop, phone, tablet or other) and never falls back to another device. A prediction sets all four keys as strings: `probability`, `bucket_percent`, `confidence`, and `likely_viewable`, which is `'true'` when the probability is at least 0.5. When neither row has the device, no prediction keys are set.
 
@@ -227,7 +227,7 @@ For an ad unit with code `gpt_lb_a` on the slot `/36117602/hdm-cosmopolitan/home
 | `'3'` | Prediction from the slot row. |
 | `'4'` | The slot row has no entry for the device; prediction from the ad unit path row. |
 | `'5'` | The file is loaded, but neither row has a prediction for the device. |
-| `'6'` | No GPT slot matches the ad unit code, or its path has no network and site. |
+| `'6'` | The ad unit has no `adslot` and no GPT slot matches its code, or the path has no network and site. |
 
 Prediction keys are set only with `'2'`, `'3'` and `'4'`.
 

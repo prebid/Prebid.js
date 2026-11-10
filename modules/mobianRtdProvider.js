@@ -368,10 +368,11 @@ function isValidTuple(tuple) {
  *
  * @param {string} adUnitCode
  * @param {string} device
+ * @param {Object} [adUnit] the auction's ad unit; its `adslot` works before GPT has defined the slot
  * @returns {[MobianViewabilityResult, MobianViewabilityPrediction?]}
  */
-function getViewabilityPrediction(adUnitCode, device) {
-  const slotInfo = getViewabilitySlotInfo(adUnitCode);
+function getViewabilityPrediction(adUnitCode, device, adUnit) {
+  const slotInfo = getViewabilitySlotInfo(adUnitCode, adUnit);
   if (!slotInfo) {
     return ['6'];
   }
@@ -393,17 +394,20 @@ function getViewabilityPrediction(adUnitCode, device) {
  *
  * @param {string[]} adUnitCodes
  * @param {MobianRtdProviderConfig} rawConfig
+ * @param {Object} [userConsent]
+ * @param {Object} [auction] the AUCTION_END payload; RTD core passes it as the 4th argument
  * @returns {Object}
  */
-export function getTargetingData(adUnitCodes, rawConfig) {
+export function getTargetingData(adUnitCodes, rawConfig, userConsent, auction) {
   const { advertiserTargeting, prefix } = getConfig(rawConfig);
   if (!advertiserTargeting.includes(VP)) {
     return {};
   }
 
+  const adUnitsByCode = new Map((auction?.adUnits || []).map((adUnit) => [adUnit.code, adUnit]));
   const device = DEVICE_CODES[dep.detectDeviceType()] || 'o';
   return adUnitCodes.reduce((targeting, adUnitCode) => {
-    const [result, tuple] = getViewabilityPrediction(adUnitCode, device);
+    const [result, tuple] = getViewabilityPrediction(adUnitCode, device, adUnitsByCode.get(adUnitCode));
     targeting[adUnitCode] = {
       [`${prefix}_vp_result`]: result,
       ...(tuple ? {
