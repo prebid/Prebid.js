@@ -15,7 +15,10 @@ const VIDEO_TIME_TO_LIVE = 3600;
 const CURRENCY = 'USD';
 let gdprApplies = null;
 let consentString = null;
-const DEFAULT_GZIP_ENABLED = true;
+// Temporarily disabled by default: gzip compression adds asynchronous waits after
+// auction start that delay the bid request hitting the wire on busy pages.
+// Publishers can still opt in via setBidderConfig({ triplelift: { gzipEnabled: true } }).
+const DEFAULT_GZIP_ENABLED = false;
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -333,9 +336,8 @@ function getGzipSetting() {
     const gzipSetting = deepAccess(config.getBidderConfig(), 'triplelift.gzipEnabled');
 
     if (gzipSetting !== undefined) {
-      const gzipValue = String(gzipSetting).toLowerCase().trim();
-      if (gzipValue === 'true' || gzipValue === 'false') {
-        return gzipValue === 'true';
+      if (typeof gzipSetting === 'boolean') {
+        return gzipSetting;
       }
       logWarn('Triplelift: Invalid gzipEnabled value in bidder config:', gzipSetting);
     }
