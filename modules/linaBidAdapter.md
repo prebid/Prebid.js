@@ -51,6 +51,15 @@ Transaction ID sharing is optional. The adapter preserves shared
 LINA SSP accepts requests without TIDs and generates its own request ID for
 request tracking. Publishers do not need to enable TID sharing to use LINA.
 
+## Privacy
+
+The adapter forwards GDPR, GPP, and COPPA signals to LINA SSP. For
+`privacy.coppa`, an explicit OpenRTB `ortb2.regs.coppa` value of `1` maps to
+`true`, and `0` maps to `false`, taking precedence over Prebid's global
+`coppa` setting. If the request value is absent or is not `0` or `1`, the
+adapter falls back to the global setting. The original OpenRTB fields are
+preserved.
+
 ## Timeout
 
 The adapter forwards Prebid Core's `bidderRequest.timeout` as `timeoutMs`.
