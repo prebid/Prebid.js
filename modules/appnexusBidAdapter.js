@@ -6,7 +6,6 @@ import {
   getParameterByName,
   getUniqueIdentifierStr,
   isArray,
-  isArrayOfNums,
   isEmpty,
   isFn,
   isNumber,
@@ -32,7 +31,20 @@ import {
   getANKewyordParamFromMaps,
   getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import { convertCamelToUnderscore, appnexusAliases } from '../libraries/appnexusUtils/anUtils.js';
+import {
+  appnexusAliases,
+  buildNativeRequest,
+  convertCamelToUnderscore,
+  convertUserParams,
+  getAppDeviceObj,
+  getAppIdObj,
+  getRtbBid,
+  handleOutstreamRendererEvents,
+  hasMemberId,
+  isErrorResponse,
+  parseMediaType
+} from '../libraries/appnexusUtils/anUtils.js';
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
@@ -81,23 +93,6 @@ const VIDEO_MAPPING = {
     'accompanying_content_mid_roll': 9,
     'accompanying_content_post_roll': 10
   }
-};
-const NATIVE_MAPPING = {
-  body: 'description',
-  body2: 'desc2',
-  cta: 'ctatext',
-  image: {
-    serverName: 'main_image',
-    requiredParams: { required: true }
-  },
-  icon: {
-    serverName: 'icon',
-    requiredParams: { required: true }
-  },
-  sponsoredBy: 'sponsored_by',
-  privacyLink: 'privacy_link',
-  salePrice: 'saleprice',
-  displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
@@ -161,44 +156,13 @@ export const spec = {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {
-      Object.keys(userObjBid.params.user)
-        .filter(param => USER_PARAMS.includes(param))
-        .forEach((param) => {
-          const uparam = convertCamelToUnderscore(param);
-          if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-            const segs = [];
-            userObjBid.params.user[param].forEach(val => {
-              if (isNumber(val)) {
-                segs.push({ 'id': val });
-              } else if (isPlainObject(val)) {
-                segs.push(val);
-              }
-            });
-            userObj[uparam] = segs;
-          } else if (param !== 'segments') {
-            userObj[uparam] = userObjBid.params.user[param];
-          }
-        });
+      Object.assign(userObj, convertUserParams(userObjBid.params.user, USER_PARAMS));
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     let debugObj = {};
     const debugObjParams = {};
@@ -412,10 +376,7 @@ export const spec = {
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 
@@ -1031,28 +992,6 @@ function bidToTag(bid) {
 }
 
 /* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  const sizes = [];
-  let sizeObj = {};
-
-  if (isArray(requestSizes) && requestSizes.length === 2 &&
-    !isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      const size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
-}
-
 function getContextFromPlacement(ortbPlacement) {
   if (!ortbPlacement) {
     return;
@@ -1110,10 +1049,6 @@ function hasUserInfo(bid) {
   return !!bid.params.user;
 }
 
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
-}
-
 function hasAppDeviceInfo(bid) {
   if (bid.params) {
     return !!bid.params.app;
@@ -1142,46 +1077,6 @@ function hasOmidSupport(bid) {
     hasOmid = bid.params.video.frameworks.includes(6);
   }
   return hasOmid;
-}
-
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
-}
-
-function buildNativeRequest(params) {
-  const request = {};
-
-  // map standard prebid native asset identifier to /ut parameters
-  // e.g., tag specifies `body` but /ut only knows `description`.
-  // mapping may be in form {tag: '<server name>'} or
-  // {tag: {serverName: '<server name>', requiredParams: {...}}}
-  Object.keys(params).forEach(key => {
-    // check if one of the <server name> forms is used, otherwise
-    // a mapping wasn't specified so pass the key straight through
-    const requestKey =
-      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-      NATIVE_MAPPING[key] ||
-      key;
-
-    // required params are always passed on request
-    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
-    request[requestKey] = Object.assign({}, requiredParams, params[key]);
-
-    // convert the sizes of image/icon assets to proper format (if needed)
-    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
-    if (isImageAsset && request[requestKey].sizes) {
-      const sizes = request[requestKey].sizes;
-      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
-        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
-      }
-    }
-
-    if (requestKey === NATIVE_MAPPING.privacyLink) {
-      request.privacy_supported = true;
-    }
-  });
-
-  return request;
 }
 
 /**
@@ -1226,21 +1121,6 @@ function outstreamRender(bid, doc) {
       rendererOptions: bid.renderer.getConfig()
     }, handleOutstreamRendererEvents.bind(null, bid));
   });
-}
-
-function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({ id, eventName });
-}
-
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
-    return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
-  } else {
-    return BANNER;
-  }
 }
 
 function getBidFloor(bid) {

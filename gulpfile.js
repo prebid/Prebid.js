@@ -28,7 +28,7 @@ const Vinyl = require('vinyl');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
 const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
-const { getChecksum, getManifest } = require('./web-bundler/manifest.mjs');
+const { getChecksum, getManifest, splitMetadataManifest } = require('./web-bundler/manifest.mjs');
 const { injector } = require('./web-bundler/buildOptionsInjector.mjs');
 
 var prebid = require('./package.json');
@@ -385,7 +385,8 @@ function testTaskMaker(options = {}) {
   }
 }
 
-// --browsers names, as Karma's launchers knew them, to Vitest's browser settings (vitest.config.mjs)
+// --browsers names to Vitest's browser settings (vitest.config.mjs). The Karma-era launcher names
+// (chromeheadless, firefoxheadless, safarinative, edgeheadless, ...) are still accepted for compatibility.
 const VITEST_BROWSERS = {
   chrome: {VITEST_BROWSER: 'chromium'},
   chromium: {VITEST_BROWSER: 'chromium'},
@@ -580,9 +581,12 @@ function buildManifest(dev) {
   return function(done) {
     getManifest(require(helpers.getBuiltPath(dev, 'dependencies.json')), getFilesToBundle(dev).files)
       .then(manifest => {
+        // the metadata chunks' checksums go in a manifest of their own, loaded only when needed
+        const split = splitMetadataManifest(manifest);
         return Promise.all([
           writeJSON('checksums.json', manifest.checksums),
-          writeJSON('manifest.json', manifest),
+          writeJSON('manifest.json', split.manifest),
+          writeJSON('manifest.metadata.json', split.metadata),
         ])
       }).then(() => done(), done);
   }
@@ -591,7 +595,7 @@ function buildManifest(dev) {
 function buildManifestChecksums(dev) {
   return function (done) {
     Promise.all(
-      ['manifest.js', 'manifest.json']
+      ['manifest.js', 'manifest.json', 'manifest.metadata.js']
         .map(file =>
           getChecksum(helpers.getBuiltPath(dev, file))
             .then(digest => fs.promises.writeFile(helpers.getBuiltPath(dev, `${file}.checksum`), digest))

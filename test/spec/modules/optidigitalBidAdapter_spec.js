@@ -348,8 +348,7 @@ describe('optidigitalAdapterTests', function () {
       ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
       const payload = JSON.parse(request.data);
-      payload.imp[0].pageTemplate = 'home';
-      expect(payload.imp[0].pageTemplate).to.exist;
+      expect(payload.pageTemplate).to.equal('home');
     });
 
     it('should add referrer to payload if it exsists in bidderRequest', function () {
