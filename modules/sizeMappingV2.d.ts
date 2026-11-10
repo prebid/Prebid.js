@@ -2,7 +2,8 @@ import type { Size } from '../src/types/common.d.ts';
 
 /**
  * Minimum viewport size, as [width, height], for a size bucket to become active.
- * Of the buckets in a sizeConfig array, only the one with the largest minViewPort that fits the current viewport is active.
+ * Of the buckets in a sizeConfig array, only the one with the largest minViewPort width that does not exceed the viewport width
+ * is active - and only if the viewport is also at least as tall as its minViewPort height; otherwise no bucket is active.
  */
 export type MinViewPort = [number, number];
 

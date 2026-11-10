@@ -64,12 +64,12 @@ export interface ActivityParams {
 
 export interface ActivityRule {
   /**
-   * Condition function for this rule; the rule applies only if this returns true.
+   * Condition function for this rule; the rule applies only if this returns true. A condition that throws denies the activity.
    * If omitted, the rule always applies.
    */
   condition?: (params: ActivityParams) => boolean;
   /**
-   * Whether the activity should be allowed when this rule applies. Defaults to true.
+   * Whether the activity should be allowed when this rule applies. If omitted, the rule denies the activity.
    */
   allow?: boolean;
   /**
