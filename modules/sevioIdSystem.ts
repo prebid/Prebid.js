@@ -25,9 +25,6 @@ export const ID_ENDPOINT = 'https://id.adx.ws/identity/resolve';
 const EID_SOURCE = 'adx.ws';
 const LOG_PREFIX = 'sevioId: ';
 const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
-// A Sevio envelope: 66 base64url characters, no padding. Only an envelope is a valid ID: anything else
-// is neither stored from a response, nor provided to bidders, nor sent back to the Identity service.
-const ENVELOPE_PATTERN = /^[A-Za-z0-9_-]{66}$/;
 const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
 // Stored in place of the ID when the Identity service refuses a request. The userId core ignores an
 // empty callback, which would leave a previously stored ID in place; `decode` maps this to no ID.
@@ -89,13 +86,15 @@ function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
   return privacy;
 }
 
-function isEnvelope(value): value is string {
-  return typeof value === 'string' && ENVELOPE_PATTERN.test(value);
+// Only a non-empty string is a valid ID: anything else is neither stored from a response, nor
+// provided to bidders, nor sent back to the Identity service.
+function isSevioId(value): value is string {
+  return typeof value === 'string' && value.trim() !== '';
 }
 
 function buildIds(storedId, emailHash: string | undefined) {
   const ids: string[] = [];
-  if (isEnvelope(storedId)) {
+  if (isSevioId(storedId)) {
     ids.push(`sevio:${storedId}`);
   }
   if (emailHash != null) {
@@ -160,7 +159,7 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
         return;
       }
       const id = parsed?.sevio_id;
-      if (isEnvelope(id)) {
+      if (isSevioId(id)) {
         callback(id);
         fireSyncs(parsed.syncs);
       } else if (id === null) {
@@ -193,7 +192,7 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
       logInfo(`${LOG_PREFIX}IDs are not provided for COPPA requests`);
       return undefined;
     }
-    return isEnvelope(value) ? { sevioId: value } : undefined;
+    return isSevioId(value) ? { sevioId: value } : undefined;
   },
   getId(config, consentData, storedId) {
     if (consentData?.coppa) {

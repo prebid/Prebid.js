@@ -126,9 +126,8 @@ privacy signals), any stored ID is revoked: Prebid replaces it in both stores wi
 `{"revoked":true}`, and no Sevio ID or EID is provided until the next request. A failed request (a
 network or HTTP error, or a malformed answer) keeps the stored ID.
 
-Only a Sevio envelope (66 base64url characters) is a valid ID. An answer carrying anything else is
-treated as malformed, and a stored value of any other shape (for example a truncated cookie) is not
-provided to bidders. It is replaced by the next request: when `storage.refreshInSeconds` elapses,
+Only a non-empty string is a valid ID. An answer carrying anything else is treated as malformed,
+and a stored value of any other shape (for example an object) is not provided to bidders. It is replaced by the next request: when `storage.refreshInSeconds` elapses,
 when it expires, or when consent changes. Set `storage.refreshInSeconds` (for example `86400`) to
 bound how long such a value can leave the user without an ID.
 
