@@ -44,6 +44,8 @@ pbjs.setConfig({
 
         // Request per-slot viewability targeting
         includeViewabilityTargeting: true,
+        // Also write viewability keys straight to the GPT slots (see below)
+        // viewabilityGptTargeting: true,
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
@@ -59,7 +61,6 @@ pbjs.setConfig({
 - With `advertiserTargeting: true` or `publisherTargeting: true`, add `includeTrafficQuality: true` to the `params` object.
 - With an array, list `tq` in it, e.g. `advertiserTargeting: ['genres', 'tq']`. `includeTrafficQuality` is ignored when the value is an array.
 - With `advertiserTargeting: true`, add `includeViewabilityTargeting: true` to request per-slot viewability targeting. With an array, list `vp` in `advertiserTargeting`; `includeViewabilityTargeting` is ignored.
-- `viewabilityTargetingPlacementSource` is deprecated and ignored.
 
 ### Waiting for targeting data
 
@@ -230,6 +231,12 @@ For an ad unit with code `gpt_lb_a` on the slot `/36117602/hdm-cosmopolitan/home
 | `'6'` | The ad unit has no `adslot` and no GPT slot matches its code, or the path has no network and site. |
 
 Prediction keys are set only with `'2'`, `'3'` and `'4'`.
+
+`viewabilityGptTargeting`: viewability keys are returned to Prebid with the auction. Prebid drops an auction with no bids after `minBidCacheTTL` seconds, so with `minBidCacheTTL: 0` a slot requested later, such as a lazy-loaded one, goes to GAM without `mobian_vp_*`. With `viewabilityGptTargeting: true`, the module also writes the keys straight to the GPT slots: slots that exist at the end of the auction right away, the rest at the page's next GPT `slotRequested`. The keys stay on a slot until the next auction writes new values, or until the page's wrapper clears them after render.
+
+Use it only when the page applies targeting from `pbjs.getAdserverTargeting()` itself. With `pbjs.setTargetingForGPTAsync()`, Prebid clears these keys before setting its own.
+
+To check the keys, look at `prev_scp` in the `gampad/ads` request. Wrappers that clear slot targeting after render can leave the Publisher Console showing no keys even though the request carried them.
 
 ------------------
 

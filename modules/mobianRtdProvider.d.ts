@@ -61,9 +61,13 @@ export interface MobianRtdProviderParams {
    */
   includeViewabilityTargeting?: boolean;
   /**
-   * @deprecated Ignored. The viewability file is chosen from each slot's GAM ad unit path.
+   * Also write `vp` keys straight to the GPT slots, so they stay on a slot after
+   * Prebid drops the auction (e.g. 0 bids with `minBidCacheTTL: 0`). Slots that
+   * don't exist yet are written at the page's next GPT `slotRequested`.
+   * Only for pages that apply targeting from `pbjs.getAdserverTargeting()`;
+   * `pbjs.setTargetingForGPTAsync()` removes these keys. Defaults to `false`.
    */
-  viewabilityTargetingPlacementSource?: string;
+  viewabilityGptTargeting?: boolean;
 }
 
 export interface MobianRtdProviderConfig {

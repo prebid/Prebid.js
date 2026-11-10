@@ -5,8 +5,8 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { isPlainObject, safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
-import { getGptSlotForAdUnitCode, setKeyValue } from '../libraries/gptUtils/gptUtils.js';
+import { isGptPubadsDefined, isPlainObject, safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
+import { getGptSlotForAdUnitCode, isSlotMatchingAdUnitCode, setKeyValue, subscribeToGamEvent } from '../libraries/gptUtils/gptUtils.js';
 import { detectDeviceType } from '../libraries/userAgentUtils/detailed.js';
 
 /**
@@ -58,6 +58,10 @@ const ALL_TARGETING_KEYS = [...CONTEXT_KEYS, ...TRAFFIC_QUALITY_KEYS, ...VIEWABI
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 // ORTB device types from detectDeviceType; anything else is 'o' (other)
 const DEVICE_CODES = { 2: 'd', 4: 'm', 5: 't' };
+const VP_PREDICTION_KEYS = ['likely_viewable', 'probability', 'bucket_percent', 'confidence'];
+// Latest vp targeting per ad unit code that hasn't been written to a GPT slot yet
+export const pendingVpTargeting = new Map();
+let slotRequestedListenerAdded = false;
 export const viewabilityTargetingData = new Map();
 
 export const MAX_CACHE_SIZE = 10;
@@ -406,9 +410,9 @@ export function getTargetingData(adUnitCodes, rawConfig, userConsent, auction) {
 
   const adUnitsByCode = new Map((auction?.adUnits || []).map((adUnit) => [adUnit.code, adUnit]));
   const device = DEVICE_CODES[dep.detectDeviceType()] || 'o';
-  return adUnitCodes.reduce((targeting, adUnitCode) => {
+  const targeting = adUnitCodes.reduce((byCode, adUnitCode) => {
     const [result, tuple] = getViewabilityPrediction(adUnitCode, device, adUnitsByCode.get(adUnitCode));
-    targeting[adUnitCode] = {
+    byCode[adUnitCode] = {
       [`${prefix}_vp_result`]: result,
       ...(tuple ? {
         [`${prefix}_vp_likely_viewable`]: String(tuple[0] >= 0.5),
@@ -417,8 +421,56 @@ export function getTargetingData(adUnitCodes, rawConfig, userConsent, auction) {
         [`${prefix}_vp_confidence`]: String(tuple[2]),
       } : {})
     };
-    return targeting;
+    return byCode;
   }, {});
+  if (rawConfig?.params?.viewabilityGptTargeting === true) {
+    writeVpTargetingToSlots(targeting, prefix);
+  }
+  return targeting;
+}
+
+/**
+ * Write stored vp targeting to every GPT slot that matches its ad unit code.
+ * A code is dropped once a matching slot exists, so each value is written once.
+ * Uses slot.setConfig directly: Prebid's updateSlotTargetingFromMap only exists from 11.15.0.
+ */
+function writePendingVpTargeting() {
+  if (!isGptPubadsDefined() || !pendingVpTargeting.size) return;
+  const slots = window.googletag.pubads().getSlots();
+  pendingVpTargeting.forEach((targeting, code) => {
+    const matching = slots.filter(isSlotMatchingAdUnitCode(code));
+    if (!matching.length) return;
+    matching.forEach((slot) => slot.setConfig({ targeting }));
+    pendingVpTargeting.delete(code);
+  });
+}
+
+/**
+ * Write viewability targeting straight to the GPT slots, so it stays on a slot
+ * after Prebid drops the auction (e.g. 0 bids with minBidCacheTTL: 0).
+ * Slots that exist now are written now; the rest at the page's next GPT slotRequested.
+ * The 4 prediction keys are always passed; null removes a key the new result doesn't have.
+ *
+ * @param {Object<string, Object<string, string>>} targetingByCode
+ * @param {string} prefix
+ */
+function writeVpTargetingToSlots(targetingByCode, prefix) {
+  const resetMap = Object.fromEntries(VP_PREDICTION_KEYS.map((key) => [`${prefix}_vp_${key}`, null]));
+  Object.entries(targetingByCode).forEach(([code, kv]) => pendingVpTargeting.set(code, { ...resetMap, ...kv }));
+  writePendingVpTargeting();
+  if (!slotRequestedListenerAdded) {
+    slotRequestedListenerAdded = true;
+    // the page's first GAM request comes before any lazy slot's request
+    subscribeToGamEvent('slotRequested', writePendingVpTargeting);
+  }
+}
+
+/**
+ * Clear stored vp targeting and the slotRequested listener flag. For tests.
+ */
+export function resetVpGptTargeting() {
+  pendingVpTargeting.clear();
+  slotRequestedListenerAdded = false;
 }
 
 /**

@@ -30,6 +30,8 @@ import {
   makeDataFromResponse,
   makeViewabilityDataFromResponse,
   mobianBrandSafetySubmodule,
+  pendingVpTargeting,
+  resetVpGptTargeting,
   setTargeting,
   viewabilityTargetingData,
   dep,
@@ -406,7 +408,6 @@ describe('Mobian RTD Submodule', function () {
         name: 'mobianBrandSafety',
         params: {
           includeViewabilityTargeting: true,
-          viewabilityTargetingPlacementSource: 'gam_ad_unit',
           publisherTargeting: true,
           advertiserTargeting: true,
         }
@@ -1133,6 +1134,207 @@ describe('Mobian RTD Submodule', function () {
         gpt_gal_a: prediction('2', [0.3041, 30, 'high']),
       });
       expect(requestedUrls).to.deep.equal([COSMO_URL]);
+    });
+  });
+
+  describe('viewabilityGptTargeting', function () {
+    const COSMO_URL = 'https://vp-data.themobianprebid.ai/36117602/hdm-cosmopolitan.json';
+    const ATF = '/36117602/hdm-cosmopolitan/homepage/atf';
+    const ROWS = {
+      [ATF]: { d: [0.3041, 30, 'high'] },
+      [`${ATF}/gpt_lb_a`]: { d: [0.4291, 40, 'high'] },
+    };
+    const config = { params: { advertiserTargeting: [VP], viewabilityGptTargeting: true } };
+    const NULL_PREDICTION = {
+      mobian_vp_likely_viewable: null,
+      mobian_vp_probability: null,
+      mobian_vp_bucket_percent: null,
+      mobian_vp_confidence: null,
+    };
+    const LB_PREDICTION = {
+      mobian_vp_result: '3',
+      mobian_vp_likely_viewable: 'false',
+      mobian_vp_probability: '0.4291',
+      mobian_vp_bucket_percent: '40',
+      mobian_vp_confidence: 'high',
+    };
+    const GAL_PREDICTION = {
+      mobian_vp_result: '2',
+      mobian_vp_likely_viewable: 'false',
+      mobian_vp_probability: '0.3041',
+      mobian_vp_bucket_percent: '30',
+      mobian_vp_confidence: 'high',
+    };
+
+    let originalGoogletag;
+    let slots;
+    let listeners;
+    let detectDeviceTypeStub;
+
+    function makeSlot(elementId, path = ATF) {
+      return {
+        getAdUnitPath: () => path,
+        getSlotElementId: () => elementId,
+        setConfig: sinon.spy(),
+        setTargeting: sinon.spy(),
+        updateTargetingFromMap: sinon.spy(),
+      };
+    }
+
+    // GPT after it has loaded: cmd.push runs the function straight away
+    function loadedGpt() {
+      return {
+        cmd: { push: (fn) => fn() },
+        pubads: () => ({
+          getSlots: () => slots,
+          addEventListener: (name, fn) => listeners.push([name, fn]),
+        }),
+      };
+    }
+
+    function fire(name) {
+      listeners.filter(([n]) => n === name).forEach(([, fn]) => fn({}));
+    }
+
+    function auctionFor(...codes) {
+      return { adUnits: codes.map((code) => ({ code, ortb2Imp: { ext: { data: { adserver: { adslot: ATF } } } } })) };
+    }
+
+    function getTargeting(codes, rawConfig = config) {
+      return mobianBrandSafetySubmodule.getTargetingData(codes, rawConfig, {}, auctionFor(...codes));
+    }
+
+    beforeEach(function () {
+      originalGoogletag = window.googletag;
+      slots = [];
+      listeners = [];
+      window.googletag = loadedGpt();
+      detectDeviceTypeStub = sinon.stub(dep, 'detectDeviceType').returns(2);
+      viewabilityTargetingData.clear();
+      viewabilityTargetingData.set(COSMO_URL, ROWS);
+      resetVpGptTargeting();
+    });
+
+    afterEach(function () {
+      window.googletag = originalGoogletag;
+      detectDeviceTypeStub.restore();
+      viewabilityTargetingData.clear();
+      resetVpGptTargeting();
+    });
+
+    it('should not touch GPT when the flag is off', function () {
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+
+      expect(getTargeting(['gpt_lb_a'], { params: { advertiserTargeting: [VP] } })).to.deep.equal({ gpt_lb_a: LB_PREDICTION });
+      expect(slot.setConfig.called).to.equal(false);
+      expect(listeners).to.deep.equal([]);
+      expect(pendingVpTargeting.size).to.equal(0);
+    });
+
+    it('should write the returned keys to the matching slot only', function () {
+      const lb = makeSlot('gpt_lb_a');
+      const other = makeSlot('gpt_other');
+      slots = [lb, other];
+
+      expect(getTargeting(['gpt_lb_a'])).to.deep.equal({ gpt_lb_a: LB_PREDICTION });
+      expect(lb.setConfig.calledOnceWith({ targeting: LB_PREDICTION })).to.equal(true);
+      expect(other.setConfig.called).to.equal(false);
+    });
+
+    it('should set the prediction keys to null when a new result has none', function () {
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+      getTargeting(['gpt_lb_a']);
+      viewabilityTargetingData.clear();
+
+      expect(getTargeting(['gpt_lb_a'])).to.deep.equal({ gpt_lb_a: { mobian_vp_result: '1' } });
+      expect(slot.setConfig.secondCall.args[0]).to.deep.equal({ targeting: { ...NULL_PREDICTION, mobian_vp_result: '1' } });
+    });
+
+    it('should write at slotRequested when GPT loads after the auction', function () {
+      window.googletag = undefined;
+
+      getTargeting(['gpt_lb_a', 'gpt_gal_a']);
+      const queue = window.googletag.cmd;
+      expect(queue).to.have.length(1);
+
+      // GPT loads and runs its queue, then the wrapper defines the slots
+      window.googletag = loadedGpt();
+      queue.forEach((fn) => fn());
+      const lb = makeSlot('gpt_lb_a');
+      const gal = makeSlot('gpt_gal_a');
+      slots = [lb, gal];
+      expect(lb.setConfig.called).to.equal(false);
+
+      fire('slotRequested');
+      expect(lb.setConfig.calledOnceWith({ targeting: LB_PREDICTION })).to.equal(true);
+      expect(gal.setConfig.calledOnceWith({ targeting: GAL_PREDICTION })).to.equal(true);
+      expect(pendingVpTargeting.size).to.equal(0);
+    });
+
+    it('should write a slot defined after the auction at the next slotRequested', function () {
+      getTargeting(['gpt_lb_a']);
+      expect(pendingVpTargeting.has('gpt_lb_a')).to.equal(true);
+
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+      fire('slotRequested');
+
+      expect(slot.setConfig.calledOnceWith({ targeting: LB_PREDICTION })).to.equal(true);
+    });
+
+    it('should write each value once', function () {
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+      getTargeting(['gpt_lb_a']);
+
+      fire('slotRequested');
+      fire('slotRequested');
+
+      expect(slot.setConfig.callCount).to.equal(1);
+    });
+
+    it('should write only the newest value when a newer auction comes first', function () {
+      getTargeting(['gpt_lb_a']);
+      viewabilityTargetingData.clear();
+      getTargeting(['gpt_lb_a']);
+
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+      fire('slotRequested');
+
+      expect(slot.setConfig.callCount).to.equal(1);
+      expect(slot.setConfig.firstCall.args[0]).to.deep.equal({ targeting: { ...NULL_PREDICTION, mobian_vp_result: '1' } });
+    });
+
+    it('should write every slot that matches the code', function () {
+      const first = makeSlot('gpt_lb_a');
+      const second = makeSlot('gpt_lb_a');
+      slots = [first, second];
+
+      getTargeting(['gpt_lb_a']);
+
+      expect(first.setConfig.calledOnceWith({ targeting: LB_PREDICTION })).to.equal(true);
+      expect(second.setConfig.calledOnceWith({ targeting: LB_PREDICTION })).to.equal(true);
+    });
+
+    it('should register the slotRequested listener once', function () {
+      getTargeting(['gpt_lb_a']);
+      getTargeting(['gpt_gal_a']);
+      getTargeting(['gpt_lb_a']);
+
+      expect(listeners.filter(([name]) => name === 'slotRequested')).to.have.length(1);
+    });
+
+    it('should only use setConfig', function () {
+      const slot = makeSlot('gpt_lb_a');
+      slots = [slot];
+      getTargeting(['gpt_lb_a']);
+
+      expect(slot.setConfig.called).to.equal(true);
+      expect(slot.setTargeting.called).to.equal(false);
+      expect(slot.updateTargetingFromMap.called).to.equal(false);
     });
   });
 
