@@ -8,7 +8,6 @@ import { Renderer } from 'src/Renderer.js';
 import { doRender } from 'src/adRendering.js';
 import { server } from 'test/mocks/xhr.js';
 
-
 const BIDDER = 'rendererFlagsBidder';
 const ENDPOINT = 'https://renderer-flags.example/bid';
 const BIDDER_SAFE_URL = 'https://bidder.example/safe.js';

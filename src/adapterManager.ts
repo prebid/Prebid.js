@@ -74,7 +74,7 @@ import type {
 import { getGlobal } from "./prebidGlobal.ts";
 import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
 import { getRendererDef, isRendererAllowed, RENDERER_TYPES } from "./auction.ts";
-import { ALL_MEDIATYPES, type MediaType } from "./mediaTypes.ts";
+import { type MediaType } from "./mediaTypes.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
