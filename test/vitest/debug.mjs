@@ -72,10 +72,11 @@ const PAGE = `<!doctype html>
     const status = document.getElementById('status');
     const frame = document.getElementById('frame');
     let seq = 0;
-    document.getElementById('rerun').onclick = async () => {
+    async function rerun() {
       const res = await fetch('${RERUN}', { method: 'POST' });
       if (!res.ok) status.textContent = 'Re-run failed: ' + await res.text();
-    };
+    }
+    document.getElementById('rerun').onclick = rerun;
     async function poll() {
       for (;;) {
         try {
@@ -83,12 +84,13 @@ const PAGE = `<!doctype html>
           if (!res.ok) throw new Error(res.status);
           const session = await res.json();
           seq = session.seq;
-          // Vitest drops a session when its page goes away, e.g. on a reload of this one
+          // Vitest drops a session when its page goes away, so after a reload of this one, start another
           if ((await fetch(session.url, { method: 'HEAD' })).ok) {
             status.textContent = 'Session ' + seq + ': ' + session.url;
             frame.src = session.url;
           } else {
-            status.textContent = 'Waiting for Vitest to start another session (Re-run)…';
+            status.textContent = 'Re-running…';
+            await rerun();
           }
         } catch (e) {
           status.textContent = 'Lost the Vitest server (' + e + '), retrying…';

@@ -75,7 +75,7 @@ VITEST_DEBUG=1 npm run test:vitest:watch -- test/spec/modules/appnexusBidAdapter
 npx gulp serve-and-test --debug --file test/spec/modules/appnexusBidAdapter_spec.js
 ```
 
-In watch mode, its Re-run button re-runs the specs as `r` in the terminal does.
+In watch mode, reloading the page, or its Re-run button, re-runs the specs as `r` in the terminal does.
 
 The page adds a frame: specs see it as `window.top`.
 
