@@ -4,6 +4,10 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
+/**
+ * @typedef {import('./nativoBidAdapter.d.ts').NativoBidParams} NativoBidParams
+ */
+
 const converter = ortbConverter({
   context: {
     // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
