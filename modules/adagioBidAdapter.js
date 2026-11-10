@@ -29,6 +29,10 @@ import { validateOrtbFields } from '../src/prebid.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('./adagioBidAdapter.d.ts').AdagioBidParams} AdagioBidParams
+ */
+
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
