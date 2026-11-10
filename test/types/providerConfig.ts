@@ -60,4 +60,20 @@ export function checkProviderConfig(pbjs: PrebidJS, dynamicName: string, existin
   pbjs.setBidderConfig({ bidders: [dynamicName], config: { userSync: { userIds: [{ name: 'sharedId', params: { create: 'invalid' } }] } } });
   // @ts-expect-error - merging bidder configuration preserves provider validation
   pbjs.mergeBidderConfig({ bidders: ['appnexus'], config: { realTimeData: { dataProviders: [{ name: 'geolocation', params: { requestPermission: 'invalid' } }] } } });
+
+  // Configuration built before the call: naming its providers in the type checks it as if it were inline (README)
+  const prebuilt = {
+    userSync: { userIds: [{ name: 'sharedId', params: { create: true } }, { name: 'customId', params: { anything: 1 } }] },
+    realTimeData: { dataProviders: [{ name: 'geolocation', params: { requestPermission: false } }] }
+  } satisfies Partial<Config<'sharedId' | 'customId' | 'geolocation'>>;
+  pbjs.setConfig(prebuilt);
+  const annotated: Partial<Config<'sharedId'>> = { userSync: { userIds: [{ name: 'sharedId', params: { create: false } }] } };
+  pbjs.setConfig(annotated);
+  // @ts-expect-error - a prebuilt configuration that names its providers is checked
+  const invalidPrebuilt = { userSync: { userIds: [{ name: 'sharedId', params: { create: 'invalid' } }] } } satisfies Partial<Config<'sharedId'>>;
+  // @ts-expect-error - an annotated configuration is checked too
+  const invalidAnnotated: Partial<Config<'sharedId'>> = { userSync: { userIds: [{ name: 'sharedId', params: { foo: true } }] } };
+  // @ts-expect-error - a provider that isn't named in the type is rejected, rather than going unchecked
+  const unnamedProvider = { userSync: { userIds: [{ name: 'customId', params: {} }] } } satisfies Partial<Config<'sharedId'>>;
+  return [invalidPrebuilt, invalidAnnotated, unnamedProvider];
 }

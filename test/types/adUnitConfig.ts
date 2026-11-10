@@ -52,4 +52,14 @@ export function checkAdUnits(pbjs: PrebidJS, dynamicBidder: string, existing: Ad
   pbjs.addAdUnits({ code: 'slot', bids: [{ module: 'pbsBidAdapter', params: { configName: 42 } }] });
   // @ts-expect-error - a bidder's union parameter type retains its mutually exclusive alternatives
   pbjs.addAdUnits({ code: 'slot', bids: [{ bidder: 'adf', params: { mid: 1, inv: 1, mname: 'tag' } }] });
+
+  // Ad units built before the call: naming their bidders in the type checks them as if they were inline (README)
+  const prebuilt = [
+    { code: 'slot', bids: [{ bidder: 'adapex', params: { seat: 'publisher' } }, { bidder: 'custom', params: { anything: true } }] }
+  ] satisfies AdUnitDefinition<'adapex' | 'custom'>[];
+  pbjs.addAdUnits(prebuilt);
+  pbjs.requestBids({ adUnits: prebuilt });
+  // @ts-expect-error - prebuilt ad units that name their bidders are checked
+  const invalidPrebuilt = [{ code: 'slot', bids: [{ bidder: 'adapex', params: { seat: 42 } }] }] satisfies AdUnitDefinition<'adapex'>[];
+  return invalidPrebuilt;
 }

@@ -208,7 +208,6 @@ function attachProperties(config, useDefaultValues = true) {
   }
 }
 
-// Prepared by Codex, an AI bot, on behalf of @patmmccann.
 /** P is inferred by the setters to keep each provider's configuration tied to its name. */
 export interface Config<P extends string = string> {
   /**
