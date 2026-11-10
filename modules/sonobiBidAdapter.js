@@ -11,6 +11,7 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./sonobiBidAdapter.d.ts').SonobiBidParams} SonobiBidParams
  */
 
 const BIDDER_CODE = 'sonobi';
