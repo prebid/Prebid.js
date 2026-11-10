@@ -41,3 +41,9 @@ The following settings are suggested for the `storage` property in the `userSync
 | name                  |  String       | Where the ID will be stored                                                      | `"amxId"` |
 | type                  |  String       | For best performance, this should be `"html5"`                                                           | `"html5"` |
 | expires               |  Number <= 30 | number of days until the stored ID expires. **Must be less than or equal to 30** | `14`      |
+
+### Params
+
+| Param under `params` | Scope    | Type   | Description                                                                 | Example            |
+| -------------------- | -------- | ------ | --------------------------------------------------------------------------- | ------------------ |
+| tagId                | Optional | String | AMX-provided tag ID, sent as the `tagId` query parameter of the ID sync request. Defaults to `""`. | `"cHJlYmlkLm9yZw"` |
