@@ -15,6 +15,7 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {BidRequest & { timeout: number }} TimedOutBid A bid request that exceeded the auction timeout.
+ * @typedef {import('./onetagBidAdapter.d.ts').OnetagBidParams} OnetagBidParams
  */
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
