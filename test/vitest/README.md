@@ -173,16 +173,22 @@ npx gulp test-only-nobuild --browserstack --browsers=safari_16
 calls them on every PR and every push to master, and a failed job fails the run. It runs in two stages, one workflow
 each:
 
-1. **Chromium** (`vitest-chromium.yml`): 2 shards each of the default and all-features-disabled variants. The default
-   variant's coverage is combined into the run's coverage report and compared with the base commit's (also computed
-   with Vitest, and cached as `coverage-vitest-<commit>`).
+1. **Chromium** (`vitest-chromium.yml`): 2 shards each of the default and all-features-disabled variants, without
+   coverage instrumentation, so coverage collection does not delay the test results or the next stage.
 2. **Browsers** (`vitest-browsers.yml`), started only once the Chromium stage has passed: Firefox (2 shards), Safari
    on macOS (2), Edge on Windows (1), Chrome 113 (1), and through BrowserStack where the secrets are available: the
    iPhone (4) and desktop Safari 16.5 for the specs that need a secure context (1), two at a time.
 
-Base branch coverage, when it isn't cached, is also computed only after the Chromium stage passes, so it never takes
-runners from it; it is skipped when the base commit has no Vitest setup. The coverage report needs only the Chromium
-stage.
+**Coverage** runs independently, in parallel with the Chromium stage: a separate call to `vitest-chromium.yml` with
+`coverage-only: true` runs every spec in the default variant in 2 shards, instruments the sources, and combines the
+results into the run's coverage report. This run is required: a test or coverage failure fails the workflow. The
+other browsers wait only for the uninstrumented Chromium stage. Coverage and uninstrumented runs keep separate
+Vitest result caches.
+
+Base branch coverage, when it isn't cached, is computed only after the uninstrumented Chromium stage passes; it is
+skipped when the base commit has no Vitest setup. It uses `coverage-only: true` and `base-coverage: true`: only this
+informational baseline tolerates failures. The head coverage is compared with the base commit's (also computed
+with Vitest, and cached as `coverage-vitest-<commit>`), without waiting for the other browsers.
 
 Each job runs its share of the specs with Vitest's `--shard=<i>/<n>` (balanced by file), 3 pages at once (Vitest's
 default on a 4-core runner) where Playwright drives the browser (Safari and BrowserStack run one at a time). Every
