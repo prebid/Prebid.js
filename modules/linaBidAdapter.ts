@@ -147,7 +147,7 @@ function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
 function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
   const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
   const bannerSizes = getBannerSizes(bid);
-  const video = getVideoParameters(bid);
+  const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
   const generated: Pick<LinaImp, 'video'> = {};
   if (video) fillVideoImp(generated, { mediaTypes: { video } }, {});
   const nativeRequest = FEATURES.NATIVE ? getNativeRequest(bid.mediaTypes?.native) : undefined;
@@ -275,18 +275,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   supportedMediaTypes: [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] as const : [])],
 
   isBidRequestValid(bid) {
-    const hasBanner = bid.mediaTypes ? bid.mediaTypes.banner !== undefined : Array.isArray(bid.sizes);
-    const hasVideo = bid.mediaTypes?.video !== undefined;
-    const hasNative = FEATURES.NATIVE && bid.mediaTypes?.native !== undefined;
-    const hasValidBanner = !hasBanner || getBannerSizes(bid).length > 0;
-    const hasValidVideo = !hasVideo || isValidVideo(bid);
-    const nativeRequest = FEATURES.NATIVE ? getNativeRequest(bid.mediaTypes?.native) : undefined;
-    const hasValidNative = !hasNative || nativeRequest !== undefined;
-    const hasValidAlternateMediaType = (hasBanner && hasValidBanner) || (hasVideo && hasValidVideo);
-    return (hasBanner || hasVideo || hasNative) &&
+    const hasValidBanner = getBannerSizes(bid).length > 0;
+    const hasValidVideo = isValidVideo(bid);
+    const hasValidNative = FEATURES.NATIVE && getNativeRequest(bid.mediaTypes?.native) !== undefined;
+    return (hasValidBanner || hasValidVideo || hasValidNative) &&
       getPublisherId(bid) !== undefined &&
-      getPlacementId(bid) !== undefined &&
-      hasValidBanner && hasValidVideo && (hasValidNative || hasValidAlternateMediaType);
+      getPlacementId(bid) !== undefined;
   },
 
   buildRequests(validBidRequests, bidderRequest): AdapterRequest | AdapterRequest[] {
