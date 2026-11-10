@@ -1,4 +1,4 @@
-import adapter, { type AnalyticsConfig } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapter, { type AnalyticsConfig, setDebounceDelay } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { deviceTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 import adapterManager from '../src/adapterManager.js';
@@ -15,6 +15,8 @@ const XE_BIDDERS = ['xe', 'xeworks', 'adipolo', 'anyclip', 'anzuDSP', 'driftpixe
 const AUCTION_DELAY = 3000;
 const LATE_DELAY = 1000;
 const MAX_BODY = 60000;
+const KEEPALIVE_QUOTA = 65536;
+const FLUSH = 'xeFlush';
 const MAX_AUCTIONS = 100;
 const MAX_BIDS = 1000;
 const MAX_EIDS = 30;
@@ -41,6 +43,7 @@ declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
 
 type Row = (string | number)[];
 type Payload = Record<string, unknown>;
+type Mark = 'rendered' | 'viewable';
 
 interface AuctionState {
   id: string;
@@ -75,6 +78,7 @@ interface BidState {
   won?: Payload;
   rendered?: boolean;
   viewable?: boolean;
+  own?: Partial<Record<Mark, Payload | null>>;
 }
 
 export const dep = {
@@ -90,6 +94,8 @@ let bidStates = new Map<string, BidState>();
 let sentEvents = new WeakSet<Payload>();
 let late: Payload[] = [];
 let lateTimer: ReturnType<typeof setTimeout> | null = null;
+let inflight = 0;
+let generation = 0;
 
 const str = (value: unknown, max = 128): string => (value == null ? '' : String(value).slice(0, max));
 const num = (value: unknown): number => {
@@ -183,14 +189,22 @@ function addUnit(auction: AuctionState, unitCode: unknown, mediaTypes: any, ortb
   const unit = auction.units.get(code);
   if (!unit) {
     auction.units.set(code, [code, typesOf(mediaTypes), sizesOf(mediaTypes), str(ortb2Imp?.ext?.gpid), ...floorRow(floorData)]);
-  } else if (!unit[4] && floorData) {
-    unit.splice(4, 5, ...floorRow(floorData));
+  } else {
+    if (!unit[3]) unit[3] = str(ortb2Imp?.ext?.gpid);
+    if (!unit[4] && floorData) unit.splice(4, 5, ...floorRow(floorData));
   }
 }
 
-function auctionPayload(a: AuctionState, codes: string[]): Payload {
+function ownerOf(a: AuctionState, codes: string[]) {
+  const requested = new Set(a.req.filter(row => codes.includes(row[0] as string)).map(row => row[1]));
+  return (row: Row, bid: boolean) => (bid && !requested.has(row[1]) && row[8] ? row[8] : row[1]) as string;
+}
+
+function auctionPayload(a: AuctionState, codes: string[], bidders?: string[]): Payload {
   const only = new Set(codes);
-  const of = (rows: Row[]) => rows.filter(row => only.has(row[0] as string));
+  const allowed = bidders && new Set(bidders);
+  const owner = ownerOf(a, codes);
+  const of = (rows: Row[], bid = false) => rows.filter(row => only.has(row[0] as string) && (!allowed || allowed.has(owner(row, bid))));
   const payload: Payload = {
     v: 2,
     e: 'auction',
@@ -208,23 +222,52 @@ function auctionPayload(a: AuctionState, codes: string[]): Payload {
     coppa: a.coppa,
     schain: a.schain,
     eids: Array.from(a.eids),
-    units: of(Array.from(a.units.values())),
+    units: Array.from(a.units.values()).filter(row => only.has(row[0] as string)),
     req: of(a.req),
-    bids: of(a.bids),
-    rej: of(a.rej),
+    bids: of(a.bids, true),
+    rej: of(a.rej, true),
     nobid: of(a.nobid),
     to: of(a.to),
-    err: a.err
+    err: allowed ? a.err.filter(row => allowed.has(row[0] as string)) : a.err
   };
   if (sampling < 1) payload.smp = sampling;
   return payload;
 }
 
-function auctionPayloads(a: AuctionState, codes: string[]): Payload[] {
-  const payload = auctionPayload(a, codes);
-  if (codes.length < 2 || bytes(JSON.stringify(payload)) <= MAX_BODY) return [payload];
-  const half = Math.ceil(codes.length / 2);
-  return [...auctionPayloads(a, codes.slice(0, half)), ...auctionPayloads(a, codes.slice(half))];
+// one bidder of one ad unit keeps what the router reads: the request with the pid, the best bid, the last rejection
+function trim(payload: Payload): Payload {
+  const rows = (key: string) => payload[key] as Row[];
+  const first = (key: string) => rows(key).slice(0, 1);
+  return {
+    ...payload,
+    req: [...rows('req').filter(row => row[2]), ...rows('req')].slice(0, 1),
+    bids: rows('bids').length ? [rows('bids').reduce((best, row) => ((row[2] as number) > (best[2] as number) ? row : best))] : [],
+    rej: rows('rej').slice(-1),
+    nobid: first('nobid'),
+    to: first('to'),
+    err: first('err')
+  };
+}
+
+function auctionPayloads(a: AuctionState, codes: string[], bidders?: string[]): Payload[] {
+  const payload = auctionPayload(a, codes, bidders);
+  if (bytes(JSON.stringify(payload)) + 2 <= MAX_BODY) return [payload];
+  if (codes.length > 1) {
+    const half = Math.ceil(codes.length / 2);
+    return [...auctionPayloads(a, codes.slice(0, half)), ...auctionPayloads(a, codes.slice(half))];
+  }
+  if (!bidders) {
+    const owner = ownerOf(a, codes);
+    const all = new Set<string>();
+    [a.req, a.nobid, a.to].forEach(rows => rows.forEach(row => row[0] === codes[0] && all.add(owner(row, false))));
+    [a.bids, a.rej].forEach(rows => rows.forEach(row => row[0] === codes[0] && all.add(owner(row, true))));
+    bidders = Array.from(all);
+  }
+  if (bidders.length > 1) {
+    const half = Math.ceil(bidders.length / 2);
+    return [...auctionPayloads(a, codes, bidders.slice(0, half)), ...auctionPayloads(a, codes, bidders.slice(half))];
+  }
+  return [trim(payload)];
 }
 
 function collect(a: AuctionState): Payload[] {
@@ -246,30 +289,50 @@ function takeLate(): Payload[] {
   return events;
 }
 
-function bodies(events: Payload[]): string[] {
-  const out: string[] = [];
+function bodies(events: Payload[]): [string, number][] {
+  const out: [string, number][] = [];
   let part: string[] = [];
-  let size = 2;
+  let size = 1;
+  const close = () => out.push([`[${part.join(',')}]`, size]);
   events.forEach(event => {
     const json = JSON.stringify(event);
     const length = bytes(json) + 1;
     if (part.length && size + length > MAX_BODY) {
-      out.push(`[${part.join(',')}]`);
+      close();
       part = [];
-      size = 2;
+      size = 1;
     }
     part.push(json);
     size += length;
   });
-  if (part.length) out.push(`[${part.join(',')}]`);
+  if (part.length) close();
   return out;
+}
+
+// keepalive bodies in flight share a 64 KiB quota; a refused keepalive request is sent once more without it
+function post(body: string, size: number, keepalive: boolean) {
+  const sentIn = generation;
+  if (keepalive) inflight += size;
+  const done = () => {
+    if (keepalive && sentIn === generation) inflight -= size;
+  };
+  dep.ajax(ENDPOINT, {
+    success: done,
+    error(_: string, xhr: any) {
+      done();
+      if (keepalive && !xhr?.status && sentIn === generation) post(body, size, false);
+    }
+  }, body, { method: 'POST', contentType: 'text/plain', keepalive });
 }
 
 function send(events: Payload[], unloading = false) {
   events.forEach(event => sentEvents.add(event));
-  bodies(events).forEach(body => {
+  let quota = KEEPALIVE_QUOTA - inflight;
+  bodies(events).forEach(([body, size]) => {
+    const keepalive = size <= quota;
+    if (keepalive || unloading) quota -= size;
     if (unloading && dep.sendBeacon(ENDPOINT, body)) return;
-    dep.ajax(ENDPOINT, { success() {}, error() {} }, body, { method: 'POST', contentType: 'text/plain', keepalive: true });
+    post(body, size, keepalive);
   });
 }
 
@@ -291,8 +354,19 @@ function lifecycle(e: string, bid: any, extra: Payload = {}): Payload | null {
   return { v: 2, e, id: bid.auctionId, pid: auction?.pids[str(bid.adUnitCode)] || '', ours: ours ? 1 : 0, b: bidRow(bid), ...extra };
 }
 
+// runs the events still waiting in the AnalyticsAdapter debounce queue
+function drainQueue() {
+  const previous = setDebounceDelay(0);
+  try {
+    xeAnalytics.enqueue({ eventType: FLUSH as any, args: null });
+  } finally {
+    setDebounceDelay(previous);
+  }
+}
+
 function onHide(event: Event) {
   if (event.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+  drainQueue();
   const events: Payload[] = [];
   auctions.forEach(a => {
     if (a.ended) events.push(...collect(a));
@@ -300,15 +374,27 @@ function onHide(event: Event) {
   send([...events, ...takeLate()], true);
 }
 
-function markOnce(flag: 'rendered' | 'viewable', bid: any, adId?: string) {
+function markOnce(flag: Mark, bid: any, adId?: string) {
   const state = bidState(adId || bid?.adId);
   if (state[flag]) return;
   state[flag] = true;
   if (state.won && !sentEvents.has(state.won)) {
     state.won[flag] = 1;
   } else {
-    pushEvent(lifecycle(flag, bid, { [flag]: 1 }));
+    const event = lifecycle(flag, bid, { [flag]: 1 });
+    state.own = { ...state.own, [flag]: event };
+    pushEvent(event);
   }
+}
+
+function unqueue(event?: Payload | null): boolean {
+  if (!event) return true;
+  if (sentEvents.has(event)) return false;
+  [auctions.get(event.id as string)?.events, late].forEach(list => {
+    const i = list ? list.indexOf(event) : -1;
+    if (i >= 0) list.splice(i, 1);
+  });
+  return true;
 }
 
 const withAuction = (auctionId: string, fn: (a: AuctionState) => void) => {
@@ -347,7 +433,11 @@ const handlers: Record<string, (args: any) => void> = {
     };
     (args.adUnits || []).forEach(unit => addUnit(auction, unit.code, unit.mediaTypes, unit.ortb2Imp, unit.bids?.[0]?.floorData));
     auctions.set(auction.id, auction);
-    evict(auctions, MAX_AUCTIONS);
+    while (auctions.size > MAX_AUCTIONS) {
+      const oldest = auctions.values().next().value as AuctionState;
+      auctions.delete(oldest.id);
+      if (oldest.ended) send(collect(oldest));
+    }
   },
   [EVENTS.BID_REQUESTED](request) {
     withAuction(request.auctionId, a => {
@@ -402,6 +492,9 @@ const handlers: Record<string, (args: any) => void> = {
     const event = lifecycle('won', bid, { rendered: 0, viewable: 0 });
     if (!event) return;
     const state = bidState(bid.adId);
+    (['rendered', 'viewable'] as Mark[]).forEach(flag => {
+      if (state[flag] && unqueue(state.own?.[flag])) event[flag] = 1;
+    });
     state.bid = bid;
     state.won = event;
     pushEvent(event);
@@ -438,6 +531,8 @@ function reset() {
   sentEvents = new WeakSet();
   late = [];
   lateTimer = null;
+  generation++;
+  inflight = 0;
   ourCodes = new Set(XE_BIDDERS);
   sampling = 1;
 }

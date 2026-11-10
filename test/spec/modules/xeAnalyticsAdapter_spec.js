@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import xeAnalytics, { dep } from 'modules/xeAnalyticsAdapter.js';
+import { setDebounceDelay } from 'libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
@@ -39,12 +40,12 @@ const bid = (bidder, cpm, extra = {}) => ({
   ...extra
 });
 
-function init(id = AUCTION) {
+function init(id = AUCTION, ortb2Imp = { ext: { gpid: '/1/top' } }) {
   events.emit(EVENTS.AUCTION_INIT, {
     auctionId: id,
     timestamp: 1000,
     timeout: 1500,
-    adUnits: [{ code: 'top', mediaTypes: { banner: { sizes: [300, 250] } }, ortb2Imp: { ext: { gpid: '/1/top' } }, bids: [{}] }]
+    adUnits: [{ code: 'top', mediaTypes: { banner: { sizes: [300, 250] } }, ortb2Imp, bids: [{}] }]
   });
 }
 
@@ -335,5 +336,119 @@ describe('xe analytics adapter', function () {
     expect([2, 4, 5]).to.include(auction.dev);
     expect(auction).to.deep.include({ gdpr: 0, usp: 0, coppa: 0, schain: 0, gpp: [] });
     expect(auction.eids).to.eql(['id5-sync.com']);
+  });
+
+  it('takes the gpid of the bid request when the ad unit has none', function () {
+    enable();
+    init(AUCTION, {});
+    request('xe', { pid: PID });
+    end();
+    clock.tick(3000);
+    expect(sentOf('auction')[0].units[0][3]).to.equal('/1/top');
+  });
+
+  it('splits one large ad unit by bidder and keeps only the best bid of a single oversized bidder', function () {
+    enable();
+    init();
+    const bidders = Array.from({ length: 60 }, (_, i) => `bidder${i}`);
+    events.emit(EVENTS.BID_REQUESTED, {
+      auctionId: AUCTION,
+      bidderCode: 'xe',
+      bids: [bidRequest('xe', { pid: PID }), ...bidders.map(code => bidRequest(code, {}))]
+    });
+    bidders.forEach(code => {
+      for (let i = 0; i < 6; i++) events.emit(EVENTS.BID_RESPONSE, bid(code, 1 + i, { bidder: `${code}-alt`, adapterCode: code }));
+    });
+    for (let i = 0; i < 600; i++) events.emit(EVENTS.BID_RESPONSE, bid('xe', i === 7 ? 9 : 1));
+    end();
+    clock.tick(3000);
+
+    bodies().forEach(body => expect(new TextEncoder().encode(body).length).to.be.at.most(60000));
+    const parts = sentOf('auction');
+    expect(parts.length).to.be.greaterThan(1);
+    parts.forEach(part => {
+      expect(part.units.map(u => u[0])).to.eql(['top']);
+      const requested = part.req.map(r => r[1]);
+      part.bids.forEach(b => expect(requested).to.include(b[8]));
+    });
+    expect(parts.flatMap(part => part.req.map(r => r[1]))).to.have.members(['xe', ...bidders]);
+    expect(parts.reduce((n, part) => n + part.bids.filter(b => b[8] !== 'xe').length, 0)).to.equal(360);
+    const xe = parts.find(part => part.req.some(r => r[1] === 'xe'));
+    expect(xe.req).to.eql([['top', 'xe', PID, 'banner']]);
+    expect(xe.bids).to.have.length(1);
+    expect(xe.bids[0][2]).to.equal(9);
+  });
+
+  it('keeps keepalive bodies within the 64 KiB quota and resends a refused one without keepalive', function () {
+    enable();
+    init();
+    const units = Array.from({ length: 80 }, (_, i) => `unit-with-a-long-name-${i}`);
+    events.emit(EVENTS.BID_REQUESTED, { auctionId: AUCTION, bidderCode: 'xe', bids: units.map(unit => bidRequest('xe', { pid: PID }, unit)) });
+    units.forEach(unit => {
+      for (let i = 0; i < 20; i++) events.emit(EVENTS.BID_RESPONSE, bid(`bidder${i}`, 1, { adUnitCode: unit }));
+    });
+    end();
+    clock.tick(3000);
+
+    const calls = ajax.getCalls();
+    expect(calls.length).to.be.greaterThan(2);
+    const size = call => new TextEncoder().encode(call.args[2]).length;
+    const kept = calls.filter(call => call.args[3].keepalive);
+    expect(kept.length).to.be.at.least(1);
+    expect(kept.length).to.be.lessThan(calls.length);
+    expect(kept.reduce((n, call) => n + size(call), 0)).to.be.at.most(65536);
+
+    kept[0].args[1].success();
+    kept[1]?.args[1].error('', { status: 500 });
+    calls[calls.length - 1].args[1].error('', { status: 0 });
+    expect(ajax.callCount).to.equal(calls.length);
+    kept[0].args[1].error('', { status: 0 });
+    expect(ajax.callCount).to.equal(calls.length + 1);
+    expect(ajax.lastCall.args[2]).to.equal(kept[0].args[2]);
+    expect(ajax.lastCall.args[3].keepalive).to.be.false;
+  });
+
+  it('runs the events still in the analytics debounce queue before flushing on pagehide', function () {
+    const previous = setDebounceDelay(100);
+    try {
+      enable();
+      fullAuction();
+      events.emit(EVENTS.BID_WON, bid('xe', 1.2));
+      window.dispatchEvent(new Event('pagehide'));
+      expect(beacon.calledOnce).to.be.true;
+      expect(sentOf('auction').map(a => a.id)).to.eql([AUCTION]);
+      expect(sentOf('won')).to.have.length(1);
+      clock.tick(10000);
+      expect(beacon.calledOnce).to.be.true;
+      expect(ajax.called).to.be.false;
+    } finally {
+      setDebounceDelay(previous);
+    }
+  });
+
+  it('sends an evicted ended auction at once and nothing after disableAnalytics', function () {
+    enable();
+    for (let i = 0; i <= 100; i++) {
+      const id = `auction-${i}`;
+      init(id);
+      request('xe', { pid: PID }, { auctionId: id, bids: [{ ...bidRequest('xe', { pid: PID }), auctionId: id }] });
+      end(id);
+    }
+    expect(sentOf('auction').map(a => a.id)).to.eql(['auction-0']);
+    xeAnalytics.disableAnalytics();
+    clock.tick(5000);
+    expect(sentOf('auction')).to.have.length(1);
+  });
+
+  it('marks the win as rendered when the render comes before bidWon', function () {
+    enable();
+    fullAuction();
+    events.emit(EVENTS.AD_RENDER_SUCCEEDED, { adId: 'ad-xe', bid: bid('xe', 1.2) });
+    events.emit(EVENTS.BID_WON, bid('xe', 1.2));
+    events.emit(EVENTS.AD_RENDER_SUCCEEDED, { adId: 'ad-xe', bid: bid('xe', 1.2) });
+    clock.tick(3000);
+    expect(sentOf('won')).to.have.length(1);
+    expect(sentOf('won')[0]).to.deep.include({ rendered: 1, viewable: 0 });
+    expect(sentOf('rendered')).to.have.length(0);
   });
 });

@@ -35,8 +35,10 @@ or cookies.
   `browserIntervention`, and `billableEvent` with the `adId` of a won bid
 
 An auction is sent 3 seconds after `auctionEnd`, together with the wins and renders of that window. Later events go in
-batches once a second. When the page is hidden or unloaded, everything pending is sent with `sendBeacon`. Requests
-are `text/plain` POSTs to `https://pbjs.xe.works/analytics`, split into bodies under 64 KB.
+batches once a second. When the page is hidden or unloaded, the events still in the analytics queue are processed and
+everything pending is sent with `sendBeacon`. Requests are `text/plain` POSTs to `https://pbjs.xe.works/analytics`
+in bodies under 60 KB: a large auction is split by ad unit, then by bidder. `keepalive` is used while the bodies in
+flight fit its 64 KB quota.
 
 # Example
 
