@@ -174,6 +174,13 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     return true;
   }
 
+  function clearBatchTimer() {
+    if (timer != null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  }
+
   function processBatch() {
     const currentBatch = batch;
     batch = [];
@@ -228,14 +235,16 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
           parent.enableAnalytics.call(this, config);
         }
       },
+      disableAnalytics() {
+        clearBatchTimer();
+        batch = [];
+        parent.disableAnalytics.call(this);
+      },
       track(event) {
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
-          if (timer != null) {
-            clearTimeout(timer);
-            timer = null;
-          }
+          clearBatchTimer();
           if (batch.length >= options.batchSize) {
             processBatch();
           } else {
