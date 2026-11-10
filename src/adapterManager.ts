@@ -74,7 +74,7 @@ import type {
 import { getGlobal } from "./prebidGlobal.ts";
 import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
 import { getRendererDef, isRendererAllowed, RENDERER_TYPES } from "./auction.ts";
-import { ALL_MEDIATYPES } from "./mediaTypes.ts";
+import { ALL_MEDIATYPES, type MediaType } from "./mediaTypes.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
@@ -160,6 +160,21 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
    * FPD is in `ortb2Imp`.
    */
   ortb2: DeepPartial<ORTBRequest>;
+  /**
+   * Flags indicating whether a bidder-provided renderer will be used for this request.
+   *
+   * A bid response may set `.renderer` and/or `.safeRenderer`, but whether they will
+   * be used to render the bid depends on publisher configuration.
+   *
+   * For any `mediaType` in this request, `rendererSupport[mediaType].renderer` is true
+   * when core will use a matching response's `.renderer`, false otherwise; likewise for `.safeRenderer`.
+   */
+  rendererSupport: {
+    [K in MediaType]?: {
+      renderer: boolean,
+      safeRenderer: boolean,
+    }
+  }
 }
 
 export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined | null }, keyof BaseBidRequest> {
