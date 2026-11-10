@@ -99,13 +99,22 @@ jobs:
 
   # The unit test gate (Vitest): every browser, both feature variants, and coverage.
   # It tests the PR's head commit.
-  # Chromium first; the other browsers and base branch coverage start only if it passes.
+  # Chromium first, without coverage; the other browsers and base branch coverage start only if it passes.
   vitest:
     name: "Unit tests (Chromium)"
     needs: checkout
     uses: ./.github/workflows/vitest-chromium.yml
     with:
       ref: ${{ needs.checkout.outputs.commit }}
+
+  # Codex: collect coverage in parallel without delaying the uninstrumented Chromium gate.
+  vitest-coverage:
+    name: "Unit test coverage (Chromium)"
+    needs: checkout
+    uses: ./.github/workflows/vitest-chromium.yml
+    with:
+      ref: ${{ needs.checkout.outputs.commit }}
+      coverage-only: true
 
   vitest-browsers:
     name: "Unit tests (browsers)"
@@ -224,6 +233,7 @@ jobs:
     with:
       ref: ${{ needs.checkout.outputs.base-commit }}
       coverage-only: true
+      base-coverage: true
   base-coverage-combine:
     name: Save base branch coverage
     needs: [checkout, base-coverage-check, base-coverage-compute]
@@ -248,12 +258,11 @@ jobs:
           path: base-coverage.info
   coverage:
     name: Coverage
-    needs: [checkout, vitest, base-coverage-check, base-coverage-combine]
-    # Gate on the coverage artifact rather than on the result of the whole Vitest call, which also covers
-    # the browsers that run without instrumentation. The output is only set once every chunk's coverage was
+    needs: [checkout, vitest-coverage, base-coverage-check, base-coverage-combine]
+    # Gate on the separate coverage run's artifact. The output is only set once every chunk's coverage was
     # combined, so a non-empty value is exactly the condition under which there is something to report.
     # Base coverage comes from the cache or from base-coverage-combine; without either there is nothing to compare.
-    if: always() && needs.vitest.outputs.coverage && needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false')
+    if: always() && needs.vitest-coverage.outputs.coverage && needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -261,7 +270,7 @@ jobs:
       - name: Fetch coverage results
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.vitest.outputs.coverage }}
+          name: ${{ needs.vitest-coverage.outputs.coverage }}
           path: ${{ runner.temp }}
       # base coverage for later PRs on this commit, from the path base-coverage-check restores it to
       - name: Save to cache
