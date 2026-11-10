@@ -15,8 +15,11 @@ const PUB_SAFE_URL = 'https://publisher.example/safe.js';
 
 const MEDIA_TYPES = {
   banner: { sizes: [[300, 250]] },
-  video: { context: 'outstream', playerSize: [[640, 480]] },
 };
+
+if (FEATURES.VIDEO) {
+  MEDIA_TYPES.video = { context: 'outstream', playerSize: [[640, 480]] };
+}
 
 const pubRenderer = () => ({ render: sinon.stub() });
 const backupRenderer = () => ({ ...pubRenderer(), backupOnly: true });
@@ -184,39 +187,41 @@ describe('bidder renderer flags', () => {
     });
   });
 
-  describe('multi-format ad unit', () => {
-    async function getRendererSupport(mediaTypes) {
-      const adUnit = {
-        code: 'renderer-flags-multiformat',
-        mediaTypes: Object.fromEntries(Object.entries(MEDIA_TYPES).map(([type, mt]) => [type, { ...mt, ...mediaTypes[type] }])),
-        bids: [{ bidder: BIDDER, params: {} }],
-      };
-      const responder = setInterval(() => server.respond());
-      try {
-        await getGlobal().requestBids({ adUnits: [adUnit], timeout: 1000 });
-      } finally {
-        clearInterval(responder);
+  if (FEATURES.VIDEO) {
+    describe('multi-format ad unit', () => {
+      async function getRendererSupport(mediaTypes) {
+        const adUnit = {
+          code: 'renderer-flags-multiformat',
+          mediaTypes: Object.fromEntries(Object.entries(MEDIA_TYPES).map(([type, mt]) => [type, { ...mt, ...mediaTypes[type] }])),
+          bids: [{ bidder: BIDDER, params: {} }],
+        };
+        const responder = setInterval(() => server.respond());
+        try {
+          await getGlobal().requestBids({ adUnits: [adUnit], timeout: 1000 });
+        } finally {
+          clearInterval(responder);
+        }
+        expect(seen).to.not.be.empty;
+        return seen.map(bidRequest => bidRequest.rendererSupport);
       }
-      expect(seen).to.not.be.empty;
-      return seen.map(bidRequest => bidRequest.rendererSupport);
-    }
 
-    it('scopes mediaTypes[type].renderer to its media type', async () => {
-      (await getRendererSupport({ banner: { renderer: pubRenderer() } })).forEach(support => {
-        expect(support).to.eql({
-          banner: { renderer: false, safeRenderer: true },
-          video: { renderer: true, safeRenderer: true },
+      it('scopes mediaTypes[type].renderer to its media type', async () => {
+        (await getRendererSupport({ banner: { renderer: pubRenderer() } })).forEach(support => {
+          expect(support).to.eql({
+            banner: { renderer: false, safeRenderer: true },
+            video: { renderer: true, safeRenderer: true },
+          });
+        });
+      });
+
+      it('scopes mediaTypes[type].safeRenderer to its media type', async () => {
+        (await getRendererSupport({ video: { safeRenderer: pubSafeRenderer() } })).forEach(support => {
+          expect(support).to.eql({
+            banner: { renderer: true, safeRenderer: true },
+            video: { renderer: false, safeRenderer: false },
+          });
         });
       });
     });
-
-    it('scopes mediaTypes[type].safeRenderer to its media type', async () => {
-      (await getRendererSupport({ video: { safeRenderer: pubSafeRenderer() } })).forEach(support => {
-        expect(support).to.eql({
-          banner: { renderer: true, safeRenderer: true },
-          video: { renderer: false, safeRenderer: false },
-        });
-      });
-    });
-  });
+  }
 });
