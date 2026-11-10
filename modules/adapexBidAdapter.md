@@ -110,7 +110,7 @@ The fallback identifier is sent only when both `transmitEids` and `transmitUfpd`
 GDPR/TCF, US Privacy, GPP and COPPA signals are handled by Prebid.js core and included in the OpenRTB request; server-provided user-sync URLs carry the applicable consent signals. The adapter declares IAB Europe TCF Vendor ID **1609** via its `gvlid`.
 
 ## User Sync
-The adapter registers cookie syncs to `https://sync.adapex.io/sync`. Iframe and pixel syncs are both supported; the type emitted follows your `userSync` configuration. An iframe sync matches more demand partners per call, so enable it for the adapter:
+The adapter registers the cookie syncs returned with each bid response. Iframe and pixel syncs are both supported; the type emitted follows your `userSync` configuration. An iframe sync matches more demand partners per call, so enable it for the adapter:
 
 ```javascript
 pbjs.setConfig({

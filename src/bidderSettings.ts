@@ -41,6 +41,11 @@ export interface BidderSettings<B extends BidderCode> {
    */
   allowedAlternateBidderCodes?: ['*'] | BidderCode[];
   /**
+   * If true, send bid requests uncompressed even when the adapter asks for `endpointCompression`.
+   * Does not affect Prebid Server; use `s2sConfig.endpointCompression` for that.
+   */
+  disableGzipCompression?: boolean;
+  /**
    * @deprecated - see
    */
   topicsHeader?: boolean;

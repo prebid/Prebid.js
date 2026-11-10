@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { decorateAdUnitsWithNativeParams, IMAGE } from '../../../src/native.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse, firstAliasBid;
@@ -708,6 +709,7 @@ describe('PubMatic adapter', () => {
                 required: true
               }
             };
+            nativeBidderRequest.bids[0].nativeParams = nativeBidderRequest.bids[0].mediaTypes.native;
           });
 
           afterEach(() => {
@@ -744,6 +746,7 @@ describe('PubMatic adapter', () => {
 
           it('should set privacy to 1 and have no assets when privacyLink is the only native key', () => {
             nativeBidderRequest.bids[0].mediaTypes.native = { privacyLink: { required: false } };
+            nativeBidderRequest.bids[0].nativeParams = nativeBidderRequest.bids[0].mediaTypes.native;
             const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
             const { imp } = request?.data;
             expect(imp).to.be.an('array');
@@ -751,6 +754,16 @@ describe('PubMatic adapter', () => {
             const nativeRequest = JSON.parse(imp[0].native.request);
             expect(nativeRequest).to.have.property('privacy').equal(1);
             expect(nativeRequest.assets).to.deep.equal([]);
+          });
+
+          it('should expand the native type shorthand', () => {
+            const bid = nativeBidderRequest.bids[0];
+            bid.mediaTypes.native = { type: 'image' };
+            delete bid.nativeParams;
+            decorateAdUnitsWithNativeParams([bid]);
+            const request = spec.buildRequests(validBidRequests, nativeBidderRequest);
+            const nativeRequest = JSON.parse(request.data.imp[0].native.request);
+            expect(nativeRequest.assets).to.eql(IMAGE.ortb.assets);
           });
         });
       }

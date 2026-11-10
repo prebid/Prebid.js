@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {
   deepAccess,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -633,7 +634,7 @@ function getTopMostAccessibleWindow() {
 
 function getViewportDimensions() {
   const topWin = getTopMostAccessibleWindow();
-  const documentElement = topWin.document.documentElement;
+  const documentElement = getWinDimensions(topWin).document.documentElement;
 
   return {
     w: documentElement.clientWidth,

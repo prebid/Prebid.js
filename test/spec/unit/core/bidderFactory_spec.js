@@ -342,6 +342,8 @@ describe('bidderFactory', () => {
             expect(bidderReq.getAID()).to.eql('aid');
             expect(reqs[0].getTIDs()).to.eql(['aid', 'tid']);
             done();
+            // no requests: returning nothing made callBids throw after done(), which went unnoticed
+            return [];
           });
           newBidder(spec).callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
         });
@@ -1865,6 +1867,25 @@ describe('bidderFactory', () => {
       expect(ajaxStub.calledOnce).to.be.true;
       expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1'); // Ensure URL does not have gzip=1
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+    });
+
+    Object.entries({
+      'standard': 'standard',
+      'this bidder': CODE,
+    }).forEach(([t, scope]) => {
+      it(`should NOT gzip when bidderSettings.${t}.disableGzipCompression is set`, async () => {
+        isGzipSupportedStub.resolves(true);
+        getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
+        debugTurnedOnStub.returns(false);
+        getGlobal().bidderSettings = { [scope]: { disableGzipCompression: true } };
+
+        await runRequest({ ...MOCK_BIDS_REQUEST, bidderCode: CODE });
+
+        expect(gzipStub.called).to.be.false;
+        expect(ajaxStub.calledOnce).to.be.true;
+        expect(ajaxStub.firstCall.args[0]).to.not.include('gzip=1');
+        expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+      });
     });
 
     it('should NOT gzip when debugMode is enabled', async () => {
