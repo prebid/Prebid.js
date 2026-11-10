@@ -18,6 +18,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./smartadserverBidAdapter.d.ts').SmartadserverBidParams} SmartadserverBidParams
  */
 
 const BIDDER_CODE = 'smartadserver';
