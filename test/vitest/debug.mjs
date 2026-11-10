@@ -7,10 +7,12 @@ import { defineBrowserProvider } from '@vitest/browser';
 
 const DEBUG_PAGE = '/debug.html';
 const NEXT = '/__debug__/next';
+const RERUN = '/__debug__/rerun';
 
 let seq = 0;
 let latest = null;
 let waiters = [];
+let vitest = null;
 
 function publish(url) {
   latest = { seq: ++seq, url };
@@ -27,6 +29,7 @@ export function debugProvider() {
     name: 'debug',
     providerFactory(project) {
       let open = false;
+      vitest = project.vitest;
       return {
         name: 'debug',
         supportsParallelism: false,
@@ -54,17 +57,25 @@ const PAGE = `<!doctype html>
   <style>
     html, body { margin: 0; height: 100%; font: 13px sans-serif; }
     body { display: flex; flex-direction: column; }
-    #status { padding: 4px 8px; background: #eee; }
+    #bar { display: flex; gap: 8px; align-items: center; padding: 4px 8px; background: #eee; }
+    #status { flex: 1; }
     iframe { flex: 1; border: 0; width: 100%; }
   </style>
 </head>
 <body>
-  <div id="status">Waiting for Vitest to start a session…</div>
+  <div id="bar">
+    <button id="rerun" title="Like 'r' in Vitest's terminal (watch mode only)">Re-run</button>
+    <span id="status">Waiting for Vitest to start a session…</span>
+  </div>
   <iframe id="frame"></iframe>
   <script>
     const status = document.getElementById('status');
     const frame = document.getElementById('frame');
     let seq = 0;
+    document.getElementById('rerun').onclick = async () => {
+      const res = await fetch('${RERUN}', { method: 'POST' });
+      if (!res.ok) status.textContent = 'Re-run failed: ' + await res.text();
+    };
     async function poll() {
       for (;;) {
         try {
@@ -77,7 +88,7 @@ const PAGE = `<!doctype html>
             status.textContent = 'Session ' + seq + ': ' + session.url;
             frame.src = session.url;
           } else {
-            status.textContent = 'Waiting for Vitest to start another session (re-run from the terminal)…';
+            status.textContent = 'Waiting for Vitest to start another session (Re-run)…';
           }
         } catch (e) {
           status.textContent = 'Lost the Vitest server (' + e + '), retrying…';
@@ -110,6 +121,15 @@ export function debugPage() {
             res.setHeader('Cache-Control', 'no-store');
             res.end(JSON.stringify(session));
           });
+        } else if (url.pathname === RERUN && req.method === 'POST') {
+          if (!vitest?.config.watch) {
+            res.statusCode = 409;
+            res.end('Vitest is not in watch mode');
+            return;
+          }
+          vitest.rerunFiles(undefined, 'debug.html').catch(e => vitest.logger.error(e));
+          res.statusCode = 204;
+          res.end();
         } else {
           nextMiddleware();
         }
