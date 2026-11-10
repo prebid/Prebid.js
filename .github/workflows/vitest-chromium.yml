@@ -1,8 +1,8 @@
 name: Vitest unit tests (Chromium)
 
 # Stage 1 of the unit test gate (#16007), called from test.yml: every spec in Chromium, in 2 shards per feature
-# variant (Vitest's `--shard`, several pages at once), and coverage from the default variant. test.yml starts stage 2
-# (vitest-browsers.yml) and base branch coverage only once this passes. See test/vitest/README.md, "CI".
+# variant (Vitest's `--shard`, several pages at once), without coverage. test.yml also calls this separately with
+# coverage-only for the default variant. See test/vitest/README.md, "CI".
 on:
   workflow_call:
     inputs:
@@ -12,7 +12,12 @@ on:
         default: ''
         required: false
       coverage-only:
-        description: Only run the coverage build (default variant), e.g. for the base branch
+        description: Run only the default variant, with coverage, independently of the unit test gate
+        type: boolean
+        default: false
+        required: false
+      base-coverage:
+        description: Label coverage as base and allow failures when computing an informational baseline
         type: boolean
         default: false
         required: false
@@ -35,15 +40,15 @@ jobs:
       matrix:
         shard: [1, 2]
         # The variant is whatever tree the precompile step leaves in dist/src ("all-features-disabled"
-        # precompiles with every feature flag but logging off). Coverage comes from the default variant.
+        # precompiles with every feature flag but logging off). Coverage-only runs use the default variant.
         variant: ${{ fromJSON(inputs.coverage-only && '["default"]' || '["default", "all-features-disabled"]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Base coverage is informational: a base commit that can't produce it (one from before Vitest) leaves
     # the coverage output empty instead of failing the run, and test.yml then skips the comparison.
-    continue-on-error: ${{ inputs.coverage-only }}
+    continue-on-error: ${{ inputs.base-coverage }}
     env:
-      VITEST_COVERAGE: ${{ matrix.variant == 'default' && '1' || '' }}
+      VITEST_COVERAGE: ${{ inputs.coverage-only && '1' || '0' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -65,24 +70,24 @@ jobs:
           ref: ${{ inputs.ref }}
       # Vitest's record of each spec file's last result and duration: with it, files that failed last time run
       # first, so their annotations show up on the PR within seconds of the tests starting. Per PR branch,
-      # falling back to the base branch's.
+      # falling back to the base branch's. Keep test, head coverage and base coverage runs separate.
       - name: Restore Vitest results
         uses: actions/cache@v5
         with:
           path: node_modules/.vite/vitest
-          key: vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: vitest-results-${{ inputs.base-coverage && 'base-coverage' || inputs.coverage-only && 'coverage' || matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-
-            vitest-results-${{ matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
+            vitest-results-${{ inputs.base-coverage && 'base-coverage' || inputs.coverage-only && 'coverage' || matrix.variant }}-${{ matrix.shard }}-${{ github.head_ref || github.ref_name }}-
+            vitest-results-${{ inputs.base-coverage && 'base-coverage' || inputs.coverage-only && 'coverage' || matrix.variant }}-${{ matrix.shard }}-${{ github.base_ref || 'master' }}-
       - name: Precompile (${{ matrix.variant }})
         run: npx gulp ${{ matrix.variant == 'default' && 'precompile' || 'precompile-all-features-disabled' }}
       - name: Run specs, shard ${{ matrix.shard }} of 2
         run: bash .github/workflows/scripts/retry-vitest.sh npm run test:vitest -- --shard=${{ matrix.shard }}/2
       - name: Upload coverage
-        if: ${{ matrix.variant == 'default' && !cancelled() }}
+        if: ${{ inputs.coverage-only && !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-${{ matrix.shard }}
+          name: vitest-coverage-${{ github.run_id }}-${{ inputs.base-coverage && 'base' || 'head' }}-${{ matrix.shard }}
           # build/coverage/chunks/shard-<i>/lcov.info
           path: build/coverage/chunks
           if-no-files-found: error
@@ -92,15 +97,15 @@ jobs:
   coverage:
     name: Vitest coverage
     needs: [chromium]
-    if: ${{ !cancelled() }}
-    continue-on-error: ${{ inputs.coverage-only }}
+    if: ${{ inputs.coverage-only && !cancelled() }}
+    continue-on-error: ${{ inputs.base-coverage }}
     runs-on: ubuntu-latest
     outputs:
       artifact: ${{ steps.name.outputs.artifact }}
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}-*
+          pattern: vitest-coverage-${{ github.run_id }}-${{ inputs.base-coverage && 'base' || 'head' }}-*
           path: build/coverage/chunks
           merge-multiple: true
       - name: Combine coverage results
@@ -117,7 +122,7 @@ jobs:
           find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
           { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - id: name
-        run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
+        run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.base-coverage && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.name.outputs.artifact }}
