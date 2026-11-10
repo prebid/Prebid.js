@@ -1,18 +1,18 @@
-// VITEST_DEBUG=1: instead of launching a browser, Vitest's pages are handed to whatever browser has /debug.html open,
-// which loads each in an iframe, so the tests run in a browser of your choosing, devtools and all.
+// VITEST_DEBUG=1: a 'debug' browser instance that runs nothing until /debug.html is opened. The page then asks for a run
+// of the specs the other instance ran, and loads the session Vitest opens for it in an iframe, so they run in whatever browser
+// has the page open, devtools and all.
 
-// installed with @vitest/browser-playwright, at its version
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { defineBrowserProvider } from '@vitest/browser';
+export const DEBUG_INSTANCE = 'debug';
 
 const DEBUG_PAGE = '/debug.html';
 const NEXT = '/__debug__/next';
-const RERUN = '/__debug__/rerun';
+const RUN = '/__debug__/run';
 
 let seq = 0;
 let latest = null;
 let waiters = [];
 let vitest = null;
+const debugProject = () => vitest?.projects.find(project => project.name === DEBUG_INSTANCE);
 
 function publish(url) {
   latest = { seq: ++seq, url };
@@ -24,29 +24,42 @@ function next(after) {
   return latest && latest.seq > after ? Promise.resolve(latest) : new Promise(resolve => waiters.push(resolve));
 }
 
-export function debugProvider() {
-  return defineBrowserProvider({
+async function run() {
+  // the specs come from the other instance's last run
+  await vitest.waitForTestRunEnd();
+  const files = new Set(vitest.state.getTestModules()
+    .filter(module => module.project.name !== DEBUG_INSTANCE)
+    .map(module => module.moduleId));
+  if (!files.size) throw new Error('no spec files have run yet');
+  await vitest.rerunTestSpecifications([...files].map(file => debugProject().createSpecification(file)), false);
+}
+
+function debugInstance(project) {
+  // the orchestrator sizes the test iframe itself; this would resize the browser window
+  project.browser.registerCommand('__vitest_viewport', () => {});
+  let open = false;
+  return {
     name: 'debug',
-    providerFactory(project) {
-      let open = false;
-      vitest = project.vitest;
-      return {
-        name: 'debug',
-        supportsParallelism: false,
-        isOpen: () => open,
-        getCommandsContext: () => ({}),
-        async openPage(_sessionId, url) {
-          open = true;
-          const page = new URL(DEBUG_PAGE, url).toString();
-          project.vitest.logger.log(`\nWaiting for a browser: open ${page}\n`);
-          publish(url);
-        },
-        async close() {
-          open = false;
-        },
-      };
+    supportsParallelism: false,
+    isOpen: () => open,
+    getCommandsContext: () => ({}),
+    async openPage(_sessionId, url) {
+      open = true;
+      publish(url);
     },
-  });
+    async close() {
+      open = false;
+    },
+  };
+}
+
+// Instances of a project share one server, so they must have the same provider (by name and server); this one hands
+// the debug instance to debug.html and the others to `provider`.
+export function withDebugInstance(provider) {
+  return {
+    ...provider,
+    providerFactory: (project) => project.name === DEBUG_INSTANCE ? debugInstance(project) : provider.providerFactory(project),
+  };
 }
 
 const PAGE = `<!doctype html>
@@ -64,49 +77,61 @@ const PAGE = `<!doctype html>
 </head>
 <body>
   <div id="bar">
-    <button id="rerun" title="Like 'r' in Vitest's terminal (watch mode only)">Re-run</button>
-    <span id="status">Waiting for Vitest to start a session…</span>
+    <button id="rerun" title="Run the specs again in this page">Re-run</button>
+    <span id="status">Waiting for Vitest…</span>
   </div>
   <iframe id="frame"></iframe>
   <script>
     const status = document.getElementById('status');
     const frame = document.getElementById('frame');
-    let seq = 0;
-    async function rerun() {
-      const res = await fetch('${RERUN}', { method: 'POST' });
-      if (!res.ok) status.textContent = 'Re-run failed: ' + await res.text();
+    async function run() {
+      const res = await fetch('${RUN}', { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      return (await res.json()).seq;
     }
-    document.getElementById('rerun').onclick = rerun;
-    async function poll() {
+    async function poll(seq) {
       for (;;) {
         try {
           const res = await fetch('${NEXT}?after=' + seq);
           if (!res.ok) throw new Error(res.status);
           const session = await res.json();
           seq = session.seq;
-          // Vitest drops a session when its page goes away, so after a reload of this one, start another
-          if ((await fetch(session.url, { method: 'HEAD' })).ok) {
-            status.textContent = 'Session ' + seq + ': ' + session.url;
-            frame.src = session.url;
-          } else {
-            status.textContent = 'Re-running…';
-            await rerun();
-          }
+          status.textContent = 'Session ' + seq + ': ' + session.url;
+          frame.src = session.url;
         } catch (e) {
           status.textContent = 'Lost the Vitest server (' + e + '), retrying…';
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
     }
-    poll();
+    function report(e) {
+      status.textContent = 'Run failed: ' + e.message;
+    }
+    document.getElementById('rerun').onclick = () => run().catch(report);
+    // the run opens a session for this page; one still open (e.g. in another tab) would be reused instead
+    run().then(poll, report);
   </script>
 </body>
 </html>`;
 
+let pageUrl = null;
+// once both the server is listening and Vitest is known, in either order
+function announce() {
+  if (pageUrl && vitest) vitest.logger.log(`\nDebug page: ${pageUrl}\n`);
+}
+
 export function debugPage() {
   return {
     name: 'prebid-vitest-debug-page',
+    configureVitest(context) {
+      vitest = context.vitest;
+      announce();
+    },
     configureServer(server) {
+      server.httpServer?.once('listening', () => {
+        pageUrl = server.resolvedUrls?.local[0] && new URL(DEBUG_PAGE, server.resolvedUrls.local[0]);
+        announce();
+      });
       const handle = (req, res, nextMiddleware) => {
         const url = new URL(req.url, 'http://localhost');
         // also '/' (but not the test iframe's '/?sessionId='): setup.mjs gives the top page Karma's URL, so that is
@@ -123,15 +148,15 @@ export function debugPage() {
             res.setHeader('Cache-Control', 'no-store');
             res.end(JSON.stringify(session));
           });
-        } else if (url.pathname === RERUN && req.method === 'POST') {
-          if (!vitest?.config.watch) {
+        } else if (url.pathname === RUN && req.method === 'POST') {
+          if (!vitest?.shouldKeepServer()) {
             res.statusCode = 409;
             res.end('Vitest is not in watch mode');
             return;
           }
-          vitest.rerunFiles(undefined, 'debug.html').catch(e => vitest.logger.error(e));
-          res.statusCode = 204;
-          res.end();
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ seq }));
+          run().catch(e => vitest.logger.error(`debug page: ${e.message}`));
         } else {
           nextMiddleware();
         }

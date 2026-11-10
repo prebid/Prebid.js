@@ -16,8 +16,8 @@
 //   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
 //   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. Chrome 113 from @puppeteer/browsers
 //
-// VITEST_DEBUG=1 launches no browser: open the /debug.html page it prints in any browser to run the specs there, one
-// file at a time, with its devtools (see debug.mjs).
+// VITEST_DEBUG=1 (watch mode only) adds a 'debug' instance that runs nothing on its own: opening the /debug.html page
+// it prints, in any browser, runs the same specs there, with its devtools (see debug.mjs).
 //
 // VITEST_BROWSERSTACK=1 runs on a BrowserStack browser through WebdriverIO instead (#16006). It needs
 // BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY, and a BrowserStack Local tunnel: globalSetup.mjs starts one
@@ -43,7 +43,7 @@ import InfraFailureReporter from './infraFailureReporter.mjs';
 import { DIST, DIST_ENTRIES, nativeSpecs } from './plugins.mjs';
 import { RAW } from './globalSetup.mjs';
 import { envFlag } from './env.mjs';
-import { debugPage, debugProvider } from './debug.mjs';
+import { DEBUG_INSTANCE, debugPage, withDebugInstance } from './debug.mjs';
 
 // CommonJS; required rather than imported so Vite doesn't bundle it into the config
 const { specFiles } = createRequire(import.meta.url)('./specs.js');
@@ -120,7 +120,6 @@ const launchOptions = {
 };
 
 async function browserProvider() {
-  if (debug) return debugProvider();
   if (localSafari) {
     const { webdriverio } = await import('@vitest/browser-webdriverio');
     // WebdriverIO starts /usr/bin/safaridriver itself. Safari allows one automation session at a time, which is
@@ -213,7 +212,6 @@ export default defineConfig({
   define: {
     // setup.mjs logs the remote browser's user agent, since BrowserStack picks the exact OS version
     __VITEST_BROWSERSTACK__: JSON.stringify(browserstack),
-    __VITEST_DEBUG__: JSON.stringify(debug),
     // every browser on iOS is WebKit
     __VITEST_WEBKIT__: JSON.stringify(['webkit', 'safari'].includes(browserName) || !!bsDevice),
   },
@@ -272,32 +270,32 @@ export default defineConfig({
     testTimeout: 0,
     hookTimeout: 0,
     isolate: true,
-    fileParallelism: debug ? false : parallelFiles,
+    fileParallelism: parallelFiles,
     ...(parallel > 1 ? { maxWorkers: parallel } : {}),
     browser: {
       enabled: true,
       // BrowserStack browsers and local Safari run headed (WebdriverIO refuses headless Safari)
-      headless: !browserstack && !localSafari && !debug,
+      headless: !browserstack && !localSafari,
       // Vitest shows its UI in a headed browser unless CI is set, and scales the test iframe down inside it, which
       // breaks specs that measure layout
       ...(browserstack || debug ? { ui: false } : {}),
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking, no
       // background timer throttling) and --no-sandbox, as Karma's ChromeNoSandbox launcher did
-      provider: await browserProvider(),
+      provider: debug ? withDebugInstance(await browserProvider()) : await browserProvider(),
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
-      instances: [{ browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : debug ? 'debug' : process.env.VITEST_CHANNEL || browserName }],
+      instances: [
+        { browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName },
+        // matches no file: debug.mjs runs the other instance's specs here when the debug page asks
+        ...(debug ? [{ browser: browserName, name: DEBUG_INSTANCE, headless: false, include: ['debug.mjs runs these on request'] }] : []),
+      ],
       screenshotFailures: false,
       // A BrowserStack session may queue when all device slots are occupied.
       ...(browserstack ? { connectTimeout: 300000 } : {}),
-      // a debug session waits for someone to open /debug.html
-      ...(debug ? { connectTimeout: 24 * 3600 * 1000 } : {}),
       // Karma's ChromeHeadless window size (Vitest defaults to a 414x896 phone viewport)
       viewport: { width: 800, height: 600 },
       // a page shaped like Karma's context.html (no lang attribute, empty title)
       testerHtmlPath: 'test/vitest/context.html',
       commands: {
-        // the orchestrator sizes the test iframe itself; this asks the provider to resize the window too
-        ...(debug ? { __vitest_viewport() {} } : {}),
         // setup.mjs sends a spec file's Istanbul counters (window.__coverage__) here, one file per spec; the name
         // ends in the chunk or shard for coverage.js's chunkOf()
         writeCoverage(ctx, json) {

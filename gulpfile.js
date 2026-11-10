@@ -369,7 +369,7 @@ function setupDist() {
 // If --browserstack is given, it will run once on each browsers.json entry that has `browserstack`, or with --browsers
 //   on the entries named, e.g. --browserstack --browsers=iphone_14,chrome; an entry with `vitest.specsMatching` runs
 //   only the spec files matching it, unless --file is given
-// If --debug is given, no browser is launched: open the debug.html page it prints in any browser to run the tests there.
+// If --debug is given, it runs in watch mode, and opening the debug.html page it prints runs the tests again in that browser.
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
@@ -441,7 +441,8 @@ async function runVitest(options) {
     // --file, or the entry's specsMatching, narrows the run to those specs (as Vitest file filters); else every spec runs
     const files = options.file ? options.file.split(',') : entryFiles ?? [];
     // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
-    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
+    // the debug page runs specs on request, which needs the server to stay up
+    await npmRun(options.watch || options.debug ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
   }
 }
 

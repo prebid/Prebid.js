@@ -4,7 +4,7 @@
 import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
-import { commands } from 'vitest/browser';
+import { commands, server } from 'vitest/browser';
 import { cookieSettler } from './cookies.mjs';
 
 const DEFAULT_TIMEOUT = 3000; // Mocha's timeout under Karma (client.mocha.timeout)
@@ -173,8 +173,8 @@ function runNow(fn, { suite, timeout, title, vctx, kind }) {
     function arm() {
       realClearTimeout(timer);
       const ms = runnable.timeout;
-      // a test paused at a breakpoint would time out
-      if (ms > 0 && ms < NO_TIMEOUT && !(typeof __VITEST_DEBUG__ !== 'undefined' && __VITEST_DEBUG__)) {
+      // under the debug page (DEBUG_INSTANCE in debug.mjs), a test paused at a breakpoint would time out
+      if (ms > 0 && ms < NO_TIMEOUT && server.config.name !== 'debug') {
         timer = realSetTimeout(() => finish(new Error(
           `Timeout of ${ms}ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves. (${title})`
         )), ms);
