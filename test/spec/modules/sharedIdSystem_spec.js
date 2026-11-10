@@ -108,11 +108,12 @@ describe('SharedId System', function () {
         expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
       });
 
-      it('should complete with the new id when storage is empty after the pixel', function () {
+      it('should complete without an id when the server removed the cookie, so script does not write it back', function () {
+        // e.g. the endpoint deleted it for Global Privacy Control or denied consent
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
         pixelDone();
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal(UUID);
+        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
       });
     });
     it('should abort if coppa is set', function () {
