@@ -573,7 +573,7 @@ describe('linaBidAdapter', function () {
   it('preserves standard video fields and extensions without mutating input or merging arrays', function () {
     const bid = {
       ...BID_REQUEST,
-      mediaTypes: { video: { playerSize: [[640, 360]], protocols: [2], api: [2], skip: 0, startdelay: 0, playbackmethod: [1] } },
+      mediaTypes: { video: { playerSize: [[640, 360]], mimes: ['video/mp4'], protocols: [2], api: [2], skip: 0, startdelay: 0, playbackmethod: [1] } },
       ortb2Imp: { video: { protocols: [3], ext: { custom: true } }, bidfloor: 99, bidfloorcur: 'KRW', audio: { mimes: ['audio/mp3'] }, id: 'stale', tagid: 'stale' },
     };
     const before = JSON.stringify(bid);
@@ -582,6 +582,97 @@ describe('linaBidAdapter', function () {
     expect(imp).to.include({ id: BID_REQUEST.bidId, tagid: BID_REQUEST.params.placementId });
     expect(imp).to.deep.include({ bidfloor: 99, bidfloorcur: 'KRW', audio: { mimes: ['audio/mp3'] } });
     expect(JSON.stringify(bid)).to.equal(before);
+  });
+
+  it('preserves valid banner demand when mixed video parameters are invalid', function () {
+    for (const video of [
+      {},
+      { playerSize: [[640, 360]] },
+      { playerSize: [[0, 360]], mimes: ['video/mp4'] },
+      { playerSize: [[640, 360]], mimes: [] },
+      { playerSize: [[640, 360]], mimes: [' '] },
+      { playerSize: [[640, 360]], mimes: ['video/mp4'], protocols: [] },
+      { playerSize: [[640, 360]], mimes: ['video/mp4'], minduration: -1 },
+      { playerSize: [[640, 360]], mimes: ['video/mp4'], minduration: 30, maxduration: 5 },
+    ]) {
+      const mixedBid = {
+        ...BID_REQUEST,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video },
+        ortb2Imp: {
+          ...BID_REQUEST.ortb2Imp,
+          video: { w: 1280, h: 720, pos: 1 },
+        },
+      };
+      const before = JSON.stringify(mixedBid);
+
+      expect(spec.isBidRequestValid(mixedBid)).to.equal(true);
+      const request = spec.buildRequests([mixedBid], BIDDER_REQUEST);
+      expect(request.data.bids[0].ortb2Imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+      expect(request.data.bids[0].ortb2Imp).not.to.have.property('video');
+      expect(request.data.bids[0].ortb2Imp.ext).to.deep.equal(BID_REQUEST.ortb2Imp.ext);
+      expect(spec.interpretResponse({ body: VALID_RESPONSE }, request)).to.have.lengthOf(1);
+      expect(spec.interpretResponse({
+        body: {
+          ...VALID_RESPONSE,
+          bids: [{ ...VALID_RESPONSE.bids[0], mediaType: 'video', ad: '<VAST version="3.0"></VAST>' }],
+        },
+      }, request)).to.deep.equal([]);
+      expect(JSON.stringify(mixedBid)).to.equal(before);
+    }
+  });
+
+  it('preserves valid video demand when mixed banner sizes are invalid', function () {
+    for (const banner of [{}, { sizes: [] }, { sizes: [[0, 250]] }, { sizes: [[300, 250], null] }]) {
+      const mixedBid = {
+        ...BID_REQUEST,
+        mediaTypes: { banner, video: { playerSize: [[640, 360]], mimes: ['video/mp4'] } },
+        ortb2Imp: { ...BID_REQUEST.ortb2Imp, banner: { format: [{ w: 300, h: 250 }], pos: 1 } },
+      };
+
+      expect(spec.isBidRequestValid(mixedBid)).to.equal(true);
+      const request = spec.buildRequests([mixedBid], BIDDER_REQUEST);
+      expect(request.data.bids[0].ortb2Imp).not.to.have.property('banner');
+      expect(request.data.bids[0].ortb2Imp.video).to.deep.equal({ w: 640, h: 360, mimes: ['video/mp4'] });
+      expect(spec.interpretResponse({ body: VALID_RESPONSE }, request)).to.deep.equal([]);
+      expect(spec.interpretResponse({
+        body: {
+          ...VALID_RESPONSE,
+          bids: [{ ...VALID_RESPONSE.bids[0], mediaType: 'video', ad: '<VAST version="3.0"></VAST>' }],
+        },
+      }, request)).to.have.lengthOf(1);
+    }
+  });
+
+  it('preserves valid Native demand alongside invalid banner and video only when enabled', function () {
+    const native = { ortb: { ver: '1.2', assets: [{ id: 1, title: { len: 80 } }] } };
+    const mixedBid = {
+      ...BID_REQUEST,
+      mediaTypes: {
+        banner: { sizes: [[0, 250]] },
+        video: { playerSize: [[640, 360]] },
+        native,
+      },
+      ortb2Imp: {
+        ...BID_REQUEST.ortb2Imp,
+        banner: { format: [{ w: 300, h: 250 }] },
+        video: { w: 1280, h: 720, pos: 1 },
+      },
+    };
+
+    expect(spec.isBidRequestValid(mixedBid)).to.equal(FEATURES.NATIVE);
+    if (FEATURES.NATIVE) {
+      const request = spec.buildRequests([mixedBid], BIDDER_REQUEST);
+      expect(request.data.bids[0].ortb2Imp).not.to.have.property('banner');
+      expect(request.data.bids[0].ortb2Imp).not.to.have.property('video');
+      expect(JSON.parse(request.data.bids[0].ortb2Imp.native.request)).to.deep.equal(native.ortb);
+    }
+  });
+
+  it('rejects mixed requests when none of the declared formats is valid', function () {
+    expect(spec.isBidRequestValid({
+      ...BID_REQUEST,
+      mediaTypes: { banner: { sizes: [[0, 250]] }, video: { playerSize: [[640, 360]] }, native: {} },
+    })).to.equal(false);
   });
 
   it('sends one multi-format LINA bid without client floor policy', function () {
