@@ -992,6 +992,95 @@ describe('IntentIQ tests', function () {
       expect(updatedFirstPartyData.isOptedOut).to.equal(false);
     });
 
+    function getFirstPartyWrites(setLsSpy, key = FIRST_PARTY_KEY) {
+      return setLsSpy.getCalls()
+        .filter(call => call.args[0] === key)
+        .map(call => JSON.parse(call.args[1]));
+    }
+
+    it('should never write pcid/pcidDate to device for new users if GDPR is detected, not even before the server response', async function () {
+      mockConsentHandlers(uspData, gppData, gdprData);
+      const setLsSpy = sinon.spy(storage, 'setDataInLocalStorage');
+      try {
+        const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+        submoduleCallback(sinon.spy());
+        await waitForClientHints();
+
+        const fpdWrites = getFirstPartyWrites(setLsSpy);
+        expect(fpdWrites).to.not.be.empty;
+        fpdWrites.forEach(written => {
+          expect(written.isOptedOut).to.be.true;
+          expect(written).to.not.have.property('pcid');
+          expect(written).to.not.have.property('pcidDate');
+        });
+      } finally {
+        setLsSpy.restore();
+      }
+    });
+
+    it('should treat new users as opted out when GDPR applies but no consent string is available yet', async function () {
+      mockConsentHandlers(uspData, gppData, { gdprApplies: true });
+      const setLsSpy = sinon.spy(storage, 'setDataInLocalStorage');
+      try {
+        const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+        submoduleCallback(sinon.spy());
+        await waitForClientHints();
+
+        const fpdWrites = getFirstPartyWrites(setLsSpy);
+        expect(fpdWrites).to.not.be.empty;
+        fpdWrites.forEach(written => {
+          expect(written.isOptedOut).to.be.true;
+          expect(written).to.not.have.property('pcid');
+          expect(written).to.not.have.property('pcidDate');
+        });
+      } finally {
+        setLsSpy.restore();
+      }
+    });
+
+    it('should strip stored identifiers and call the server when GDPR applies and stored first-party data has no isOptedOut', async function () {
+      const now = Date.now();
+      localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({
+        pcid: 'stored-pcid',
+        pcidDate: now,
+        sCal: now,
+        uspString: uspData,
+        gppString: gppData.gppString
+      }));
+      mockConsentHandlers(uspData, gppData, { gdprApplies: true });
+
+      const submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+      submoduleCallback(sinon.spy());
+      await waitForClientHints();
+
+      const lsFPD = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
+      expect(lsFPD.isOptedOut).to.be.true;
+      expect(lsFPD).to.not.have.property('pcid');
+      expect(lsFPD).to.not.have.property('pcidDate');
+      expect(server.requests).to.have.lengthOf(1);
+    });
+
+    it('should keep isOptedOut but drop identifiers in siloed first-party data when opted out', async function () {
+      const siloKey = `${FIRST_PARTY_KEY}_p_${partner}`;
+      mockConsentHandlers(uspData, gppData, gdprData);
+      const setLsSpy = sinon.spy(storage, 'setDataInLocalStorage');
+      try {
+        intentIqIdSubmodule.getId({ params: { ...defaultConfigParams.params, siloEnabled: true } });
+        await waitForClientHints();
+
+        const fpdWrites = getFirstPartyWrites(setLsSpy, siloKey);
+        expect(fpdWrites).to.not.be.empty;
+        fpdWrites.forEach(written => {
+          expect(written.isOptedOut).to.be.true;
+          expect(written).to.not.have.property('pcid');
+          expect(written).to.not.have.property('pcidDate');
+        });
+        expect(JSON.parse(localStorage.getItem(siloKey)).isOptedOut).to.equal(true);
+      } finally {
+        setLsSpy.restore();
+      }
+    });
+
     it('should save cmpData parameters in LS data and used it request if uspData, gppData, gdprData exists', async function () {
       mockConsentHandlers(uspData, gppData, gdprData);
 

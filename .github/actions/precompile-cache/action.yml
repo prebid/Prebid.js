@@ -1,0 +1,50 @@
+name: Precompile cache
+description: Restore (and optionally save) the gulp precompile and tsc caches, rolling forward per commit
+
+# Every run misses the exact key, restores the newest snapshot for the same build system and recompiles
+# only what changed. The caches key each file on its contents but not on the build system itself (see
+# gulp.precompilation.js), so the files that make up the build system are hashed into the key instead.
+# Pushes (master) restore only their own commit's snapshot, so they build from scratch: a build-system file missing
+# from that list can fool a PR's run, but not master's.
+inputs:
+  variant:
+    description: Feature variant the precompile runs with
+    default: default
+  save:
+    description: "'true' to also save the cache when the job ends"
+    default: 'false'
+  ref:
+    description: Commit being tested; empty for the triggering commit
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Compute cache key
+      id: key
+      shell: bash
+      env:
+        PREFIX: vitest-${{ inputs.variant }}-${{ hashFiles('package-lock.json', '.babelrc.js', 'babelConfig.js', 'plugins/*.js', 'features.json', 'gulp.precompilation.js', 'gulp.cache.js', 'gulpHelpers.js', 'tsconfig.json', 'tsconfig-strict.json') }}-
+        COMMIT: ${{ inputs.ref || github.sha }}
+        FALLBACK: ${{ github.event_name != 'push' }}
+      run: |
+        if [ "$FALLBACK" = true ]; then echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"; fi
+        echo "key=$PREFIX$COMMIT" >> "$GITHUB_OUTPUT"
+    - name: Restore and save precompile cache
+      if: ${{ inputs.save == 'true' }}
+      uses: actions/cache@v5
+      with:
+        path: |
+          .cache/precompile
+          .cache/ts
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: ${{ steps.key.outputs.prefix }}
+    - name: Restore precompile cache
+      if: ${{ inputs.save != 'true' }}
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          .cache/precompile
+          .cache/ts
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: ${{ steps.key.outputs.prefix }}

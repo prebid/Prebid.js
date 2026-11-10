@@ -25,6 +25,7 @@ import {
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
@@ -142,7 +143,8 @@ export function detectViewability(bid) {
       element = getDomElement(viewabilityContainerIdentifier);
 
       if (element) {
-        bidParamSizes = [element.offsetWidth, element.offsetHeight];
+        const { width, height } = getElementDimensions(element);
+        bidParamSizes = [width, height];
         minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
