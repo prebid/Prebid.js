@@ -84,7 +84,11 @@ function getIdCallback(pubcid, pixelUrl) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
-        callback(getStoredId() || pubcid);
+        // By now the User ID module has stored `pubcid` (getId's `id`), and the pixel endpoint has had the
+        // chance to set the cookie again from the server. If storage holds an id, complete without one:
+        // passing it would have the User ID module write it again from script, turning the server-set cookie
+        // back into a script-set one. Only if storage is empty, complete with the id created here, as before.
+        callback(getStoredId() ? undefined : pubcid);
       })();
     } else {
       callback(pubcid);
