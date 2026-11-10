@@ -10,7 +10,7 @@ Reports the Prebid.js auctions of ad units that carry an XE placement to XE (xe.
 reports of XE publishers: competition, win share, floors, timeouts, rejected bids and render outcomes.
 
 Every bidder of such an ad unit is reported, but bidder params are not: only the XE placement id (`pid`) of the
-`xe`, `xeworks` and `lunamediax` bidders, their aliases and the codes listed in the `bidders` option. Auctions and ad
+`xe` and `xeworks` bidders, their aliases and the codes listed in the `bidders` option. Auctions and ad
 units without an XE placement are not sent.
 
 The adapter sends no user ids, IP addresses or consent strings: only flags (GDPR applies, GPP section ids, US Privacy

@@ -10,7 +10,7 @@ import { logError } from '../src/utils.js';
 const CODE = 'xe';
 const GVLID = 1383;
 const ENDPOINT = 'https://pbjs.xe.works/analytics';
-const XE_BIDDERS = ['xe', 'xeworks', 'lunamediax'];
+const XE_BIDDERS = ['xe', 'xeworks'];
 const AUCTION_DELAY = 3000;
 const LATE_DELAY = 1000;
 const MAX_BODY = 60000;
@@ -25,7 +25,7 @@ const ORTB_DEVICE_TYPE = {
 
 export interface XeAnalyticsOptions {
   /**
-   * Bidder codes whose params carry an XE placement id (`pid`), on top of `xe`, `xeworks`, `lunamediax` and their aliases.
+   * Bidder codes whose params carry an XE placement id (`pid`), on top of `xe`, `xeworks` and their aliases.
    */
   bidders?: string[];
 }
