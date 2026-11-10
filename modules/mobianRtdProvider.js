@@ -65,12 +65,11 @@ let slotRequestedListenerAdded = false;
 export const viewabilityTargetingData = new Map();
 
 export const MAX_CACHE_SIZE = 10;
-export const VIEWABILITY_TARGETING_MAX_CACHE_SIZE = 10;
 
 function setViewabilityTargetingData(key, value) {
   if (
     !viewabilityTargetingData.has(key) &&
-    viewabilityTargetingData.size >= VIEWABILITY_TARGETING_MAX_CACHE_SIZE
+    viewabilityTargetingData.size >= MAX_CACHE_SIZE
   ) {
     viewabilityTargetingData.delete(viewabilityTargetingData.keys().next().value);
   }
@@ -130,8 +129,8 @@ export function makeMemoizedTrafficQualityFetch() {
 
 export const getTrafficQualityData = makeMemoizedTrafficQualityFetch();
 
-export function makeMemoizedViewabilityFetch(maxSize = VIEWABILITY_TARGETING_MAX_CACHE_SIZE) {
-  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : VIEWABILITY_TARGETING_MAX_CACHE_SIZE;
+export function makeMemoizedViewabilityFetch(maxSize = MAX_CACHE_SIZE) {
+  const sanitizedMaxSize = (Number.isFinite(maxSize) && maxSize >= 1) ? Math.floor(maxSize) : MAX_CACHE_SIZE;
   const cache = new Map();
   return function (fileUrl) {
     if (cache.has(fileUrl)) {
@@ -152,7 +151,7 @@ export function makeMemoizedViewabilityFetch(maxSize = VIEWABILITY_TARGETING_MAX
   };
 }
 
-export const getViewabilityData = makeMemoizedViewabilityFetch(VIEWABILITY_TARGETING_MAX_CACHE_SIZE);
+export const getViewabilityData = makeMemoizedViewabilityFetch(MAX_CACHE_SIZE);
 
 dep.getContextData = getContextData;
 dep.getTrafficQualityData = getTrafficQualityData;
