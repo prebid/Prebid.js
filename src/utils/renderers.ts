@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import type { AdUnitDefinition } from "../adUnits.ts";
+import type { BidderCode } from "../types/common";
 
 export const RENDERER_TYPES = [
   'renderer',
@@ -7,8 +8,8 @@ export const RENDERER_TYPES = [
 ] as const;
 export type RendererType = typeof RENDERER_TYPES[number];
 
-export function isRendererAllowed(type: RendererType) {
-  return !(type === 'renderer' && !(config.getConfig('allowTopWindowRenderers') ?? true));
+export function isRendererAllowed(bidder: BidderCode, type: RendererType) {
+  return !(type === 'renderer' && !(config.runWithBidder(bidder, () => config.getConfig('allowTopWindowRenderers')) ?? true));
 }
 
 const VALIDATE = {

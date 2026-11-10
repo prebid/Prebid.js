@@ -319,8 +319,8 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           incrementBidderRequestsCounter(adUnit.code, bidderCode);
         }
 
-        const rendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('renderer'));
-        const safeRendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('safeRenderer'));
+        const rendererAllowed = isRendererAllowed(bid.bidder, 'renderer');
+        const safeRendererAllowed = isRendererAllowed(bid.bidder, 'safeRenderer');
 
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,

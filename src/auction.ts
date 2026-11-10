@@ -782,9 +782,9 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
   }
 }
 
-function installRenderer<T extends RendererType>(type: T, bid: Partial<Bid>, bidder: BidderCode, getPubRenderer: () => Bid[T]) {
+function installRenderer<T extends RendererType>(type: T, bid: Partial<Bid>, getPubRenderer: () => Bid[T]) {
   // bids can get here outside of their bidder's context (e.g. after the currency module defers them)
-  if (config.runWithBidder(bidder, () => isRendererAllowed(type))) {
+  if (isRendererAllowed(bid.bidderCode, type)) {
     const pubRenderer = getPubRenderer();
     if (pubRenderer) {
       bid[type] = pubRenderer;
@@ -816,9 +816,8 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  const bidder = bidRequest?.bidder ?? bid.adapterCode ?? bid.bidderCode;
-  installRenderer('safeRenderer', bid, bidder, () => getRendererDef('safeRenderer', bid.safeRenderer == null, bidRequest, bidMediaType, adUnit));
-  installRenderer('renderer', bid, bidder, () => {
+  installRenderer('safeRenderer', bid, () => getRendererDef('safeRenderer', bid.safeRenderer == null, bidRequest, bidMediaType, adUnit));
+  installRenderer('renderer', bid, () => {
     const renderDef = getRendererDef('renderer', bid.renderer == null, bidRequest, bidMediaType, adUnit);
     if (renderDef) {
       const renderer = Renderer.install({
