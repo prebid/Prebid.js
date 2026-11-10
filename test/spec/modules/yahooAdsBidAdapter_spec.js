@@ -1756,6 +1756,15 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
+        [1, 3600].forEach(param => {
+          it(`should accept a ttl of ${param}, the ends of the documented 1 - 3600 range`, () => {
+            const { serverResponse, bidderRequest } = generateResponseMock('banner');
+            config.setConfig({ yahooAds: { ttl: param } });
+            const response = spec.interpretResponse(serverResponse, { bidderRequest });
+            expect(response[0].ttl).to.equal(param);
+          });
+        });
+
         it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({

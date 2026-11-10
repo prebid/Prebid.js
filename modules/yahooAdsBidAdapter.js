@@ -256,7 +256,7 @@ function getTtl(bidderRequest) {
 };
 
 function validateTTL(ttl) {
-  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL;
+  return (isNumber(ttl) && ttl > 0 && ttl <= 3600) ? ttl : DEFAULT_BID_TTL;
 };
 
 function isNotEmptyStr(value) {
