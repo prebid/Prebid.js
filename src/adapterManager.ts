@@ -167,7 +167,8 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
    * be used to render the bid depends on publisher configuration.
    *
    * For any `mediaType` in this request, `rendererSupport[mediaType].renderer` is true
-   * when core will use a matching response's `.renderer`, false otherwise; likewise for `.safeRenderer`.
+   * when core will use a matching response's `.renderer`, false otherwise; likewise for `.safeRenderer`
+   * (but note that when both are provided, `.safeRenderer` is preferred).
    */
   rendererSupport: {
     [K in MediaType]?: {
@@ -318,6 +319,9 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           incrementBidderRequestsCounter(adUnit.code, bidderCode);
         }
 
+        const rendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('renderer'));
+        const safeRendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('safeRenderer'));
+
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
@@ -335,15 +339,13 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           deferBilling: !!adUnit.deferBilling,
           rendererSupport: Object.fromEntries(
             Object.entries(mediaTypes).map(([mediaType, mediaTypeDef]) => {
-              const rendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('renderer'));
-              const safeRendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('safeRenderer'));
-              const hasPubRenderer = getRendererDef('renderer', false, bid as any, mediaTypeDef, adUnit) != null;
-              const hasAnyPubSafeRenderer = getRendererDef('safeRenderer', true, bid as any, mediaTypeDef, adUnit) != null;
+              const hasPubRenderer = getRendererDef('renderer', false, bid, mediaTypeDef, adUnit) != null;
+              const hasAnyPubSafeRenderer = getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) != null;
               return [
                 mediaType,
                 {
                   renderer: rendererAllowed && !hasPubRenderer && !hasAnyPubSafeRenderer,
-                  safeRenderer: safeRendererAllowed && getRendererDef('safeRenderer', false, bid as any, mediaTypeDef, adUnit) == null,
+                  safeRenderer: safeRendererAllowed && getRendererDef('safeRenderer', false, bid, mediaTypeDef, adUnit) == null,
                 }
               ];
             })
