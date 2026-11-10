@@ -54,7 +54,9 @@ describe('novatiqIdSystem', function () {
 
     it('should set sharedStatus if sharedID is configured but returned null', function() {
       const config = { params: { sourceid: '123', useSharedId: true } };
+      const stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns(null);
       const response = novatiqIdSubmodule.getId(config);
+      stub.restore();
       expect(response.sharedStatus).to.equal('Not Found');
     });
 
