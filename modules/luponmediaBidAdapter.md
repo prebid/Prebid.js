@@ -19,6 +19,19 @@ returned under the `luponmedia` bidder code.
 
 A key is lowercase letters, digits, `-` and `_`, with parts separated by dots.
 
+# User sync
+
+With iframe syncs allowed for `luponmedia`, the adapter loads one sync iframe per page. With only
+image syncs allowed (Prebid's default `userSync` settings), it returns up to 5 images instead, at most
+once an hour per browser for the same consent when storage is allowed for `luponmedia`. Allowing
+iframes is recommended: it syncs every partner, not only those with an image sync.
+
+```js
+pbjs.setConfig({
+  userSync: { filterSettings: { iframe: { bidders: ['luponmedia'], filter: 'include' } } }
+});
+```
+
 # Multiple bids
 
 The adapter may return several bids per ad unit, highest CPM first, under the `luponmedia` bidder
