@@ -9,11 +9,6 @@ import { doRender } from 'src/adRendering.js';
 import { server } from 'test/mocks/xhr.js';
 
 
-const FLAGS = {
-  renderer: 'willRunBidderRenderer',
-  safeRenderer: 'willRunBidderSafeRenderer',
-};
-
 const BIDDER = 'rendererFlagsBidder';
 const ENDPOINT = 'https://renderer-flags.example/bid';
 const BIDDER_SAFE_URL = 'https://bidder.example/safe.js';
@@ -39,9 +34,8 @@ const CASES = [
   { name: 'adUnit.renderer, backupOnly', adUnit: { renderer: backupRenderer() }, expected: { renderer: true, safeRenderer: true } },
   { name: 'adUnit.renderer without render()', adUnit: { renderer: { url: 'https://publisher.example/r.js' } }, expected: { renderer: true, safeRenderer: true } },
   { name: 'adUnit.bids[].renderer', bid: { renderer: pubRenderer() }, expected: { renderer: false, safeRenderer: true } },
-  // TODO: adapterManager copies adUnit.renderer over adUnit.bids[].renderer, contradicting its documented precedence
   { name: 'adUnit.bids[].renderer, backupOnly, with adUnit.renderer', adUnit: { renderer: pubRenderer() }, bid: { renderer: backupRenderer() }, expected: { renderer: false, safeRenderer: true } },
-  { name: 'adUnit.bids[].renderer with adUnit.renderer, backupOnly', adUnit: { renderer: backupRenderer() }, bid: { renderer: pubRenderer() }, expected: { renderer: true, safeRenderer: true } },
+  { name: 'adUnit.bids[].renderer with adUnit.renderer, backupOnly', adUnit: { renderer: backupRenderer() }, bid: { renderer: pubRenderer() }, expected: { renderer: false, safeRenderer: true } },
   { name: 'adUnit.bids[].renderer on another bidder', otherBid: { renderer: pubRenderer() }, expected: { renderer: true, safeRenderer: true } },
   { name: 'mediaTypes[type].renderer', mediaType: { renderer: pubRenderer() }, expected: { renderer: false, safeRenderer: true } },
   { name: 'mediaTypes[type].renderer, backupOnly', mediaType: { renderer: backupRenderer() }, expected: { renderer: true, safeRenderer: true } },
@@ -53,8 +47,8 @@ const CASES = [
   { name: 'adUnit.bids[].safeRenderer', bid: { safeRenderer: pubSafeRenderer() }, expected: { renderer: false, safeRenderer: false } },
   { name: 'adUnit.bids[].safeRenderer on another bidder', otherBid: { safeRenderer: pubSafeRenderer() }, expected: { renderer: true, safeRenderer: true } },
   { name: 'mediaTypes[type].safeRenderer', mediaType: { safeRenderer: pubSafeRenderer() }, expected: { renderer: false, safeRenderer: false } },
-  // mediaTypes[type].renderer.backupOnly also makes publisher safeRenderers yield to the bidder's
-  { name: 'adUnit.safeRenderer with mediaTypes[type].renderer, backupOnly', adUnit: { safeRenderer: pubSafeRenderer() }, mediaType: { renderer: backupRenderer() }, expected: { renderer: false, safeRenderer: true } },
+  { name: 'adUnit.safeRenderer with mediaTypes[type].renderer, backupOnly', adUnit: { safeRenderer: pubSafeRenderer() }, mediaType: { renderer: backupRenderer() }, expected: { renderer: false, safeRenderer: false } },
+  { name: 'adUnit.safeRenderer, backupOnly', adUnit: { safeRenderer: { ...pubSafeRenderer(), backupOnly: true } }, expected: { renderer: false, safeRenderer: true } },
 
   { name: 'allowTopWindowRenderers: false', config: { allowTopWindowRenderers: false }, expected: { renderer: false, safeRenderer: true } },
   { name: 'allowTopWindowRenderers: false, for this bidder', bidderConfig: { allowTopWindowRenderers: false }, expected: { renderer: false, safeRenderer: true } },
@@ -177,15 +171,50 @@ describe('bidder renderer flags', () => {
             expect(ranSafeRenderer, 'bidder safeRenderer ran').to.equal(tc.expected.safeRenderer);
           });
 
-          it('exposes the matching flags to the adapter', async () => {
+          it('exposes the matching rendererSupport to the adapter', async () => {
             adapterSets = 'renderer';
             await runAuction(type, tc);
             expect(seen).to.not.be.empty;
             seen.forEach(bidRequest => {
-              expect(bidRequest[FLAGS.renderer], FLAGS.renderer).to.equal(tc.expected.renderer);
-              expect(bidRequest[FLAGS.safeRenderer], FLAGS.safeRenderer).to.equal(tc.expected.safeRenderer);
+              expect(bidRequest.rendererSupport).to.eql({ [type]: tc.expected });
             });
           });
+        });
+      });
+    });
+  });
+
+  describe('multi-format ad unit', () => {
+    async function getRendererSupport(mediaTypes) {
+      const adUnit = {
+        code: 'renderer-flags-multiformat',
+        mediaTypes: Object.fromEntries(Object.entries(MEDIA_TYPES).map(([type, mt]) => [type, { ...mt, ...mediaTypes[type] }])),
+        bids: [{ bidder: BIDDER, params: {} }],
+      };
+      const responder = setInterval(() => server.respond());
+      try {
+        await getGlobal().requestBids({ adUnits: [adUnit], timeout: 1000 });
+      } finally {
+        clearInterval(responder);
+      }
+      expect(seen).to.not.be.empty;
+      return seen.map(bidRequest => bidRequest.rendererSupport);
+    }
+
+    it('scopes mediaTypes[type].renderer to its media type', async () => {
+      (await getRendererSupport({ banner: { renderer: pubRenderer() } })).forEach(support => {
+        expect(support).to.eql({
+          banner: { renderer: false, safeRenderer: true },
+          video: { renderer: true, safeRenderer: true },
+        });
+      });
+    });
+
+    it('scopes mediaTypes[type].safeRenderer to its media type', async () => {
+      (await getRendererSupport({ video: { safeRenderer: pubSafeRenderer() } })).forEach(support => {
+        expect(support).to.eql({
+          banner: { renderer: true, safeRenderer: true },
+          video: { renderer: false, safeRenderer: false },
         });
       });
     });

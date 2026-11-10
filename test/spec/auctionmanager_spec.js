@@ -1524,6 +1524,14 @@ describe('auctionmanager.js', function () {
             delete renderer.url;
             expect(getBid().renderer.renderNow).to.be.true;
           });
+
+          it(`renders through the publisher's render function ${t}`, () => {
+            delete renderer.url;
+            renderer.render = sinon.stub();
+            const bid = getBid();
+            bid.renderer.render(bid);
+            sinon.assert.calledWith(renderer.render, bid);
+          });
         });
 
         // Regression: a bid can be accepted when its ad unit is no longer

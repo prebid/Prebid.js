@@ -73,7 +73,8 @@ import type {
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
 import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
-import { RENDERER_TYPES } from "./auction.ts";
+import { getRendererDef, isRendererAllowed, RENDERER_TYPES } from "./auction.ts";
+import { ALL_MEDIATYPES } from "./mediaTypes.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
@@ -316,7 +317,22 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
-          deferBilling: !!adUnit.deferBilling
+          deferBilling: !!adUnit.deferBilling,
+          rendererSupport: Object.fromEntries(
+            Object.entries(mediaTypes).map(([mediaType, mediaTypeDef]) => {
+              const rendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('renderer'));
+              const safeRendererAllowed = config.runWithBidder(bid.bidder, () => isRendererAllowed('safeRenderer'));
+              const hasPubRenderer = getRendererDef('renderer', false, bid as any, mediaTypeDef, adUnit) != null;
+              const hasAnyPubSafeRenderer = getRendererDef('safeRenderer', true, bid as any, mediaTypeDef, adUnit) != null;
+              return [
+                mediaType,
+                {
+                  renderer: rendererAllowed && !hasPubRenderer && !hasAnyPubSafeRenderer,
+                  safeRenderer: safeRendererAllowed && getRendererDef('safeRenderer', false, bid as any, mediaTypeDef, adUnit) == null,
+                }
+              ];
+            })
+          )
         }));
         return bids;
       }, [])

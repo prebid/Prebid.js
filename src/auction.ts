@@ -847,7 +847,7 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
         renderNow: renderDef.url == null,
         requiresVastUrl: renderDef.requiresVastUrl
       });
-      renderer.setRender(renderer.render);
+      renderer.setRender(renderDef.render);
       return renderer;
     }
   });
