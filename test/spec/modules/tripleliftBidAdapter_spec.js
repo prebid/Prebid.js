@@ -974,10 +974,10 @@ describe('triplelift oRTB bid adapter', function () {
       expect(requests[0]).to.exist.and.to.be.a('object');
     });
 
-    it('should enable gzip compression by default', () => {
+    it('should disable gzip compression by default', () => {
       // Use default
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].options.endpointCompression).to.be.true;
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should respect bidder boolean configuration set via setBidderConfig', () => {
@@ -1002,6 +1002,18 @@ describe('triplelift oRTB bid adapter', function () {
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].options.endpointCompression).to.be.true;
+    });
+
+    it('should fall back to the default when gzipEnabled is not a boolean', () => {
+      // A string is not coerced: 'true' must not read back as opting in
+      bidderConfigStub.returns({
+        triplelift: {
+          gzipEnabled: 'true'
+        }
+      });
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should be a post request and populate the payload', function() {
