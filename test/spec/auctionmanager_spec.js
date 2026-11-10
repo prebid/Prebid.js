@@ -12,6 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
+import { Renderer } from 'src/Renderer.js';
 import { _internal as store, updateVast, vastLocalCache } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
@@ -1618,6 +1619,41 @@ describe('auctionmanager.js', function () {
                   });
                 });
               });
+            });
+          });
+
+          describe('allowTopWindowRenderers', () => {
+            afterEach(() => {
+              config.resetConfig();
+            });
+
+            function prepareOutsideBidderContext() {
+              const { adUnit, bidderRequest } = makeBidRequest();
+              const index = {
+                getAdUnit: () => adUnit,
+                getBidRequest: () => bidderRequest.bids[0],
+                getMediaTypes: () => bidderRequest.bids[0].mediaTypes,
+              };
+              const bidderRenderer = Renderer.install({ renderNow: true });
+              const bidResponse = config.runWithBidder(null, () => auctionModule.getPreparedBidForAuction({
+                cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner', renderer: bidderRenderer
+              }, { index }));
+              return { support: bidderRequest.bids[0].rendererSupport.banner, bidResponse, bidderRenderer };
+            }
+
+            it('keeps bidder renderers when allowed only by bidder config', () => {
+              config.setConfig({ allowTopWindowRenderers: false });
+              config.setBidderConfig({ bidders: [BIDDER_CODE], config: { allowTopWindowRenderers: true } });
+              const { support, bidResponse, bidderRenderer } = prepareOutsideBidderContext();
+              expect(support.renderer).to.be.true;
+              expect(bidResponse.renderer).to.equal(bidderRenderer);
+            });
+
+            it('drops bidder renderers when disallowed only by bidder config', () => {
+              config.setBidderConfig({ bidders: [BIDDER_CODE], config: { allowTopWindowRenderers: false } });
+              const { support, bidResponse } = prepareOutsideBidderContext();
+              expect(support.renderer).to.be.false;
+              expect(bidResponse.renderer).to.be.null;
             });
           });
         });
