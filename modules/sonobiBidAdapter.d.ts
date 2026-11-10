@@ -1,4 +1,5 @@
 import type { Size } from '../src/types/common.d.ts';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 /** Parameters shared by both Sonobi slot identifiers. */
 export interface SonobiCommonParams {
@@ -16,22 +17,16 @@ export interface SonobiCommonParams {
   bid_request_url?: string;
 }
 
-/** Slot identified by GAM ad unit path; takes precedence over `placement_id`. */
-export interface SonobiAdUnitParams extends SonobiCommonParams {
-  /** GAM ad unit path, e.g. `'/1234567/example/adUnit/code'`. */
-  ad_unit: string;
+/** The slot identifiers. */
+export interface SonobiSlotParams {
+  /** GAM ad unit path, e.g. `'/1234567/example/adUnit/code'`; takes precedence over `placement_id`. */
+  ad_unit?: string;
+  /** 20-character hex Sonobi placement ID. */
   placement_id?: string;
 }
 
-/** Slot identified by Sonobi placement ID. */
-export interface SonobiPlacementParams extends SonobiCommonParams {
-  /** 20-character hex Sonobi placement ID. */
-  placement_id: string;
-  ad_unit?: string;
-}
-
 /** Parameters accepted by the Sonobi bidder adapter: `ad_unit` or `placement_id` is required. */
-export type SonobiBidParams = SonobiAdUnitParams | SonobiPlacementParams;
+export type SonobiBidParams = RequireAtLeastOne<SonobiCommonParams & SonobiSlotParams, 'ad_unit' | 'placement_id'>;
 
 declare module '../src/adUnits' {
   interface BidderParams {

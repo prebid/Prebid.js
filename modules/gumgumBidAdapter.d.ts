@@ -1,3 +1,5 @@
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
+
 /** Parameters shared by every GumGum placement. */
 export interface GumgumBaseBidParams {
   /** Zone (tracking) ID, for bids tracking a single domain or site. */
@@ -34,20 +36,12 @@ export interface GumgumBaseBidParams {
   videoPubID?: number | string;
 }
 
-/** The adapter rejects a bid unless at least one of these placement identifiers is set. */
-export type GumgumPlacementId =
-  | { zone: string }
-  | { pubId: number | string }
-  | { inScreen: string }
-  | { inScreenPubID: number | string }
-  | { inSlot: number | string }
-  | { ICV: number | string }
-  | { video: string }
-  | { inVideo: string }
-  | { videoPubID: number | string };
+/** The placement identifiers; the adapter rejects a bid unless at least one of them is set. */
+export type GumgumPlacementIdKey =
+  'zone' | 'pubId' | 'inScreen' | 'inScreenPubID' | 'inSlot' | 'ICV' | 'video' | 'inVideo' | 'videoPubID';
 
 /** Parameters accepted by the GumGum bidder adapter. */
-export type GumgumBidParams = GumgumBaseBidParams & GumgumPlacementId;
+export type GumgumBidParams = RequireAtLeastOne<GumgumBaseBidParams, GumgumPlacementIdKey>;
 
 declare module '../src/adUnits' {
   interface BidderParams {

@@ -1,5 +1,6 @@
 import type { ORTBImp, ORTBRequest } from '../src/types/ortb/request.d.ts';
 import type { Size } from '../src/types/common.d.ts';
+import type { RequireAtLeastOne } from '../src/types/objects.d.ts';
 
 type ORTBVideo = NonNullable<ORTBImp['video']>;
 
@@ -54,18 +55,13 @@ interface GridBidParamsBase {
   floorcpm?: number | string;
 }
 
-/** Parameters accepted by the Grid bidder adapter: either `uid` or `secid` is required. */
-export type GridBidParams = GridBidParamsBase & ({
-  /** Grid ad slot ID. */
-  uid: number | string;
-  /** Section ID; takes precedence over `uid` as `imp.tagid`. */
-  secid?: number | string;
-} | {
+/** Parameters accepted by the Grid bidder adapter: `uid` or `secid` is required. */
+export type GridBidParams = RequireAtLeastOne<GridBidParamsBase & {
   /** Grid ad slot ID. */
   uid?: number | string;
   /** Section ID; takes precedence over `uid` as `imp.tagid`. */
-  secid: number | string;
-});
+  secid?: number | string;
+}, 'uid' | 'secid'>;
 
 declare module '../src/adUnits' {
   interface BidderParams {
