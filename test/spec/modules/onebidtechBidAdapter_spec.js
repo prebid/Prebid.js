@@ -394,8 +394,6 @@ describe('One Bid Tech Bid Adapter', function () {
       };
 
       const [wonBid] = spec.interpretResponse(serverResponse, request);
-      // interpretResponse must actually set nurl, or the request below would
-      // never be made.
       expect(wonBid.nurl).to.equal('https://win.example.com/notice');
 
       spec.onBidWon(wonBid);
