@@ -73,6 +73,7 @@ import type {
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
 import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
+import { RENDERER_TYPES } from "./auction.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
@@ -114,7 +115,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_TYPES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -227,11 +228,6 @@ const ADUNIT_BID_PROPERTIES = [
   'element',
 ] as const;
 
-const RENDERER_PROPERTIES = [
-  'renderer',
-  'safeRenderer',
-] as const;
-
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   bidderCode: BIDDER;
   auctionId: Identifier;
@@ -278,7 +274,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
         bid = Object.assign({},
-          getDefinedParams(adUnit, RENDERER_PROPERTIES),
+          getDefinedParams(adUnit, RENDERER_TYPES),
           bid,
           {
             ortb2Imp: mergeDeep(

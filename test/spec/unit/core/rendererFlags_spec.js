@@ -8,10 +8,10 @@ import { Renderer } from 'src/Renderer.js';
 import { doRender } from 'src/adRendering.js';
 import { server } from 'test/mocks/xhr.js';
 
-// TODO: placeholder names
+
 const FLAGS = {
-  renderer: 'bidderRendererRuns',
-  safeRenderer: 'bidderSafeRendererRuns',
+  renderer: 'willRunBidderRenderer',
+  safeRenderer: 'willRunBidderSafeRenderer',
 };
 
 const BIDDER = 'rendererFlagsBidder';

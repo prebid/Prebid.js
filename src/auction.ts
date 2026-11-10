@@ -17,7 +17,7 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook, ignoreCallbackArg } from './hook.js';
-import { AUDIO, VIDEO } from './mediaTypes.js';
+import { AUDIO, type BaseMediaType, VIDEO } from './mediaTypes.js';
 import { auctionManager } from './auctionManager.js';
 import { bidderSettings } from './bidderSettings.js';
 import * as events from './events.js';
@@ -782,6 +782,39 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
   }
 }
 
+export const RENDERER_TYPES = [
+  'renderer',
+  'safeRenderer',
+] as const;
+
+export type RendererType = typeof RENDERER_TYPES[number];
+
+export function isRendererAllowed(type: RendererType) {
+  return !(type === 'renderer' && !(config.getConfig('allowTopWindowRenderers') ?? true));
+}
+
+export const getRendererDef = (() => {
+  const VALIDATE = {
+    'renderer': (candidate) => candidate?.render,
+    'safeRenderer': (candidate) => candidate?.url
+  };
+  return <T extends RendererType>(type: T, includeBackupOnly: boolean, bidRequest: BidRequest<BidderCode>, mediaType: BaseMediaType, adUnit: AdUnit) => {
+    return [mediaType?.[type], bidRequest?.[type], adUnit?.[type]]
+      .find(candidate => VALIDATE[type](candidate) && (includeBackupOnly || !candidate.backupOnly));
+  };
+})();
+
+function installRenderer<T extends RendererType>(type: T, bid: Partial<Bid>, getPubRenderer: () => Bid[T]) {
+  if (isRendererAllowed(type)) {
+    const pubRenderer = getPubRenderer();
+    if (pubRenderer) {
+      bid[type] = pubRenderer;
+    }
+  } else {
+    bid[type] = null;
+  }
+}
+
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
@@ -804,30 +837,20 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
-  const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
-
-  const renderer = [mediaTypeRenderer, bidRequest?.renderer, adUnit?.renderer]
-    .find(candidate => candidate?.render && !(candidate.backupOnly === true && bid.renderer));
-
-  const safeRenderer: SafeRendererConfig | undefined = [mediaTypeSafeRenderer, bidRequest?.safeRenderer, adUnit?.safeRenderer]
-    .find(candidate => candidate?.url && !(candidate.backupOnly === true && bid.safeRenderer));
-
-  if (safeRenderer != null) {
-    bid.safeRenderer = safeRenderer;
-  }
-
-  const allowTopWindowRenderers = config.getConfig('allowTopWindowRenderers') ?? true;
-
-  if (allowTopWindowRenderers) {
-    if (renderer) {
-      // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
-      bid.renderer.setRender(renderer.render);
+  installRenderer('safeRenderer', bid, () => getRendererDef('safeRenderer', bid.safeRenderer == null, bidRequest, bidMediaType, adUnit));
+  installRenderer('renderer', bid, () => {
+    const renderDef = getRendererDef('renderer', bid.renderer == null, bidRequest, bidMediaType, adUnit);
+    if (renderDef) {
+      const renderer = Renderer.install({
+        url: renderDef.url,
+        config: (renderDef as any).options,
+        renderNow: renderDef.url == null,
+        requiresVastUrl: renderDef.requiresVastUrl
+      });
+      renderer.setRender(renderer.render);
+      return renderer;
     }
-  } else {
-    bid.renderer = null;
-  }
+  });
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, mediaTypes, config.getConfig('mediaTypePriceGranularity'));
