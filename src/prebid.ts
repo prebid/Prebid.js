@@ -47,7 +47,8 @@ import {
   markBidAsRendered,
   markWinningBid,
   renderAdDirect,
-  renderIfDeferred
+  renderIfDeferred,
+  getRenderedBid
 } from './adRendering.js';
 import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
@@ -1333,6 +1334,10 @@ function triggerBilling({ adId, adUnitCode }: {
   adId?: string;
   adUnitCode?: AdUnitCode
 }) {
+  if (adId != null) {
+    // the ad server only knows about the expired bid when another was rendered in its place (see `auctionOptions.replaceExpiredBid`)
+    adId = getRenderedBid(auctionManager.findBidByAdId(adId))?.adId ?? adId;
+  }
   auctionManager.getAllWinningBids()
     .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
     .forEach((bid) => {

@@ -12,6 +12,7 @@ import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
 import { newTargeting, targeting } from 'src/targeting.js';
 import { bidFilters } from '../../../src/targeting/filters.js';
 import { config as configObj } from 'src/config.js';
+import { handleRender } from 'src/adRendering.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { resetAuctionState } from 'src/auction.js';
@@ -4188,6 +4189,44 @@ describe('Unit: Prebid Module', function () {
       it(`should trigger billing when invoked with ${t}`, () => {
         pbjs.triggerBilling(val());
         sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    });
+
+    describe('for a bid rendered in place of an expired one', () => {
+      let expired;
+      beforeEach(async () => {
+        expired = { adId: 'expired', adUnitCode: 'other-ad-unit', responseTimestamp: 0, ttl: 1 };
+        // deferBilling without deferRendering, as for an adapter that implements onBidBillable
+        Object.assign(bid, { responseTimestamp: Date.now(), ttl: 300, deferBilling: true, deferRendering: false });
+        sandbox.stub(auctionManager, 'addWinningBid');
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
+        configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => bid } });
+        handleRender({
+          adId: expired.adId,
+          bidResponse: expired,
+          renderFn: sinon.stub(),
+          resizeFn: sinon.stub(),
+          doc: {}
+        });
+      });
+      afterEach(() => {
+        configObj.resetConfig();
+      });
+
+      it('should bill the replacement when invoked with the adId of the expired bid', () => {
+        pbjs.triggerBilling({ adId: expired.adId });
+        sinon.assert.calledOnce(adapterManager.triggerBilling);
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+
+      it('should still bill the replacement when invoked with its own adId', () => {
+        pbjs.triggerBilling({ adId: bid.adId });
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+
+      it('should not bill anything for an unrelated adId', () => {
+        pbjs.triggerBilling({ adId: 'unrelated' });
+        sinon.assert.notCalled(adapterManager.triggerBilling);
       });
     });
   });
