@@ -15,9 +15,6 @@ import { detectDeviceType } from '../libraries/userAgentUtils/detailed.js';
  * @typedef {import('./mobianRtdProvider.d.ts').MobianResolvedConfig} MobianResolvedConfig
  * @typedef {import('./mobianRtdProvider.d.ts').MobianTargetingKey} MobianTargetingKey
  * @typedef {import('./mobianRtdProvider.d.ts').MobianContextData} MobianContextData
- * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityRows} MobianViewabilityRows
- * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityPrediction} MobianViewabilityPrediction
- * @typedef {import('./mobianRtdProvider.d.ts').MobianViewabilityResult} MobianViewabilityResult
  */
 
 export const MOBIAN_URL = 'https://prebid.outcomes.net/api/prebid/v1/assessment/async';
@@ -308,7 +305,7 @@ export function makeTrafficQualityDataFromResponse(trafficQualityData) {
 
 /**
  * @param {Object|string} viewabilityData
- * @returns {MobianViewabilityRows}
+ * @returns {Object<string, Object<string, Array>>} the file's rows: path or path/code → device → [probability, bucket percent, confidence]
  */
 export function makeViewabilityDataFromResponse(viewabilityData) {
   const data = typeof viewabilityData === 'string' ? safeJSONParse(viewabilityData) : viewabilityData;
@@ -372,7 +369,7 @@ function isValidTuple(tuple) {
  * @param {string} adUnitCode
  * @param {string} device
  * @param {Object} [adUnit] the auction's ad unit; its `adslot` works before GPT has defined the slot
- * @returns {[MobianViewabilityResult, MobianViewabilityPrediction?]}
+ * @returns {Array} [result, prediction]: result '1'–'6' (see mobianRtdProvider.md); prediction only with '2', '3', '4'
  */
 function getViewabilityPrediction(adUnitCode, device, adUnit) {
   const slotInfo = getViewabilitySlotInfo(adUnitCode, adUnit);
