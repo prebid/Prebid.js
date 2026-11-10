@@ -107,10 +107,10 @@ jobs:
     with:
       ref: ${{ needs.checkout.outputs.commit }}
 
-  # Codex: collect coverage in parallel without delaying the uninstrumented Chromium gate.
+  # Codex: collect Chromium coverage alongside the other browsers only after the uninstrumented gate passes.
   vitest-coverage:
     name: "Unit test coverage (Chromium)"
-    needs: checkout
+    needs: [checkout, vitest]
     uses: ./.github/workflows/vitest-chromium.yml
     with:
       ref: ${{ needs.checkout.outputs.commit }}
