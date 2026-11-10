@@ -10,7 +10,7 @@ import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
 import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js';
 import { activityParamsBuilder } from '../../src/activities/params.js';
 import type { StartAuctionOptions } from "../../src/prebid.ts";
-import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
+import type { ProviderConfig, RTDProviderConfig } from "./spec.ts";
 
 // export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
 export { type RTDProviderConfig } from './spec.ts';
@@ -100,8 +100,11 @@ const setEventsListeners = (function () {
   };
 })();
 
-type RealTimeDataConfig = {
-  dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+type RealTimeDataConfig<P extends string = string> = {
+  dataProviders: (
+    { [K in keyof ProviderConfig]: RTDProviderConfig<K> }[keyof ProviderConfig]
+    | { [K in P]: RTDProviderConfig<K> }[P]
+  )[];
   /**
    * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
    */
@@ -109,8 +112,8 @@ type RealTimeDataConfig = {
 };
 
 declare module '../../src/config' {
-  interface Config {
-    [MODULE_NAME]?: RealTimeDataConfig;
+  interface Config<P extends string = string> {
+    [MODULE_NAME]?: RealTimeDataConfig<P>;
   }
 }
 

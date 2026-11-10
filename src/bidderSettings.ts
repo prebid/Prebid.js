@@ -5,6 +5,7 @@ import type { BidderCode } from "./types/common";
 import type { BidRequest } from "./adapterManager.ts";
 import type { Bid } from "./bidfactory.ts";
 import type { StorageType } from "./storageManager.ts";
+import type { BidderParams } from "./adUnits.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface BidderSettings<B extends BidderCode> {
@@ -79,6 +80,23 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
     val(bid: Bid, bidRequest: BidRequest<B>): string;
   })[];
 }
+
+type BivariantCallback<T> = T extends (...args: infer A) => infer R ? { callback(...args: A): R }['callback'] : T;
+
+// The open index must also accept callbacks for specific bidders. Keep this relaxation on the
+// index alone; named bidders and explicit BidderScopedSettings retain their strict callback types.
+type OpenBidderSettings = {
+  [K in keyof BidderScopedSettings<BidderCode>]: BivariantCallback<BidderScopedSettings<BidderCode>[K]>
+};
+
+/** Known bidders receive their own request types; custom bidders retain an open params object. */
+export type BidderSettingsMap = {
+  standard?: BidderSettings<BidderCode>
+} & {
+  [bidder: BidderCode]: OpenBidderSettings | undefined
+} & {
+  [B in keyof BidderParams]?: BidderScopedSettings<B>
+};
 
 export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends SETTINGS> {
   getSettings;
