@@ -45,6 +45,25 @@ describe('Generic analytics', () => {
         expect(adapter.enabled).to.be.true;
       });
 
+      it('should not depend on options.hasOwnProperty', () => {
+        const nullPrototypeOptions = Object.assign(Object.create(null), {
+          url: 'mock',
+          method: 'GET'
+        });
+        adapter.enableAnalytics({ options: nullPrototypeOptions });
+        expect(adapter.enabled).to.be.true;
+
+        adapter.disableAnalytics();
+        adapter.enableAnalytics({
+          options: {
+            url: 'mock',
+            method: 'GET',
+            hasOwnProperty: null
+          }
+        });
+        expect(adapter.enabled).to.be.true;
+      });
+
       it('should still validate options after being disabled', () => {
         adapter.enableAnalytics({ options: {} });
         expect(adapter.enabled).to.be.false;
