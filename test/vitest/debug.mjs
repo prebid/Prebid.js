@@ -72,8 +72,13 @@ const PAGE = `<!doctype html>
           if (!res.ok) throw new Error(res.status);
           const session = await res.json();
           seq = session.seq;
-          status.textContent = 'Session ' + seq + ': ' + session.url;
-          frame.src = session.url;
+          // Vitest drops a session when its page goes away, e.g. on a reload of this one
+          if ((await fetch(session.url, { method: 'HEAD' })).ok) {
+            status.textContent = 'Session ' + seq + ': ' + session.url;
+            frame.src = session.url;
+          } else {
+            status.textContent = 'Waiting for Vitest to start another session (re-run from the terminal)…';
+          }
         } catch (e) {
           status.textContent = 'Lost the Vitest server (' + e + '), retrying…';
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -89,9 +94,11 @@ export function debugPage() {
   return {
     name: 'prebid-vitest-debug-page',
     configureServer(server) {
-      server.middlewares.use((req, res, nextMiddleware) => {
+      const handle = (req, res, nextMiddleware) => {
         const url = new URL(req.url, 'http://localhost');
-        if (url.pathname === DEBUG_PAGE) {
+        // also '/' (but not the test iframe's '/?sessionId='): setup.mjs gives the top page Karma's URL, so that is
+        // what a reload asks for
+        if (url.pathname === DEBUG_PAGE || (url.pathname === '/' && !url.searchParams.has('sessionId'))) {
           res.setHeader('Content-Type', 'text/html');
           res.end(PAGE);
         } else if (url.pathname === NEXT) {
@@ -106,7 +113,9 @@ export function debugPage() {
         } else {
           nextMiddleware();
         }
-      });
+      };
+      // ahead of Vitest's own, which answers a bare '/' with "Invalid session ID"
+      server.middlewares.stack.unshift({ route: '', handle });
     },
   };
 }

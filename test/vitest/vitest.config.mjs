@@ -63,6 +63,12 @@ const chunk = process.env.TEST_CHUNK || (shard ? `shard-${shard}` : '1');
 // `vitest` without `run` (`npm run test:vitest:watch`, `gulp serve-and-test`) re-runs the specs whose imports
 // change, which needs Vite's file watcher; one-shot runs leave it off.
 const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');
+const WATCHED = [DIST, path.join(root, 'test/vitest'), path.join(root, 'web-bundler')];
+// the watched trees and their ancestors, which the watcher has to descend through
+const watchedPath = (p) => {
+  const abs = path.resolve(root, p);
+  return WATCHED.some(dir => abs === dir || abs.startsWith(dir + path.sep) || dir.startsWith(abs + path.sep));
+};
 
 const browserstack = envFlag('VITEST_BROWSERSTACK');
 const debug = envFlag('VITEST_DEBUG');
@@ -237,7 +243,9 @@ export default defineConfig({
     ],
   },
   server: {
-    ...(watching ? {} : { watch: null }),
+    // Vitest matches every file created under the watched tree against each spec's glob, which pins a CPU for
+    // half a minute when a build writes into the repo alongside it (`gulp serve-and-test`).
+    ...(watching ? { watch: { ignored: [(p) => !watchedPath(p)] } } : { watch: null }),
     // Vite answers only requests for localhost unless told otherwise
     ...(host ? { allowedHosts: [host] } : {}),
   },
