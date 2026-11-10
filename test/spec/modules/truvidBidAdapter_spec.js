@@ -3,6 +3,10 @@ import { spec } from 'modules/truvidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { server } from 'test/mocks/xhr.js';
 
+// The request/response building lives in libraries/onebidtechUtils and is
+// covered in detail by onebidtechBidAdapter_spec.js. This spec covers what is
+// specific to Truvid: bidder identity, endpoint, validation, win notice, and
+// that the shared pipeline is wired up end to end.
 const PLACEMENT_ID = '7a2e91c4d05b3f68a1c9e0b4d7f25a36';
 
 describe('Truvid Bid Adapter', function () {
@@ -120,6 +124,26 @@ describe('Truvid Bid Adapter', function () {
 
       expect(imp.bidfloor).to.equal(2);
       expect(imp.bidfloorcur).to.equal('GBP');
+    });
+
+    it('sends one request per placementId, each to its own URL with only its own impressions', function () {
+      const other = { ...bannerBid, bidId: 'bid3', params: { placementId: 'f1c0a58e3d7b4926a0e8c5b19d34f672' } };
+      const requests = spec.buildRequests([bannerBid, other], bidderRequest);
+
+      expect(requests).to.be.an('array').with.lengthOf(2);
+      expect(requests[0].url).to.equal(`https://us-e.tru-bid.com/ssp/${PLACEMENT_ID}`);
+      expect(requests[1].url).to.equal('https://us-e.tru-bid.com/ssp/f1c0a58e3d7b4926a0e8c5b19d34f672');
+      expect(JSON.parse(requests[0].data).imp.map((imp) => imp.id)).to.deep.equal(['bid1']);
+      expect(JSON.parse(requests[1].data).imp.map((imp) => imp.id)).to.deep.equal(['bid3']);
+      expect(requests[0].bids).to.deep.equal([bannerBid]);
+      expect(requests[1].bids).to.deep.equal([other]);
+    });
+
+    it('keeps bids with the same placementId in a single request', function () {
+      const request = spec.buildRequests([bannerBid, videoBid], bidderRequest);
+
+      expect(request).to.not.be.an('array');
+      expect(JSON.parse(request.data).imp.map((imp) => imp.id)).to.deep.equal(['bid1', 'bid2']);
     });
 
     it('forwards GDPR and USP consent', function () {
