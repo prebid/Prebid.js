@@ -1440,7 +1440,9 @@ describe('triplelift oRTB bid adapter', function () {
       expect(firstUrl).to.contain('gdpr=true');
       expect(firstUrl).to.contain('cmp_cs=' + GDPR_CONSENT_STR);
 
-      const secondUrl = spec.buildRequests(bidRequests, bidderRequest)[0].url;
+      const secondRequest = { ...bidderRequest };
+      delete secondRequest.gdprConsent;
+      const secondUrl = spec.buildRequests(bidRequests, secondRequest)[0].url;
       expect(secondUrl).not.to.match(/(?:\?|&)gdpr=/);
       expect(secondUrl).not.to.match(/(?:\?|&)cmp_cs=/);
     });
