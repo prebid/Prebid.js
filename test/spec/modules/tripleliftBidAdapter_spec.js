@@ -164,9 +164,13 @@ describe('triplelift oRTB bid adapter', function () {
     });
 
     it('should return true when required params found - instream - 2', function () {
-      delete instreamBid.mediaTypes.playerSize;
+      delete instreamBid.mediaTypes.video.playerSize;
       delete instreamBid.params.video.w;
       delete instreamBid.params.video.h;
+
+      expect(instreamBid.mediaTypes.video.playerSize).to.equal(undefined);
+      expect(instreamBid.params.video.w).to.equal(undefined);
+      expect(instreamBid.params.video.h).to.equal(undefined);
       expect(spec.isBidRequestValid(instreamBid)).to.equal(true);
     });
 
@@ -974,10 +978,10 @@ describe('triplelift oRTB bid adapter', function () {
       expect(requests[0]).to.exist.and.to.be.a('object');
     });
 
-    it('should enable gzip compression by default', () => {
+    it('should disable gzip compression by default', () => {
       // Use default
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].options.endpointCompression).to.be.true;
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should respect bidder boolean configuration set via setBidderConfig', () => {
