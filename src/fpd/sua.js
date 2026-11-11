@@ -12,8 +12,7 @@ export const HIGH_ENTROPY_HINTS = [
   'bitness',
   'model',
   'platformVersion',
-  'fullVersionList',
-  'wow64'
+  'fullVersionList'
 ];
 
 export const LOW_ENTROPY_HINTS = [
