@@ -12,7 +12,8 @@ export const HIGH_ENTROPY_HINTS = [
   'bitness',
   'model',
   'platformVersion',
-  'fullVersionList'
+  'fullVersionList',
+  'wow64'
 ];
 
 export const LOW_ENTROPY_HINTS = [
@@ -100,5 +101,8 @@ export function uaDataToSUA(source, uaData) {
       sua[prop] = value;
     }
   });
+  if (typeof uaData.wow64 !== 'undefined') {
+    sua.wow64 = uaData.wow64 ? 1 : 0;
+  }
   return sua;
 }
