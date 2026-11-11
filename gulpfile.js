@@ -25,6 +25,7 @@ var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
+const { disclosureSummary } = require('./gulp.disclosureSummary.js');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
 const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
@@ -277,23 +278,6 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
       });
     return wrapped;
   }
-}
-
-function disclosureSummary(modules, summaryFileName) {
-  const stream = new PassThrough({ objectMode: true });
-  import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
-    const summary = getStorageDisclosureSummary(modules, (moduleName) => {
-      const metadataPath = `./metadata/modules/${moduleName}.json`;
-      if (fs.existsSync(metadataPath)) {
-        return JSON.parse(fs.readFileSync(metadataPath).toString());
-      } else {
-        return null;
-      }
-    })
-    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
-    stream.push(null);
-  })
-  return stream;
 }
 
 function getFilesToBundle(dev, moduleArr) {
