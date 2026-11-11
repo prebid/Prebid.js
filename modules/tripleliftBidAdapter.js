@@ -278,6 +278,10 @@ function setBidFloors(bidRequest, imp) {
 function buildRequestUrl(bidRequests, bidderRequest) {
   let url = TL_ENDPOINT;
 
+  // GDPR consent is request-scoped; never reuse a previous auction's consent.
+  gdprApplies = null;
+  consentString = null;
+
   url = tryAppendQueryString(url, 'lib', 'prebid');
   url = tryAppendQueryString(url, 'v', '$prebid.version$');
 
