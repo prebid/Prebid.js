@@ -974,10 +974,10 @@ describe('triplelift oRTB bid adapter', function () {
       expect(requests[0]).to.exist.and.to.be.a('object');
     });
 
-    it('should enable gzip compression by default', () => {
+    it('should disable gzip compression by default', () => {
       // Use default
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].options.endpointCompression).to.be.true;
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should respect bidder boolean configuration set via setBidderConfig', () => {
@@ -1022,6 +1022,24 @@ describe('triplelift oRTB bid adapter', function () {
 
       requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].options.endpointCompression).to.be.false;
+    });
+
+    it('should not reuse GDPR consent from a previous auction', function() {
+      const consentedRequest = {
+        ...bidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: GDPR_CONSENT_STR
+        }
+      };
+
+      const firstUrl = spec.buildRequests(bidRequests, consentedRequest)[0].url;
+      expect(firstUrl).to.contain('gdpr=true');
+      expect(firstUrl).to.contain('cmp_cs=' + GDPR_CONSENT_STR);
+
+      const secondUrl = spec.buildRequests(bidRequests, bidderRequest)[0].url;
+      expect(secondUrl).not.to.match(/(?:\?|&)gdpr=/);
+      expect(secondUrl).not.to.match(/(?:\?|&)cmp_cs=/);
     });
 
     it('should be a post request and populate the payload', function() {
