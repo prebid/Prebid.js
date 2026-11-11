@@ -406,6 +406,15 @@ describe('video.js', function () {
       });
     });
 
+    it('warns when rejecting an outstream bid because its renderer is disallowed', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const warn = sandbox.spy(utils, 'logWarn');
+      const bid = { adUnitId: 'au', bidderCode: 'b', renderer: { render: () => true } };
+      const adUnits = [{ adUnitId: 'au', mediaTypes: { video: { context: 'outstream' } } }];
+      expect(isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })).to.equal(false);
+      sinon.assert.calledWith(warn, sinon.match(/Ignoring bidder-provided renderer/));
+    });
+
     describe('outstream bid with no renderer', () => {
       let bid, adUnits, index;
       beforeEach(() => {

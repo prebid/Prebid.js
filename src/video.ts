@@ -150,11 +150,11 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
     // outstream bids, by default, require a renderer on the bid or pub-defined on adunit
     const bidRequest = index.getBidRequest(bid);
     return (
-      isRendererAllowed('safeRenderer', bid.bidderCode, VIDEO, adUnit) && (
+      isRendererAllowed('safeRenderer', bid.bidderCode, VIDEO, adUnit, bid) && (
         bid.safeRenderer != null || getRendererDef('safeRenderer', true, bidRequest, videoMediaType, adUnit) != null
       )
     ) || (
-      isRendererAllowed('renderer', bid.bidderCode, VIDEO, adUnit) && (
+      isRendererAllowed('renderer', bid.bidderCode, VIDEO, adUnit, bid) && (
         bid.renderer != null || getRendererDef('renderer', true, bidRequest, videoMediaType, adUnit) != null
       )
     );
