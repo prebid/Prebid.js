@@ -126,7 +126,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
   }
 
-  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
+  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint', flushOnPageHide: true });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;

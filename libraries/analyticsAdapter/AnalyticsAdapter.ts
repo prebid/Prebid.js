@@ -96,6 +96,16 @@ export type SomeAnalyticsConfig =
 
 type AnalyticsAdapterOptions = {
   analyticsType?: AnalyticsType;
+  /**
+   * Opt in to sending queued events when the page is hidden or unloaded (`pagehide`, or `visibilitychange`
+   * to hidden), for example after a same-tab ad click. Without it, events reach `track` after a short debounce,
+   * and those still queued when the page goes away are lost.
+   *
+   * When set, `track` is called synchronously for every queued event while the page is going away, followed by
+   * the adapter's `onPageHide`, if it has one. Only opt in if `track` is cheap and synchronous, and sends with
+   * `navigator.sendBeacon` or `keepalive` (or only buffers events that `onPageHide` sends that way).
+   */
+  flushOnPageHide?: boolean;
   url?: string;
   global?: string;
   handler?: any;
@@ -120,8 +130,8 @@ export type AnalyticsAdapterInstance<PROVIDER extends AnalyticsProvider = Analyt
   enabled: boolean;
   _oldEnable?: (config?: AnalyticsConfig<PROVIDER>) => void;
   /**
-   * Optional hook, called when the page is hidden or unloaded (`pagehide`, or `visibilitychange` to hidden),
-   * after events still waiting in the queue have been passed to `track`.
+   * Optional hook for adapters created with `flushOnPageHide: true`. Called when the page is hidden or unloaded
+   * (`pagehide`, or `visibilitychange` to hidden), after events still waiting in the queue have been passed to `track`.
    * Adapters that hold events (for example, to send them in batches) can use it to send them before the page goes away.
    */
   onPageHide?: () => void;
@@ -134,7 +144,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
     return new (AnalyticsAdapter as unknown as AnalyticsAdapterConstructor)<PROVIDER>(options);
   }
 
-  const { url, analyticsType, global, handler } = options;
+  const { url, analyticsType, global, handler, flushOnPageHide = false } = options;
 
   const queue = [];
   let handlers;
@@ -280,20 +290,22 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
       );
 
       // A navigation (such as a same-tab ad click) can unload the page before the debounce timer fires;
-      // send what's queued when the page is hidden.
-      pageHideListener = (ev: Event) => {
-        if (ev.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
-        flushQueue();
-        if (typeof this.onPageHide === 'function') {
-          try {
-            this.onPageHide();
-          } catch (e) {
-            logError(`${provider} analytics: error in onPageHide`, e);
+      // adapters that opt in send what's queued when the page is hidden.
+      if (flushOnPageHide) {
+        pageHideListener = (ev: Event) => {
+          if (ev.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+          flushQueue();
+          if (typeof this.onPageHide === 'function') {
+            try {
+              this.onPageHide();
+            } catch (e) {
+              logError(`${provider} analytics: error in onPageHide`, e);
+            }
           }
-        }
-      };
-      window.addEventListener('pagehide', pageHideListener);
-      document.addEventListener('visibilitychange', pageHideListener);
+        };
+        window.addEventListener('pagehide', pageHideListener);
+        document.addEventListener('visibilitychange', pageHideListener);
+      }
     } else {
       logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }

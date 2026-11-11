@@ -318,7 +318,24 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
   });
 
-  describe('when the page is hidden', () => {
+  it('does not track queued events on pagehide unless the adapter opts in', () => {
+    events.emit(BID_WON, { i: 0 });
+    window.dispatchEvent(new Event('pagehide'));
+    setVisibility('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(100);
+    sinon.assert.calledOnce(adapter.track);
+  });
+
+  describe('when the page is hidden, with flushOnPageHide', () => {
+    beforeEach(() => {
+      adapter.disableAnalytics();
+      adapter = new AnalyticsAdapter({ ...adapterConfig, flushOnPageHide: true });
+      adapter.track = sinon.stub();
+      adapter.enableAnalytics({});
+    });
+
     it('tracks queued events on pagehide, without waiting for the debounce delay', () => {
       events.emit(BID_WON, { i: 0 });
       sinon.assert.notCalled(adapter.track);
