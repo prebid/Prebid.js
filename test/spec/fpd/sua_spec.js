@@ -161,6 +161,27 @@ describe('uaDataToSUA', () => {
             '134'
           ]
         }
+      ],
+      brands: [
+        {
+          brand: '.Not/A)Brand',
+          version: [
+            '99'
+          ]
+        },
+        {
+          brand: 'Google Chrome',
+          version: [
+            '103'
+          ]
+        },
+        {
+          brand: 'Chromium',
+          version: [
+            '103'
+          ]
+        }
+      ]
       ]
     });
   });
