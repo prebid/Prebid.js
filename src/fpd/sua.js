@@ -12,8 +12,7 @@ export const HIGH_ENTROPY_HINTS = [
   'bitness',
   'model',
   'platformVersion',
-  'fullVersionList',
-  'wow64'
+  'fullVersionList'
 ];
 
 export const LOW_ENTROPY_HINTS = [
@@ -28,6 +27,13 @@ export const LOW_ENTROPY_HINTS = [
 export const getLowEntropySUA = lowEntropySUAAccessor();
 
 /**
+ * Returns a promise to the raw result of `navigator.userAgentData.getHighEntropyValues(hints)`, or null if not available.
+ *
+ * @param {Array[String]} hints hints to request, defaults to all (HIGH_ENTROPY_HINTS).
+ */
+export const getHighEntropyValues = highEntropyValuesAccessor();
+
+/**
  * Returns a promise to high entropy UA client hints encoded as an ortb2.6 device.sua object, or null if no UA client hints are available.
  *
  * Note that the return value is a promise because the underlying browser API returns a promise; this
@@ -36,7 +42,7 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
  *
  * @param {Array[String]} hints hints to request, defaults to all (HIGH_ENTROPY_HINTS).
  */
-export const getHighEntropySUA = highEntropySUAAccessor();
+export const getHighEntropySUA = suaFromValuesAccessor(getHighEntropyValues);
 
 export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
   const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
@@ -45,7 +51,7 @@ export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) 
   };
 }
 
-export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
+function cacheByHints(fn) {
   const cache = {};
   const keys = new WeakMap();
   return function (hints = HIGH_ENTROPY_HINTS) {
@@ -56,16 +62,30 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
     }
     const key = keys.get(hints);
     if (!cache.hasOwnProperty(key)) {
-      try {
-        cache[key] = uaData.getHighEntropyValues(hints).then(result => {
-          return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result));
-        }).catch(() => null);
-      } catch (e) {
-        cache[key] = PbPromise.resolve(null);
-      }
+      cache[key] = fn(hints);
     }
     return cache[key];
   };
+}
+
+export function highEntropyValuesAccessor(uaData = window.navigator?.userAgentData) {
+  return cacheByHints(hints => {
+    try {
+      return uaData.getHighEntropyValues(hints)
+        .then(result => isEmpty(result) ? null : Object.freeze(result))
+        .catch(() => null);
+    } catch (e) {
+      return PbPromise.resolve(null);
+    }
+  });
+}
+
+function suaFromValuesAccessor(getValues) {
+  return cacheByHints(hints => getValues(hints).then(values => values == null ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, values))));
+}
+
+export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
+  return suaFromValuesAccessor(highEntropyValuesAccessor(uaData));
 }
 
 /**
@@ -92,9 +112,6 @@ export function uaDataToSUA(source, uaData) {
   if (uaData.fullVersionList || uaData.brands) {
     sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version));
   }
-  if (source === SUA_SOURCE_HIGH_ENTROPY && uaData.brands) {
-    sua.brands = uaData.brands.map(({ brand, version }) => toBrandVersion(brand, version));
-  }
   if (typeof uaData['mobile'] !== 'undefined') {
     sua.mobile = uaData.mobile ? 1 : 0;
   }
@@ -104,8 +121,5 @@ export function uaDataToSUA(source, uaData) {
       sua[prop] = value;
     }
   });
-  if (typeof uaData.wow64 !== 'undefined') {
-    sua.wow64 = uaData.wow64 ? 1 : 0;
-  }
   return sua;
 }
