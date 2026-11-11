@@ -92,7 +92,7 @@ export function uaDataToSUA(source, uaData) {
   if (uaData.fullVersionList || uaData.brands) {
     sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version));
   }
-  if (uaData.brands) {
+  if (source === SUA_SOURCE_HIGH_ENTROPY && uaData.brands) {
     sua.brands = uaData.brands.map(({ brand, version }) => toBrandVersion(brand, version));
   }
   if (typeof uaData['mobile'] !== 'undefined') {
