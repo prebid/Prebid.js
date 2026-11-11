@@ -293,4 +293,77 @@ describe('resetdigitalBidAdapter', function () {
       expect(payload).to.not.have.property('schain');
     });
   });
+
+  describe('buildRequests details', function () {
+    const makeBid = (params = {}, extra = {}) => ({
+      bidId: 'bid-1',
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      params: { pubId: '12345', ...params },
+      ...extra,
+    });
+    const build = (bids, bidderRequest = {}) =>
+      JSON.parse(spec.buildRequests(bids, { refererInfo: {}, ...bidderRequest }).data);
+
+    it('should include gdpr and ccpa consent in the payload', function () {
+      const payload = build([makeBid()], {
+        gdprConsent: { gdprApplies: true, consentString: 'consent-string' },
+        uspConsent: '1YNN',
+      });
+      expect(payload.gdpr).to.deep.equal({ applies: true, consent: 'consent-string' });
+      expect(payload.ccpa).to.equal('1YNN');
+    });
+
+    it('should use the floor from getFloor when it is in USD', function () {
+      const payload = build([makeBid({}, { getFloor: () => ({ currency: 'USD', floor: '1.5' }) })]);
+      expect(payload.imps[0].bid_floor).to.equal(1.5);
+      expect(payload.imps[0].bid_floor_cur).to.equal('USD');
+    });
+
+    it('should ignore a getFloor result in another currency', function () {
+      const payload = build([makeBid({}, { getFloor: () => ({ currency: 'EUR', floor: 2 }) })]);
+      expect(payload.imps[0].bid_floor).to.equal(null);
+    });
+
+    it('should accept keywords as a comma separated string or an array', function () {
+      const payload = build([
+        makeBid({ keywords: 'a,b' }),
+        makeBid({ keywords: ['c', 'd'] }, { bidId: 'bid-2' }),
+      ]);
+      const keywordsOf = (imp) => imp.keywords.split(',').filter(Boolean);
+      expect(keywordsOf(payload.imps[0])).to.deep.equal(['a', 'b']);
+      expect(keywordsOf(payload.imps[1])).to.deep.equal(['c', 'd']);
+    });
+
+    it('should group multi-uid eids by rtiPartner in user_ids', function () {
+      const payload = build([makeBid({}, {
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [
+            { id: 'tdid-1', atype: 1, ext: { rtiPartner: 'TDID' } },
+            { id: 'uid2-1', atype: 3, ext: { rtiPartner: 'UID2' } },
+          ],
+        }],
+      })]);
+      expect(payload.user_ids['adserver.org']).to.deep.equal({ TDID: 'tdid-1', UID2: 'uid2-1' });
+    });
+  });
+
+  describe('interpretResponse edge cases', function () {
+    it('should return no bids for an empty body (204 no-bid)', function () {
+      expect(spec.interpretResponse({ body: '' }, {})).to.deep.equal([]);
+    });
+
+    it('should return no bids when the response has no bids', function () {
+      expect(spec.interpretResponse({ body: { bids: [] } }, {})).to.deep.equal([]);
+    });
+  });
+
+  describe('getUserSyncs without gdprApplies', function () {
+    it('should only pass the consent string when gdprApplies is not a boolean', function () {
+      const sync = spec.getUserSyncs({ pixelEnabled: true }, [], { consentString: 'abc' });
+      const url = new URL(sync[0].url);
+      expect(url.searchParams.get('gdpr')).to.equal(null);
+      expect(url.searchParams.get('gdpr_consent')).to.equal('abc');
+    });
+  });
 });
