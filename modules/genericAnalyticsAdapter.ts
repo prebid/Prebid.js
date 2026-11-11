@@ -228,6 +228,16 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
           parent.enableAnalytics.call(this, config);
         }
       },
+      onPageHide() {
+        // the page may be going away; send the incomplete batch now instead of after batchDelay
+        if (timer != null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        if (batch.length > 0) {
+          processBatch();
+        }
+      },
       track(event) {
         const datum = translate(event);
         if (datum != null) {
