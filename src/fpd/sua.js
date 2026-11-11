@@ -45,19 +45,27 @@ export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) 
   };
 }
 
-export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
-  const cache = {};
-  const keys = new WeakMap();
+export function highEntropySUAAccessor(uaData) {
+  const caches = new WeakMap();
   return function (hints = HIGH_ENTROPY_HINTS) {
-    if (!keys.has(hints)) {
-      const sorted = Array.from(hints);
-      sorted.sort();
-      keys.set(hints, sorted.join('|'));
+    const currentUaData = uaData || window.navigator?.userAgentData;
+    if (!currentUaData || typeof currentUaData.getHighEntropyValues !== 'function') {
+      return PbPromise.resolve(null);
     }
-    const key = keys.get(hints);
+
+    let cache = caches.get(currentUaData);
+    if (!cache) {
+      cache = {};
+      caches.set(currentUaData, cache);
+    }
+
+    const sorted = Array.from(hints);
+    sorted.sort();
+    const key = sorted.join('|');
+
     if (!cache.hasOwnProperty(key)) {
       try {
-        cache[key] = uaData.getHighEntropyValues(hints).then(result => {
+        cache[key] = currentUaData.getHighEntropyValues(hints).then(result => {
           return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result));
         }).catch(() => null);
       } catch (e) {
