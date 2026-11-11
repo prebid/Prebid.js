@@ -10,7 +10,7 @@ export type RuleResult = {
 /**
  * Activity control rule. MAY return {allow, reason}; returning null/undefined leaves the decision to other rules.
  */
-export type ActivityRule = (params: ActivityParams) => RuleResult | null | undefined | void;
+export type ActivityRule = (params: ActivityParams) => RuleResult | null | void;
 
 type RuleEntry = [priority: number, name: string, rule: ActivityRule];
 
@@ -23,7 +23,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   }
 
   function runRule(activity: Activity, name: string, rule: ActivityRule, params: ActivityParams) {
-    let res: RuleResult | null | undefined | void;
+    let res: ReturnType<ActivityRule>;
     try {
       res = rule(params);
     } catch (e) {
