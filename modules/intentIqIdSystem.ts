@@ -10,7 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.ts';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.ts';
-import { getHighEntropySUA } from '../src/fpd/sua.js';
+import { getHighEntropyValues } from '../src/fpd/sua.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.ts';
 import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.ts';
 import {
@@ -170,7 +170,7 @@ declare module './userId/spec' {
 
 const MODULE_NAME = 'intentIqId' as const;
 
-export const dep = { getHighEntropySUA };
+export const dep = { getHighEntropyValues };
 
 const encoderCH: Record<string, number> = {
   brands: 0,
@@ -365,37 +365,10 @@ export function setGamReporting(gamObjectReference: any, gamParameterName: strin
 }
 
 /**
- * Converts shared SUA data into IntentIQ's encoded client hints.
- * @param {object} sua - Structured user agent data from the shared accessor
+ * Processes raw client hints data into a structured format.
+ * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
-function suaToClientHints(sua: any): string {
-  if (!sua) return '';
-
-  const clientHints: Record<string, any> = {};
-  if (sua.brands) {
-    clientHints.brands = sua.brands.map(({ brand, version }: any) => ({
-      brand,
-      version: Array.isArray(version) ? version.join('.') : version
-    }));
-  }
-  if (sua.browsers) {
-    clientHints.fullVersionList = sua.browsers.map(({ brand, version }: any) => ({
-      brand,
-      version: Array.isArray(version) ? version.join('.') : version
-    }));
-  }
-  if (typeof sua.mobile !== 'undefined') clientHints.mobile = Boolean(sua.mobile);
-  if (sua.platform?.brand) clientHints.platform = sua.platform.brand;
-  if (sua.platform?.version) clientHints.platformVersion = sua.platform.version.join('.');
-  if (sua.architecture) clientHints.architecture = sua.architecture;
-  if (sua.bitness) clientHints.bitness = sua.bitness;
-  if (sua.model) clientHints.model = sua.model;
-  if (typeof sua.wow64 !== 'undefined') clientHints.wow64 = Boolean(sua.wow64);
-
-  return handleClientHints(clientHints);
-}
-
 export function handleClientHints(clientHints: any): string {
   const chParams: Record<string, string> = {};
   for (const key in clientHints) {
@@ -560,17 +533,16 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
-    let chPromise: Promise<string> | null = null;
 
     function fetchAndHandleCH(): Promise<string> {
-      return dep.getHighEntropySUA(CH_KEYS)
-        .then((sua: any) => {
-          if (!sua) {
+      return dep.getHighEntropyValues(CH_KEYS)
+        .then((raw: any) => {
+          if (!raw) {
             clientHints = '';
             removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
             return '';
           }
-          const nextCH = suaToClientHints(sua);
+          const nextCH = handleClientHints(raw);
           const prevCH = clientHints || '';
           if (nextCH !== prevCH) {
             clientHints = nextCH;
@@ -588,7 +560,7 @@ export const intentIqIdSubmodule = {
         });
     }
 
-    chPromise = fetchAndHandleCH();
+    const chPromise = fetchAndHandleCH();
     chPromise.catch((err: any) => {
       logError('fetchAndHandleCH failed', err);
     });
@@ -662,15 +634,11 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
-      if (chPromise) {
-        if (clientHints) {
-          buildAndSendPixel(clientHints);
-        } else {
-          waitOnCH(chTimeout)
-            .then((ch: any) => buildAndSendPixel(ch || ''));
-        }
+      if (clientHints) {
+        buildAndSendPixel(clientHints);
       } else {
-        buildAndSendPixel('');
+        waitOnCH(chTimeout)
+          .then((ch: any) => buildAndSendPixel(ch || ''));
       }
       return;
     }
@@ -846,20 +814,15 @@ export const intentIqIdSubmodule = {
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
       };
 
-      if (chPromise) {
-        if (clientHints) {
-          // CH found in LS: send immediately; background fetch will refresh/clear later
-          sendAjax(clientHints);
-        } else {
-          // No CH in LS: wait up to chTimeout, then send
-          waitOnCH(chTimeout).then((ch: any) => {
-            // Send with received CH or without it
-            sendAjax(ch || '');
-          });
-        }
+      if (clientHints) {
+        // CH found in LS: send immediately; background fetch will refresh/clear later
+        sendAjax(clientHints);
       } else {
-        // CH not supported: send without uh
-        sendAjax('');
+        // No CH in LS: wait up to chTimeout, then send
+        waitOnCH(chTimeout).then((ch: any) => {
+          // Send with received CH or without it
+          sendAjax(ch || '');
+        });
       }
     };
     const respObj: any = { callback: resp };

@@ -1,5 +1,7 @@
 import {
+  HIGH_ENTROPY_HINTS,
   highEntropySUAAccessor,
+  highEntropyValuesAccessor,
   lowEntropySUAAccessor,
   SUA_SOURCE_HIGH_ENTROPY,
   SUA_SOURCE_LOW_ENTROPY,
@@ -14,8 +16,7 @@ describe('uaDataToSUA', () => {
     'mobile': 'mobile',
     'architecture': 'architecture',
     'model': 'model',
-    'bitness': 'bitness',
-    'wow64': 'wow64'
+    'bitness': 'bitness'
   }).forEach(([suaKey, uaKey]) => {
     it(`should not set ${suaKey} if ${uaKey} is missing from UAData`, () => {
       const example = {
@@ -24,19 +25,11 @@ describe('uaDataToSUA', () => {
         mobile: true,
         model: 'mockModel',
         bitness: '64',
-        architecture: 'arm',
-        wow64: true
+        architecture: 'arm'
       };
       delete example[uaKey];
       const sua = uaDataToSUA(SUA_SOURCE_UNKNOWN, example);
       expect(sua.hasOwnProperty(suaKey)).to.be.false;
-    });
-  });
-
-  it('should preserve wow64=false as zero', () => {
-    expect(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, { wow64: false })).to.eql({
-      source: SUA_SOURCE_HIGH_ENTROPY,
-      wow64: 0
     });
   });
 
@@ -93,7 +86,6 @@ describe('uaDataToSUA', () => {
     const uaData = {
       architecture: 'x86',
       bitness: '64',
-      wow64: true,
       fullVersionList: [
         {
           'brand': '.Not/A)Brand',
@@ -132,7 +124,6 @@ describe('uaDataToSUA', () => {
       architecture: 'x86',
       bitness: '64',
       model: 'mockModel',
-      wow64: 1,
       platform: {
         brand: 'Linux',
         version: [
@@ -167,26 +158,6 @@ describe('uaDataToSUA', () => {
             '0',
             '5060',
             '134'
-          ]
-        }
-      ],
-      brands: [
-        {
-          brand: '.Not/A)Brand',
-          version: [
-            '99'
-          ]
-        },
-        {
-          brand: 'Google Chrome',
-          version: [
-            '103'
-          ]
-        },
-        {
-          brand: 'Chromium',
-          version: [
-            '103'
           ]
         }
       ]
@@ -282,5 +253,40 @@ describe('highEntropySUAAccessor', () => {
     return getSUA().then(result => {
       expect(() => { result.prop = 'value'; }).to.throw();
     });
+  });
+});
+
+describe('highEntropyValuesAccessor', () => {
+  let userAgentData, uaResult, getValues;
+  beforeEach(() => {
+    uaResult = { architecture: 'x86', wow64: false };
+    userAgentData = {
+      getHighEntropyValues: sinon.stub().callsFake(() => Promise.resolve(uaResult))
+    };
+    getValues = highEntropyValuesAccessor(userAgentData);
+  });
+
+  it('should resolve to the raw values', () => {
+    return getValues(['architecture', 'wow64']).then(result => {
+      expect(result).to.eql({ architecture: 'x86', wow64: false });
+    });
+  });
+
+  it('should resolve to null if getHighEntropyValues is not available', () => {
+    return highEntropyValuesAccessor({})().then(result => {
+      expect(result).to.eql(null);
+    });
+  });
+
+  it('should resolve to null on an empty result', () => {
+    uaResult = {};
+    return getValues().then(result => {
+      expect(result).to.eql(null);
+    });
+  });
+
+  it('should request all high entropy hints by default', () => {
+    getValues();
+    sinon.assert.calledWith(userAgentData.getHighEntropyValues, HIGH_ENTROPY_HINTS);
   });
 });

@@ -17,7 +17,7 @@ import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, PREBID, WITH_IIQ, WITHOUT_IIQ } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
-import { highEntropySUAAccessor, SUA_SOURCE_HIGH_ENTROPY, uaDataToSUA } from '../../../src/fpd/sua.js';
+import { highEntropyValuesAccessor } from '../../../src/fpd/sua.js';
 
 const partner = 10;
 const pai = '11';
@@ -59,8 +59,6 @@ export const testClientHints = {
   platformVersion: '6.5.0',
   wow64: false
 };
-
-const testSUA = uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, testClientHints);
 
 function stubCHDeferred(stub) {
   let resolve;
@@ -130,7 +128,7 @@ describe('IntentIQ tests', function () {
   let sandbox;
   let logErrorStub;
   let clock;
-  let getHighEntropySUAStub;
+  let getHighEntropyValuesStub;
   const testLSValue = {
     'date': Date.now(),
     'cttl': 2000,
@@ -159,7 +157,7 @@ describe('IntentIQ tests', function () {
     storage.setCookie(FIRST_PARTY_KEY, '', expiredDate, 'Lax');
     storage.setCookie(FIRST_PARTY_KEY + '_' + partner, '', expiredDate, 'Lax');
     sandbox = sinon.createSandbox();
-    getHighEntropySUAStub = sandbox.stub(dep, 'getHighEntropySUA').resolves(null);
+    getHighEntropyValuesStub = sandbox.stub(dep, 'getHighEntropyValues').resolves(null);
     logErrorStub = sinon.stub(utils, 'logError');
     clock = sinon.useFakeTimers({ now: Date.now() });
     globalThis.__iiqClock = clock;
@@ -1287,15 +1285,15 @@ describe('IntentIQ tests', function () {
   [false, true].forEach(wow64 => {
     it(`should preserve the client hint encoding with wow64=${wow64}`, async () => {
       const rawHints = { ...testClientHints, wow64, model: wow64 ? 'Test device' : '' };
-      getHighEntropySUAStub.resolves(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, rawHints));
+      getHighEntropyValuesStub.resolves(rawHints);
       intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
       await waitForClientHints();
 
       const expectedClientHints = handleClientHints(rawHints);
       expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedClientHints);
       expect(server.requests[0].url).to.include(`&uh=${encodeURIComponent(expectedClientHints)}`);
-      expect(getHighEntropySUAStub.calledOnce).to.be.true;
-      expect(getHighEntropySUAStub.firstCall.args[0]).to.have.members([
+      expect(getHighEntropyValuesStub.calledOnce).to.be.true;
+      expect(getHighEntropyValuesStub.firstCall.args[0]).to.have.members([
         'architecture', 'bitness', 'brands', 'fullVersionList', 'mobile', 'model', 'platform', 'platformVersion', 'wow64'
       ]);
     });
@@ -1303,7 +1301,7 @@ describe('IntentIQ tests', function () {
 
   it('should omit withheld high entropy properties from the encoded hints', async () => {
     const rawHints = { brands: testClientHints.brands, mobile: false, platform: 'Linux' };
-    getHighEntropySUAStub.resolves(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, rawHints));
+    getHighEntropyValuesStub.resolves(rawHints);
     intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
     await waitForClientHints();
 
@@ -1311,8 +1309,7 @@ describe('IntentIQ tests', function () {
     expect(JSON.parse(savedClientHints)).to.deep.equal({
       '0': '"Not(A:Brand";v="24", "Chromium";v="122"',
       '1': '?0',
-      '2': '"Linux"',
-      '8': '"Not(A:Brand";v="24", "Chromium";v="122"'
+      '2': '"Linux"'
     });
     expect(server.requests[0].url).to.include(`&uh=${encodeURIComponent(savedClientHints)}`);
   });
@@ -1391,7 +1388,7 @@ describe('IntentIQ tests', function () {
   it('should send uh from LS immediately and later update LS with fresh CH', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
     const callBackSpy = sinon.spy();
-    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
+    const { resolve } = stubCHDeferred(getHighEntropyValuesStub);
 
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 300 } };
     const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
@@ -1404,7 +1401,7 @@ describe('IntentIQ tests', function () {
     expect(server.requests.length).to.equal(1); // only one request sent
 
     // deliver fresh CH from the browser
-    resolve(testSUA);
+    resolve(testClientHints);
     await waitForClientHints();
 
     // LS must be updated; no extra network calls
@@ -1416,7 +1413,7 @@ describe('IntentIQ tests', function () {
   it('should use cached uh immediately and clears LS on CH error (API supported)', async () => {
     const callBackSpy = sinon.spy();
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    getHighEntropySUAStub.rejects(new Error('boom'));
+    getHighEntropyValuesStub.rejects(new Error('boom'));
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 200 } };
     const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
     submoduleCallback(callBackSpy);
@@ -1435,7 +1432,7 @@ describe('IntentIQ tests', function () {
   });
 
   it('should send without uh when client hints are unavailable and no hints are cached', async function () {
-    getHighEntropySUAStub.callsFake(highEntropySUAAccessor({}));
+    getHighEntropyValuesStub.callsFake(highEntropyValuesAccessor({}));
     const cbSpy = sinon.spy();
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 0 } };
 
@@ -1450,9 +1447,9 @@ describe('IntentIQ tests', function () {
     expect(saved === '' || saved === null).to.be.true;
   });
 
-  it('should clear cached hints and omit uh on subsequent requests when SUA resolves null', async () => {
+  it('should clear cached hints and omit uh on subsequent requests when client hints resolve null', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    getHighEntropySUAStub.resolves(null);
+    getHighEntropyValuesStub.resolves(null);
 
     intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
     expect(server.requests[0].url).to.include('&uh=OLD_CH_VALUE');
@@ -1467,7 +1464,7 @@ describe('IntentIQ tests', function () {
 
   it('blacklist: should use uh from LS immediately and updates LS when CH resolves', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
+    const { resolve } = stubCHDeferred(getHighEntropyValuesStub);
     const blk = detectBrowser();
     const cfg = { params: { ...defaultConfigParams.params, browserBlackList: blk, chTimeout: 50 } };
 
@@ -1480,7 +1477,7 @@ describe('IntentIQ tests', function () {
     expect(server.requests.length).to.equal(1);
 
     // Now deliver fresh CH from browser and wait for background handlers
-    resolve(testSUA);
+    resolve(testClientHints);
     await waitForClientHints();
 
     // LS updated, network not re-fired
@@ -1493,7 +1490,7 @@ describe('IntentIQ tests', function () {
     localStorage.removeItem(CLIENT_HINTS_KEY);
     const expectedCH = handleClientHints(testClientHints);
 
-    getHighEntropySUAStub.resolves(testSUA);
+    getHighEntropyValuesStub.resolves(testClientHints);
 
     const blk = detectBrowser();
     const cfg = {
@@ -1516,7 +1513,7 @@ describe('IntentIQ tests', function () {
 
   it('blacklist: should send sync without uh on timeout and store hints when they arrive', async () => {
     const expectedCH = handleClientHints(testClientHints);
-    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
+    const { resolve } = stubCHDeferred(getHighEntropyValuesStub);
     const blk = detectBrowser();
     const cfg = {
       params: {
@@ -1535,7 +1532,7 @@ describe('IntentIQ tests', function () {
     expect(req.url).to.include('at=20');
     expect(req.url).to.not.include('&uh=');
 
-    resolve(testSUA);
+    resolve(testClientHints);
     await waitForClientHints();
     expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
     expect(server.requests).to.have.lengthOf(1);
