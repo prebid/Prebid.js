@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/linaBidAdapter';
 import { config } from 'src/config';
 import { coppaDataHandler } from 'src/consentHandler';
+import { toFetchRequest } from 'src/ajax';
 import sinon from 'sinon';
 
 const BID_REQUEST = {
@@ -212,10 +213,25 @@ describe('linaBidAdapter', function () {
     expect(request.data.bids[0]).not.to.have.property('placementId');
     expect(request.data.bids[0].ortb2Imp.banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
     expect(request.data.bids[0].ortb2Imp.ext).to.deep.include(BID_REQUEST.ortb2Imp.ext);
-    expect(request.options.customHeaders).to.deep.equal({ 'X-App-Key': BID_REQUEST.params.publisherId });
+    expect(request).not.to.have.property('options');
 
     const requestWithMissingBidderAuctionId = spec.buildRequests([BID_REQUEST], { ...BIDDER_REQUEST, auctionId: undefined });
     expect(requestWithMissingBidderAuctionId.data).not.to.have.property('auctionId');
+  });
+
+  it('uses a safelisted POST with JSON in the body and no custom headers', function () {
+    const request = spec.buildRequests([BID_REQUEST], BIDDER_REQUEST);
+    const transport = toFetchRequest(request.url, JSON.stringify(request.data), {
+      method: request.method,
+      withCredentials: true,
+      ...request.options,
+    });
+
+    expect(transport.method).to.equal('POST');
+    expect([...transport.headers.keys()]).to.deep.equal(['content-type']);
+    expect(transport.headers.get('Content-Type')).to.equal('text/plain');
+    expect(transport.credentials).to.equal('include');
+    expect(request.data.publisherId).to.equal(BID_REQUEST.params.publisherId);
   });
 
   it('preserves shared TIDs independently of legacy aliases and request IDs', function () {
@@ -358,7 +374,7 @@ describe('linaBidAdapter', function () {
       params: { publisherId: ' pub_local_001 ', placementId: ' 550e8400-e29b-41d4-a716-446655440000 ' },
     }], BIDDER_REQUEST);
 
-    expect(request.options.customHeaders).to.deep.equal({ 'X-App-Key': 'pub_local_001' });
+    expect(request).not.to.have.property('options');
     expect(request.data.publisherId).to.equal('pub_local_001');
     expect(request.data.ortb2.site).not.to.have.property('publisher');
     expect(request.data.bids[0]).not.to.have.property('placementId');
@@ -374,8 +390,9 @@ describe('linaBidAdapter', function () {
     const requests = spec.buildRequests([BID_REQUEST, secondBid], BIDDER_REQUEST);
 
     expect(requests).to.have.lengthOf(2);
-    expect(requests[0].options.customHeaders).to.deep.equal({ 'X-App-Key': BID_REQUEST.params.publisherId });
-    expect(requests[1].options.customHeaders).to.deep.equal({ 'X-App-Key': 'pub-second' });
+    expect(requests[0].data.publisherId).to.equal(BID_REQUEST.params.publisherId);
+    expect(requests[1].data.publisherId).to.equal('pub-second');
+    requests.forEach((request) => expect(request).not.to.have.property('options'));
   });
 
   it('preserves client OpenRTB currency for the SSP to resolve', function () {
@@ -420,7 +437,7 @@ describe('linaBidAdapter', function () {
       params: { publisherId: 'pub-10001', placementId: '550e8400-e29b-41d4-a716-446655440000' },
       getFloor: () => ({ floor: 1000, currency: 'KRW' }),
     }], BIDDER_REQUEST);
-    expect(requestWithFloor.options.customHeaders).to.deep.equal({ 'X-App-Key': 'pub-10001' });
+    expect(requestWithFloor.data.publisherId).to.equal('pub-10001');
     expect(requestWithFloor.data.bids[0].ortb2Imp.tagid).to.equal('550e8400-e29b-41d4-a716-446655440000');
     expect(requestWithFloor.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
     expect(requestWithFloor.data.bids[0].ortb2Imp).not.to.have.property('bidfloorcur');
