@@ -26,7 +26,7 @@ export const storagePpKey = '__im_ppid';
 export const cookieKey = '_im_vid';
 export const apiDomain = 'ups.im-apps.net';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
-const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
+const cookiesMaxAge = 34560000000; // 400 days (400 * 24 * 60 * 60 * 1000)
 
 function setImDataInCookie(value) {
   storage.setCookie(
