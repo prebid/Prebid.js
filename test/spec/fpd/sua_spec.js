@@ -14,7 +14,8 @@ describe('uaDataToSUA', () => {
     'mobile': 'mobile',
     'architecture': 'architecture',
     'model': 'model',
-    'bitness': 'bitness'
+    'bitness': 'bitness',
+    'wow64': 'wow64'
   }).forEach(([suaKey, uaKey]) => {
     it(`should not set ${suaKey} if ${uaKey} is missing from UAData`, () => {
       const example = {
@@ -84,6 +85,7 @@ describe('uaDataToSUA', () => {
     const uaData = {
       architecture: 'x86',
       bitness: '64',
+      wow64: true,
       fullVersionList: [
         {
           'brand': '.Not/A)Brand',
@@ -122,6 +124,7 @@ describe('uaDataToSUA', () => {
       architecture: 'x86',
       bitness: '64',
       model: 'mockModel',
+      wow64: 1,
       platform: {
         brand: 'Linux',
         version: [
