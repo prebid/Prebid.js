@@ -380,7 +380,8 @@ function suaToClientHints(sua: any): string {
     platformVersion: Array.isArray(sua.platform?.version) ? sua.platform.version.join('.') : sua.platform?.version,
     architecture: sua.architecture,
     bitness: sua.bitness,
-    model: sua.model
+    model: sua.model,
+    wow64: sua.wow64 === 1
   });
 }
 
