@@ -170,6 +170,8 @@ declare module './userId/spec' {
 
 const MODULE_NAME = 'intentIqId' as const;
 
+export const dep = { getHighEntropySUA };
+
 const encoderCH: Record<string, number> = {
   brands: 0,
   mobile: 1,
@@ -370,19 +372,27 @@ export function setGamReporting(gamObjectReference: any, gamParameterName: strin
 function suaToClientHints(sua: any): string {
   if (!sua) return '';
 
-  return handleClientHints({
-    fullVersionList: sua.browsers?.map(({ brand, version }: any) => ({
+  const clientHints: Record<string, any> = {};
+  if (sua.brands) {
+    clientHints.brands = sua.brands.map(({ brand, version }: any) => ({
       brand,
       version: Array.isArray(version) ? version.join('.') : version
-    })),
-    mobile: Boolean(sua.mobile),
-    platform: sua.platform?.brand,
-    platformVersion: Array.isArray(sua.platform?.version) ? sua.platform.version.join('.') : sua.platform?.version,
-    architecture: sua.architecture,
-    bitness: sua.bitness,
-    model: sua.model,
-    wow64: sua.wow64 === 1
-  });
+    }));
+  } else if (sua.browsers) {
+    clientHints.fullVersionList = sua.browsers.map(({ brand, version }: any) => ({
+      brand,
+      version: Array.isArray(version) ? version.join('.') : version
+    }));
+  }
+  if (typeof sua.mobile !== 'undefined') clientHints.mobile = Boolean(sua.mobile);
+  if (sua.platform?.brand) clientHints.platform = sua.platform.brand;
+  if (sua.platform?.version) clientHints.platformVersion = sua.platform.version.join('.');
+  if (sua.architecture) clientHints.architecture = sua.architecture;
+  if (sua.bitness) clientHints.bitness = sua.bitness;
+  if (sua.model) clientHints.model = sua.model;
+  if (typeof sua.wow64 !== 'undefined') clientHints.wow64 = Boolean(sua.wow64);
+
+  return handleClientHints(clientHints);
 }
 
 export function handleClientHints(clientHints: any): string {
@@ -552,8 +562,13 @@ export const intentIqIdSubmodule = {
     let chPromise: Promise<string> | null = null;
 
     function fetchAndHandleCH(): Promise<string> {
-      return getHighEntropySUA(CH_KEYS)
+      return dep.getHighEntropySUA(CH_KEYS)
         .then((sua: any) => {
+          if (!sua) {
+            clientHints = '';
+            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
+            return '';
+          }
           const nextCH = suaToClientHints(sua);
           const prevCH = clientHints || '';
           if (nextCH !== prevCH) {
