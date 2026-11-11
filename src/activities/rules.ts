@@ -1,20 +1,29 @@
 import { prefixLog } from '../utils.js';
-import { ACTIVITY_PARAM_COMPONENT } from './params.js';
+import { ACTIVITY_PARAM_COMPONENT, type ActivityParams } from './params.js';
+import type { Activity } from './activities.ts';
+
+export type RuleResult = {
+  allow: boolean;
+  reason?: unknown;
+};
 
 /**
- * @param logger
- * @return {((function(string, string, function(Object): {allow: boolean, reason?: string}, number=): function(): void)|(function(string, {}): boolean)|*)[]}
+ * Activity control rule. MAY return {allow, reason}; returning null/undefined leaves the decision to other rules.
  */
-export function ruleRegistry(logger = prefixLog('Activity control:')) {
-  const registry = {};
+export type ActivityRule = (params: ActivityParams) => RuleResult | null | undefined | void;
 
-  function getRules(activity) {
+type RuleEntry = [priority: number, name: string, rule: ActivityRule];
+
+export function ruleRegistry(logger = prefixLog('Activity control:')) {
+  const registry: { [A in Activity]?: RuleEntry[] } = {};
+
+  function getRules(activity: Activity) {
     registry[activity] = registry[activity] || [];
     return registry[activity];
   }
 
-  function runRule(activity, name, rule, params) {
-    let res;
+  function runRule(activity: Activity, name: string, rule: ActivityRule, params: ActivityParams) {
+    let res: RuleResult | null | undefined | void;
     try {
       res = rule(params);
     } catch (e) {
@@ -28,7 +37,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const DEDUPE_INTERVAL = 1000;
 
   // eslint-disable-next-line no-restricted-syntax
-  function logResult({ activity, name, allow, reason, component }) {
+  function logResult({ activity, name, allow, reason, component }: RuleResult & { activity: Activity; name: string; component: string }) {
     const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
     const deduping = dupes.hasOwnProperty(msg);
     if (deduping) {
@@ -36,7 +45,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     }
     dupes[msg] = setTimeout(() => delete dupes[msg], DEDUPE_INTERVAL);
     if (!deduping) {
-      const parts = [msg];
+      const parts: unknown[] = [msg];
       reason && parts.push(reason);
       (allow ? logger.logInfo : logger.logWarn).apply(logger, parts);
     }
@@ -46,9 +55,9 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     /**
      * Register an activity control rule.
      *
-     * @param {string} activity - Activity name, as defined in `activities.js`.
-     * @param {string} ruleName - A name for this rule, used for logging.
-     * @param {function(Object): {allow: boolean, reason?: string}} rule - Rule definition function. Takes in activity
+     * @param activity - Activity name, as defined in `activities.ts`.
+     * @param ruleName - A name for this rule, used for logging.
+     * @param rule - Rule definition function. Takes in activity
      *        parameters as a single map; MAY return an object {allow, reason}, where allow is true/false,
      *        and reason is an optional message used for logging.
      *
@@ -57,13 +66,13 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      *        Returning null/undefined has no effect - the decision is left to other rules.
      *        If no rule returns an allow value, the default is to allow the activity.
      *
-     * @param {number} [priority=10] - Rule priority; lower number means higher priority.
-     * @returns {function(): void} - A function that unregisters the rule when called.
+     * @param priority - Rule priority; lower number means higher priority.
+     * @returns A function that unregisters the rule when called.
      */
-    function registerActivityControl(activity, ruleName, rule, priority = 10) {
+    function registerActivityControl(activity: Activity, ruleName: string, rule: ActivityRule, priority = 10): () => void {
       const rules = getRules(activity);
       const pos = rules.findIndex(([itemPriority]) => priority < itemPriority);
-      const entry = [priority, ruleName, rule];
+      const entry: RuleEntry = [priority, ruleName, rule];
       rules.splice(pos < 0 ? rules.length : pos, 0, entry);
       return function () {
         const idx = rules.indexOf(entry);
@@ -73,11 +82,11 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     /**
      * Test whether an activity is allowed.
      *
-     * @param {string} activity activity name
-     * @param {{}} params activity parameters; should be generated through the `activityParams` utility.
-     * @return {boolean} true for allow, false for deny.
+     * @param activity activity name
+     * @param params activity parameters; should be generated through the `activityParams` utility.
+     * @return true for allow, false for deny.
      */
-    function isActivityAllowed(activity, params) {
+    function isActivityAllowed(activity: Activity, params: ActivityParams): boolean {
       let lastPriority, foundAllow;
       for (const [priority, name, rule] of getRules(activity)) {
         if (lastPriority !== priority && foundAllow) break;
@@ -95,7 +104,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
       foundAllow && logResult(foundAllow);
       return true;
     }
-  ];
+  ] as const;
 }
 
 export const [registerActivityControl, isActivityAllowed] = ruleRegistry();
