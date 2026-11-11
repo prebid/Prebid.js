@@ -36,6 +36,16 @@ describe('gumgumAdapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
+    [['zone', 'zone-backoff', 't'], ['pubId', 98765, 'pubId']].forEach(([param, value, dataKey]) => {
+      it(`should not request a ${param} the server rejected until the retry delay passes`, function () {
+        const rejected = { ...bid, params: { [param]: value } };
+        expect(spec.isBidRequestValid(rejected)).to.equal(true);
+        // the server's error response for this placement asks to wait drt ms before requesting it again
+        spec.interpretResponse({ body: { err: { drt: 1 } } }, { data: { [dataKey]: value }, sizes: [[300, 250]] });
+        expect(spec.isBidRequestValid(rejected)).to.equal(false);
+      });
+    });
+
     it('should return true when required params found', function () {
       const zoneBid = { ...bid, params: { 'zone': '123' } };
       const pubIdBid = { ...bid, params: { 'pubId': 123 } };
@@ -1780,7 +1790,7 @@ describe('gumgumAdapter', function () {
       expect(result.native).to.be.undefined;
     });
   });
-  describe('getUserSyncs', function () {
+  it('getUserSyncs should map pixel types to image and iframe', function () {
     const syncOptions = {
       'iframeEnabled': 'true'
     };

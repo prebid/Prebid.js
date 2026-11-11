@@ -1,4 +1,4 @@
-import { deepSetValue, logError } from '../src/utils.js';
+import { deepSetValue, isPlainObject, logError } from '../src/utils.js';
 import { AdapterRequest, BidderSpec, registerBidder, ServerResponse } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
@@ -10,6 +10,10 @@ import { SyncType } from '../src/userSync.js';
 import { ConsentDataForKey, CONSENT_GDPR, CONSENT_USP, CONSENT_GPP } from '../src/consentHandler.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { addEventTrackers } from '../libraries/pbsExtensions/processors/eventTrackers.js';
+import { setBidResponseVideoCache } from '../libraries/pbsExtensions/processors/video.js';
+import { extPrebidMediaType } from '../libraries/pbsExtensions/processors/mediaType.js';
+import { BID_RESPONSE } from '../src/pbjsORTB.js';
 
 const BIDDER_CODE = 'pubstack';
 const GVLID = 1408;
@@ -77,11 +81,23 @@ const converter = ortbConverter({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    return {
+    const bidResponse = {
       ...buildBidResponse(bid, context),
       ttl: (bid as any).ttl ?? bid.exp ?? DEFAULT_TTL,
       netRevenue: (bid as any).netRevenue ?? DEFAULT_NET_REVENUE,
     };
+    const targeting = (bid as any).ext?.prebid?.targeting;
+    if (isPlainObject(targeting)) bidResponse.adserverTargeting = targeting;
+    addEventTrackers(bidResponse, bid);
+    if (FEATURES.VIDEO) setBidResponseVideoCache(bidResponse, bid);
+    return bidResponse;
+  },
+  overrides: {
+    [BID_RESPONSE]: {
+      mediaType(setResponseMediaType, bidResponse, bid, context) {
+        extPrebidMediaType(bidResponse, bid, context);
+      },
+    },
   },
 });
 
@@ -141,7 +157,7 @@ const getUserSyncs: GetUserSyncFn = (syncOptions, _serverResponses, gdprConsent,
 
   return Array.from(siteIds).map(siteId => ({
     type: isIframeEnabled ? 'iframe' : 'image',
-    url: `${syncUrl}?consent=${payload}&siteId=${siteId}`,
+    url: `${syncUrl}?consent=${encodeURIComponent(payload)}&siteId=${siteId}`,
   }));
 };
 

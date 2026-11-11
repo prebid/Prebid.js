@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { CORE_MOD } from '../../web-bundler/dependencies.mjs';
-import { BO_CHUNK, cleanDependencies } from '../../web-bundler/manifest.mjs';
+import { BO_CHUNK, cleanDependencies, splitMetadataManifest } from '../../web-bundler/manifest.mjs';
 import sinon from 'sinon';
 
 describe('cleanDependencies', () => {
@@ -49,5 +49,17 @@ describe('cleanDependencies', () => {
       deps['metaModule.js'] = ['otherDep.js'];
       requiresMeta.callsFake((mod) => mod === 'metaModule');
     });
+  });
+});
+
+describe('splitMetadataManifest', () => {
+  it('should move the metadata checksums to a manifest of their own', () => {
+    const deps = { 'a.js': ['b.js'] };
+    const split = splitMetadataManifest({
+      dependencies: deps,
+      checksums: { 'a.js': 'cs-a', 'a.metadata.js': 'cs-a-meta', 'prebid-core.metadata.js': 'cs-core-meta' }
+    });
+    expect(split.manifest).to.eql({ dependencies: deps, checksums: { 'a.js': 'cs-a' } });
+    expect(split.metadata).to.eql({ checksums: { 'a.metadata.js': 'cs-a-meta', 'prebid-core.metadata.js': 'cs-core-meta' } });
   });
 });
