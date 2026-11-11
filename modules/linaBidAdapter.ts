@@ -316,7 +316,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           })),
           privacy: getPrivacy(bidderRequest),
         },
-        options: { contentType: 'application/json', customHeaders: { 'X-App-Key': publisherId } },
       };
     });
 

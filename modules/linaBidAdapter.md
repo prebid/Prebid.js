@@ -43,8 +43,12 @@ Requests use the fixed HTTPS QA endpoint
 `https://ssp-api.qa.web3lge.com/v1/prebid/bids`.
 Endpoint overrides are not supported.
 
-The SSP must allow the page origin and the `Content-Type` and `X-App-Key`
-headers through CORS.
+Requests send a JSON body with `Content-Type: text/plain` and no custom headers.
+The body field `publisherId` is the only publisher integration key;
+`X-App-Key` is not used and cannot replace a missing `publisherId`.
+The SSP must allow the page origin through CORS and return
+`Access-Control-Allow-Credentials: true`. Deploy SSP support for this body-only
+contract before using this adapter version. Responses remain JSON.
 
 Transaction ID sharing is optional. The adapter preserves shared
 `ortb2.source.tid` and `ortb2Imp.ext.tid` values and leaves missing TIDs unset.
