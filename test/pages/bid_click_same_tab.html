@@ -1,0 +1,87 @@
+<!-- Test page for a same-tab creative click: the bidClick event must reach analytics before the page unloads -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Prebid.js same-tab click test</title>
+
+	<!-- Prebid.js -->
+	<script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=genericAnalyticsAdapter"></script>
+
+	<script>
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		var RUN = new URLSearchParams(window.location.search).get('run');
+		var SERVER = 'http://' + window.location.hostname + ':4444';
+
+		// same ad units as banner.html, so the fake appnexus server returns its banner fixture
+		const adUnits = [{
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizes: [[300, 250], [300, 600]],
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}]
+		}, {
+			code: 'div-gpt-ad-1460505748561-1',
+			mediaTypes: {
+				banner: {
+					sizes: [[300, 250], [300, 600]],
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}]
+		}];
+
+		pbjs.que.push(function () {
+			pbjs.setConfig({ enableTIDs: true, bidClickTracking: { enabled: true } });
+			// The batch is never full and its delay outlasts the test, so bidClick only reaches the
+			// collector if analytics sends queued events when the page goes away.
+			pbjs.enableAnalytics({
+				provider: 'generic',
+				options: {
+					url: SERVER + '/analytics?run=' + encodeURIComponent(RUN),
+					batchSize: 100,
+					batchDelay: 600000,
+					events: {
+						bidClick: function (data) {
+							return { eventType: 'bidClick', adId: data.adId, method: data.method };
+						}
+					}
+				}
+			});
+			// replace the fixture's creative with a link that navigates this tab
+			pbjs.onEvent('bidResponse', function (bid) {
+				bid.ad = '<a id="click-me" href="' + SERVER + '/landing?run=' + encodeURIComponent(RUN) +
+					'" target="_top" style="display:block;width:300px;height:250px">click me</a>';
+			});
+			pbjs.addAdUnits(adUnits);
+			pbjs.requestBids({
+				bidsBackHandler: function () {
+					var bid = pbjs.getHighestCpmBids('div-gpt-ad-1460505748561-0')[0];
+					var frame = document.getElementById('ad-frame');
+					pbjs.renderAd(frame.contentDocument, bid.adId);
+				}
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<h2>Prebid.js same-tab click test</h2>
+	<iframe id="ad-frame" width="300" height="250" frameborder="0" scrolling="no"></iframe>
+</body>
+
+</html>
