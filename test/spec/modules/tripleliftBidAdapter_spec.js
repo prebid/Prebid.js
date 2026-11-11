@@ -1427,6 +1427,24 @@ describe('triplelift oRTB bid adapter', function () {
       delete bidderRequest.refererInfo.page;
     });
 
+    it('should not reuse GDPR consent from a previous auction', function() {
+      const consentedRequest = {
+        ...bidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: GDPR_CONSENT_STR
+        }
+      };
+
+      const firstUrl = spec.buildRequests(bidRequests, consentedRequest)[0].url;
+      expect(firstUrl).to.contain('gdpr=true');
+      expect(firstUrl).to.contain('cmp_cs=' + GDPR_CONSENT_STR);
+
+      const secondUrl = spec.buildRequests(bidRequests, bidderRequest)[0].url;
+      expect(secondUrl).not.to.match(/(?:\?|&)gdpr=/);
+      expect(secondUrl).not.to.match(/(?:\?|&)cmp_cs=/);
+    });
+
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
