@@ -140,11 +140,11 @@ export const spec = {
     };
     payload.regs.ext = {};
     payload.user.ext = {};
-    payload.device.ua = navigator.userAgent;
+    payload.device.ua = bidderRequest.ortb2?.device?.ua;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
     payload.site.domain = _getDomainFromURL(payload.site.page);
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(payload.device.ua) ? 1 : 0;
     if (params.test) {
       payload.test = params.test;
     }
