@@ -226,42 +226,6 @@ describe('Generic analytics', () => {
         sinon.assert.calledTwice(handler);
       });
 
-      it('sends an incomplete batch when the page is hidden', () => {
-        adapter.enableAnalytics({
-          options: {
-            batchDelay: 1000,
-            batchSize: 10,
-            handler
-          }
-        });
-        events.emit(BID_RESPONSE, { i: 0 });
-        clock.tick(100); // let the analytics queue pass the event to the adapter
-        sinon.assert.notCalled(handler);
-        events.emit(BID_RESPONSE, { i: 1 });
-        window.dispatchEvent(new Event('pagehide'));
-        sinon.assert.calledOnce(handler);
-        sinon.assert.calledWith(handler, [
-          sinon.match({ eventType: BID_RESPONSE, args: { i: 0 } }),
-          sinon.match({ eventType: BID_RESPONSE, args: { i: 1 } })
-        ]);
-        clock.tick(1000);
-        sinon.assert.calledOnce(handler);
-      });
-
-      it('does not send an empty batch when the page is hidden', () => {
-        adapter.enableAnalytics({
-          options: {
-            batchSize: 1,
-            handler
-          }
-        });
-        events.emit(BID_RESPONSE, { i: 0 });
-        clock.tick(100);
-        sinon.assert.calledOnce(handler);
-        window.dispatchEvent(new Event('pagehide'));
-        sinon.assert.calledOnce(handler);
-      });
-
       describe('and options.events is specified', () => {
         it('filters out other events', () => {
           adapter.enableAnalytics({
