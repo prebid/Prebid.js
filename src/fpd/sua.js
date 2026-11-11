@@ -45,27 +45,19 @@ export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) 
   };
 }
 
-export function highEntropySUAAccessor(uaData) {
-  const caches = new WeakMap();
+export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
+  const cache = {};
+  const keys = new WeakMap();
   return function (hints = HIGH_ENTROPY_HINTS) {
-    const currentUaData = uaData || window.navigator?.userAgentData;
-    if (!currentUaData || typeof currentUaData.getHighEntropyValues !== 'function') {
-      return PbPromise.resolve(null);
+    if (!keys.has(hints)) {
+      const sorted = Array.from(hints);
+      sorted.sort();
+      keys.set(hints, sorted.join('|'));
     }
-
-    let cache = caches.get(currentUaData);
-    if (!cache) {
-      cache = {};
-      caches.set(currentUaData, cache);
-    }
-
-    const sorted = Array.from(hints);
-    sorted.sort();
-    const key = sorted.join('|');
-
+    const key = keys.get(hints);
     if (!cache.hasOwnProperty(key)) {
       try {
-        cache[key] = currentUaData.getHighEntropyValues(hints).then(result => {
+        cache[key] = uaData.getHighEntropyValues(hints).then(result => {
           return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result));
         }).catch(() => null);
       } catch (e) {
@@ -99,6 +91,9 @@ export function uaDataToSUA(source, uaData) {
   }
   if (uaData.fullVersionList || uaData.brands) {
     sua.browsers = (uaData.fullVersionList || uaData.brands).map(({ brand, version }) => toBrandVersion(brand, version));
+  }
+  if (uaData.brands) {
+    sua.brands = uaData.brands.map(({ brand, version }) => toBrandVersion(brand, version));
   }
   if (typeof uaData['mobile'] !== 'undefined') {
     sua.mobile = uaData.mobile ? 1 : 0;
