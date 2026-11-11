@@ -5,6 +5,7 @@ import { server } from 'test/mocks/xhr.js';
 import {
   intentIqIdSubmodule,
   handleClientHints,
+  dep,
   firstPartyData as moduleFPD,
   isCMPStringTheSame, createPixelUrl, translateMetadata,
   initializeGlobalIIQ,
@@ -61,24 +62,12 @@ export const testClientHints = {
 function stubCHDeferred() {
   let resolve, reject;
   const p = new Promise((res, rej) => { resolve = res; reject = rej; });
-  const originalUAD = navigator.userAgentData;
-  const stub = sinon.stub(navigator, 'userAgentData').value({
-    ...originalUAD,
-    getHighEntropyValues: () => p
-  });
+  const stub = sinon.stub(dep, 'getHighEntropySUA').returns(p);
   return { resolve, reject, stub };
 }
 
 function stubCHReject(err = new Error('boom')) {
-  ensureUAData();
-  return sinon.stub(navigator.userAgentData, 'getHighEntropyValues')
-    .callsFake(() => Promise.reject(err));
-}
-
-function ensureUAData() {
-  if (!navigator.userAgentData) {
-    Object.defineProperty(navigator, 'userAgentData', { value: {}, configurable: true });
-  }
+  return sinon.stub(dep, 'getHighEntropySUA').callsFake(() => Promise.reject(err));
 }
 
 async function waitForClientHints() {
@@ -1296,10 +1285,7 @@ describe('IntentIQ tests', function () {
 
   it('should get and save client hints to storage', async () => {
     localStorage.clear();
-    Object.defineProperty(navigator, 'userAgentData', {
-      value: { getHighEntropyValues: async () => testClientHints },
-      configurable: true
-    });
+    sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
     intentIqIdSubmodule.getId(defaultConfigParams);
     await waitForClientHints();
 
@@ -1431,7 +1417,7 @@ describe('IntentIQ tests', function () {
 
   it('should clear CLIENT_HINTS from LS and NOT send uh when CH are not supported', async function () {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const uadStub = sinon.stub(navigator, 'userAgentData').value(undefined); // no CH-API
+    const uadStub = sinon.stub(dep, 'getHighEntropySUA').resolves(null);
     const cbSpy = sinon.spy();
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 0 } };
 
@@ -1478,9 +1464,7 @@ describe('IntentIQ tests', function () {
     localStorage.removeItem(CLIENT_HINTS_KEY);
     const expectedCH = handleClientHints(testClientHints);
 
-    let uadStub = sinon.stub(navigator, 'userAgentData').value({
-      getHighEntropyValues: async () => testClientHints
-    });
+    let uadStub = sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
 
     const blk = detectBrowser();
     const cfg = {
@@ -1505,10 +1489,7 @@ describe('IntentIQ tests', function () {
 
   it('blacklist: sends sync with uh when CH supported and ready', async () => {
     const expectedCH = handleClientHints(testClientHints);
-    Object.defineProperty(navigator, 'userAgentData', {
-      value: { getHighEntropyValues: async () => testClientHints },
-      configurable: true
-    });
+    sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
     const blk = detectBrowser();
     const cfg = {
       params: {
