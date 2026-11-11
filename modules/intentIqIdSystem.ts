@@ -365,8 +365,8 @@ export function setGamReporting(gamObjectReference: any, gamParameterName: strin
 }
 
 /**
- * Processes raw client hints data into a structured format.
- * @param {object} clientHints - Raw client hints data
+ * Converts shared SUA data into IntentIQ's encoded client hints.
+ * @param {object} sua - Structured user agent data from the shared accessor
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
 function suaToClientHints(sua: any): string {

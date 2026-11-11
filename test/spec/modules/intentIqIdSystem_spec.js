@@ -17,6 +17,7 @@ import { clearAllCookies } from '../../helpers/cookies.js';
 import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, PREBID, WITH_IIQ, WITHOUT_IIQ } from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import { decryptData } from '../../../libraries/intentIqUtils/cryptionUtils.js';
+import { highEntropySUAAccessor, SUA_SOURCE_HIGH_ENTROPY, uaDataToSUA } from '../../../src/fpd/sua.js';
 
 const partner = 10;
 const pai = '11';
@@ -59,15 +60,13 @@ export const testClientHints = {
   wow64: false
 };
 
-function stubCHDeferred() {
-  let resolve, reject;
-  const p = new Promise((res, rej) => { resolve = res; reject = rej; });
-  const stub = sinon.stub(dep, 'getHighEntropySUA').returns(p);
-  return { resolve, reject, stub };
-}
+const testSUA = uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, testClientHints);
 
-function stubCHReject(err = new Error('boom')) {
-  return sinon.stub(dep, 'getHighEntropySUA').callsFake(() => Promise.reject(err));
+function stubCHDeferred(stub) {
+  let resolve;
+  const p = new Promise(res => { resolve = res; });
+  stub.returns(p);
+  return { resolve };
 }
 
 async function waitForClientHints() {
@@ -131,6 +130,7 @@ describe('IntentIQ tests', function () {
   let sandbox;
   let logErrorStub;
   let clock;
+  let getHighEntropySUAStub;
   const testLSValue = {
     'date': Date.now(),
     'cttl': 2000,
@@ -159,6 +159,7 @@ describe('IntentIQ tests', function () {
     storage.setCookie(FIRST_PARTY_KEY, '', expiredDate, 'Lax');
     storage.setCookie(FIRST_PARTY_KEY + '_' + partner, '', expiredDate, 'Lax');
     sandbox = sinon.createSandbox();
+    getHighEntropySUAStub = sandbox.stub(dep, 'getHighEntropySUA').resolves(null);
     logErrorStub = sinon.stub(utils, 'logError');
     clock = sinon.useFakeTimers({ now: Date.now() });
     globalThis.__iiqClock = clock;
@@ -1283,15 +1284,37 @@ describe('IntentIQ tests', function () {
     });
   });
 
-  it('should get and save client hints to storage', async () => {
-    localStorage.clear();
-    sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
-    intentIqIdSubmodule.getId(defaultConfigParams);
+  [false, true].forEach(wow64 => {
+    it(`should preserve the client hint encoding with wow64=${wow64}`, async () => {
+      const rawHints = { ...testClientHints, wow64, model: wow64 ? 'Test device' : '' };
+      getHighEntropySUAStub.resolves(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, rawHints));
+      intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
+      await waitForClientHints();
+
+      const expectedClientHints = handleClientHints(rawHints);
+      expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedClientHints);
+      expect(server.requests[0].url).to.include(`&uh=${encodeURIComponent(expectedClientHints)}`);
+      expect(getHighEntropySUAStub.calledOnce).to.be.true;
+      expect(getHighEntropySUAStub.firstCall.args[0]).to.have.members([
+        'architecture', 'bitness', 'brands', 'fullVersionList', 'mobile', 'model', 'platform', 'platformVersion', 'wow64'
+      ]);
+    });
+  });
+
+  it('should omit withheld high entropy properties from the encoded hints', async () => {
+    const rawHints = { brands: testClientHints.brands, mobile: false, platform: 'Linux' };
+    getHighEntropySUAStub.resolves(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, rawHints));
+    intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
     await waitForClientHints();
 
     const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
-    const expectedClientHints = handleClientHints(testClientHints);
-    expect(savedClientHints).to.equal(expectedClientHints);
+    expect(JSON.parse(savedClientHints)).to.deep.equal({
+      '0': '"Not(A:Brand";v="24", "Chromium";v="122"',
+      '1': '?0',
+      '2': '"Linux"',
+      '8': '"Not(A:Brand";v="24", "Chromium";v="122"'
+    });
+    expect(server.requests[0].url).to.include(`&uh=${encodeURIComponent(savedClientHints)}`);
   });
 
   it('should add clientHints to the URL if provided', function () {
@@ -1365,10 +1388,10 @@ describe('IntentIQ tests', function () {
     expect(url).to.include('&isInTestGroup=');
   });
 
-  it('should sends uh from LS immediately and later updates LS with fresh CH', async () => {
+  it('should send uh from LS immediately and later update LS with fresh CH', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
     const callBackSpy = sinon.spy();
-    const { resolve, stub } = stubCHDeferred(); // Defer CH-API resolution
+    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
 
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 300 } };
     const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
@@ -1381,21 +1404,19 @@ describe('IntentIQ tests', function () {
     expect(server.requests.length).to.equal(1); // only one request sent
 
     // deliver fresh CH from the browser
-    resolve(testClientHints);
+    resolve(testSUA);
     await waitForClientHints();
 
     // LS must be updated; no extra network calls
     const expectedFresh = handleClientHints(testClientHints);
     expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
-
-    stub.restore();
   });
 
   it('should use cached uh immediately and clears LS on CH error (API supported)', async () => {
     const callBackSpy = sinon.spy();
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const chStub = stubCHReject(new Error('boom')); // CH API rejects
+    getHighEntropySUAStub.rejects(new Error('boom'));
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 200 } };
     const submoduleCallback = intentIqIdSubmodule.getId(cfg).callback;
     submoduleCallback(callBackSpy);
@@ -1411,13 +1432,10 @@ describe('IntentIQ tests', function () {
     const saved = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(saved === '' || saved === null).to.be.true;
     expect(server.requests.length).to.equal(1);
-
-    chStub.restore();
   });
 
-  it('should clear CLIENT_HINTS from LS and NOT send uh when CH are not supported', async function () {
-    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const uadStub = sinon.stub(dep, 'getHighEntropySUA').resolves(null);
+  it('should send without uh when client hints are unavailable and no hints are cached', async function () {
+    getHighEntropySUAStub.callsFake(highEntropySUAAccessor({}));
     const cbSpy = sinon.spy();
     const cfg = { params: { ...defaultConfigParams.params, chTimeout: 0 } };
 
@@ -1430,13 +1448,26 @@ describe('IntentIQ tests', function () {
     expect(req).to.exist;
     expect(req.url).to.not.include('&uh=');
     expect(saved === '' || saved === null).to.be.true;
+  });
 
-    uadStub.restore();
+  it('should clear cached hints and omit uh on subsequent requests when SUA resolves null', async () => {
+    localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
+    getHighEntropySUAStub.resolves(null);
+
+    intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
+    expect(server.requests[0].url).to.include('&uh=OLD_CH_VALUE');
+    await waitForClientHints();
+    expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(null);
+
+    intentIqIdSubmodule.getId(defaultConfigParams).callback(sinon.spy());
+    await waitForClientHints();
+    expect(server.requests).to.have.lengthOf(2);
+    expect(server.requests[1].url).to.not.include('&uh=');
   });
 
   it('blacklist: should use uh from LS immediately and updates LS when CH resolves', async () => {
     localStorage.setItem(CLIENT_HINTS_KEY, 'OLD_CH_VALUE');
-    const { resolve, stub } = stubCHDeferred(); // getHighEntropyValues returns pending promise
+    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
     const blk = detectBrowser();
     const cfg = { params: { ...defaultConfigParams.params, browserBlackList: blk, chTimeout: 50 } };
 
@@ -1449,22 +1480,20 @@ describe('IntentIQ tests', function () {
     expect(server.requests.length).to.equal(1);
 
     // Now deliver fresh CH from browser and wait for background handlers
-    resolve(testClientHints);
+    resolve(testSUA);
     await waitForClientHints();
 
     // LS updated, network not re-fired
     const expectedFresh = handleClientHints(testClientHints);
     expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedFresh);
     expect(server.requests.length).to.equal(1);
-
-    stub.restore();
   });
 
   it('blacklist: should send sync with uh when CH supported and ready', async () => {
     localStorage.removeItem(CLIENT_HINTS_KEY);
     const expectedCH = handleClientHints(testClientHints);
 
-    let uadStub = sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
+    getHighEntropySUAStub.resolves(testSUA);
 
     const blk = detectBrowser();
     const cfg = {
@@ -1483,30 +1512,33 @@ describe('IntentIQ tests', function () {
     expect(req.url).to.include('at=20');
     expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
     expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
-
-    uadStub.restore();
   });
 
-  it('blacklist: sends sync with uh when CH supported and ready', async () => {
+  it('blacklist: should send sync without uh on timeout and store hints when they arrive', async () => {
     const expectedCH = handleClientHints(testClientHints);
-    sinon.stub(dep, 'getHighEntropySUA').resolves(testClientHints);
+    const { resolve } = stubCHDeferred(getHighEntropySUAStub);
     const blk = detectBrowser();
     const cfg = {
       params: {
         ...defaultConfigParams.params,
         browserBlackList: blk,
-        chTimeout: 300
+        chTimeout: 10
       }
     };
 
     intentIqIdSubmodule.getId(cfg);
-    await waitForClientHints();
+    expect(server.requests).to.have.lengthOf(0);
+    await clock.tickAsync(11);
 
     const req = server.requests[0];
     expect(req).to.exist;
     expect(req.url).to.include('at=20');
-    expect(req.url).to.include(`&uh=${encodeURIComponent(expectedCH)}`);
+    expect(req.url).to.not.include('&uh=');
+
+    resolve(testSUA);
+    await waitForClientHints();
     expect(readData(CLIENT_HINTS_KEY, ['html5'])).to.equal(expectedCH);
+    expect(server.requests).to.have.lengthOf(1);
   });
 
   it('should return true if CMP strings are the same', function () {

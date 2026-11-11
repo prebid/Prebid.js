@@ -24,11 +24,19 @@ describe('uaDataToSUA', () => {
         mobile: true,
         model: 'mockModel',
         bitness: '64',
-        architecture: 'arm'
+        architecture: 'arm',
+        wow64: true
       };
       delete example[uaKey];
       const sua = uaDataToSUA(SUA_SOURCE_UNKNOWN, example);
       expect(sua.hasOwnProperty(suaKey)).to.be.false;
+    });
+  });
+
+  it('should preserve wow64=false as zero', () => {
+    expect(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, { wow64: false })).to.eql({
+      source: SUA_SOURCE_HIGH_ENTROPY,
+      wow64: 0
     });
   });
 
