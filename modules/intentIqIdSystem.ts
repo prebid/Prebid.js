@@ -10,7 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.ts';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.ts';
-import { isCHSupported } from '../libraries/intentIqUtils/chUtils.ts';
+import { getHighEntropySUA } from '../src/fpd/sua.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.ts';
 import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.ts';
 import {
@@ -367,6 +367,23 @@ export function setGamReporting(gamObjectReference: any, gamParameterName: strin
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
+function suaToClientHints(sua: any): string {
+  if (!sua) return '';
+
+  return handleClientHints({
+    fullVersionList: sua.browsers?.map(({ brand, version }: any) => ({
+      brand,
+      version: Array.isArray(version) ? version.join('.') : version
+    })),
+    mobile: Boolean(sua.mobile),
+    platform: sua.platform?.brand,
+    platformVersion: Array.isArray(sua.platform?.version) ? sua.platform.version.join('.') : sua.platform?.version,
+    architecture: sua.architecture,
+    bitness: sua.bitness,
+    model: sua.model
+  });
+}
+
 export function handleClientHints(clientHints: any): string {
   const chParams: Record<string, string> = {};
   for (const key in clientHints) {
@@ -531,13 +548,12 @@ export const intentIqIdSubmodule = {
 
     // Read client hints from storage
     clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
-    const chSupported = isCHSupported();
     let chPromise: Promise<string> | null = null;
 
     function fetchAndHandleCH(): Promise<string> {
-      return (navigator as any).userAgentData.getHighEntropyValues(CH_KEYS)
-        .then((raw: any) => {
-          const nextCH = handleClientHints(raw) || '';
+      return getHighEntropySUA(CH_KEYS)
+        .then((sua: any) => {
+          const nextCH = suaToClientHints(sua);
           const prevCH = clientHints || '';
           if (nextCH !== prevCH) {
             clientHints = nextCH;
@@ -555,15 +571,10 @@ export const intentIqIdSubmodule = {
         });
     }
 
-    if (chSupported) {
-      chPromise = fetchAndHandleCH();
-      chPromise.catch((err: any) => {
-        logError('fetchAndHandleCH failed', err);
-      });
-    } else {
-      clientHints = '';
-      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
-    }
+    chPromise = fetchAndHandleCH();
+    chPromise.catch((err: any) => {
+      logError('fetchAndHandleCH failed', err);
+    });
 
     function waitOnCH(timeoutMs: number): Promise<any> {
       const timeout = new Promise<string>(resolve => setTimeout(() => resolve(''), timeoutMs));
@@ -634,7 +645,7 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
-      if (chSupported) {
+      if (chPromise) {
         if (clientHints) {
           buildAndSendPixel(clientHints);
         } else {
@@ -818,7 +829,7 @@ export const intentIqIdSubmodule = {
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
       };
 
-      if (chSupported) {
+      if (chPromise) {
         if (clientHints) {
           // CH found in LS: send immediately; background fetch will refresh/clear later
           sendAjax(clientHints);
