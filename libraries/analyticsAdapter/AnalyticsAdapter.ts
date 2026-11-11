@@ -119,6 +119,12 @@ export type AnalyticsAdapterInstance<PROVIDER extends AnalyticsProvider = Analyt
   getUrl: () => string | undefined;
   enabled: boolean;
   _oldEnable?: (config?: AnalyticsConfig<PROVIDER>) => void;
+  /**
+   * Optional hook, called when the page is hidden or unloaded (`pagehide`, or `visibilitychange` to hidden),
+   * after events still waiting in the queue have been passed to `track`.
+   * Adapters that hold events (for example, to send them in batches) can use it to send them before the page goes away.
+   */
+  onPageHide?: () => void;
 };
 
 type AnalyticsAdapterConstructor = new <PROVIDER extends AnalyticsProvider>(options: AnalyticsAdapterOptions) => AnalyticsAdapterInstance<PROVIDER>;
@@ -136,8 +142,9 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
   let sampled = true;
   let provider: PROVIDER;
   let lastTrackedEvent = null;
+  let pageHideListener = null;
 
-  const emptyQueue = (() => {
+  const { emptyQueue, flushQueue } = (() => {
     let running = false;
     let timer;
     const clearQueue = () => {
@@ -167,12 +174,21 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
         }
       }
     };
-    return function () {
+    const cancelTimer = () => {
       if (timer != null) {
         clearTimeout(timer);
         timer = null;
       }
-      debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
+    };
+    return {
+      emptyQueue() {
+        cancelTimer();
+        debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
+      },
+      flushQueue() {
+        cancelTimer();
+        clearQueue();
+      }
     };
   })();
 
@@ -262,6 +278,22 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
             return [ev, handler];
           })
       );
+
+      // A navigation (such as a same-tab ad click) can unload the page before the debounce timer fires;
+      // send what's queued when the page is hidden.
+      pageHideListener = (ev: Event) => {
+        if (ev.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+        flushQueue();
+        if (typeof this.onPageHide === 'function') {
+          try {
+            this.onPageHide();
+          } catch (e) {
+            logError(`${provider} analytics: error in onPageHide`, e);
+          }
+        }
+      };
+      window.addEventListener('pagehide', pageHideListener);
+      document.addEventListener('visibilitychange', pageHideListener);
     } else {
       logMessage(`Analytics adapter for "${global}" disabled by sampling`);
     }
@@ -278,6 +310,11 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
     Object.entries(handlers || {}).forEach(([event, handler]: any) => {
       events.off(event, handler);
     });
+    if (pageHideListener != null) {
+      window.removeEventListener('pagehide', pageHideListener);
+      document.removeEventListener('visibilitychange', pageHideListener);
+      pageHideListener = null;
+    }
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
     enabled = false;
   }

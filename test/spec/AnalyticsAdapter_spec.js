@@ -284,6 +284,7 @@ describe('Analytics asynchronous event tracking', () => {
   let adapter, clock;
 
   beforeEach(() => {
+    clearEvents();
     clock = sinon.useFakeTimers();
     adapter = new AnalyticsAdapter(adapterConfig);
     adapter.track = sinon.stub();
@@ -291,7 +292,16 @@ describe('Analytics asynchronous event tracking', () => {
   });
 
   afterEach(() => {
+    adapter.disableAnalytics();
     clock.restore();
+  });
+
+  function setVisibility(state) {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+  }
+
+  afterEach(() => {
+    delete document.visibilityState;
   });
 
   it('does not call track as long as events are coming', () => {
@@ -306,5 +316,48 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledTwice(adapter.track);
     sinon.assert.calledWith(adapter.track.firstCall, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
+  });
+
+  describe('when the page is hidden', () => {
+    it('tracks queued events on pagehide, without waiting for the debounce delay', () => {
+      events.emit(BID_WON, { i: 0 });
+      sinon.assert.notCalled(adapter.track);
+      window.dispatchEvent(new Event('pagehide'));
+      sinon.assert.calledOnce(adapter.track);
+      sinon.assert.calledWith(adapter.track, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
+      clock.tick(200);
+      sinon.assert.calledOnce(adapter.track);
+    });
+
+    it('tracks queued events when visibility changes to hidden', () => {
+      events.emit(BID_WON, { i: 0 });
+      setVisibility('hidden');
+      document.dispatchEvent(new Event('visibilitychange'));
+      sinon.assert.calledOnce(adapter.track);
+    });
+
+    it('keeps waiting when visibility changes to visible', () => {
+      events.emit(BID_WON, { i: 0 });
+      setVisibility('visible');
+      document.dispatchEvent(new Event('visibilitychange'));
+      sinon.assert.notCalled(adapter.track);
+      clock.tick(100);
+      sinon.assert.calledOnce(adapter.track);
+    });
+
+    it('calls onPageHide after tracking queued events', () => {
+      adapter.onPageHide = sinon.stub();
+      events.emit(BID_WON, { i: 0 });
+      window.dispatchEvent(new Event('pagehide'));
+      sinon.assert.calledOnce(adapter.onPageHide);
+      sinon.assert.callOrder(adapter.track, adapter.onPageHide);
+    });
+
+    it('stops listening once disabled', () => {
+      adapter.onPageHide = sinon.stub();
+      adapter.disableAnalytics();
+      window.dispatchEvent(new Event('pagehide'));
+      sinon.assert.notCalled(adapter.onPageHide);
+    });
   });
 });
