@@ -193,8 +193,12 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
 
     if (extend) {
       if (pixelUrl) {
-        const callback = queuePixelCallback(pixelUrl, storedId as string);
-        return { callback: callback };
+        // Complete the callback once the pixel settles so the User ID module's batch (and
+        // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
+        // would have the User ID module re-store it, overwriting the server-set cookie from script.
+        return {
+          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined))()
+        };
       } else {
         return { id: storedId };
       }

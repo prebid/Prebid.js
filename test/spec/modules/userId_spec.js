@@ -402,6 +402,29 @@ describe('User ID', function () {
       }]);
     });
 
+    it('Extend cookie with pixelUrl: getUserIdsAsync resolves once the pixel loads', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { extend: true, pixelUrl: '/any/pubcid/url' });
+      // run submodule callbacks right away instead of after the first auction
+      customConfig.userSync.auctionDelay = 10;
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => setTimeout(done));
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+
+        const ids = await Promise.race([
+          getGlobal().getUserIdsAsync(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+        ]);
+        expect(ids).to.eql({ pubcid: 'altpubcid200000' });
+        sinon.assert.calledOnce(triggerPixel);
+        expect(triggerPixel.firstCall.args[0]).to.include('/any/pubcid/url');
+      } finally {
+        triggerPixel.restore();
+      }
+    });
+
     it('First visit with pixelUrl: the cookie the server sets is not rewritten from script after the pixel', async function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', { pixelUrl: '/any/pubcid/url' });
