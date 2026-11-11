@@ -378,7 +378,8 @@ function suaToClientHints(sua: any): string {
       brand,
       version: Array.isArray(version) ? version.join('.') : version
     }));
-  } else if (sua.browsers) {
+  }
+  if (sua.browsers) {
     clientHints.fullVersionList = sua.browsers.map(({ brand, version }: any) => ({
       brand,
       version: Array.isArray(version) ? version.join('.') : version
