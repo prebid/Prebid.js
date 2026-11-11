@@ -41,14 +41,11 @@ user syncs.
 
 Requests use the fixed HTTPS QA endpoint
 `https://ssp-api.qa.web3lge.com/v1/prebid/bids`.
-Endpoint overrides are not supported.
 
-Requests send a JSON body with `Content-Type: text/plain` and no custom headers.
-The body field `publisherId` is the only publisher integration key;
-`X-App-Key` is not used and cannot replace a missing `publisherId`.
-The SSP must allow the page origin through CORS and return
-`Access-Control-Allow-Credentials: true`. Deploy SSP support for this body-only
-contract before using this adapter version. Responses remain JSON.
+Requests send a JSON body with `Content-Type: text/plain`. The `publisherId`
+body field contains the publisher integration key. Responses use JSON.
+Configure LINA SSP CORS to allow the page origin and return
+`Access-Control-Allow-Credentials: true`.
 
 Transaction ID sharing is optional. The adapter preserves shared
 `ortb2.source.tid` and `ortb2Imp.ext.tid` values and leaves missing TIDs unset.
@@ -77,10 +74,8 @@ for `timeoutMs`.
 
 # Test Parameters
 
-The IDs below are defined by the mandatory LINA SSP official inventory Seed.
-All four placements belong to the same publisher and site. Before submission,
-apply the Seed to the deployed endpoint, verify creative supply for every
-format. Seed definitions alone do not guarantee deployed Bid responses.
+Use the following IDs with the test Ad Unit examples below. All four
+placements belong to the same publisher and site.
 
 | Parameter | Test Value | Applies To |
 | --- | --- | --- |
