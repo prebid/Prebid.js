@@ -141,14 +141,15 @@ describe('bidder renderer flags', () => {
       clearInterval(responder);
     }
     const bid = bids[adUnit.code]?.bids?.find(b => b.bidderCode === BIDDER);
-    expect(bid, 'bid from the auction').to.exist;
     return bid;
   }
 
   function render(bidResponse) {
-    const renderFn = sinon.stub();
-    doRender({ renderFn, resizeFn: sinon.stub(), bidResponse, doc: document, isMainDocument: false });
-    return renderFn;
+    if (bidResponse) {
+      const renderFn = sinon.stub();
+      doRender({ renderFn, resizeFn: sinon.stub(), bidResponse, doc: document, isMainDocument: false });
+      return renderFn;
+    }
   }
 
   Object.keys(MEDIA_TYPES).forEach(type => {

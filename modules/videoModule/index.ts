@@ -427,7 +427,7 @@ function videoRenderHook(next, args) {
 }
 
 function isRendererAllowedHook(next, type, bidder, mediaType, adUnit, bidResponse) {
-  if (mediaType === VIDEO && adUnit.video) {
+  if (mediaType === VIDEO && adUnit?.video) {
     if (bidResponse?.[type] != null) {
       logWarn(`Ignoring bidder-provided ${type}: rendering is managed by the video module (adUnit.video is set)`, { bidResponse, adUnit });
     }
@@ -437,11 +437,11 @@ function isRendererAllowedHook(next, type, bidder, mediaType, adUnit, bidRespons
   }
 }
 
-function videoBidRequiresRendererHook(next, adUnit) {
+function videoBidRequiresRendererHook(next, videoMediaType, adUnit) {
   if (adUnit?.video) {
     next.bail(false);
   } else {
-    next(adUnit);
+    next(videoMediaType, adUnit);
   }
 }
 

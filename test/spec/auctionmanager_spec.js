@@ -108,7 +108,7 @@ function mockBidRequest(bid, opts) {
     },
     video: {
       context: 'outstream',
-      renderer: {}
+      renderer: { render() {} }
     }
   };
   const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
@@ -1666,6 +1666,7 @@ describe('auctionmanager.js', function () {
           render: (bid) => bid
         };
         Object.assign(adUnits[0], { renderer });
+        delete bidderRequests[0].bids[0].mediaTypes.video.renderer;
 
         const bids1 = Object.assign({},
           bids[0],

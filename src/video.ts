@@ -146,8 +146,8 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
     return !!(bid.vastUrl || bid.vastXml);
   }
 
-  // outstream bids require a renderer on the bid or pub-defined on adunit
-  if (videoBidRequiresRenderer(adUnit)) {
+  if (videoBidRequiresRenderer(videoMediaType, adUnit)) {
+    // outstream bids, by default, require a renderer on the bid or pub-defined on adunit
     const bidRequest = index.getBidRequest(bid);
     return (
       isRendererAllowed('safeRenderer', bid.bidderCode, VIDEO, adUnit) && (
@@ -162,8 +162,8 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
   return true;
 }
 
-export const videoBidRequiresRenderer = hook('sync', (adUnit: AdUnit) => {
-  return adUnit.mediaTypes?.video?.context === OUTSTREAM && !adUnit.mediaTypes?.video?.useCacheKey;
+export const videoBidRequiresRenderer = hook('sync', (videoMediaType: VideoMediaType, adUnit: AdUnit) => {
+  return videoMediaType?.context === OUTSTREAM && !videoMediaType?.useCacheKey;
 });
 
 declare module './bidfactory' {
