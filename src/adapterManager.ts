@@ -344,7 +344,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
                   renderer: rendererAllowed &&
                     getRendererDef('renderer', false, bid, mediaTypeDef, adUnit) == null &&
                     // any safeRenderer will be used over a bidder-provided renderer
-                    getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) == null,
+                    !(safeRendererAllowed && getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) != null),
                   safeRenderer: safeRendererAllowed &&
                     getRendererDef('safeRenderer', false, bid, mediaTypeDef, adUnit) == null,
                 }

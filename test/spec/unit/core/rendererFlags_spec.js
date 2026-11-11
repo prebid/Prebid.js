@@ -7,6 +7,7 @@ import { config } from 'src/config.js';
 import { Renderer } from 'src/Renderer.js';
 import { doRender } from 'src/adRendering.js';
 import { server } from 'test/mocks/xhr.js';
+import { isRendererAllowed } from 'src/utils/renderers.ts';
 
 const BIDDER = 'rendererFlagsBidder';
 const ENDPOINT = 'https://renderer-flags.example/bid';
@@ -54,6 +55,7 @@ const CASES = [
 
   { name: 'allowTopWindowRenderers: false', config: { allowTopWindowRenderers: false }, expected: { renderer: false, safeRenderer: true } },
   { name: 'allowTopWindowRenderers: false, for this bidder', bidderConfig: { allowTopWindowRenderers: false }, expected: { renderer: false, safeRenderer: true } },
+  { name: 'safeRenderer disallowed, with adUnit.safeRenderer', disallowSafeRenderer: true, adUnit: { safeRenderer: pubSafeRenderer() }, expected: { renderer: true, safeRenderer: false } },
   { name: 'allowTopWindowRenderers: false, overridden for this bidder', config: { allowTopWindowRenderers: false }, bidderConfig: { allowTopWindowRenderers: true }, expected: { renderer: true, safeRenderer: true } },
 
   { name: 'videoModule (adUnit.video)', only: 'video', adUnit: { video: { divId: 'player' } }, expected: { renderer: false, safeRenderer: false } },
@@ -116,6 +118,14 @@ describe('bidder renderer flags', () => {
     config.resetConfig();
   });
 
+  function disallowSafeRendererHook(next, type, ...args) {
+    if (type === 'safeRenderer') {
+      next.bail(false);
+    } else {
+      next(type, ...args);
+    }
+  }
+
   function makeAdUnit(type, tc) {
     const { mediaTypes: _, ...adUnitProps } = tc.adUnit ?? {};
     return {
@@ -161,6 +171,14 @@ describe('bidder renderer flags', () => {
               sandbox.stub(getGlobal().videoModule, 'renderBid');
             });
           }
+          if (tc.disallowSafeRenderer) {
+            beforeEach(() => {
+              isRendererAllowed.before(disallowSafeRendererHook);
+            });
+            afterEach(() => {
+              isRendererAllowed.getHooks({ hook: disallowSafeRendererHook }).remove();
+            });
+          }
 
           it(`renders as expected (renderer ${tc.expected.renderer ? 'runs' : 'does not run'}, safeRenderer ${tc.expected.safeRenderer ? 'runs' : 'does not run'})`, async () => {
             adapterSets = 'renderer';
@@ -169,7 +187,7 @@ describe('bidder renderer flags', () => {
 
             adapterSets = 'safeRenderer';
             const renderFn = render(await runAuction(type, tc));
-            const ranSafeRenderer = renderFn.called && renderFn.args[0][0].safeRenderer?.url === BIDDER_SAFE_URL;
+            const ranSafeRenderer = !!renderFn?.called && renderFn.args[0][0].safeRenderer?.url === BIDDER_SAFE_URL;
             expect(ranSafeRenderer, 'bidder safeRenderer ran').to.equal(tc.expected.safeRenderer);
           });
 
