@@ -434,8 +434,14 @@ describe('video.js', function () {
         expect(isValidVideoBid(bid, { index })).to.be.false;
       });
 
-      it('is valid if managed by the video module', () => {
+      it('is invalid if managed by the video module but has no VAST', () => {
         adUnits[0].video = true;
+        expect(isValidVideoBid(bid, { index })).to.be.false;
+      });
+
+      it('is valid if managed by the video module and has VAST', () => {
+        adUnits[0].video = true;
+        bid.vastUrl = 'https://vast.example';
         expect(isValidVideoBid(bid, { index })).to.be.true;
       });
     });

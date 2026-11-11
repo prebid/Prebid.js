@@ -121,13 +121,13 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
  */
 export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } = {}): boolean {
   const videoMediaType = index.getMediaTypes(bid)?.video;
-  const context = videoMediaType && videoMediaType?.context;
-  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  if (videoMediaType == null) return true;
+  const { context, useCacheKey } = videoMediaType;
   const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
-  if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
+  if (useCacheKey || context !== OUTSTREAM) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl && videoMediaType.cache !== false) {
@@ -142,8 +142,6 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
       `);
       return false;
     }
-
-    return !!(bid.vastUrl || bid.vastXml);
   }
 
   if (videoBidRequiresRenderer(videoMediaType, adUnit)) {
@@ -158,8 +156,9 @@ export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } 
         bid.renderer != null || getRendererDef('renderer', true, bidRequest, videoMediaType, adUnit) != null
       )
     );
+  } else {
+    return !!(bid.vastUrl || bid.vastXml);
   }
-  return true;
 }
 
 export const videoBidRequiresRenderer = hook('sync', (videoMediaType: VideoMediaType, adUnit: AdUnit) => {
