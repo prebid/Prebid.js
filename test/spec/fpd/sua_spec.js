@@ -182,7 +182,6 @@ describe('uaDataToSUA', () => {
           ]
         }
       ]
-      ]
     });
   });
 });
