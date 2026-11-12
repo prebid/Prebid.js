@@ -731,6 +731,11 @@ export const spec = {
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 
+    if (isEmpty(filteredBidRequests)) {
+      logWarn('buildRequests: all bids were filtered out by mode; returning no requests');
+      return [];
+    }
+
     if (getConfigValue(bidderRequest, 'singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, filteredBidRequests[0]);
       filteredBidRequests.forEach(bid => {
