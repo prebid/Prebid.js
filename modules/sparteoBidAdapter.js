@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./sparteoBidAdapter.d.ts').SparteoBidParams} SparteoBidParams
  */
 
 const BIDDER_CODE = 'sparteo';
