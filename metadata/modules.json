@@ -5249,13 +5249,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "mgidX",
-      "aliasOf": null,
-      "gvlid": 358,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "minutemedia",
       "aliasOf": null,
       "gvlid": 918,
