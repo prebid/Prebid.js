@@ -77,6 +77,11 @@ export const fabrick: UserIdConfig<'fabrickId'> = {
   },
   storage: { name: 'pbjs_fabrickId', type: 'cookie', expires: 7 },
 };
+// the request query string takes numbers and mixed arrays as well as strings
+export const fabrickNumericParams: UserIdConfig<'fabrickId'> = {
+  name: 'fabrickId',
+  params: { apiKey: '123456789', iab1: 1, iab2: [2, '3'] },
+};
 // @ts-expect-error apiKey is required
 export const fabrickNoApiKey: UserIdConfig<'fabrickId'> = { name: 'fabrickId', params: { e: 'abc' } };
 

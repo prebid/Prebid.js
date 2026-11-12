@@ -4,7 +4,7 @@ import type {} from './userId/spec.js';
 /**
  * A value appended to the Fabrick ID request query string. Arrays add one query parameter per entry.
  */
-export type FabrickIdParamValue = string | string[];
+export type FabrickIdParamValue = string | number | (string | number)[];
 
 export interface FabrickIdParams {
   /**
