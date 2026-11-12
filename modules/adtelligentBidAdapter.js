@@ -13,6 +13,7 @@ import { getPlacementPositionUtils } from "../libraries/placementPositionInfo/pl
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('./adtelligentBidAdapter.d.ts').AdtelligentBidParams} AdtelligentBidParams
  */
 
 const subdomainSuffixes = ['', 1, 2];
