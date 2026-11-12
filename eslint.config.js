@@ -375,4 +375,13 @@ module.exports = [
       ],
       }
   },
+  {
+    files: ['schema/**/*.d.ts'],
+    rules: {
+      // named, empty interfaces are what gives generated JSON schema definitions their names
+      '@typescript-eslint/no-empty-object-type': ['error', {allowInterfaces: 'with-single-extends'}],
+      // typescript-json-schema reads JSON schema keywords from JSDoc tags
+      'jsdoc/check-tag-names': 'off',
+    }
+  },
   ]

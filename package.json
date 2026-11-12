@@ -34,7 +34,8 @@
     "./metadata/*.json": "./metadata/modules/*.json",
     "./metadata/*": "./dist/src/metadata/modules/*.js",
     "./customize/*.mjs": "./customize/*.mjs",
-    "./customize/*": "./customize/*.mjs"
+    "./customize/*": "./customize/*.mjs",
+    "./schema/*": "./dist/schema/*"
   },
   "scripts": {
     "build": "gulp build",
@@ -139,8 +140,9 @@
     "resolve-from": "^5.0.0",
     "sinon": "^22.0.0",
     "terser-webpack-plugin": "^5.6.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.26.1",
+    "typescript-json-schema": "0.68.0",
     "typescript-min": "npm:typescript@5.7.2",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",

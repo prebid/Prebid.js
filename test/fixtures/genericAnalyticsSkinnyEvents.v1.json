@@ -39,7 +39,16 @@
     },
     "floorData": {
       "floorValue": 1,
-      "floorCurrency": "USD"
+      "floorRule": "banner|*",
+      "floorRuleValue": 1,
+      "floorCurrency": "USD",
+      "cpmAfterAdjustments": 1.5,
+      "enforcements": {
+        "enforceJS": true
+      },
+      "matchedFields": {
+        "mediaType": "banner"
+      }
     },
     "requestTimestamp": 1000,
     "responseTimestamp": 1200,
@@ -78,7 +87,16 @@
     },
     "floorData": {
       "floorValue": 1,
-      "floorCurrency": "USD"
+      "floorRule": "banner|*",
+      "floorRuleValue": 1,
+      "floorCurrency": "USD",
+      "cpmAfterAdjustments": 1.5,
+      "enforcements": {
+        "enforceJS": true
+      },
+      "matchedFields": {
+        "mediaType": "banner"
+      }
     },
     "requestTimestamp": 1000,
     "responseTimestamp": 1200,

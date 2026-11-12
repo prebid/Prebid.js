@@ -263,9 +263,8 @@ export function bidTimeout(args: BidTimeoutInput | (Record<number, NoBidInput> &
  * in `src/events`, these describe what the generic analytics handler receives
  * after the skinny event formatter has run.
  *
- * This discriminated union can be narrowed on `eventType`; the matching JSON
- * Schema lives in genericAnalyticsSkinnyEvents.v1.schema.json. Changing this
- * shape incompatibly requires a new schema version.
+ * This discriminated union can be narrowed on `eventType`. The JSON Schema is generated from it
+ * (schema/genericAnalyticsSkinnyEvents.v1.d.ts); changing it incompatibly requires a new schema version.
  */
 export type SkinnyEventPayloads = {
   [EVENTS.NO_BID]: SkinnyNoBid;

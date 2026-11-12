@@ -37,7 +37,8 @@ Every payload also includes `eventType` (the name of the event) and `analyticsLa
 
 The built-in preset emits five JSON event shapes. Their versioned contract is published alongside this module:
 
-- [JSON Schema v1](genericAnalyticsSkinnyEvents.v1.schema.json) for collectors and other non-TypeScript consumers.
+- JSON Schema v1, `prebid.js/schema/genericAnalyticsSkinnyEvents.v1.schema.json` in the NPM package, for collectors
+  and other non-TypeScript consumers. It is generated from the TypeScript types by `gulp build`.
 - TypeScript exports `SkinnyEventPayload` (a discriminated union),
   `SkinnyEventPayloads` (event-name-to-payload mapping), and `SkinnyEventType`,
   plus the per-event types from `genericAnalyticsSkinnyEvents.ts`.
@@ -58,12 +59,22 @@ and `ortb2Imp` at individual bid-request level. For stored-impression requests
 sent to Prebid Server, the bidder request's `bidderCode` and individual bids'
 `bidder` may be `null` rather than a bidder name.
 
-Nested OpenRTB fields are not separately reinvented in TypeScript: `ortb2` comes from `DeepPartial<ORTBRequest>` and `ortb2Imp` from `DeepPartial<ORTBImp>` in Prebid's shared OpenRTB 2.6 definitions (`src/types/ortb/request.d.ts`, wrapping `iab-openrtb/v26`). Compile-time assertions in `test/types/skinnyAnalyticsEvents.ts` enforce these relationships. The JSON Schema remains deliberately permissive within these extension-bearing nested objects; it does not validate every OpenRTB field at runtime.
+Nested OpenRTB objects (`ortb2`, `ortb2Imp`) are described by separate schemas, `schema/ortb2/request.schema.json`
+and `schema/ortb2/imp.schema.json`, which the event schema references with `$ref`. They validate the fields
+OpenRTB 2.6 declares and accept any other field. To skip OpenRTB validation, register a permissive schema
+under their `$id` instead, e.g. with Ajv:
+
+```javascript
+['ortb2/request.schema.json', 'ortb2/imp.schema.json'].forEach(file => ajv.addSchema({ $id: `${baseUrl}${file}` }));
+```
+
+where `baseUrl` is the location of the event schema's `$id`. `ortb2` and `ortb2Imp` must still be objects.
+The schemas use union types (`"type": ["string", "number"]`), which Ajv's strict mode rejects unless `allowUnionTypes` is set.
 
 The wire contract is regression-tested by two existing CI suites: browser tests
 compare the five formatter outputs after `JSON.stringify`/`JSON.parse` with
 `test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
-tests validate those same fixtures against this JSON Schema using Ajv 2020.
+tests validate those same fixtures against the generated JSON Schema using Ajv 2020.
 This catches output changes independently of schema edits and rejects
 unknown event types or fields with incorrect types.
 

@@ -105,7 +105,15 @@ describe('Generic analytics skinny events', () => {
       dealId: 'deal',
       meta: { advertiserDomains: ['example.com'] },
       adserverTargeting: { hb_pb: '1.50' },
-      floorData: { floorValue: 1, floorCurrency: 'USD' },
+      floorData: {
+        floorValue: 1,
+        floorRule: 'banner|*',
+        floorRuleValue: 1,
+        floorCurrency: 'USD',
+        cpmAfterAdjustments: 1.5,
+        enforcements: { enforceJS: true },
+        matchedFields: { mediaType: 'banner' }
+      },
       requestTimestamp: 1000,
       responseTimestamp: 1200,
       timeToRespond: 200,
