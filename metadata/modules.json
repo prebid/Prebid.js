@@ -2817,13 +2817,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "smoot",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "tqblz_demo",
       "aliasOf": null,
       "gvlid": null,
