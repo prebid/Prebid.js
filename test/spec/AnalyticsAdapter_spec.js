@@ -274,11 +274,12 @@ FEATURE: Analytics Adapters API
 });
 
 describe('Analytics asynchronous event tracking', () => {
+  let previousDelay;
   before(() => {
-    setDebounceDelay(100);
+    previousDelay = setDebounceDelay(100);
   });
   after(() => {
-    setDebounceDelay(0);
+    setDebounceDelay(previousDelay);
   });
 
   let adapter, clock;
@@ -293,6 +294,7 @@ describe('Analytics asynchronous event tracking', () => {
 
   afterEach(() => {
     adapter.disableAnalytics();
+    clearEvents();
     clock.restore();
   });
 
@@ -316,6 +318,43 @@ describe('Analytics asynchronous event tracking', () => {
     sinon.assert.calledTwice(adapter.track);
     sinon.assert.calledWith(adapter.track.firstCall, sinon.match({ eventType: BID_WON, args: { i: 0 } }));
     sinon.assert.calledWith(adapter.track.secondCall, sinon.match({ eventType: BID_WON, args: { i: 1 } }));
+  });
+
+  it('does not call track for queued events after being disabled', () => {
+    events.emit(BID_WON, { i: 0 });
+    adapter.disableAnalytics();
+    clock.tick(200);
+    sinon.assert.notCalled(adapter.track);
+  });
+
+  it('does not replay events discarded on disable when enabled again', () => {
+    events.emit(BID_WON, { i: 0 });
+    adapter.disableAnalytics();
+    adapter.enableAnalytics({});
+    clock.tick(200);
+    sinon.assert.notCalled(adapter.track);
+  });
+
+  it('does not call track for an event whose own dispatch disabled the adapter', () => {
+    const disable = () => adapter.disableAnalytics();
+    adapter.disableAnalytics();
+    events.on(BID_WON, disable); // registered before the adapter's listener, so it runs first
+    try {
+      adapter.enableAnalytics({});
+      events.emit(BID_WON, { i: 0 });
+    } finally {
+      events.off(BID_WON, disable);
+    }
+    clock.tick(200);
+    sinon.assert.notCalled(adapter.track);
+  });
+
+  it('keeps an adapter\'s own enableAnalytics when disabled before being enabled', () => {
+    const other = new AnalyticsAdapter(adapterConfig);
+    const ownEnable = sinon.stub();
+    other.enableAnalytics = ownEnable;
+    other.disableAnalytics();
+    expect(other.enableAnalytics).to.equal(ownEnable);
   });
 
   it('does not track queued events on pagehide unless the adapter opts in', () => {

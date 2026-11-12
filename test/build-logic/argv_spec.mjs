@@ -62,6 +62,16 @@ describe('build CLI argument parsing', () => {
     expect(parse('--no-coverage', '--coverage=false')).to.eql({ coverage: 'false' });
   });
 
+  it('does not interpret extra leading dashes as valid boolean flags', () => {
+    expect(parse('---nolint')).to.eql({ '-nolint': true });
+    expect(parse('---no-coverage')).to.eql({ '-no-coverage': true });
+    expect(parse('----no-fetch')).to.eql({ '--no-fetch': true });
+    expect(parse('---nolint', '--no-coverage')).to.eql({
+      '-nolint': true,
+      coverage: false,
+    });
+  });
+
   it('does not negate misspelled flags', () => {
     expect(parse('--no-COVERAGE')).to.eql({ 'no-COVERAGE': true });
     expect(parse('--no-sourcemaps')).to.eql({ 'no-sourcemaps': true });

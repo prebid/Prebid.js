@@ -3,9 +3,11 @@ import { endLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from '../../src/ut
 // rects are cached for the current layout epoch, together with getWinDimensions(), so the two can be
 // combined; see src/utils/layoutEpoch.js
 let cache = new WeakMap();
+let dimensionCache = new WeakMap();
 
 onLayoutEpochEnd(() => {
   cache = new WeakMap();
+  dimensionCache = new WeakMap();
 });
 
 export function clearCache() {
@@ -24,4 +26,13 @@ export function getBoundingClientRect(element) {
   }
 
   return clientRect;
+}
+
+// Preserve the untransformed, integer border-box dimensions of offsetWidth/offsetHeight.
+export function getElementDimensions(element) {
+  if (!dimensionCache.has(element)) {
+    startLayoutEpoch();
+    dimensionCache.set(element, { width: element.offsetWidth, height: element.offsetHeight });
+  }
+  return dimensionCache.get(element);
 }

@@ -7,7 +7,7 @@
 	<title>Prebid.js same-tab click test</title>
 
 	<!-- Prebid.js -->
-	<script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=genericAnalyticsAdapter"></script>
+	<script async src="http://localhost:4444/bundle?modules=msftBidAdapter&modules=genericAnalyticsAdapter"></script>
 
 	<script>
 		var pbjs = pbjs || {};
@@ -16,7 +16,7 @@
 		var RUN = new URLSearchParams(window.location.search).get('run');
 		var SERVER = 'http://' + window.location.hostname + ':4444';
 
-		// same ad units as banner.html, so the fake appnexus server returns its banner fixture
+		// same ad units as banner.html, so the fake msft server returns its banner fixture
 		const adUnits = [{
 			code: 'div-gpt-ad-1460505748561-0',
 			mediaTypes: {
@@ -25,9 +25,9 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13144370
+					placement_id: 13144370
 				}
 			}]
 		}, {
@@ -38,9 +38,9 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13144370
+					placement_id: 13144370
 				}
 			}]
 		}];

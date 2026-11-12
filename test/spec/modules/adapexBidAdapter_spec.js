@@ -675,24 +675,19 @@ describe('adapexBidAdapter', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, undefined)).to.be.empty;
     });
 
-    it('serves the server-baked iframe sync from sync.adapex.io, keeping path and query', function () {
+    it('serves the server-baked iframe sync unchanged', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: BOTH })]);
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=iframe' }]);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: SERVER_IFRAME }]);
     });
 
     it('picks the image entry when only pixels are enabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, [response({ sync: BOTH })]);
-      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
+      expect(syncs).to.deep.equal([{ type: 'image', url: SERVER_IMAGE }]);
     });
 
     it('falls back to any enabled entry when the preferred type is absent', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: [{ type: 'image', url: SERVER_IMAGE }] })]);
-      expect(syncs).to.deep.equal([{ type: 'image', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=image' }]);
-    });
-
-    it('leaves an already-Adapex URL unchanged', function () {
-      const url = 'https://sync.adapex.io/sync?seat=Gmtb';
-      expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url }] })])[0].url).to.equal(url);
+      expect(syncs).to.deep.equal([{ type: 'image', url: SERVER_IMAGE }]);
     });
 
     it('never reads the sync header: a no-bid without body sync emits nothing', function () {
@@ -712,7 +707,7 @@ describe('adapexBidAdapter', function () {
       expect(headerReads).to.equal(0);
     });
 
-    it('rejects non-HTTPS sync URLs before pinning the origin', function () {
+    it('rejects non-HTTPS sync URLs', function () {
       ['javascript:alert(1)', 'data:text/plain,hello', 'http://px-us-e.floxis.tech/sync'].forEach((url) => {
         expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync: [{ type: 'iframe', url }] })])).to.be.empty;
       });
@@ -721,7 +716,7 @@ describe('adapexBidAdapter', function () {
     it('uses the next usable sync when the preferred entry has an invalid URL', function () {
       const sync = [{ type: 'iframe', url: 'not a url' }, ...BOTH];
       expect(spec.getUserSyncs({ iframeEnabled: true }, [response({ sync })])).to.deep.equal([
-        { type: 'iframe', url: 'https://sync.adapex.io/sync?seat=Gmtb&gdpr=1&type=iframe' }
+        { type: 'iframe', url: SERVER_IFRAME }
       ]);
     });
 
@@ -730,21 +725,16 @@ describe('adapexBidAdapter', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [noBid])).to.have.lengthOf(1);
     });
 
-    it('emits one sync per seat and dedupes URLs that rewrite to the same Adapex URL', function () {
+    it('emits one sync per seat and dedupes identical URLs', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [
         response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Gmtb' }] }),
-        response({ sync: [{ type: 'iframe', url: 'https://px-eu.floxis.tech/sync?seat=Gmtb' }] }),
+        response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Gmtb' }] }),
         response({ sync: [{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Seat2' }] })
       ]);
       expect(syncs.map((s) => s.url)).to.deep.equal([
-        'https://sync.adapex.io/sync?seat=Gmtb',
-        'https://sync.adapex.io/sync?seat=Seat2'
+        'https://px-us-e.floxis.tech/sync?seat=Gmtb',
+        'https://px-us-e.floxis.tech/sync?seat=Seat2'
       ]);
-    });
-
-    it('never emits a floxis.tech sync', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [response({ sync: BOTH })]);
-      syncs.forEach((s) => expect(s.url).to.not.include('floxis'));
     });
   });
 

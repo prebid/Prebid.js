@@ -1,7 +1,11 @@
 import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule/index.js';
+import { tracker, videoImpressionVerifierFactory } from 'modules/videoModule/videoImpressionVerifier.js';
+import * as utils from 'src/utils.js';
 import { EVENTS } from 'src/constants.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { stubAuctionIndex } from '../../../helpers/indexStub.js';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -16,6 +20,7 @@ let gamSubmoduleFactoryMock;
 let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
 let adQueueCoordinatorMock;
+let bidTrackerMock;
 
 function resetTestVars() {
   ortbVideoMock = {};
@@ -62,9 +67,14 @@ function resetTestVars() {
     registerProvider: sinon.spy(),
     queueAd: sinon.spy()
   };
+
+  bidTrackerMock = {
+    store: sinon.spy(),
+    remove: sinon.spy()
+  };
 }
 
-const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {
+const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator, bidTracker) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
@@ -74,7 +84,8 @@ const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, v
     videoEvents || videoEventsMock,
     gamSubmoduleFactory || gamSubmoduleFactoryMock,
     videoImpressionVerifierFactory || videoImpressionVerifierFactoryMock,
-    adQueueCoordinator || adQueueCoordinatorMock
+    adQueueCoordinator || adQueueCoordinatorMock,
+    bidTracker || bidTrackerMock
   );
   pbVideo.init();
   return pbVideo;
@@ -203,6 +214,113 @@ describe('Prebid Video', function () {
       expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
       expect(adUnit.mediaTypes.video).to.have.property('test2', 'publisherValue');
       expect(nextFn.calledOnce).to.be.true;
+    });
+  });
+
+  describe('Size buckets', function () {
+    let getConfigCallback;
+    let beforeBidRequestCallback;
+    let logWarnStub;
+
+    const getConfig = (propertyName, callback) => {
+      if (propertyName === 'video' && callback) {
+        getConfigCallback = callback;
+      }
+    };
+
+    beforeEach(() => {
+      logWarnStub = sinon.stub(utils, 'logWarn');
+      videoCoreMock.getOrtbVideo = () => ({ w: 495, h: 655, plcmt: 1 });
+      pbVideoFactory(null, getConfig, Object.assign({}, pbGlobalMock), {
+        before: callback_ => { beforeBidRequestCallback = callback_; }
+      });
+    });
+
+    afterEach(() => {
+      logWarnStub.restore();
+    });
+
+    function runAuction(adUnit) {
+      const adUnits = [Object.assign({ code: 'ad1', video: { divId: 'divId' } }, adUnit)];
+      beforeBidRequestCallback(sinon.spy(), { adUnits });
+      return adUnits[0];
+    }
+
+    function setVideoConfig(video) {
+      getConfigCallback({ video: Object.assign({ providers: [] }, video) });
+    }
+
+    it('reports the actual player size when sizeBuckets is not set', function () {
+      setVideoConfig({});
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video).to.include({ w: 495, h: 655 });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    it('reports the nearest bucket and sets ext.true_size when sizeBuckets is set', function () {
+      setVideoConfig({ sizeBuckets: [[640, 360], [480, 640], [300, 250]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video).to.include({ w: 480, h: 640, plcmt: 1 });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([480, 640]);
+      expect(adUnit.ortb2Imp.video.ext.true_size).to.eql({ w: 495, h: 655 });
+    });
+
+    it('preserves other ortb2Imp fields', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} }, ortb2Imp: { ext: { gpid: 'gpid' }, video: { ext: { other: 1 } } } });
+      expect(adUnit.ortb2Imp).to.eql({ ext: { gpid: 'gpid' }, video: { ext: { other: 1, true_size: { w: 495, h: 655 } } } });
+    });
+
+    it('recomputes sizes for an ad unit object reused across auctions, without changing it', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640], [640, 360]] });
+      const publisherAdUnit = { code: 'ad1', video: { divId: 'divId' }, mediaTypes: { video: {} } };
+      const first = [publisherAdUnit];
+      beforeBidRequestCallback(sinon.spy(), { adUnits: first });
+      expect(first[0].mediaTypes.video.playerSize).to.eql([480, 640]);
+
+      videoCoreMock.getOrtbVideo = () => ({ w: 650, h: 370, plcmt: 1 });
+      const second = [publisherAdUnit];
+      beforeBidRequestCallback(sinon.spy(), { adUnits: second });
+      expect(second[0].mediaTypes.video.playerSize).to.eql([640, 360]);
+      expect(second[0].ortb2Imp.video.ext.true_size).to.eql({ w: 650, h: 370 });
+
+      expect(publisherAdUnit).to.eql({ code: 'ad1', video: { divId: 'divId' }, mediaTypes: { video: {} } });
+    });
+
+    it('reverts to the actual size when sizeBuckets is unset again', function () {
+      setVideoConfig({ sizeBuckets: [[480, 640]] });
+      setVideoConfig({});
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    it('ignores invalid buckets', function () {
+      setVideoConfig({ sizeBuckets: [[500, 'x'], [500, 650, 1], [0, 650], 'abc', [490.5, 650], [300, 250]] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([300, 250]);
+      expect(logWarnStub.callCount).to.equal(5);
+    });
+
+    it('reports the actual size, without true_size, when no bucket is valid', function () {
+      setVideoConfig({ sizeBuckets: [['a', 'b']] });
+      const adUnit = runAuction({ mediaTypes: { video: {} } });
+      expect(adUnit.mediaTypes.video.playerSize).to.eql([495, 655]);
+      expect(adUnit.ortb2Imp).to.be.undefined;
+    });
+
+    Object.entries({
+      'mediaTypes.video.playerSize': { mediaTypes: { video: { playerSize: [640, 480] } } },
+      'mediaTypes.video.w/h': { mediaTypes: { video: { w: 640, h: 480 } } },
+      'ortb2Imp.video.w/h': { mediaTypes: { video: {} }, ortb2Imp: { video: { w: 640, h: 480 } } },
+    }).forEach(([t, adUnitProps]) => {
+      it(`does not apply buckets when the publisher sets ${t}`, function () {
+        setVideoConfig({ sizeBuckets: [[480, 640]] });
+        const adUnit = runAuction(adUnitProps);
+        expect(adUnit.mediaTypes.video.playerSize).to.not.eql([480, 640]);
+        expect(adUnit.ortb2Imp?.video?.ext?.true_size).to.be.undefined;
+      });
     });
   });
 
@@ -357,10 +475,66 @@ describe('Prebid Video', function () {
       emit: sinon.spy()
     };
 
-    it('should ask Impression Verifier to track bid on Bid Adjustment', function () {
+    describe('Impression Verifier selection', function () {
+      let cache, cachedVerifier;
+      const getConfig = topic => topic === 'cache' ? cache : undefined;
+
+      beforeEach(function () {
+        cache = undefined;
+        cachedVerifier = { trackBid: sinon.spy(), getBidIdentifiers: sinon.spy() };
+        pbVideoFactory(null, getConfig, null, null, pbEvents, null, null, isCacheUsed => isCacheUsed ? cachedVerifier : videoImpressionVerifierMock);
+      });
+
+      it('should use the cached Impression Verifier once cache is configured after init', function () {
+        cache = { url: 'https://cache.example.com' };
+        bidAdjustmentCb({});
+
+        expect(cachedVerifier.trackBid.calledOnce).to.be.true;
+        expect(videoImpressionVerifierMock.trackBid.called).to.be.false;
+      });
+
+      it('should revert to the uncached Impression Verifier once cache is unset', function () {
+        cache = { url: 'https://cache.example.com' };
+        bidAdjustmentCb({});
+        cache = undefined;
+        bidAdjustmentCb({});
+
+        expect(cachedVerifier.trackBid.calledOnce).to.be.true;
+        expect(videoImpressionVerifierMock.trackBid.calledOnce).to.be.true;
+      });
+    });
+
+    it('should match a bid tracked before the cache config was updated', function () {
+      pbEvents.emit.resetHistory();
+      let cache;
+      const getConfig = topic => topic === 'cache' ? cache : undefined;
+      const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1', vastUrl: 'https://vast.example.com/tag' };
+      const pbGlobal = Object.assign({}, pbGlobalMock, { getBidResponsesForAdUnitCode: () => ({ bids: [bid] }) });
+      const bidTracker = tracker();
+      const storeSpy = sinon.spy(bidTracker, 'store');
+      pbVideoFactory(null, getConfig, pbGlobal, null, pbEvents, null, null, videoImpressionVerifierFactory, null, bidTracker);
+      bidAdjustmentCb(bid);
+      const trackingId = storeSpy.firstCall.args[0];
+
+      cache = { url: 'https://cache.example.com' };
+      adImpressionCb({ adId: trackingId });
+
+      expect(pbEvents.emit.calledOnce).to.be.true;
+      expect(pbEvents.emit.getCall(0).args[0]).to.be.equal('videoBidImpression');
+      expect(pbEvents.emit.getCall(0).args[1].bid).to.be.equal(bid);
+    });
+
+    it('should ask Impression Verifier to track bid with its ad unit on Bid Adjustment', function () {
+      const adUnit = { adUnitId: 'au1', code: 'u1', video: { adServer: { tracking: {} } } };
+      const bid = { adUnitId: 'au1', adUnitCode: 'u1' };
+      const indexStub = sinon.stub(auctionManager, 'index').get(() => stubAuctionIndex({ adUnits: [adUnit] }));
       pbVideoFactory(null, null, null, null, pbEvents);
-      bidAdjustmentCb();
+
+      bidAdjustmentCb(bid);
+      indexStub.restore();
+
       expect(videoImpressionVerifierMock.trackBid.calledOnce).to.be.true;
+      expect(videoImpressionVerifierMock.trackBid.calledWith(bid, adUnit)).to.be.true;
     });
 
     it('should trigger video bid impression when the bid matched', function () {

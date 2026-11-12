@@ -4,7 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const path = require('path');
 const { parseArgs } = require('node:util');
-const appnexusHandler = require('./responders/appnexus.js');
+const msftHandler = require('./responders/msft.js');
 const tripleliftHandler = require('./responders/triplelift.js');
 const bundleMaker = require('./bundle.js');
 
@@ -40,7 +40,7 @@ app.get('/bundle', bundleMaker, (req, res) => {
   res.send();
 });
 
-app.post('/appnexus', appnexusHandler, (req, res) => {
+app.post('/msft', msftHandler, (req, res) => {
   res.send();
 });
 

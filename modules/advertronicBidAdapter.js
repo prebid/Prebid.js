@@ -2,7 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import { deepAccess, deepSetValue, logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -45,9 +45,9 @@ const converter = ortbConverter({
         // Attach our renderer for outstream unless the publisher supplied one.
         if (
           bidRequest &&
-          deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' &&
+          bidRequest?.mediaTypes?.video?.context === 'outstream' &&
           !bidRequest.renderer &&
-          !deepAccess(bidRequest, 'mediaTypes.video.renderer')
+          !bidRequest?.mediaTypes?.video?.renderer
         ) {
           bidResponse.renderer = createRenderer(bidResponse, bidRequest.adUnitCode);
         }

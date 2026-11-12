@@ -37,8 +37,14 @@ export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
 
 let debounceDelay = 100;
 
+/**
+ * Set the delay analytics adapters wait for events to stop coming before tracking them.
+ * @returns the previous delay, so that it can be restored
+ */
 export function setDebounceDelay(delay) {
+  const previous = debounceDelay;
   debounceDelay = delay;
+  return previous;
 }
 
 export type AnalyticsProvider = string;
@@ -152,9 +158,10 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
   let sampled = true;
   let provider: PROVIDER;
   let lastTrackedEvent = null;
+  let lastQueuedEvent = null;
   let pageHideListener = null;
 
-  const { emptyQueue, flushQueue } = (() => {
+  const emptyQueue = (() => {
     let running = false;
     let timer;
     const clearQueue = () => {
@@ -184,22 +191,20 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
         }
       }
     };
-    const cancelTimer = () => {
+    const cancel = () => {
       if (timer != null) {
         clearTimeout(timer);
         timer = null;
       }
     };
-    return {
-      emptyQueue() {
-        cancelTimer();
-        debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
-      },
-      flushQueue() {
-        cancelTimer();
-        clearQueue();
-      }
+    const flush = () => {
+      cancel();
+      clearQueue();
     };
+    return Object.assign(function () {
+      cancel();
+      debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
+    }, { cancel, flush });
   })();
 
   return Object.defineProperties({
@@ -234,6 +239,9 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
   }
 
   function _enqueue({ eventType, args, sequence }) {
+    if (sequence != null && (lastQueuedEvent == null || sequence > lastQueuedEvent)) {
+      lastQueuedEvent = sequence;
+    }
     queue.push(() => {
       if (Object.keys(allLabels || []).length > 0) {
         args = {
@@ -283,7 +291,13 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = ({ eventType, sequence, args }) => this.enqueue({ eventType, args, sequence });
+            const handler = ({ eventType, sequence, args }) => {
+              // the event bus calls the handlers it collected when the event was emitted, so this one
+              // can still run after an earlier handler for the same event has disabled analytics
+              if (enabled) {
+                this.enqueue({ eventType, args, sequence });
+              }
+            };
             events.listen(ev, handler);
             return [ev, handler];
           })
@@ -294,7 +308,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
       if (flushOnPageHide) {
         pageHideListener = (ev: Event) => {
           if (ev.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
-          flushQueue();
+          emptyQueue.flush();
           if (typeof this.onPageHide === 'function') {
             try {
               this.onPageHide();
@@ -327,7 +341,17 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>(opt
       document.removeEventListener('visibilitychange', pageHideListener);
       pageHideListener = null;
     }
-    this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
+    // discard events that are still waiting to be tracked, and count them as tracked so that they are not
+    // replayed if analytics is enabled again - the same as events that adapters had already buffered
+    queue.length = 0;
+    emptyQueue.cancel();
+    if (lastQueuedEvent != null && (lastTrackedEvent == null || lastQueuedEvent > lastTrackedEvent)) {
+      lastTrackedEvent = lastQueuedEvent;
+    }
+    // undo only what _enable did: if it never ran, enableAnalytics may be an adapter's own (validating) override
+    if (this._oldEnable) {
+      this.enableAnalytics = this._oldEnable;
+    }
     enabled = false;
   }
 }

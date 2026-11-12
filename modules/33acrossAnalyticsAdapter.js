@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
+import { logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 /**
@@ -443,13 +443,13 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
         // The value of the UNIQUIFIER is likely to be the div-id,
         // but, if div-id is randomized / unavailable, may be something else like the media size)
-        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || au.code,
+        slotId: au.ortb2Imp?.ext?.gpid || au.code,
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],
       };
     }),
-    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {})),
+    userIds: Object.keys(bidderRequests?.[0]?.bids?.[0]?.userId || {}),
   };
 
   locals.transactionManagers[auctionId] ||=

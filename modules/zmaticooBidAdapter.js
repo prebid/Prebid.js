@@ -1,4 +1,4 @@
-import { deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -131,7 +131,7 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
+      bcat: bidderRequest?.ortb2Imp?.bcat || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
@@ -140,11 +140,11 @@ export const spec = {
     };
     payload.regs.ext = {};
     payload.user.ext = {};
-    payload.device.ua = navigator.userAgent;
+    payload.device.ua = bidderRequest.ortb2?.device?.ua;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
     payload.site.domain = _getDomainFromURL(payload.site.page);
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(payload.device.ua) ? 1 : 0;
     if (params.test) {
       payload.test = params.test;
     }
@@ -241,7 +241,7 @@ function buildBanner(request) {
 
 function buildVideo(request) {
   const video = {};
-  const videoParams = deepAccess(request, 'mediaTypes.video', {});
+  const videoParams = request?.mediaTypes?.video || {};
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
       video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -283,14 +283,14 @@ export function checkParamDataType(key, value, datatype) {
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!bidRequest?.mediaTypes?.banner;
 }
 
 /**
  * @param {BidRequest} bidRequest bid request
  */
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video');
+  return !!bidRequest?.mediaTypes?.video;
 }
 
 export function _getDomainFromURL(url) {
