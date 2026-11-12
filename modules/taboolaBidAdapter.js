@@ -19,6 +19,10 @@ import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
+/**
+ * @typedef {import('./taboolaBidAdapter.d.ts').TaboolaBidParams} TaboolaBidParams
+ */
+
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
