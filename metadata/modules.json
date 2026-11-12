@@ -983,13 +983,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pubx",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pxyz",
       "aliasOf": null,
       "gvlid": null,
