@@ -402,13 +402,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "bedigitech",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "bidglass",
       "aliasOf": null,
       "gvlid": null,
