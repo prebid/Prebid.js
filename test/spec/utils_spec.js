@@ -40,7 +40,7 @@ describe('Utils', function () {
     });
 
     it('should return false if window.top is not accessible', function () {
-      sandbox.stub(utils.internal, 'getWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(false);
       assert.equal(utils.canAccessWindowTop(), false);
     });
   });
@@ -51,7 +51,7 @@ describe('Utils', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       root = { parent: {}, frameElement: {} };
-      sandbox.stub(utils.internal, 'getWindowTop').returns(root);
+      sandbox.stub(utils, 'getWindowTop').returns(root);
     });
 
     afterEach(function () {
@@ -97,7 +97,7 @@ describe('Utils', function () {
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      sandbox.stub(utils.internal, 'getWindowTop').returns({});
+      sandbox.stub(utils, 'getWindowTop').returns({});
     });
 
     afterEach(function() {

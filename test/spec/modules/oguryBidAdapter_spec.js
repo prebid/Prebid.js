@@ -641,7 +641,7 @@ describe('OguryBidAdapter', () => {
       expect(ortbBidRequest.id).to.equal(bidRequest.bidId);
       expect(ortbBidRequest.tagid).to.equal(bidRequest.adUnitCode);
       expect(ortbBidRequest.banner).to.deep.equal({
-        topframe: 1,
+        topframe: 0,
         format: [{
           w: bidRequest.mediaTypes.banner.sizes[0][0],
           h: bidRequest.mediaTypes.banner.sizes[0][1],

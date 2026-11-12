@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { getWinDimensions, resetWinDimensions } from '../../../src/utils/winDimensions.js';
 import { clearCache, getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
-import { internal } from '../../../src/utils.js';
+import * as utils from '../../../src/utils.js';
 
 describe('cached window dimensions', () => {
   afterEach(() => {
@@ -62,8 +62,8 @@ describe('cached window dimensions', () => {
 
   it('uses the accessible top window by default and falls back when it cannot be accessed', () => {
     const top = { location: { href: 'https://example.com' }, innerWidth: 1000 };
-    sinon.stub(internal, 'getWindowTop').returns(top);
-    sinon.stub(internal, 'getWindowSelf').returns({ innerWidth: 300 });
+    sinon.stub(utils, 'getWindowTop').returns(top);
+    sinon.stub(utils, 'getWindowSelf').returns({ innerWidth: 300 });
     resetWinDimensions();
     expect(getWinDimensions().innerWidth).to.equal(1000);
     Object.defineProperty(top, 'location', { get() { throw new Error('cross-origin'); } });

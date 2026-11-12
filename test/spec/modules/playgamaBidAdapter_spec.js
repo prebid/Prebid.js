@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/playgamaBidAdapter.js';
 import { config } from 'src/config.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
-import { internal, resetWinDimensions } from 'src/utils.js';
+import { resetWinDimensions } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const PRODUCTION_ENDPOINT = 'https://ssp.playgama.com/v2/auction';
 const STAGING_ENDPOINT = 'https://ssp-staging.playgama.com/v2/auction';
@@ -218,7 +219,7 @@ describe('playgamaBidAdapter', function () {
     });
 
     it('sizes a GAM-delivered h5 interstitial to the viewport minus the SSP gap', function () {
-      const getWindowTop = sinon.stub(internal, 'getWindowTop').returns({
+      const getWindowTop = sinon.stub(utils, 'getWindowTop').returns({
         location: { href: 'https://example.com/' },
         innerWidth: 1000,
         innerHeight: 800,

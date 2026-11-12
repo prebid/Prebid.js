@@ -16,7 +16,6 @@ describe('teadsBidAdapter', () => {
   function stubInaccessibleTop() {
     const top = { get document() { throw new Error('cross-origin'); } };
     sandbox.stub(utils, 'getWindowTop').returns(top);
-    sandbox.stub(utils.internal, 'getWindowTop').returns(top);
   }
 
   beforeEach(function () {

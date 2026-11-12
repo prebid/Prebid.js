@@ -8,4 +8,3 @@ function getWindowTop() {
 
 // eslint-disable-next-line no-import-assign -- the namespace is a stubbable facade (test/vitest/stubs.mjs)
 utils.getWindowTop = getWindowTop;
-utils.internal.getWindowTop = getWindowTop;

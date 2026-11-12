@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-import { internal, resetWinDimensions, getWindowTop } from 'src/utils.js';
+import { resetWinDimensions, getWindowTop } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { hook } from '../../../src/hook.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
@@ -638,7 +639,7 @@ describe('E-Planning Adapter', function () {
         }
       };
       sandbox = sinon.createSandbox();
-      getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
+      getWindowTopStub = sandbox.stub(utils, 'getWindowTop');
       getWindowTopStub.returns(createWindow(800));
       resetWinDimensions();
     });
