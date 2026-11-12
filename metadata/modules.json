@@ -4941,13 +4941,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "blue",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "brid",
       "aliasOf": null,
       "gvlid": 786,
