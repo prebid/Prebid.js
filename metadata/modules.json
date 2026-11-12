@@ -780,13 +780,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "lkqd",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "lockerdome",
       "aliasOf": null,
       "gvlid": null,
