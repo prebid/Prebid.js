@@ -10,10 +10,10 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 const TJS = require('typescript-json-schema');
-const {version} = require('./package.json');
+const {npmDistUrl} = require('./plugins/buildOptions.js');
 
 const SCHEMA_DIR = path.resolve(__dirname, 'schema');
-const DEFAULT_BASE_URL = `https://cdn.jsdelivr.net/npm/prebid.js@${version}/dist/schema/`;
+const DEFAULT_BASE_URL = npmDistUrl('schema/');
 
 /**
  * The sources as `gulp ts` compiles them - all of them, so that every module augmentation applies - but with
