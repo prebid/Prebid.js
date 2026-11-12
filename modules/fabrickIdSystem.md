@@ -31,20 +31,20 @@ Every param except `url`, `refererInfo` and names starting with `max` is appende
 | --- | --- | --- | --- |
 | name | Required | String | `"fabrickId"` |
 | params.apiKey | Required | String | API key provided by Neustar. No ID is requested without it. |
-| params.e | Optional | String or String[] | Hashed email address. |
-| params.p | Optional | String or String[] | Hashed phone number. |
-| params.i4 | Optional | String or String[] | IPv4 address. |
-| params.i6 | Optional | String or String[] | IPv6 address. |
-| params.m | Optional | String or String[] | Mobile advertising ID (IDFA/AAID). |
-| params.ia | Optional | String or String[] | Identifier for advertising (IFA). |
-| params.iv | Optional | String or String[] | Identifier for vendors (IFV). |
-| params['1pd'] | Optional | String or String[] | Partner or advertiser first-party user ID other than a first-party cookie ID. Up to 255 characters. |
-| params['1pc'] | Optional | String or String[] | Partner or advertiser first-party cookie ID. Up to 255 characters. |
-| params.u | Optional | String or String[] | URL-encoded page URL. |
-| params.f | Optional | String or String[] | URL-encoded referrer URL. |
-| params.ifa_type | Optional | String or String[] | Source of the IFA, per the IAB IFA guidelines. |
+| params.e | Optional | String, Number, or an array of them | Hashed email address. |
+| params.p | Optional | String, Number, or an array of them | Hashed phone number. |
+| params.i4 | Optional | String, Number, or an array of them | IPv4 address. |
+| params.i6 | Optional | String, Number, or an array of them | IPv6 address. |
+| params.m | Optional | String, Number, or an array of them | Mobile advertising ID (IDFA/AAID). |
+| params.ia | Optional | String, Number, or an array of them | Identifier for advertising (IFA). |
+| params.iv | Optional | String, Number, or an array of them | Identifier for vendors (IFV). |
+| params['1pd'] | Optional | String, Number, or an array of them | Partner or advertiser first-party user ID other than a first-party cookie ID. Up to 255 characters. |
+| params['1pc'] | Optional | String, Number, or an array of them | Partner or advertiser first-party cookie ID. Up to 255 characters. |
+| params.u | Optional | String, Number, or an array of them | URL-encoded page URL. |
+| params.f | Optional | String, Number, or an array of them | URL-encoded referrer URL. |
+| params.ifa_type | Optional | String, Number, or an array of them | Source of the IFA, per the IAB IFA guidelines. |
 | params.lmt | Optional | `0`, `1`, `'0'`, `'1'` or Boolean | Limit ad tracking. `1` means the user opted out of ad tracking and measurement; do not send the real IFA in `ia` then. `true`/`false` are sent as `1`/`0`; earlier Prebid.js versions dropped booleans. |
-| params.iab1 ... params.iab4 | Optional | String or String[] | URL-encoded IAB Tech Lab Content Taxonomy v3.0 tier 1-4 category. |
+| params.iab1 ... params.iab4 | Optional | String, Number, or an array of them | URL-encoded IAB Tech Lab Content Taxonomy v3.0 tier 1-4 category. |
 | params.url | Optional | String | Base request URL. Params are appended directly, so include the trailing `?`. Default `https://fid.agkn.com/f?`. |
 | params.refererInfo | Optional | Object | Replaces Prebid's detected referer info. The module reads `topmostLocation`, `stack[0]` and `canonicalUrl`. |
 | params.maxUrlLen | Optional | Number | Maximum request URL length when appending referrers. Default `2000`. |
