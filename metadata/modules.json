@@ -4360,20 +4360,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pwbid",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "pubwise",
-      "aliasOf": "pwbid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "scalibur",
       "aliasOf": null,
       "gvlid": 1471,
