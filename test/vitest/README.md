@@ -23,9 +23,9 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
   under Karma.
 - Each spec file starts with no cookies, `localStorage` or `sessionStorage`: before anything else loads,
   `nativeSetup.mjs` clears the storage, and the cookies through the `clearCookies` browser command
-  (`vitest.config.mjs`; Playwright clears its browser context's, WebdriverIO those of the spec's frame) and waits
-  until `document.cookie` is empty. The debug page has no provider to clear them, so it expires those it shows at `/`
-  and at its own path. Within a file nothing is reset, so a spec still cleans up what one test writes before
+  (`vitest.config.mjs`; Playwright clears its browser context's, WebdriverIO those of the spec's frame), then expires
+  whatever `document.cookie` still shows until it is empty: the debug page has no provider, and WebKit can keep showing
+  a cookie that was expired right after it was written (`cookies.mjs`). Within a file nothing is reset, so a spec still cleans up what one test writes before
   the next.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
@@ -263,10 +263,19 @@ patmmccann/Prebid.js fork branch). The differences were three specs fixed separa
 (consentUtils), #15980 (pixfuture). Every spec now runs natively; the last ones to move needed fixes in their modules
 or specs (#16011).
 
-Each spec file running in its own page, with its storage reset, means the suite no longer catches a spec leaking state
-into a later one, as a shared Karma chunk could, except through `window.top`, which the spec files run one after another
-in a page share (sevio's spec once broke oolo's).
-Running with `--sequence.shuffle.files` and a fixed `--sequence.seed` reproduces order-dependent failures.
+### State leaking between spec files
+
+Each spec file runs in its own page and starts with no cookies or storage, so it can't leak state into a later file
+the way a shared Karma chunk could, with one exception: `window.top`, which the spec files run one after another in a
+page share. sevio's spec once hid `window.top.performance.timing`, which broke oolo's. Two checks cover it (#16011):
+
+- **`stateGuard.mjs`, on every run:** `nativeSetup.mjs` snapshots `window.top` before each spec file (its own
+  properties, those of its `document`, `performance`, `history` and `navigator`, and the elements in its body), and
+  the file fails if it leaves anything new behind once its last `after()` hook has run. Delete what the spec or the
+  module added in an `after()` hook (several adapters keep a global on the top window: `ADAGIO`, `sublime`, ...).
+- **`vitest-shuffle.yml`, daily and on demand:** the whole suite in Chromium with the spec files in a random order,
+  one page at a time, for order dependencies the guard can't see. The job summary has the seed;
+  `VITEST_PARALLEL=0 npm run test:vitest -- --sequence.shuffle.files --sequence.seed=<seed>` reproduces it.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.

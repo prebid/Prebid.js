@@ -1,0 +1,53 @@
+name: Vitest unit tests in shuffled order
+
+# Catches specs that depend on the order spec files run in (#16011): state one file leaves for another that
+# test/vitest/stateGuard.mjs can't see. Runs the whole suite in Chromium with the spec files in a random order, one
+# page at a time (VITEST_PARALLEL=0), so a seed always gives the same order: a failure is reproduced locally with the
+# seed in the job summary. Daily and on demand, not on PRs, where a random order would make results flaky.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Shuffle seed (default a new random one)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  shuffled:
+    name: Vitest Chromium, shuffled spec files
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # sets up Node and restores node_modules
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Install browser
+        run: npx playwright install chromium
+      - name: Precompile
+        run: npx gulp precompile
+      - name: Pick the seed
+        id: seed
+        env:
+          SEED: ${{ inputs.seed }}
+        run: |
+          seed="${SEED:-$RANDOM$RANDOM}"
+          echo "seed=$seed" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Shuffle seed: \`$seed\`"
+            echo 'Reproduce locally, after `npx gulp precompile`:'
+            echo '```'
+            echo "VITEST_PARALLEL=0 npm run test:vitest -- --sequence.shuffle.files --sequence.seed=$seed"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Run the specs in shuffled order (seed ${{ steps.seed.outputs.seed }})
+        env:
+          VITEST_PARALLEL: 0
+        run: npm run test:vitest -- --sequence.shuffle.files --sequence.seed=${{ steps.seed.outputs.seed }}
