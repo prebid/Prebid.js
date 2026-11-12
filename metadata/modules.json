@@ -2467,13 +2467,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "onomagic",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "underdogmedia",
       "aliasOf": null,
       "gvlid": "159",
