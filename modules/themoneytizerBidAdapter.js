@@ -2,10 +2,6 @@ import { logInfo, logWarn } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-/**
- * @typedef {import('./themoneytizerBidAdapter.d.ts').ThemoneytizerBidParams} ThemoneytizerBidParams
- */
-
 const BIDDER_CODE = 'themoneytizer';
 const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 

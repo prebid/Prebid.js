@@ -11,7 +11,6 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
- * @typedef {import('./inmobiBidAdapter.d.ts').InmobiBidParams} InmobiBidParams
  */
 
 const GVLID = 333;
