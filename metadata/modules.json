@@ -2684,13 +2684,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "oraki",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pgamssp",
       "aliasOf": null,
       "gvlid": null,
