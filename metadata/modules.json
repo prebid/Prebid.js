@@ -2985,13 +2985,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "open8",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "sonarads",
       "aliasOf": null,
       "gvlid": 1300,
