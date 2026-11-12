@@ -1242,20 +1242,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "yieldlift",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "yl",
-      "aliasOf": "yieldlift",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "yieldlove",
       "aliasOf": null,
       "gvlid": 251,
