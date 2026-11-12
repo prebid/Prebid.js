@@ -103,6 +103,24 @@ function checkTypeParameters(root, schema, generator, typeParameters) {
   }
 }
 
+/**
+ * Symbol-keyed members (such as those of Map or Set) come out as properties named `__@<symbol>@<id>`; their presence
+ * means the schema describes an object's runtime internals rather than its JSON serialization.
+ */
+function checkSymbolKeys(root, schema) {
+  const found = [];
+  const visit = (node, at) => {
+    if (Array.isArray(node)) return node.forEach((item, i) => visit(item, `${at}/${i}`));
+    if (node == null || typeof node !== 'object') return;
+    Object.keys(node.properties ?? {}).filter(key => key.startsWith('__@')).forEach(key => found.push(`${at}/properties/${key}`));
+    Object.entries(node).forEach(([key, value]) => visit(value, `${at}/${key}`));
+  };
+  visit(schema, '#');
+  if (found.length > 0) {
+    throw new Error(`The JSON schema for '${root}' has symbol-keyed properties, which do not survive JSON serialization (is it a Map or Set?): ${found.join(', ')}`);
+  }
+}
+
 function toDraft2020(node, resolveRef) {
   if (Array.isArray(node)) return node.map(n => toDraft2020(n, resolveRef));
   if (node == null || typeof node !== 'object') return node;
@@ -158,6 +176,7 @@ function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
     }
     const schema = generator.getSchemaForSymbol(name);
     checkTypeParameters(name, schema, generator, typeParameters);
+    checkSymbolKeys(name, schema);
     return [name, schema];
   }));
   return Object.fromEntries(Object.entries(roots).map(([name, output]) => {

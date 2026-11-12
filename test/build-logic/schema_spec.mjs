@@ -35,4 +35,8 @@ describe('JSON schema generation', function () {
   it('fails when a schema would describe a bare type parameter', () => {
     expect(() => generateSchemas({ dir: fixture('typeParameter') })).to.throw(/type parameter\(s\) 'V'/);
   });
+
+  it('fails when a schema would describe symbol-keyed members', () => {
+    expect(() => generateSchemas({ dir: fixture('symbolKeys') })).to.throw(/symbol-keyed properties.*__@toStringTag/);
+  });
 });
