@@ -45,7 +45,7 @@ With the top-window renderer, Safari and iOS Chrome keep the Parallax frame phys
 
 ## Test Parameters
 
-Splash staging inventory is publisher `725` with placements `100021` (Standard 300x600), `100022` (Parallax 700x1600) and `100023` (Interstitial 320x480); the Parallax test campaign is mobile-only, so use a mobile device or device emulation with a mobile user agent. Review all three formats at <https://one.tcpip.pl/public/prebid-official.html> (`?format=standard|parallax|interstitial`).
+Splash staging inventory is publisher `725` with placements `100021` (Standard 300x600), `100022` (Parallax 700x1600) and `100023` (Interstitial 320x480); the Parallax test campaign is mobile-only, so use a mobile device or device emulation with a mobile user agent. Review all three formats at <https://one.tcpip.pl/public/prebid-official-sandbox.html?format=standard&renderer_policy=disabled&safe_renderer=cdn> (`format=standard|parallax|interstitial`). The demo defaults to top-window rendering when `renderer_policy` is omitted. Use `renderer_policy=disabled` to exercise Safe Renderer; use `renderer_policy=bidder-enabled` to allow Splash's top-window renderer while global top-window rendering is disabled. A publisher Safe Renderer still takes precedence.
 
 ```javascript
 const adUnits = [

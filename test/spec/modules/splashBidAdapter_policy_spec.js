@@ -118,6 +118,7 @@ describe('Splash renderer choice through core', () => {
 
     const index = {
       getAdUnit: () => adUnit,
+      getBidderRequest: () => request,
       getBidRequest: () => request.bids[0],
       getMediaTypes: () => request.bids[0].mediaTypes,
     };
