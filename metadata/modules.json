@@ -2698,13 +2698,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pubrise",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "qt",
       "aliasOf": null,
       "gvlid": null,
