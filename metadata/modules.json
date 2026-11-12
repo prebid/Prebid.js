@@ -4332,20 +4332,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "bmtm",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "brightmountainmedia",
-      "aliasOf": "bmtm",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "cadent_aperture_mx",
       "aliasOf": null,
       "gvlid": null,
