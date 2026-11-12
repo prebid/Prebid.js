@@ -3940,13 +3940,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "twistdigital",
-      "aliasOf": null,
-      "gvlid": 1292,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "vidazoo",
       "aliasOf": null,
       "gvlid": 744,
