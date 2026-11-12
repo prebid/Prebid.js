@@ -145,7 +145,7 @@ When a check fails, recommend the smallest relevant change: populate
 include and configure the applicable consent module and CMP for a missing
 consent integration; add a positive floor rule through `priceFloors` or an
 ad unit's floor data; or register a `googletag.pubads().registerRequestHook`
-callback (see `integrationExamples/gpt/hello_world.html`) with
+callback (see `integrationExamples/gpt/hello_world_request_hook.html`) with
 `requestHookTimeoutMs` set slightly above the Prebid auction timeout so initial
 `display()`, lazy loading, and refreshes automatically await a fresh Prebid
 auction and `setTargetingForGPTAsync` without `disableInitialLoad` or manual
