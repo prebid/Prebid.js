@@ -223,10 +223,9 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    // Sync regardless of the bid response: a no-bid (HTTP 204, empty body) must
+    // still trigger a sync, otherwise users we never bid on never get matched.
     const syncs = [];
-    if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
 
     let gdprParams = '';
     if (gdprConsent) {

@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -42,12 +42,12 @@ export const spec = {
         exp: bidRequest.params.exp,
         bidFloor: floorInfo.floor,           // Floor amount
         currency: floorInfo.currency,        // Floor currency (NEW)
-        sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
-        playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
+        sizes: prepareSizes(bidRequest?.mediaTypes?.banner?.sizes),
+        playerSizes: prepareSizes(bidRequest?.mediaTypes?.video?.playerSize),
         impMediaTypes: formatTypes,
         adUnitCode: bidRequest.adUnitCode,
-        video: deepAccess(bidRequest, 'mediaTypes.video'),
-        banner: deepAccess(bidRequest, 'mediaTypes.banner'),
+        video: bidRequest?.mediaTypes?.video,
+        banner: bidRequest?.mediaTypes?.banner,
         ext: bidRequest.ortb2Imp?.ext
       });
       bidIds.push(bidRequest.bidId);
@@ -246,8 +246,8 @@ function getBidFloor(bidRequest, formatTypes) {
 
 const getFormatType = bidRequest => {
   let formats = [];
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner');
-  if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video');
+  if (bidRequest?.mediaTypes?.banner) formats.push('Banner');
+  if (bidRequest?.mediaTypes?.video) formats.push('Video');
   return formats;
 };
 
