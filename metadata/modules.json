@@ -2992,13 +2992,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "widespace",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adtrgtme",
       "aliasOf": null,
       "gvlid": null,
