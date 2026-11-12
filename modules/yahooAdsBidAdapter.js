@@ -761,11 +761,15 @@ export const spec = {
     const seatbids = serverResponse.body.seatbid;
     const usedAdIds = new Set();
     seatbids.forEach(seatbid => {
-      if (!Array.isArray(seatbid.bid)) {
+      // skip malformed seats and bids without losing the valid ones
+      if (!Array.isArray(seatbid?.bid)) {
         return;
       }
 
       seatbid.bid.forEach(bid => {
+        if (!isPlainObject(bid)) {
+          return;
+        }
         const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
         // In singleRequestMode the server request carries the whole bidder request, not this bid's own request;
         // per-bid settings (params.ttl, the ad unit's video context and renderer) come from the bid request it answers.

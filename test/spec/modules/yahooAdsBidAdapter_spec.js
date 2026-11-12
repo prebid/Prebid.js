@@ -2360,11 +2360,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
     it('should skip seatbids without a bid array and keep parsing the rest', () => {
       const { serverResponse, bidderRequest } = generateResponseMock('banner');
-      serverResponse.body.seatbid.unshift({ seat: 'empty' }, { seat: 'not-an-array', bid: {} }, { seat: 'no-bids', bid: [] });
+      serverResponse.body.seatbid.unshift(null, { seat: 'empty' }, { seat: 'not-an-array', bid: {} }, { seat: 'no-bids', bid: [] }, { seat: 'null-bid', bid: [null] });
 
       const response = spec.interpretResponse(serverResponse, { bidderRequest });
       expect(response).to.have.lengthOf(1);
-      expect(response[0].requestId).to.equal(serverResponse.body.seatbid[3].bid[0].impid);
+      expect(response[0].requestId).to.equal(serverResponse.body.seatbid[5].bid[0].impid);
     });
   });
 });
