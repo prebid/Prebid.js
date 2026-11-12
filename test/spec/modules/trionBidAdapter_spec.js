@@ -1,9 +1,8 @@
 import { expect } from 'chai';
-import 'src/utils.js';
+import { getWindowTop } from 'src/utils.js';
 import { spec, acceptPostMessage, getStorageData, setStorageData } from 'modules/trionBidAdapter.js';
 
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { getWindowTop } from '../../../src/utils.js';
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 

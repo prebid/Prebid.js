@@ -151,6 +151,34 @@ describe('connatixBidAdapter', function () {
       expect(result).to.equal(100);
     });
 
+    it('should find the viewabilityContainerIdentifier element in the top document when the current one lacks it', () => {
+      const topQuerySelector = sinon.stub();
+      topQuerySelector.withArgs('#validElement').returns(element);
+      topWinMock.document.querySelector = topQuerySelector;
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#validElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+      getElementStub.returns(null);
+
+      expect(connatixDetectViewability(bid)).to.equal(100);
+      sinon.assert.calledWith(topQuerySelector, '#validElement');
+    });
+
     it('should use getElementById and return 100% viewability when viewabilityContainerIdentifier is an ID without # prefix', () => {
       sandbox.stub(utils, 'inIframe').returns(false);
       sandbox.stub(utils, 'getWindowTop').returns(topWinMock);

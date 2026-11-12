@@ -45,6 +45,45 @@ describe('Utils', function () {
     });
   });
 
+  describe('frame helpers', function () {
+    let sandbox, root;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      root = { parent: {}, frameElement: {} };
+      sandbox.stub(utils.internal, 'getWindowTop').returns(root);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('getParentWindow returns the parent of a frame', function () {
+      expect(utils.getParentWindow({ parent: root })).to.equal(root);
+    });
+
+    it('getParentWindow returns the top window for the top window', function () {
+      expect(utils.getParentWindow(root)).to.equal(root);
+    });
+
+    it('getFrameElement returns the element embedding a frame', function () {
+      const frameElement = {};
+      expect(utils.getFrameElement({ frameElement })).to.equal(frameElement);
+    });
+
+    it('getFrameElement returns null for the top window', function () {
+      expect(utils.getFrameElement(root)).to.equal(null);
+    });
+
+    it('getWindowTopOf returns getWindowTop() for the current window', function () {
+      expect(utils.getWindowTopOf(window)).to.equal(root);
+    });
+
+    it('getWindowTopOf returns the top of another window', function () {
+      expect(utils.getWindowTopOf({ top: root })).to.equal(root);
+    });
+  });
+
   describe('isSafeFrameWindow', function () {
     // SafeFrames implementation
     // https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf

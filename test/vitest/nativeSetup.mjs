@@ -6,7 +6,8 @@ import { loadLater } from './stubs.mjs';
 // webpack's default `node.global`: `global` is the global object (some specs use it)
 globalThis.global = globalThis;
 
+// first, so that modules loaded by test_deps.js see it too
+await import('test/helpers/windowTop.js');
 await import('test/test_deps.js');
 await import('test/pipeline_setup.js');
-await import('test/helpers/windowTop.js');
 await loadLater();

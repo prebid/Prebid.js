@@ -288,6 +288,19 @@ describe('H12 Media Adapter', function () {
       expect(requestsData).to.deep.include({ coords: { x: 10, y: 10 } });
     });
 
+    it('should return the frame position when in an iframe', function () {
+      const frame = (left, top) => ({ getBoundingClientRect: () => ({ left, top }) });
+      const outer = { frameElement: frame(5, 7) };
+      outer.self = outer.parent = outer;
+      sandbox.stub(utils, 'inIframe').returns(true);
+      sandbox.stub(utils, 'getParentWindow').callsFake(fake => fake === window ? outer : fake.parent);
+      sandbox.stub(utils, 'getFrameElement').callsFake(fake => fake === window ? frame(10, 20) : fake.frameElement);
+      createElementVisible(validBid.adUnitCode);
+      const requests = spec.buildRequests([validBid], bidderRequest);
+
+      expect(requests[0].data.bidrequest).to.deep.include({ coords: { x: 15, y: 27 } });
+    });
+
     it('should define iframe', function () {
       sandbox.stub(utils, 'inIframe').returns(true);
       createElementVisible(validBid.adUnitCode);
