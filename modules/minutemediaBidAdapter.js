@@ -2,6 +2,10 @@ import { logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { makeBaseSpec } from '../libraries/riseUtils/index.js';
 
+/**
+ * @typedef {import('./minutemediaBidAdapter.d.ts').MinutemediaBidParams} MinutemediaBidParams
+ */
+
 const BIDDER_CODE = 'minutemedia';
 const BASE_URL = 'https://hb.minutemedia-prebid.com/';
 const GVLID = 918;
