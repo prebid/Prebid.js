@@ -103,11 +103,6 @@ export const eplanningMissingCi: BidderParams['eplanning'] = { sv: 'pbjs.e-plann
 // @ts-expect-error - ci is a string
 export const eplanningNumericCi: BidderParams['eplanning'] = { ci: 18 };
 
-export const adtelligent: BidderParams['adtelligent'] = { aid: 331133 };
-export const indicue: BidderParams['indicue'] = { aid: 12412, vpb_placement_id: 'top', iframe: true, outstream: { autoplay: true } };
-// @ts-expect-error - aid is required
-export const adtelligentMissingAid: BidderParams['adtelligent'] = { iframe: true };
-
 export const resetdigital: BidderParams['resetdigital'] = {
   pubId: 'your-pub-id',
   siteID: 'your-site-id',
