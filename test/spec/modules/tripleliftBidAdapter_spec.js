@@ -164,7 +164,7 @@ describe('triplelift oRTB bid adapter', function () {
     });
 
     it('should return true when required params found - instream - 2', function () {
-      delete instreamBid.mediaTypes.playerSize;
+      delete instreamBid.mediaTypes.video.playerSize;
       delete instreamBid.params.video.w;
       delete instreamBid.params.video.h;
       expect(spec.isBidRequestValid(instreamBid)).to.equal(true);
@@ -974,10 +974,10 @@ describe('triplelift oRTB bid adapter', function () {
       expect(requests[0]).to.exist.and.to.be.a('object');
     });
 
-    it('should enable gzip compression by default', () => {
+    it('should disable gzip compression by default', () => {
       // Use default
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].options.endpointCompression).to.be.true;
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should respect bidder boolean configuration set via setBidderConfig', () => {
@@ -1002,6 +1002,18 @@ describe('triplelift oRTB bid adapter', function () {
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].options.endpointCompression).to.be.true;
+    });
+
+    it('should fall back to the default when gzipEnabled is not a boolean', () => {
+      // A string is not coerced: 'true' must not read back as opting in
+      bidderConfigStub.returns({
+        triplelift: {
+          gzipEnabled: 'true'
+        }
+      });
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].options.endpointCompression).to.be.false;
     });
 
     it('should be a post request and populate the payload', function() {
@@ -1415,6 +1427,28 @@ describe('triplelift oRTB bid adapter', function () {
       delete bidderRequest.refererInfo.page;
     });
 
+    it('should not reuse GDPR consent from a previous auction', function() {
+      const consentedRequest = {
+        ...bidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: GDPR_CONSENT_STR
+        }
+      };
+
+      const firstRequest = spec.buildRequests(bidRequests, consentedRequest)[0];
+      expect(firstRequest.url).to.contain('gdpr=true');
+      expect(firstRequest.url).to.contain('cmp_cs=' + GDPR_CONSENT_STR);
+
+      const secondRequest = { ...bidderRequest };
+      delete secondRequest.gdprConsent;
+      spec.buildRequests(bidRequests, secondRequest);
+
+      const sync = spec.getUserSyncs({ iframeEnabled: true })[0];
+      expect(sync.url).not.to.match(/(?:\?|&)gdpr=/);
+      expect(sync.url).not.to.match(/(?:\?|&)cmp_cs=/);
+    });
+
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -1472,7 +1506,7 @@ describe('triplelift oRTB bid adapter', function () {
 
       floorInfo = { currency: 'BTC', floor: 10.99 };
       let request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.imp[1].floor).to.deep.equal(undefined);
+      expect(request.data.imp[0].floor).to.equal(1.00);
     });
 
     it('should delete bidfloor and bidfloorcur', function() {

@@ -1,0 +1,139 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/msft",
+    "body": {
+      "imp": [
+        {
+          "ext": {
+            "tid": "u7736ca51-e2dc-4a7b-8c34-ec9203ce4aa6",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13144370
+            }
+          },
+          "id": "c6404411-6da4-4ae6-8b05-addaa730fa6e",
+          "banner": {
+            "topframe": 1,
+            "format": [
+              {
+                "w": 300,
+                "h": 250
+              },
+              {
+                "w": 300,
+                "h": 600
+              }
+            ],
+            "w": 300,
+            "h": 250
+          },
+          "secure": 1
+        },
+        {
+          "ext": {
+            "tid": "ue8a6ceea-71e4-432f-92b3-3f3e369fafe4",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13144370
+            }
+          },
+          "id": "0d368d76-1548-42d5-bfdd-b892e7499201",
+          "banner": {
+            "topframe": 1,
+            "format": [
+              {
+                "w": 300,
+                "h": 250
+              },
+              {
+                "w": 300,
+                "h": 600
+              }
+            ],
+            "w": 300,
+            "h": 250
+          },
+          "secure": 1
+        }
+      ],
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/banner.html?pbjs_debug=true",
+        "ext": {
+          "data": {
+            "documentLang": "en"
+          }
+        },
+        "content": {
+          "language": "en"
+        }
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 748,
+          "vph": 477
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "Windows"
+          },
+          "browsers": [
+            {
+              "brand": "Not:A-Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "156"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "156"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "u87024353-e988-4fd0-a303-561a4f4216e5",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "1d2f9248-2ec0-4ede-8d5c-105c6d765617",
+      "test": 0,
+      "tmax": 3000,
+      "ext": {
+        "appnexus": {
+          "prebid": true,
+          "hb_source": 1,
+          "sdk": {
+            "version": "11.47.0-pre",
+            "source": "pbjs"
+          },
+          "referrer_detection": {
+            "rd_ref": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fbanner.html%3Fpbjs_debug%3Dtrue",
+            "rd_top": true,
+            "rd_ifs": 0,
+            "rd_stk": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fbanner.html%3Fpbjs_debug%3Dtrue"
+          }
+        }
+      }
+    }
+  }
+}

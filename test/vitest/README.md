@@ -63,6 +63,22 @@ when a spec might be failing because of another one running alongside it (pages 
 storage). It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec
 file at a time.
 
+### Debugging in a browser
+
+`VITEST_DEBUG=1` (or `--debug` on the `gulp test*` tasks, which then run in watch mode) runs the specs headless as
+usual, and also prints the URL of a page, `http://localhost:9876/debug.html`. Opening it in any browser runs the same
+specs again there, in an iframe, one file at a time, so its devtools can inspect them and stop at breakpoints; they
+show up as the `debug` browser instance. Test timeouts are off there, so a test paused in the debugger doesn't fail.
+Reloading the page, or its Re-run button, runs them there again; a change to the sources re-runs only the headless ones.
+
+```sh
+VITEST_DEBUG=1 npm run test:vitest:watch -- test/spec/modules/appnexusBidAdapter_spec.js
+npx gulp test-only --debug --file test/spec/modules/appnexusBidAdapter_spec.js
+npx gulp serve-and-test --debug --file test/spec/modules/appnexusBidAdapter_spec.js   # also re-precompiles
+```
+
+The page adds a frame: specs see it as `window.top`.
+
 For the all-features-disabled variant (Karma's "Unit tests (all features disabled)" job), precompile with
 `npx gulp precompile-all-features-disabled` instead.
 

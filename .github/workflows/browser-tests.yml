@@ -1,5 +1,5 @@
 name: Build checks and e2e tests on all browsers
-# Unit tests run under Vitest (vitest-chromium.yml and vitest-browsers.yml, #16007); Karma's unit and BrowserStack jobs were here.
+# Unit tests are not run here: see vitest-chromium.yml and vitest-browsers.yml (called from test.yml).
 on:
   workflow_call:
     inputs:

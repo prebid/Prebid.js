@@ -364,7 +364,7 @@ export function waitForElementToLoad(element, timeout) {
  *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
  */
 
-export function politeTriggerPixel(url, credentials = 'include') {
+export function politeTriggerPixel(url, credentials = 'include', immediate = false) {
   const triggerSync = () => {
     if (window.fetch && window.Request) {
       try {
@@ -381,7 +381,11 @@ export function politeTriggerPixel(url, credentials = 'include') {
     if (credentials !== 'omit') triggerPixel(url);
   };
 
-  runBackgroundTask(triggerSync);
+  if (immediate) {
+    triggerSync();
+  } else {
+    runBackgroundTask(triggerSync);
+  }
 }
 
 export function triggerPixel(url, done, timeout) {

@@ -1133,6 +1133,13 @@ describe('floxisBidAdapter', function () {
         expect(syncs[0].url).to.equal('https://px-us-e.floxis.tech/sync?seat=Gmtb');
       });
 
+      it('should ignore a non-HTTPS body entry and fall through to the header', function () {
+        ['javascript:alert(1)', 'http://px-us-e.floxis.tech/sync?seat=aBfL'].forEach((url) => {
+          const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(url, 'iframe')], 'seat=Gmtb&region=us-e')]);
+          expect(syncs).to.deep.equal([{ type: 'iframe', url: 'https://px-us-e.floxis.tech/sync?seat=Gmtb' }]);
+        });
+      });
+
       it('should emit no sync when the body carries only a disabled-type entry and no header', function () {
         const syncs = spec.getUserSyncs({ iframeEnabled: true }, [bodyResponse([bodySync(IMAGE_URL, 'image')])]);
         expect(syncs).to.have.lengthOf(0);

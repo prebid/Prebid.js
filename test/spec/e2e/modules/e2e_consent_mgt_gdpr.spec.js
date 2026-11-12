@@ -7,20 +7,20 @@ const TEST_PAGE_URL = testPageURL('consent_mgt_gdpr.html?pbjs_debug=true');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  hb_pb_appnexus: '10.00',
-  hb_native_title_appn: 'This is a Prebid Native Creative',
+  hb_pb_msft: '10.00',
+  hb_native_title_msft: 'This is a Prebid Native Creative',
   hb_native_linkurl: 'http://prebid.org/dev-docs/show-native-ads.html',
   hb_format: 'native',
   hb_native_brand: 'Prebid.org',
   hb_size: '0x0',
-  hb_bidder_appnexus: 'appnexus',
-  hb_native_linkurl_ap: 'http://prebid.org/dev-docs/show-native-ads.html',
+  hb_bidder_msft: 'msft',
+  hb_native_linkurl_ms: 'http://prebid.org/dev-docs/show-native-ads.html',
   hb_native_title: 'This is a Prebid Native Creative',
   hb_pb: '10.00',
-  hb_native_brand_appn: 'Prebid.org',
-  hb_bidder: 'appnexus',
-  hb_format_appnexus: 'native',
-  hb_size_appnexus: '0x0'
+  hb_native_brand_msft: 'Prebid.org',
+  hb_bidder: 'msft',
+  hb_format_msft: 'native',
+  hb_size_msft: '0x0'
 };
 
 describe('Prebid.js GDPR Ad Unit Test', function () {
@@ -46,11 +46,11 @@ describe('Prebid.js GDPR Ad Unit Test', function () {
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     expect(targetingKeys.hb_adid).to.be.a('string');
     expect(targetingKeys.hb_native_body).to.be.a('string');
-    expect(targetingKeys.hb_native_body_appne).to.be.a('string');
+    expect(targetingKeys.hb_native_body_msft).to.be.a('string');
     expect(targetingKeys.hb_native_icon).to.be.a('string');
-    expect(targetingKeys.hb_native_icon_appne).to.be.a('string');
+    expect(targetingKeys.hb_native_icon_msft).to.be.a('string');
     expect(targetingKeys.hb_native_image).to.be.a('string');
-    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_adid_msft).to.be.a('string');
   });
 
   it('should render the Banner Ad on the page', function () {
