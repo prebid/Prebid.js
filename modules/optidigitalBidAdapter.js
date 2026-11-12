@@ -51,10 +51,7 @@ export const spec = {
       return [];
     }
 
-    const ortb2 = bidderRequest.ortb2 || {
-      bcat: [],
-      badv: []
-    };
+    const ortb2 = bidderRequest.ortb2 || {};
 
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
