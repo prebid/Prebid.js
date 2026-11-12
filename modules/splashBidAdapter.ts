@@ -19,7 +19,6 @@ import {
   unwrapCreativeHtml,
 } from '../libraries/splashUtils/creative.js';
 import {
-  deepAccess,
   deepSetValue,
   generateUUID,
   getWinDimensions,
@@ -69,6 +68,14 @@ declare module '../src/adUnits' {
 }
 
 type SplashBidRequest = BidRequest<typeof BIDDER_CODE>;
+
+interface SplashBidExt {
+  splash?: {
+    slot?: { width?: unknown, height?: unknown };
+    format?: unknown;
+  };
+  general?: { display_format?: unknown };
+}
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
@@ -129,8 +136,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     }
     addEventTrackers(bidResponse, bid);
     if (format !== STANDARD) {
-      const slotWidth = Number(deepAccess(bid, 'ext.splash.slot.width')) || 0;
-      const slotHeight = Number(deepAccess(bid, 'ext.splash.slot.height')) || 0;
+      const ext = bid.ext as SplashBidExt | undefined;
+      const slotWidth = Number(ext?.splash?.slot?.width) || 0;
+      const slotHeight = Number(ext?.splash?.slot?.height) || 0;
       if (format === PARALLAX && slotWidth > 0 && slotHeight > 0) {
         Object.assign(bidResponse, { width: slotWidth, height: slotHeight });
       }
@@ -225,10 +233,12 @@ function replacesAdapterRenderer(renderer): boolean {
  * nothing to replace it. Publisher overrides are resolved by core without withholding the bid.
  */
 function customPresentation(bid: SplashBidRequest, bidderRequest: unknown): typeof TOP_WINDOW | typeof SAFE {
-  const safeRenderers = [deepAccess(bid, 'mediaTypes.banner.safeRenderer'), deepAccess(bid, 'safeRenderer')]
+  const safeRenderers = [bid.mediaTypes?.banner?.safeRenderer, bid.safeRenderer]
     .filter(safeRenderer => safeRenderer && safeRenderer.url);
-  const topWindow = deepAccess(bidderRequest, 'allowTopWindowRenderers') === true && !safeRenderers.length &&
-    !replacesAdapterRenderer(deepAccess(bid, 'mediaTypes.banner.renderer')) && !replacesAdapterRenderer(deepAccess(bid, 'renderer'));
+  const allowTopWindowRenderers = bidderRequest && typeof bidderRequest === 'object' &&
+    (bidderRequest as { allowTopWindowRenderers?: unknown }).allowTopWindowRenderers === true;
+  const topWindow = allowTopWindowRenderers && !safeRenderers.length &&
+    !replacesAdapterRenderer(bid.mediaTypes?.banner?.renderer) && !replacesAdapterRenderer(bid.renderer);
   return topWindow ? TOP_WINDOW : SAFE;
 }
 
@@ -246,7 +256,8 @@ function normalizeFormat(value: unknown): SplashDisplayFormat | undefined {
 
 function responseDisplayFormat(bid): SplashDisplayFormat | null | undefined {
   let format: SplashDisplayFormat | undefined;
-  for (const value of [deepAccess(bid, 'ext.splash.format'), deepAccess(bid, 'ext.general.display_format')]) {
+  const ext = bid.ext as SplashBidExt | undefined;
+  for (const value of [ext?.splash?.format, ext?.general?.display_format]) {
     if (value === undefined) continue;
     const normalized = normalizeFormat(value);
     if (!normalized || (format && normalized !== format)) return null;
@@ -565,7 +576,7 @@ function installParallaxSizing(frame: HTMLElement, stage: HTMLElement, { slotHei
   let animationFrame: number | null = null;
   function computeHeight() {
     const dims = getWinDimensions();
-    const viewport = dims.innerHeight || deepAccess(dims, 'document.documentElement.clientHeight') || 0;
+    const viewport = dims.innerHeight || dims.document?.documentElement?.clientHeight || 0;
     // A slot height equal to the creative height means the slot follows the viewport.
     if (!slotHeight || (creativeHeight > 0 && Math.abs(slotHeight - creativeHeight) <= 1)) return viewport;
     return viewport > 0 ? Math.min(slotHeight, viewport) : slotHeight;
