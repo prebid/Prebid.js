@@ -4367,13 +4367,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "chtnw",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "cointraffic",
       "aliasOf": null,
       "gvlid": null,
