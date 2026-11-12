@@ -13,13 +13,11 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  */
 
 const BIDDER_CODE = 'between';
-const GVLID = 724;
 const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['btw'],
   supportedMediaTypes: ['banner', 'video'],
   /**

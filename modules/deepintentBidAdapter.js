@@ -8,7 +8,6 @@ import { buildOrtbVideo } from '../libraries/ortbVideoUtils/ortbVideoUtils.js';
 
 const LOG_WARN_PREFIX = 'DeepIntent: ';
 const BIDDER_CODE = 'deepintent';
-const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
 const DI_M_V = '1.0.0';
@@ -20,7 +19,6 @@ export const ORTB_VIDEO_PARAMS = {
 };
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: [],
 
