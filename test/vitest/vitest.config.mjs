@@ -303,10 +303,22 @@ export default defineConfig({
           fs.mkdirSync(RAW, { recursive: true });
           fs.writeFileSync(path.join(RAW, `${name}.chunk-${chunk}_spec.json`), json);
         },
-        // nativeSetup.mjs, before each spec file: every cookie of the page's context, including paths and domains the page
-        // can't see
-        async clearCookies(ctx) {
-          await (ctx.context?.clearCookies() ?? ctx.browser?.deleteCookies());
+        // nativeSetup.mjs, before each spec file; false when there is no provider to do it (the debug page)
+        async clearCookies({ context, browser, provider }) {
+          if (context) {
+            await context.clearCookies();
+            return true;
+          }
+          if (!browser) return false;
+          // WebDriver Classic deletes only the cookies the current frame's document can see; the spec's is the iframe
+          const switched = provider.isIframeSwitched();
+          if (!switched) await provider.switchToTestFrame();
+          try {
+            await browser.deleteCookies();
+          } finally {
+            if (!switched) await provider.switchToMainFrame();
+          }
+          return true;
         },
       },
     },

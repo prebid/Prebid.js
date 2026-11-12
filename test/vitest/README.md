@@ -23,8 +23,9 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
   under Karma.
 - Each spec file starts with no cookies, `localStorage` or `sessionStorage`: before anything else loads,
   `nativeSetup.mjs` clears the storage, and the cookies through the `clearCookies` browser command
-  (`vitest.config.mjs`; Playwright clears its browser context's, WebdriverIO the page's), then expires whatever
-  `document.cookie` still shows. Within a file nothing is reset, so a spec still cleans up what one test writes before
+  (`vitest.config.mjs`; Playwright clears its browser context's, WebdriverIO those of the spec's frame) and waits
+  until `document.cookie` is empty. The debug page has no provider to clear them, so it expires those it shows at `/`
+  and at its own path. Within a file nothing is reset, so a spec still cleans up what one test writes before
   the next.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
