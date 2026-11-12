@@ -2670,13 +2670,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "harion",
-      "aliasOf": null,
-      "gvlid": 1406,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "iqzone",
       "aliasOf": null,
       "gvlid": null,
