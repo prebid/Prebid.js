@@ -3,7 +3,6 @@ import { fetchExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  deepAccess,
   deepSetValue,
   formatQS,
   mergeDeep,
@@ -68,9 +67,9 @@ const ORTB_DEVICE_TYPE_MAP = new Map([
  */
 export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // Resource key
-  let resourceKey = deepAccess(moduleConfig, 'params.resourceKey');
+  let resourceKey = moduleConfig?.params?.resourceKey;
   // On-premise JS URL
-  let onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl');
+  let onPremiseJSUrl = moduleConfig?.params?.onPremiseJSUrl;
 
   // Trim the values
   if (typeof resourceKey === 'string') {
@@ -526,7 +525,7 @@ export const resolveIdUsage = (moduleConfig) => {
  * @returns {string|undefined}
  */
 export const resolveTcString = (userConsent) => {
-  const tc = deepAccess(userConsent, 'gdpr.consentString');
+  const tc = userConsent?.gdpr?.consentString;
   return (typeof tc === 'string' && tc.length > 0) ? tc : undefined;
 };
 
@@ -537,7 +536,7 @@ export const resolveTcString = (userConsent) => {
  * @returns {string|undefined}
  */
 export const resolveGpp = (userConsent) => {
-  const gpp = deepAccess(userConsent, 'gpp.gppString');
+  const gpp = userConsent?.gpp?.gppString;
   return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined;
 };
 
@@ -626,8 +625,8 @@ const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
     // Don't clobber a publisher-observed device.ip / device.ipv6 with
     // our IP-derived value. Publisher signal wins.
     if (enrichment.device) {
-      if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-      if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+      if (global?.device?.ip) delete enrichment.device.ip;
+      if (global?.device?.ipv6) delete enrichment.device.ipv6;
     }
     mergeDeep(global, enrichment);
     logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
@@ -652,7 +651,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     }
   };
   try {
-    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
+    const tdlUrl = moduleConfig?.params?.tdlUrl;
     const idUsage = resolveIdUsage(moduleConfig);
     const tcString = resolveTcString(userConsent);
     const gpp = resolveGpp(userConsent);

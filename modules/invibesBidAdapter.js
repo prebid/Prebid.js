@@ -5,6 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./invibesBidAdapter.d.ts').InvibesBidParams} InvibesBidParams
  */
 
 const CONSTANTS = {

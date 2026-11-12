@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter as OrtbConverter } from '../libraries/ortbConverter/converter.js';
 import { Renderer } from '../src/Renderer.js';
-import { deepAccess, deepSetValue } from '../src/utils.js';
+import { deepSetValue } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -62,7 +62,7 @@ const ortbConverter = OrtbConverter({
     utils.deepSetValue(request, 'device.ip', 'caller');
     utils.deepSetValue(request, 'ext.avx_add_vast_url', 1);
 
-    const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+    const eids = bidderRequest?.bids?.[0]?.userIdAsEids;
 
     if (eids && eids.length) {
       deepSetValue(request, 'user.ext.eids', eids);
@@ -291,7 +291,7 @@ export const spec = {
 
     return bids.map((bid) => {
       const thisRequest = utils.getBidRequest(bid.requestId, [bidRequest]);
-      const context = utils.deepAccess(thisRequest, 'mediaTypes.video.context');
+      const context = thisRequest?.mediaTypes?.video?.context;
 
       if (FEATURES.VIDEO && bid.mediaType === 'video' && context === 'outstream') {
         bid.renderer = videoUtils.createOutstreamVideoRenderer(bid);

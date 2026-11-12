@@ -4,6 +4,7 @@ const { checkDeclarationFilename } = require('./filename.js');
 const noRedundantValidatedCondition = require('./noRedundantValidatedCondition.js');
 const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 const augmentationReachable = require('./augmentationReachable.js');
+const noDeepAccessImport = require('./noDeepAccessImport.js');
 const noSynchronousLayoutRead = require('./noSynchronousLayoutRead.js');
 
 const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
@@ -50,6 +51,7 @@ module.exports = {
       }
     },
     'no-redundant-validated-condition': noRedundantValidatedCondition,
+    'no-deep-access-import': noDeepAccessImport,
     'no-extra-function-args': noExtraFunctionArgs,
     'augmentation-reachable': augmentationReachable,
     'no-synchronous-layout-read': noSynchronousLayoutRead,

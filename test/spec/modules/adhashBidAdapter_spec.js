@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adhashBidAdapter.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
+import { deepClone } from 'src/utils.js';
 
 describe('adhashBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -27,43 +28,43 @@ describe('adhashBidAdapter', function () {
     });
 
     it('should return false when there are no params', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when unsupported media type is requested', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.mediaTypes = { native: { sizes: [[300, 250]] } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when publisherId is not a string', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.publisherId = 123;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when publisherId is not valid', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.publisherId = 'short string';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when publisherId is not a string', function () {
-      const bid = { ...validBid };
+    it('should return false when platformURL is not a string', function () {
+      const bid = deepClone(validBid);
       bid.params.platformURL = 123;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when publisherId is not valid', function () {
-      const bid = { ...validBid };
+    it('should return false when platformURL is not valid', function () {
+      const bid = deepClone(validBid);
       bid.params.platformURL = 'https://';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when bidderURL is present but not https://', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.bidderURL = 'http://example.com/';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
