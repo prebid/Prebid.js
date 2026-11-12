@@ -393,10 +393,11 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
   if (extractedUserId && extractedUserId !== 0) {
     deepSetValue(data, 'user.buyeruid', extractedUserId);
   }
-  if (data.regs?.ext === undefined || data.regs?.ext === null) {
-    data.regs = {
-      ext: {}
-    };
+  if (data.regs === undefined || data.regs === null) {
+    data.regs = {};
+  }
+  if (data.regs.ext === undefined || data.regs.ext === null) {
+    data.regs.ext = {};
   }
   deepSetValue(data, 'regs.coppa', 0);
   if (gdprConsent.gdprApplies) {
