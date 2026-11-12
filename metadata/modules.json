@@ -1046,20 +1046,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "slimcut",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "scm",
-      "aliasOf": "slimcut",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "smartico",
       "aliasOf": null,
       "gvlid": null,
