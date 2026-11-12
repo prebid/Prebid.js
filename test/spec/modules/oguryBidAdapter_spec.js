@@ -641,7 +641,7 @@ describe('OguryBidAdapter', () => {
       expect(ortbBidRequest.id).to.equal(bidRequest.bidId);
       expect(ortbBidRequest.tagid).to.equal(bidRequest.adUnitCode);
       expect(ortbBidRequest.banner).to.deep.equal({
-        topframe: 0,
+        topframe: 1,
         format: [{
           w: bidRequest.mediaTypes.banner.sizes[0][0],
           h: bidRequest.mediaTypes.banner.sizes[0][1],
@@ -1043,14 +1043,14 @@ describe('OguryBidAdapter', () => {
         h: 101
       };
       spec.onBidWon(bidSample);
-      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample);
+      expect(utils.getWindowTop().OG_PREBID_BID_OBJECT).to.deep.equal(bidSample);
     });
   });
 
   describe('getWindowContext', function() {
     it('Should return top window if exist', function() {
       const res = spec.getWindowContext();
-      expect(res).to.equal(window.top);
+      expect(res).to.equal(utils.getWindowTop());
       expect(res).to.not.be.undefined;
     });
 

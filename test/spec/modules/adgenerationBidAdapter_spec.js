@@ -213,7 +213,7 @@ describe('AdgenerationAdapter', function () {
         }
       };
       const expectedBanner = {
-        topframe: 0,
+        topframe: 1,
         format: [
           {
             w: 300,

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/h12mediaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils.js';
 import { clearCache } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 describe('H12 Media Adapter', function () {
@@ -296,6 +297,7 @@ describe('H12 Media Adapter', function () {
     });
 
     it('should define iframe', function () {
+      sandbox.stub(utils, 'inIframe').returns(true);
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const requests = spec.buildRequests([validBid, validBid2], bidderRequest);

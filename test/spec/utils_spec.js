@@ -54,8 +54,16 @@ describe('Utils', function () {
       }
     };
 
+    let sandbox;
+
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils.internal, 'getWindowTop').returns({});
+    });
+
     afterEach(function() {
       delete window.$sf;
+      sandbox.restore();
     });
 
     it('should return true if window.$sf is accessible', function () {

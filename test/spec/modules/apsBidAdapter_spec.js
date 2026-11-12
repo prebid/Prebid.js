@@ -159,7 +159,7 @@ describe('apsBidAdapter', () => {
 
       expect(result.data.imp.length).to.equal(2);
       expect(result.data.imp[0]).to.deep.equal({
-        banner: { format: [{ h: 250, w: 300 }], h: 250, topframe: 0, w: 300 },
+        banner: { format: [{ h: 250, w: 300 }], h: 250, topframe: 1, w: 300 },
         id: 'bid1',
         secure: 1,
       });

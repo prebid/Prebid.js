@@ -22,6 +22,9 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
 - `test_deps.js` and `pipeline_setup.js` load before each spec (`nativeSetup.mjs`), and `hookSetup.js` after it, as
   under Karma. Spec files share the origin's cookies and storage, so a spec cleans up what it writes and clears what
   it needs empty.
+- `getWindowTop()` returns the spec's own window (`test/helpers/windowTop.js`), not the page Vitest runs each spec
+  file in and reuses for the next one. So `inIframe()` is false; a spec that needs a frame stubs `inIframe()` or
+  `getWindowTop()`.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
 - suite `this`, `done` callbacks, and the 3000ms timeout with `this.timeout()`;

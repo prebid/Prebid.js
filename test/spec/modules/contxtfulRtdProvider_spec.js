@@ -788,14 +788,14 @@ describe('contxtfulRtdProvider', function () {
       const fakeElem = fakeGetElementById(100, 100, 30, 30);
       if (isVisible) {
         fakeElem.checkVisibility = function () { return true; };
-        sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+        sandbox.stub(utils.getWindowTop(), 'getComputedStyle').returns({ display: 'block' });
       } else {
         fakeElem.checkVisibility = function () { return false; };
-        sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+        sandbox.stub(utils.getWindowTop(), 'getComputedStyle').returns({ display: 'none' });
       }
 
       if (withIframe) {
-        sandbox.stub(utils, 'getWindowSelf').returns(window.top);
+        sandbox.stub(utils, 'getWindowSelf').returns(utils.getWindowTop());
         sandbox.stub(utils, 'inIframe').returns(true);
         sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);
       } else {
@@ -803,7 +803,7 @@ describe('contxtfulRtdProvider', function () {
         sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);
       }
       if (forceGetElementById) {
-        sandbox.stub(window.top.document, 'getElementById').returns(fakeElem);
+        sandbox.stub(utils.getWindowTop().document, 'getElementById').returns(fakeElem);
       }
       contxtfulSubmodule.init(config);
     }
@@ -823,7 +823,7 @@ describe('contxtfulRtdProvider', function () {
         };
         InitDivStubPositions(config, false, true, false);
         const fakeElem = fakeGetElementById(100, 100, 30, 30);
-        sandbox.stub(window.top.document, 'getElementById').returns(function (id) {
+        sandbox.stub(utils.getWindowTop().document, 'getElementById').returns(function (id) {
           if (id === 'code1' || id === 'code2') {
             return undefined;
           } else {

@@ -8,4 +8,5 @@ globalThis.global = globalThis;
 
 await import('test/test_deps.js');
 await import('test/pipeline_setup.js');
+await import('test/helpers/windowTop.js');
 await loadLater();

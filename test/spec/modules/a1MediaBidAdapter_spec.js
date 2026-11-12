@@ -72,7 +72,7 @@ const getConvertedBidReq = () => {
               w: 320
             },
           ],
-          topframe: 0
+          topframe: 1
         },
         bidfloor: 0,
         bidfloorcur: 'JPY',

@@ -399,8 +399,8 @@ describe('Adagio Rtd Provider', function () {
     it('update the ortb2Fragments object with adg_rtd signals', function() {
       const bidRequest = utils.deepClone(bidReqConfig);
 
-      sandbox.stub(window.top.document, 'getElementById').returns(getElementByIdMock());
-      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(utils.getWindowTop().document, 'getElementById').returns(getElementByIdMock());
+      sandbox.stub(utils.getWindowTop(), 'getComputedStyle').returns({ display: 'block' });
       sandbox.stub(utils, 'inIframe').returns(false);
 
       adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
@@ -425,8 +425,8 @@ describe('Adagio Rtd Provider', function () {
         scrollY: 1000,
         document: dims.document
       });
-      sandbox.stub(window.top.document, 'getElementById').returns(getElementByIdMock());
-      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(utils.getWindowTop().document, 'getElementById').returns(getElementByIdMock());
+      sandbox.stub(utils.getWindowTop(), 'getComputedStyle').returns({ display: 'block' });
       sandbox.stub(utils, 'inIframe').returns(false);
 
       adagioRtdSubmodule.getBidRequestData(bidRequest, cb);

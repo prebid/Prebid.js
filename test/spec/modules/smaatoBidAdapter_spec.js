@@ -110,7 +110,7 @@ describe('smaatoBidAdapterTest', () => {
           w: 300
         }
       ],
-      topframe: 0,
+      topframe: 1,
     };
 
     describe('common', () => {

@@ -115,6 +115,7 @@ describe('Yandex adapter', function () {
     });
 
     it('should return banner coordinates', function () {
+      sandbox.stub(utils, 'inIframe').returns(true);
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.imp[0].ext.coords.x).to.equal(123);
       expect(requests[0].data.imp[0].ext.coords.y).to.equal(234);

@@ -93,9 +93,7 @@ describe('connatixBidAdapter', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      // An element of the top document, which the tests treat as the page (inIframe() is false): one of the test
-      // frame's document would be offset and clipped by that frame, which on a phone isn't at the top left.
-      element = window.top.document.createElement('div');
+      element = document.createElement('div');
       getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
@@ -106,7 +104,7 @@ describe('connatixBidAdapter', function () {
         innerHeight: 600
       };
 
-      querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
+      querySelectorStub = sandbox.stub(document, 'querySelector');
       getElementStub = sandbox.stub(adUnits, 'getAdUnitElement');
       sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
         {
@@ -180,7 +178,6 @@ describe('connatixBidAdapter', function () {
 
       expect(result).to.equal(100);
       expect(getElementByIdStub.calledWith('validElement')).to.be.true;
-      expect(querySelectorStub.calledWith('validElement')).to.be.false;
     });
 
     it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
@@ -250,6 +247,7 @@ describe('connatixBidAdapter', function () {
 
       // Simulate an error when querying the element
       querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+      getElementStub.returns(null);
 
       getBoundingClientRectStub.returns({
         left: 100,
