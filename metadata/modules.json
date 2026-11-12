@@ -4395,20 +4395,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "distroscale",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ds",
-      "aliasOf": "distroscale",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "empower",
       "aliasOf": null,
       "gvlid": 1248,
