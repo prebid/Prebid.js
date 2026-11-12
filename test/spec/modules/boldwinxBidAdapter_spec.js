@@ -114,16 +114,29 @@ describe('boldwinx bid adapter', function () {
       expect(request.url).to.equal(`${BID_URL}?epid=a%20b%26c`);
     });
 
-    it('sends every bid in its own request, even when bids share an epid', function () {
+    it('puts the bids of one epid into one request and every epid into its own', function () {
       const bids = [
         makeBid({ bidId: 'bid-1', params: { epid: '1' } }),
         makeBid({ bidId: 'bid-2', params: { epid: '2' } }),
         makeBid({ bidId: 'bid-3', params: { epid: 1 } }),
       ];
       const requests = buildRequests(bids);
-      expect(requests.map((request) => request.url)).to.deep.equal([`${BID_URL}?epid=1`, `${BID_URL}?epid=2`, `${BID_URL}?epid=1`]);
-      requests.forEach((request) => expect(request.data.imp).to.have.lengthOf(1));
-      expect(new Set(requests.map((request) => request.data.id)).size).to.equal(3);
+      expect(requests.map((request) => request.url)).to.deep.equal([`${BID_URL}?epid=1`, `${BID_URL}?epid=2`]);
+      expect(requests.map((request) => request.data.imp.map((imp) => imp.id))).to.deep.equal([['bid-1', 'bid-3'], ['bid-2']]);
+      expect(requests[0].data.id).to.not.equal(requests[1].data.id);
+    });
+
+    it('matches the bids of a multi-impression response to their ad units by impid', function () {
+      const bids = [
+        makeBid({ bidId: 'bid-1', adUnitCode: 'div-1' }),
+        makeBid({ bidId: 'bid-2', adUnitCode: 'div-2' }),
+      ];
+      const [request] = buildRequests(bids);
+      const result = spec.interpretResponse(makeResponse(request, [
+        { id: 'b', impid: 'bid-2', price: 2, adm: '<div>two</div>', w: 728, h: 90, crid: 'c2', mtype: 1 },
+        { id: 'a', impid: 'bid-1', price: 1, adm: '<div>one</div>', w: 300, h: 250, crid: 'c1', mtype: 1 },
+      ]), request);
+      expect(result.map((bid) => [bid.requestId, bid.cpm, bid.width])).to.deep.equal([['bid-2', 2, 728], ['bid-1', 1, 300]]);
     });
 
     if (FEATURES.VIDEO && FEATURES.NATIVE) {
@@ -132,7 +145,7 @@ describe('boldwinx bid adapter', function () {
           makeBid({ bidId: 'bid-v', mediaTypes: { video: VIDEO_PARAMS } }),
           makeBid({ bidId: 'bid-n', mediaTypes: { native: { ortb: NATIVE_REQUEST } }, nativeOrtbRequest: NATIVE_REQUEST }),
         ];
-        const [video, native] = buildRequests(bids).map((request) => request.data.imp[0]);
+        const [video, native] = buildRequests(bids)[0].data.imp;
         expect(video.video).to.include({ w: 640, h: 480 });
         expect(video.video.mimes).to.deep.equal(['video/mp4']);
         expect(JSON.parse(native.native.request).assets).to.have.lengthOf(2);
@@ -296,10 +309,11 @@ describe('boldwinx bid adapter', function () {
             { adm: VAST },
             { adm: NATIVE_ADM },
           ];
-          const result = buildRequests(bids).flatMap((request, i) => {
-            const response = makeResponse(request, [{ id: `b${i}`, impid: request.data.imp[0].id, price: 1, crid: 'c', ...markups[i] }]);
-            return spec.interpretResponse(response, request);
-          });
+          const [request] = buildRequests(bids);
+          const response = makeResponse(request, request.data.imp.map((imp, i) => (
+            { id: `b${i}`, impid: imp.id, price: 1, crid: 'c', ...markups[i] }
+          )));
+          const result = spec.interpretResponse(response, request);
           expect(result.map((bid) => [bid.requestId, bid.mediaType])).to.deep.equal([
             ['bid-b', BANNER], ['bid-v', VIDEO], ['bid-n', NATIVE],
           ]);

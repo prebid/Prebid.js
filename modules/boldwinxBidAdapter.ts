@@ -131,16 +131,23 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return isValidEpid(bidRequest?.params?.epid);
   },
 
-  // The endpoint answers 204 to any request with more than one imp, so every bid goes alone.
-  // That is one HTTP call per ad unit; batch them per epid once the server accepts multi-imp.
+  // The epid goes in the URL, so the bids of one epid share a request and each epid gets its own.
   buildRequests(validBidRequests, bidderRequest) {
-    const requests: AdapterRequest[] = [];
+    const bidsByEpid = new Map<string, typeof validBidRequests>();
     validBidRequests.forEach((bidRequest) => {
-      const data = converter.toORTB({ bidRequests: [bidRequest], bidderRequest });
+      const epid = String(bidRequest.params.epid);
+      if (!bidsByEpid.has(epid)) {
+        bidsByEpid.set(epid, []);
+      }
+      bidsByEpid.get(epid).push(bidRequest);
+    });
+    const requests: AdapterRequest[] = [];
+    bidsByEpid.forEach((bidRequests, epid) => {
+      const data = converter.toORTB({ bidRequests, bidderRequest });
       if (data.imp.length > 0) {
         requests.push({
           method: 'POST',
-          url: `${BID_URL}?epid=${encodeURIComponent(bidRequest.params.epid)}`,
+          url: `${BID_URL}?epid=${encodeURIComponent(epid)}`,
           data,
         });
       }

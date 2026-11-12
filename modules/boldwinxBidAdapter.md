@@ -11,8 +11,8 @@ Maintainer: info@bold-win.com
 Connects to the Boldwin endpoint that the `epid` (endpoint ID) param selects. Supports banner,
 video (instream; outstream needs the publisher's own renderer) and native (ORTB native request).
 
-Contact info@bold-win.com to get an `epid`. Every ad unit goes into its own request with one
-impression, because the endpoint accepts one impression per request.
+Contact info@bold-win.com to get an `epid`. The ad units of one `epid` go into one request,
+one impression each.
 
 Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
 out of the request, and Prebid still enforces it on the bids.
