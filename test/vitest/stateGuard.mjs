@@ -1,9 +1,9 @@
 // Fails a spec file that leaves state behind on `window.top`. Each spec file runs in a page (iframe) of its own and
-// starts with no cookies or storage (nativeSetup.mjs), but `window.top` is the one page all spec files share: a
-// property a spec adds there, or a built-in it shadows, outlives it and can break a later file (sevio's spec once
-// hid `top.performance.timing`, which oolo's reads). nativeSetup.mjs snapshots it before the spec loads; the
-// plugin (plugins.mjs) calls registerStateGuard() at the end of each spec, so its afterAll runs after the spec's
-// own after() hooks.
+// starts with no cookies or storage (nativeSetup.mjs), but `window.top` is shared by the spec files that run one
+// after another in a page: a property a spec adds there, or a built-in it shadows, outlives it and can break a later
+// file (sevio's spec once hid `top.performance.timing`, which oolo's reads). nativeSetup.mjs snapshots it before the
+// spec loads; the plugin (plugins.mjs) calls registerStateGuard() at the end of each spec, so its afterAll runs after
+// the spec's own after() hooks.
 import * as vitest from 'vitest';
 
 // own properties a page shouldn't gain from a spec (built-ins live on prototypes, so an own one shadows them)
@@ -62,9 +62,8 @@ export function registerStateGuard() {
   vitest.afterAll(() => {
     const leaks = leaksSince(snapshot);
     if (leaks.length) {
-      throw new Error(`This spec file left state on window.top, which every later spec file shares: ${leaks.join(', ')}. ` +
-        'Restore it in an after()/afterEach() hook (delete an own property you added). With VITEST_PARALLEL, another ' +
-        'spec file running at the same time may have left it: the property names the module. See test/vitest/README.md.');
+      throw new Error(`This spec file left state on window.top, which later spec files share: ${leaks.join(', ')}. ` +
+        'Restore it in an after()/afterEach() hook (delete an own property you added). See test/vitest/README.md.');
     }
   });
 }

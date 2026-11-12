@@ -1,5 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, getWinDimensions } from '../src/utils.js';
+import { getWinDimensions } from '../src/utils.js';
+
+/**
+ * @typedef {import('./justpremiumBidAdapter.d.ts').JustpremiumBidParams} JustpremiumBidParams
+ */
 
 const BIDDER_CODE = 'justpremium';
 const GVLID = 62;
@@ -45,10 +49,10 @@ export const spec = {
       sizes[zone].push.apply(sizes[zone], b.mediaTypes && b.mediaTypes.banner && b.mediaTypes.banner.sizes);
     });
 
-    if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
-      payload.pubcid = deepAccess(validBidRequests[0], 'userId.pubcid');
-    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
-      payload.pubcid = deepAccess(validBidRequests[0], 'crumbs.pubcid');
+    if (validBidRequests[0]?.userId?.pubcid) {
+      payload.pubcid = validBidRequests[0]?.userId?.pubcid;
+    } else if (validBidRequests[0]?.crumbs?.pubcid) {
+      payload.pubcid = validBidRequests[0]?.crumbs?.pubcid;
     }
 
     payload.uids = validBidRequests[0].userId;

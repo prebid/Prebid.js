@@ -56,6 +56,38 @@ describe('Creative renderer - display', () => {
     });
   });
 
+  it('captures trusted clicks on links when opted in', () => {
+    const listeners = {};
+    const contentDocument = {
+      addEventListener: sinon.spy((type, fn) => { listeners[type] = fn; })
+    };
+    const frame = { contentDocument, addEventListener: sinon.spy((type, fn) => { listeners.load = fn; }) };
+    mkFrame.returns(frame);
+    runRenderer({ ad: '<a href="https://example.com">Go</a>', trackClicks: true });
+    listeners.load();
+    const link = { closest: () => ({ href: 'https://example.com' }) };
+    listeners.click({ isTrusted: true, target: link });
+    sinon.assert.calledWith(sendMessage, 'Prebid Event', { event: 'bidClick', method: 'creativeClick' });
+    sendMessage.resetHistory();
+    listeners.click({ isTrusted: false, target: link });
+    listeners.click({ isTrusted: true, target: { closest: () => null } });
+    sinon.assert.notCalled(sendMessage);
+  });
+
+  it('does not observe adUrl frames even when enabled', () => {
+    const frame = { addEventListener: sinon.spy() };
+    mkFrame.returns(frame);
+    runRenderer({ adUrl: 'https://example.com/ad', trackClicks: true });
+    sinon.assert.notCalled(frame.addEventListener);
+  });
+
+  it('does not observe inline frames unless enabled', () => {
+    const frame = { addEventListener: sinon.spy() };
+    mkFrame.returns(frame);
+    runRenderer({ ad: '<a>ad</a>' });
+    sinon.assert.notCalled(frame.addEventListener);
+  });
+
   it('defaults width and height to 100%', () => {
     runRenderer({ ad: 'mock' });
     sinon.assert.calledWith(doc.body.appendChild, sinon.match({

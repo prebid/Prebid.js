@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {
   deepAccess,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -18,6 +19,10 @@ import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
 import { isIframe } from '../libraries/omsUtils/index.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+
+/**
+ * @typedef {import('./33acrossBidAdapter.d.ts').ThirtyThreeAcrossBidParams} ThirtyThreeAcrossBidParams
+ */
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -633,7 +638,7 @@ function getTopMostAccessibleWindow() {
 
 function getViewportDimensions() {
   const topWin = getTopMostAccessibleWindow();
-  const documentElement = topWin.document.documentElement;
+  const documentElement = getWinDimensions(topWin).document.documentElement;
 
   return {
     w: documentElement.clientWidth,

@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel } from '../src/utils.js';
+import { deepSetValue, logError, logInfo, logWarn, parseUrl, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -428,7 +428,7 @@ export const spec = {
 
 function getGzipSetting() {
   try {
-    const gzipSetting = deepAccess(config.getBidderConfig(), 'criteo.gzipEnabled');
+    const gzipSetting = config.getBidderConfig()?.criteo?.gzipEnabled;
 
     if (gzipSetting !== undefined) {
       const gzipValue = String(gzipSetting).toLowerCase().trim();

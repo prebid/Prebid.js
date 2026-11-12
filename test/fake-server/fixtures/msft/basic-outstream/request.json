@@ -1,0 +1,127 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/msft",
+    "body": {
+      "imp": [
+        {
+          "video": {
+            "skip": 1,
+            "playbackmethod": [
+              2
+            ],
+            "plcmt": 4,
+            "w": 640,
+            "h": 480
+          },
+          "ext": {
+            "tid": "uf89768df-f397-44b6-b932-35ce69db6fc9",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13232385
+            }
+          },
+          "id": "9e56be40-a3c0-43bb-a77e-e03ce6870e49",
+          "secure": 1
+        },
+        {
+          "video": {
+            "skip": 1,
+            "playbackmethod": [
+              2
+            ],
+            "plcmt": 4,
+            "w": 640,
+            "h": 480
+          },
+          "ext": {
+            "tid": "ud476c95d-66dd-4e2a-9de1-b1ba1ed0f113",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13232385
+            }
+          },
+          "id": "774fded8-2e8d-4987-b2a2-75c346d06063",
+          "secure": 1
+        }
+      ],
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/outstream.html?pbjs_debug=true",
+        "ext": {
+          "data": {
+            "documentLang": "en"
+          }
+        },
+        "content": {
+          "language": "en"
+        }
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 748,
+          "vph": 477
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "Windows"
+          },
+          "browsers": [
+            {
+              "brand": "Not:A-Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "156"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "156"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "u1df35838-0895-4684-94ab-0d5d2f2c8cdd",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "1eab88c4-0b7a-4a46-9d0d-322fdf9ecaaf",
+      "test": 0,
+      "tmax": 3000,
+      "ext": {
+        "appnexus": {
+          "prebid": true,
+          "hb_source": 1,
+          "sdk": {
+            "version": "11.47.0-pre",
+            "source": "pbjs"
+          },
+          "referrer_detection": {
+            "rd_ref": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Foutstream.html%3Fpbjs_debug%3Dtrue",
+            "rd_top": true,
+            "rd_ifs": 0,
+            "rd_stk": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Foutstream.html%3Fpbjs_debug%3Dtrue"
+          }
+        }
+      }
+    }
+  }
+}

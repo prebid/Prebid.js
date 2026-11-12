@@ -1,10 +1,9 @@
 name: Vitest unit tests in shuffled order
 
 # Catches specs that depend on the order spec files run in (#16011): state one file leaves for another that
-# test/vitest/stateGuard.mjs can't see, such as a module's own globals or the shared origin's storage. Runs the
-# whole suite in Chromium with the spec files in a random order, one page at a time, so a seed always gives the same
-# order: a failure is reproduced locally with the seed in the job summary. Daily and on demand, not on PRs, where a
-# random order would make results flaky.
+# test/vitest/stateGuard.mjs can't see. Runs the whole suite in Chromium with the spec files in a random order, one
+# page at a time (VITEST_PARALLEL=0), so a seed always gives the same order: a failure is reproduced locally with the
+# seed in the job summary. Daily and on demand, not on PRs, where a random order would make results flaky.
 on:
   schedule:
     - cron: '17 6 * * *'
@@ -45,8 +44,10 @@ jobs:
             echo "### Shuffle seed: \`$seed\`"
             echo 'Reproduce locally, after `npx gulp precompile`:'
             echo '```'
-            echo "npm run test:vitest -- --sequence.shuffle.files --sequence.seed=$seed"
+            echo "VITEST_PARALLEL=0 npm run test:vitest -- --sequence.shuffle.files --sequence.seed=$seed"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Run the specs in shuffled order (seed ${{ steps.seed.outputs.seed }})
+        env:
+          VITEST_PARALLEL: 0
         run: npm run test:vitest -- --sequence.shuffle.files --sequence.seed=${{ steps.seed.outputs.seed }}

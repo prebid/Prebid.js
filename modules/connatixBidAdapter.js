@@ -9,7 +9,6 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  deepAccess,
   deepSetValue,
   formatQS,
   getWindowTop,
@@ -25,6 +24,7 @@ import {
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
@@ -52,7 +52,7 @@ let context = {};
  */
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
+    return bid?.params?.bidfloor ?? 0;
   }
 
   try {
@@ -74,7 +74,7 @@ export function validateBanner(mediaTypes) {
     return true;
   }
 
-  const banner = deepAccess(mediaTypes, BANNER, {});
+  const banner = mediaTypes?.[BANNER] || {};
   return (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
 }
 
@@ -142,7 +142,8 @@ export function detectViewability(bid) {
       element = getDomElement(viewabilityContainerIdentifier);
 
       if (element) {
-        bidParamSizes = [element.offsetWidth, element.offsetHeight];
+        const { width, height } = getElementDimensions(element);
+        bidParamSizes = [width, height];
         minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
@@ -194,7 +195,7 @@ export function _getBidRequests(validBidRequests) {
       detectedViewabilityPercentage,
     };
 
-    const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+    const gpid = bid?.ortb2Imp?.ext?.gpid;
     if (gpid && isStr(gpid)) {
       bidRequest.gpid = gpid;
     }
@@ -207,7 +208,7 @@ export function _getBidRequests(validBidRequests) {
  * Get ids from Prebid User ID Modules and add them to the payload
  */
 function _handleEids(payload, validBidRequests) {
-  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = validBidRequests?.[0]?.userIdAsEids;
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
@@ -252,9 +253,9 @@ export const spec = {
    * Otherwise, the request to the Connatix server is not made
    */
   isBidRequestValid: (bid = {}) => {
-    const bidId = deepAccess(bid, 'bidId');
-    const mediaTypes = deepAccess(bid, 'mediaTypes', {});
-    const params = deepAccess(bid, 'params', {});
+    const bidId = bid?.bidId;
+    const mediaTypes = bid?.mediaTypes || {};
+    const params = bid?.params || {};
 
     const hasBidId = Boolean(bidId);
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));

@@ -1,4 +1,4 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
+import { isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
@@ -22,16 +22,16 @@ export const spec = {
     if (!bid.params.siteId && !bid.params.placementId) {
       return false;
     }
-    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
+    if (!bid?.mediaTypes?.banner && !bid?.mediaTypes?.video) {
       return false;
     }
-    if (deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
-      if (!deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    if (bid?.mediaTypes?.banner) { // Not support multi type bids, favor banner over video
+      if (!bid?.mediaTypes?.banner?.sizes) {
         // sizes at the banner is required.
         return false;
       }
-    } else if (deepAccess(bid, 'mediaTypes.video')) {
-      if (!deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    } else if (bid?.mediaTypes?.video) {
+      if (!bid?.mediaTypes?.video?.playerSize) {
         // playerSize is required for instream adUnits.
         return false;
       }
@@ -97,11 +97,11 @@ export const spec = {
     }
 
     payload.device = {};
-    payload.device.ua = deepAccess(bidderRequest, 'ortb2.device.ua');
-    payload.device.height = deepAccess(bidderRequest, 'ortb2.device.h');
-    payload.device.width = deepAccess(bidderRequest, 'ortb2.device.w');
+    payload.device.ua = bidderRequest?.ortb2?.device?.ua;
+    payload.device.height = bidderRequest?.ortb2?.device?.h;
+    payload.device.width = bidderRequest?.ortb2?.device?.w;
     payload.device.dnt = getDNT() ? 1 : 0;
-    payload.device.language = deepAccess(bidderRequest, 'ortb2.device.language');
+    payload.device.language = bidderRequest?.ortb2?.device?.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
