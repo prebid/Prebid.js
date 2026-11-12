@@ -4353,13 +4353,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "alkimi",
-      "aliasOf": null,
-      "gvlid": 1169,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "apacdex",
       "aliasOf": null,
       "gvlid": null,
