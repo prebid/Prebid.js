@@ -18,6 +18,16 @@ describe('JSON schema generation', function () {
     expect(schema.$defs.SchemaFixtureBase.required).to.have.members(['declared', 'augmented']);
   });
 
+  it('uses JSDoc tags as schema keywords only in schema types', () => {
+    const schema = generateSchemas({ dir: fixture('jsdoc') })['root.schema.json'];
+    expect(schema.properties.local).to.eql({ type: 'string', minLength: 1 });
+    expect(schema.$defs.SchemaFixtureDocumented.properties).to.eql({
+      constrained: { type: 'string', description: 'Has a description.' },
+      retyped: { type: 'number' },
+      ignored: { type: 'boolean' },
+    });
+  });
+
   it('fails when a root type name is not unique', () => {
     expect(() => generateSchemas({ dir: fixture('duplicateName') })).to.throw(/'ORTBRequest' is used for more than one type/);
   });

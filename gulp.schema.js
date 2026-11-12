@@ -26,6 +26,45 @@ function sourceProject() {
   return {fileNames, options: {...rest, strictNullChecks: true, noEmit: true}};
 }
 
+/**
+ * Blank out JSDoc tags, keeping their positions: the generator turns tags such as `@type`, `@pattern` or `@ignore`
+ * into schema keywords, and should do that only for the types written to describe a schema.
+ */
+function withoutJsDocTags(sourceFile) {
+  const ranges = [];
+  const visit = (node) => {
+    ts.getJSDocCommentsAndTags(node).filter(ts.isJSDoc).forEach(doc => {
+      if (doc.tags?.length > 0) ranges.push([doc.tags[0].pos, doc.end - '*/'.length]);
+    });
+    ts.forEachChild(node, visit);
+  };
+  // getJSDocCommentsAndTags needs parent pointers, which the compiler host's source files do not have
+  visit(ts.createSourceFile(sourceFile.fileName, sourceFile.text, ts.ScriptTarget.Latest, true));
+  if (ranges.length === 0) return sourceFile.text;
+  const text = sourceFile.text.split('');
+  ranges.forEach(([start, end]) => {
+    for (let i = start; i < end; i++) {
+      if (text[i] !== '\n' && text[i] !== '\r') text[i] = ' ';
+    }
+  });
+  return text.join('');
+}
+
+function compilerHost(options, schemaFiles) {
+  const keep = new Set(schemaFiles.map(file => path.resolve(file)));
+  const host = ts.createCompilerHost(options);
+  const getSourceFile = host.getSourceFile;
+  host.getSourceFile = function (fileName, languageVersionOrOptions, ...rest) {
+    const sourceFile = getSourceFile.call(this, fileName, languageVersionOrOptions, ...rest);
+    if (sourceFile == null || keep.has(path.resolve(fileName)) || !sourceFile.text.includes('@')) {
+      return sourceFile;
+    }
+    const text = withoutJsDocTags(sourceFile);
+    return text === sourceFile.text ? sourceFile : ts.createSourceFile(fileName, text, languageVersionOrOptions, true);
+  };
+  return host;
+}
+
 function schemaFiles(dir) {
   return fs.readdirSync(dir, {recursive: true})
     .filter(file => file.endsWith('.d.ts'))
@@ -91,7 +130,7 @@ function toDraft2020(node, resolveRef) {
 function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
   const files = schemaFiles(dir);
   const {fileNames, options} = sourceProject();
-  const program = ts.createProgram([...new Set([...fileNames, ...files])], options);
+  const program = ts.createProgram([...new Set([...fileNames, ...files])], options, compilerHost(options, files));
   const generator = TJS.buildGenerator(program, {
     required: true,
     strictNullChecks: true,
