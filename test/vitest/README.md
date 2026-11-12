@@ -266,12 +266,23 @@ patmmccann/Prebid.js fork branch). The differences were three specs fixed separa
 (consentUtils), #15980 (pixfuture). Every spec now runs natively; the last ones to move needed fixes in their modules
 or specs (#16011).
 
-Each spec file running in its own page, with its storage reset, means the suite no longer catches a spec leaking state
-into a later one, as a shared Karma chunk could, except through `window.top`, which the spec files run one after another
-in a page share (sevio's spec once broke oolo's). `prebid/no-window-top` keeps code from reaching it directly, through
-`window.top`, `parent` or `frameElement`, in favor of `getWindowTop()`, `getWindowTopOf()`, `getParentWindow()` and
-`getFrameElement()` (`src/utils.js`), which stay inside the spec's frame.
-Running with `--sequence.shuffle.files` and a fixed `--sequence.seed` reproduces order-dependent failures.
+### State leaking between spec files
+
+Each spec file runs in its own page and starts with no cookies or storage, so it can't leak state into a later file
+the way a shared Karma chunk could, with one exception: `window.top`, which the spec files run one after another in a
+page share. sevio's spec once hid `window.top.performance.timing`, which broke oolo's. Three checks cover it (#16011):
+
+- **`stateGuard.mjs`, on every run:** `nativeSetup.mjs` snapshots `window.top` before each spec file (its own
+  properties, those of its `document`, `performance`, `history` and `navigator`, and the elements in its body), and
+  the file fails if it leaves anything new behind once its last `after()` hook has run. Delete what the spec or the
+  module added in an `after()` hook. Modules that keep a global on the top window (`ADAGIO`, `sublime`, ...) reach it
+  through `getWindowTop()`, which `test/helpers/windowTop.js` points at the spec's own frame.
+- **`prebid/no-window-top`, at lint time:** keeps code from reaching `window.top` directly, through `window.top`,
+  `parent` or `frameElement`, in favor of `getWindowTop()`, `getWindowTopOf()`, `getParentWindow()` and
+  `getFrameElement()` (`src/utils.js`), which specs can stub so they stay inside their own frame.
+- **`vitest-shuffle.yml`, daily and on demand:** the whole suite in Chromium with the spec files in a random order,
+  one page at a time, for order dependencies the guard can't see. The job summary has the seed;
+  `VITEST_PARALLEL=0 npm run test:vitest -- --sequence.shuffle.files --sequence.seed=<seed>` reproduces it.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest
 upgrades need checking.
