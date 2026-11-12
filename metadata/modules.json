@@ -955,13 +955,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "padsquad",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pilotx",
       "aliasOf": "pilotx",
       "gvlid": null,
