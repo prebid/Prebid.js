@@ -27,8 +27,8 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 
 const NM_VERSION = '4.5.1';
 const PBJS_VERSION = 'v$prebid.version$';
-const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
+const ACP_ID = 21731; // Google Additional Consent provider ID (NDS Sales Inc, nextmillennium.io); GVL ID 1060 was deleted
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://dev.pbsa.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
@@ -139,8 +139,8 @@ const ALLOWED_ORTB2_IMP_PARAMETERS = [
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, VIDEO],
-  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     return !!(

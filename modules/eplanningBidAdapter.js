@@ -7,6 +7,10 @@ import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { serializeSupplyChain } from '../libraries/schainSerializer/schainSerializer.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
+/**
+ * @typedef {import('./eplanningBidAdapter.d.ts').EplanningBidParams} EplanningBidParams
+ */
+
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const rnd = Math.random();

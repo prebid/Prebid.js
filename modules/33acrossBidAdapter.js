@@ -21,6 +21,10 @@ import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
 import { isIframe } from '../libraries/omsUtils/index.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
+/**
+ * @typedef {import('./33acrossBidAdapter.d.ts').ThirtyThreeAcrossBidParams} ThirtyThreeAcrossBidParams
+ */
+
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
 const BIDDER_ALIASES = ['33across_mgni'];

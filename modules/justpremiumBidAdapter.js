@@ -1,6 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getWinDimensions, getWindowTop } from '../src/utils.js';
 
+/**
+ * @typedef {import('./justpremiumBidAdapter.d.ts').JustpremiumBidParams} JustpremiumBidParams
+ */
+
 const BIDDER_CODE = 'justpremium';
 const GVLID = 62;
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr';

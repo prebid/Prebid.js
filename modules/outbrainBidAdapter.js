@@ -12,6 +12,10 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { Renderer } from '../src/Renderer.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('./outbrainBidAdapter.d.ts').OutbrainBidParams} OutbrainBidParams
+ */
+
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
 const CURRENCY = 'USD';
