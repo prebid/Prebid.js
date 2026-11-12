@@ -969,13 +969,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pubgenius",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "publicgood",
       "aliasOf": null,
       "gvlid": null,
