@@ -20,8 +20,12 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
 - Bare `src/...`, `modules/...`, `test/...` and `buildOptions.mjs` imports resolve against `dist/src`, as webpack's
   `resolve.modules` does. `web-bundler/` and `package.json` are aliased.
 - `test_deps.js` and `pipeline_setup.js` load before each spec (`nativeSetup.mjs`), and `hookSetup.js` after it, as
-  under Karma. Spec files share the origin's cookies and storage, so a spec cleans up what it writes and clears what
-  it needs empty.
+  under Karma.
+- Each spec file starts with no cookies, `localStorage` or `sessionStorage`: before anything else loads,
+  `nativeSetup.mjs` clears the storage, and the cookies through the `clearCookies` browser command
+  (`vitest.config.mjs`; Playwright clears its browser context's, WebdriverIO the page's), then expires whatever
+  `document.cookie` still shows. Within a file nothing is reset, so a spec still cleans up what one test writes before
+  the next.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
 - suite `this`, `done` callbacks, and the 3000ms timeout with `this.timeout()`;
@@ -59,9 +63,10 @@ precompiles first. `vitest.config.mjs` documents the environment variables.
 
 Spec files run in several pages at once, as in CI: Vitest's default of a page per CPU core but one, at most 12 (3 on
 a CI runner). `VITEST_PARALLEL=<n>` sets the number; `VITEST_PARALLEL=0` (or `1`) runs one page at a time, which helps
-when a spec might be failing because of another one running alongside it (pages share one origin's cookies and
-storage). It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari, BrowserStack) runs one spec
-file at a time.
+when a spec might be failing because of another one running alongside it (under Playwright, each page has a browser
+context of its own, so pages running at once share neither storage nor `window.top`, but those running one after
+another in a page share `window.top`). It only applies to browsers driven by Playwright, headless: WebdriverIO (Safari,
+BrowserStack) runs one spec file at a time.
 
 ### Debugging in a browser
 
@@ -257,8 +262,9 @@ patmmccann/Prebid.js fork branch). The differences were three specs fixed separa
 (consentUtils), #15980 (pixfuture). Every spec now runs natively; the last ones to move needed fixes in their modules
 or specs (#16011).
 
-Each spec file running in its own page means the suite no longer catches a spec leaking state into a later one, as a
-shared Karma chunk could, except through `window.top`, which all spec files share (sevio's spec once broke oolo's).
+Each spec file running in its own page, with its storage reset, means the suite no longer catches a spec leaking state
+into a later one, as a shared Karma chunk could, except through `window.top`, which the spec files run one after another
+in a page share (sevio's spec once broke oolo's).
 Running with `--sequence.shuffle.files` and a fixed `--sequence.seed` reproduces order-dependent failures.
 
 **Known risk:** making a suite's own tests run before its child suites uses a Vitest internal API, so Vitest

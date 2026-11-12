@@ -303,6 +303,11 @@ export default defineConfig({
           fs.mkdirSync(RAW, { recursive: true });
           fs.writeFileSync(path.join(RAW, `${name}.chunk-${chunk}_spec.json`), json);
         },
+        // nativeSetup.mjs, before each spec file: every cookie of the page's context, including paths and domains the page
+        // can't see
+        async clearCookies(ctx) {
+          await (ctx.context?.clearCookies() ?? ctx.browser?.deleteCookies());
+        },
       },
     },
   },
