@@ -126,7 +126,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
   }
 
-  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
+  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint', flushOnPageHide: true });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
@@ -239,6 +239,13 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
         clearBatchTimer();
         batch = [];
         parent.disableAnalytics.call(this);
+      },
+      onPageHide() {
+        // the page may be going away; send the incomplete batch now instead of after batchDelay
+        clearBatchTimer();
+        if (batch.length > 0) {
+          processBatch();
+        }
       },
       track(event) {
         const datum = translate(event);

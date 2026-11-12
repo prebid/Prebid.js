@@ -87,7 +87,7 @@ export const dep = {
 };
 
 const pgamdirectAnalytics = Object.assign(
-  adapter({ url: DEFAULT_ENDPOINT, analyticsType: 'endpoint' }),
+  adapter({ url: DEFAULT_ENDPOINT, analyticsType: 'endpoint', flushOnPageHide: true }),
   {
     /**
      * Called by the AnalyticsAdapter base class on every tracked
