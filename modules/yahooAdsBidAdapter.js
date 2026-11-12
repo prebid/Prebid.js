@@ -539,6 +539,9 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     }
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
+      if (!isArray(outBoundBidRequest.site.content.data)) {
+        outBoundBidRequest.site.content.data = [];
+      }
       siteContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
@@ -547,7 +550,6 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
       });
     };
@@ -555,6 +557,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
+      outBoundBidRequest.app = outBoundBidRequest.app || {};
+      outBoundBidRequest.app.content = outBoundBidRequest.app.content || {};
+      if (!isArray(outBoundBidRequest.app.content.data)) {
+        outBoundBidRequest.app.content.data = [];
+      }
       appContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
@@ -563,11 +570,6 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.app = {
-          content: {
-            data: []
-          }
-        };
         outBoundBidRequest.app.content.data.push(newDataObject);
       });
     };
