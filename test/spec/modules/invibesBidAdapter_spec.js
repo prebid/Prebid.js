@@ -4,6 +4,11 @@ import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.invibes;
+  });
+
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
   const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
