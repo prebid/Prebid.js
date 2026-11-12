@@ -3541,13 +3541,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "anyclip",
-      "aliasOf": "anyclip",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "anzuDSP",
       "aliasOf": null,
       "gvlid": null,
