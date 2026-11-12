@@ -106,7 +106,7 @@ export const spec = {
       }
 
       if (typeof bid.getFloor === 'function') {
-        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : (isVideoRequest(bid) ? VIDEO : BANNER));
         if (floor) {
           imp.bidfloor = floor;
         }
