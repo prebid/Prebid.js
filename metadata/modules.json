@@ -563,13 +563,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "engageya",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "engerio",
       "aliasOf": null,
       "gvlid": null,
