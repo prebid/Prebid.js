@@ -654,13 +654,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "glomex",
-      "aliasOf": null,
-      "gvlid": 967,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "gnet",
       "aliasOf": null,
       "gvlid": null,
