@@ -10,7 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { detectBrowser } from '../libraries/intentIqUtils/detectBrowserUtils.ts';
 import { appendSPData } from '../libraries/intentIqUtils/urlUtils.ts';
-import { isCHSupported } from '../libraries/intentIqUtils/chUtils.ts';
+import { getHighEntropyValues } from '../src/fpd/sua.js';
 import { appendVrrefAndFui } from '../libraries/intentIqUtils/getRefferer.ts';
 import { getCmpData, areCmpValuesEqual, isValidValue } from '../libraries/intentIqUtils/getCmpData.ts';
 import {
@@ -169,6 +169,8 @@ declare module './userId/spec' {
 }
 
 const MODULE_NAME = 'intentIqId' as const;
+
+export const dep = { getHighEntropyValues };
 
 const encoderCH: Record<string, number> = {
   brands: 0,
@@ -477,7 +479,7 @@ export const intentIqIdSubmodule = {
     let shouldCallServer = false;
     FIRST_PARTY_KEY_FINAL = `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + configParams.partner : ''}`;
     const cmpData = getCmpData();
-    const gdprDetected = cmpData.gdprString;
+    const gdprDetected = cmpData.gdprApplies || cmpData.gdprString;
     firstPartyData = tryParse(readData(FIRST_PARTY_KEY_FINAL, allowedStorage) as string);
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
@@ -490,6 +492,7 @@ export const intentIqIdSubmodule = {
       actualABGroup = undefined;
     }
     let newUser = false;
+    let needsStore = false;
 
     setGamReporting(gamObjectReference, gamParameterName, actualABGroup, isBlacklisted);
 
@@ -510,25 +513,36 @@ export const intentIqIdSubmodule = {
       // value is regenerated each session without overwriting persisted fields.
       firstPartyData = firstPartyData ? { ...firstPartyData, ...newObj } : newObj;
       newUser = true;
-      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      needsStore = true;
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
-      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      needsStore = true;
     }
 
+    // Must run before any storeData so identifiers are never persisted for new GDPR users
     if (gdprDetected && !('isOptedOut' in firstPartyData)) {
       firstPartyData.isOptedOut = true;
+      // Strip identifiers already on device and let the server decide the actual status
+      needsStore = true;
+      shouldCallServer = true;
+    }
+
+    if (needsStore) {
+      storeData(FIRST_PARTY_KEY_FINAL, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     }
 
     // Read client hints from storage
     clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
-    const chSupported = isCHSupported();
-    let chPromise: Promise<string> | null = null;
 
     function fetchAndHandleCH(): Promise<string> {
-      return (navigator as any).userAgentData.getHighEntropyValues(CH_KEYS)
+      return dep.getHighEntropyValues(CH_KEYS)
         .then((raw: any) => {
-          const nextCH = handleClientHints(raw) || '';
+          if (!raw) {
+            clientHints = '';
+            removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
+            return '';
+          }
+          const nextCH = handleClientHints(raw);
           const prevCH = clientHints || '';
           if (nextCH !== prevCH) {
             clientHints = nextCH;
@@ -546,15 +560,10 @@ export const intentIqIdSubmodule = {
         });
     }
 
-    if (chSupported) {
-      chPromise = fetchAndHandleCH();
-      chPromise.catch((err: any) => {
-        logError('fetchAndHandleCH failed', err);
-      });
-    } else {
-      clientHints = '';
-      removeDataByKey(CLIENT_HINTS_KEY, allowedStorage);
-    }
+    const chPromise = fetchAndHandleCH();
+    chPromise.catch((err: any) => {
+      logError('fetchAndHandleCH failed', err);
+    });
 
     function waitOnCH(timeoutMs: number): Promise<any> {
       const timeout = new Promise<string>(resolve => setTimeout(() => resolve(''), timeoutMs));
@@ -625,15 +634,11 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
       if (configParams.callback) configParams.callback('');
 
-      if (chSupported) {
-        if (clientHints) {
-          buildAndSendPixel(clientHints);
-        } else {
-          waitOnCH(chTimeout)
-            .then((ch: any) => buildAndSendPixel(ch || ''));
-        }
+      if (clientHints) {
+        buildAndSendPixel(clientHints);
       } else {
-        buildAndSendPixel('');
+        waitOnCH(chTimeout)
+          .then((ch: any) => buildAndSendPixel(ch || ''));
       }
       return;
     }
@@ -809,20 +814,15 @@ export const intentIqIdSubmodule = {
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
       };
 
-      if (chSupported) {
-        if (clientHints) {
-          // CH found in LS: send immediately; background fetch will refresh/clear later
-          sendAjax(clientHints);
-        } else {
-          // No CH in LS: wait up to chTimeout, then send
-          waitOnCH(chTimeout).then((ch: any) => {
-            // Send with received CH or without it
-            sendAjax(ch || '');
-          });
-        }
+      if (clientHints) {
+        // CH found in LS: send immediately; background fetch will refresh/clear later
+        sendAjax(clientHints);
       } else {
-        // CH not supported: send without uh
-        sendAjax('');
+        // No CH in LS: wait up to chTimeout, then send
+        waitOnCH(chTimeout).then((ch: any) => {
+          // Send with received CH or without it
+          sendAjax(ch || '');
+        });
       }
     };
     const respObj: any = { callback: resp };

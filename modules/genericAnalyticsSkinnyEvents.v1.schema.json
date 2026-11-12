@@ -14,6 +14,12 @@
       "$ref": "#/$defs/bidWon"
     },
     {
+      "$ref": "#/$defs/bidClick"
+    },
+    {
+      "$ref": "#/$defs/bidClickInferred"
+    },
+    {
       "$ref": "#/$defs/bidRequested"
     },
     {
@@ -147,6 +153,78 @@
         "ortb2",
         "eidsSources",
         "bids"
+      ]
+    },
+    "clickFields": {
+      "type": "object",
+      "description": "Bid correlation fields shared by observed and inferred clicks. Excludes the full bid, creative markup and click URLs.",
+      "properties": {
+        "analyticsLabels": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "auctionId": {
+          "type": "string"
+        },
+        "adUnitCode": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "adId": {
+          "type": "string"
+        },
+        "bidder": {
+          "type": "string"
+        },
+        "bidderCode": {
+          "type": "string"
+        },
+        "cpm": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "client",
+            "s2s"
+          ]
+        },
+        "assetId": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "auctionId",
+        "adUnitCode",
+        "transactionId",
+        "requestId",
+        "adId",
+        "bidder",
+        "bidderCode",
+        "cpm",
+        "currency",
+        "mediaType",
+        "source"
       ]
     },
     "noBid": {
@@ -430,6 +508,47 @@
         "source"
       ],
       "additionalProperties": false
+    },
+    "bidClick": {
+      "type": "object",
+      "description": "An observed click on a rendered bid (creative message or native click tracker).",
+      "$ref": "#/$defs/clickFields",
+      "properties": {
+        "eventType": {
+          "const": "bidClick"
+        },
+        "method": {
+          "enum": [
+            "creativeClick",
+            "nativeClick"
+          ]
+        }
+      },
+      "required": [
+        "eventType",
+        "method"
+      ],
+      "unevaluatedProperties": false
+    },
+    "bidClickInferred": {
+      "type": "object",
+      "description": "A click inferred from focus moving into the ad iframe; never an observed click.",
+      "$ref": "#/$defs/clickFields",
+      "properties": {
+        "eventType": {
+          "const": "bidClickInferred"
+        },
+        "method": {
+          "enum": [
+            "iframeFocus"
+          ]
+        }
+      },
+      "required": [
+        "eventType",
+        "method"
+      ],
+      "unevaluatedProperties": false
     },
     "bidRequested": {
       "type": "object",

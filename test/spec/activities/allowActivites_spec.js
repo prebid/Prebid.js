@@ -79,6 +79,13 @@ describe('allowActivities config', () => {
       expect(isAllowed(ACTIVITY, params)).to.be.false;
     });
 
+    it('deny the activity when they apply and do not set allow', () => {
+      setupActivityConfig({
+        rules: [{ condition: () => true }]
+      });
+      expect(isAllowed(ACTIVITY, params)).to.be.false;
+    });
+
     it('do not choke when the condition throws', () => {
       setupActivityConfig({
         rules: [{

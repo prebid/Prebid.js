@@ -7,6 +7,7 @@ import { registerActivityControl } from "../../src/activities/rules.js";
 import { noCredsAjax as ajax } from "../../src/ajax.ts";
 import { AuctionIndex } from "../../src/auctionIndex.js";
 import { auctionManager } from "../../src/auctionManager.js";
+import type { Bid } from "../../src/bidfactory.ts";
 import { config } from "../../src/config.ts";
 import { getHook } from "../../src/hook.ts";
 import { generateUUID, logInfo, logWarn } from "../../src/utils.ts";
@@ -397,10 +398,11 @@ export function registerActivities() {
     [ACTIVITY_ADD_BID_RESPONSE]: 'processed-auction',
   };
 
-  [ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE].forEach(activity => {
+  ([ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE] as const).forEach(activity => {
     unregisterFunctions.push(
       registerActivityControl(activity, MODULE_NAME, (params) => {
-        const auctionId = params.auctionId || params.bid?.auctionId;
+        // fetchBids passes auctionId; acceptBid only has it on the bid response
+        const auctionId = params.auctionId || (params.bid as Partial<Bid>)?.auctionId;
         if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
         if (!auctionId) return;
 

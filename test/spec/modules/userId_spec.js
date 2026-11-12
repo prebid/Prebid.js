@@ -402,6 +402,78 @@ describe('User ID', function () {
       }]);
     });
 
+    it('Extend cookie with pixelUrl: getUserIdsAsync resolves once the pixel loads', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { extend: true, pixelUrl: '/any/pubcid/url' });
+      // run submodule callbacks right away instead of after the first auction
+      customConfig.userSync.auctionDelay = 10;
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => setTimeout(done));
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+
+        const ids = await Promise.race([
+          getGlobal().getUserIdsAsync(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+        ]);
+        expect(ids).to.eql({ pubcid: 'altpubcid200000' });
+        sinon.assert.calledOnce(triggerPixel);
+        expect(triggerPixel.firstCall.args[0]).to.include('/any/pubcid/url');
+      } finally {
+        triggerPixel.restore();
+      }
+    });
+
+    it('First visit with pixelUrl: the cookie the server sets is not rewritten from script after the pixel', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { pixelUrl: '/any/pubcid/url' });
+      // run submodule callbacks right away instead of after the first auction
+      customConfig.userSync.auctionDelay = 10;
+
+      // record script writes to document.cookie, and when the pixel fired relative to them
+      let proto = Object.getPrototypeOf(document);
+      while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
+      const nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
+      const scriptWrites = [];
+      let writesBeforePixel = null;
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get() { return nativeCookie.get.call(document); },
+        set(value) {
+          scriptWrites.push(value);
+          nativeCookie.set.call(document, value);
+        }
+      });
+      // the endpoint sets the cookie from the server, then the pixel loads
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => {
+        writesBeforePixel = scriptWrites.length;
+        const id = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)[0];
+        nativeCookie.set.call(document, `pubcid=${id}; path=/`);
+        setTimeout(done);
+      });
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+
+        const ids = await Promise.race([
+          getGlobal().getUserIdsAsync(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+        ]);
+        sinon.assert.calledOnce(triggerPixel);
+        expect(ids.pubcid).to.be.a('string').and.not.be.empty;
+        expect(triggerPixel.firstCall.args[0]).to.include('/any/pubcid/url').and.include(ids.pubcid);
+        // getId's id was stored from script before the pixel...
+        expect(scriptWrites.slice(0, writesBeforePixel).some(w => w.startsWith('pubcid='))).to.be.true;
+        // ...but not again after it
+        expect(scriptWrites.slice(writesBeforePixel).filter(w => w.startsWith('pubcid='))).to.eql([]);
+      } finally {
+        delete document.cookie;
+        triggerPixel.restore();
+      }
+    });
+
     it('Disable auto create', async function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', { create: false });

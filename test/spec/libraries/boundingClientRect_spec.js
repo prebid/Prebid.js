@@ -1,4 +1,4 @@
-import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect.js';
+import { clearCache, getBoundingClientRect, getElementDimensions } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 import { endLayoutEpoch } from '../../../src/utils/layoutEpoch.js';
 
 describe('getBoundingClientRect', () => {
@@ -56,5 +56,36 @@ describe('getBoundingClientRect', () => {
     expect(result2).to.deep.eql(result1);
 
     document.body.removeChild(element);
+  });
+});
+
+describe('getElementDimensions', () => {
+  afterEach(() => clearCache());
+
+  it('preserves untransformed border-box dimensions and caches them until the epoch ends', () => {
+    let width = 300;
+    const readWidth = sinon.spy(() => width);
+    const element = {
+      get offsetWidth() { return readWidth(); },
+      get offsetHeight() { return 250; },
+      getBoundingClientRect: () => ({ width: 150, height: 125 })
+    };
+    expect(getElementDimensions(element)).to.deep.equal({ width: 300, height: 250 });
+    width = 400;
+    expect(getElementDimensions(element).width).to.equal(300);
+    sinon.assert.calledOnce(readWidth);
+    clearCache();
+    expect(getElementDimensions(element).width).to.equal(400);
+    sinon.assert.calledTwice(readWidth);
+  });
+
+  it('keeps elements separate and refreshes after the task ends', async () => {
+    const first = { offsetWidth: 1, offsetHeight: 2 };
+    const second = { offsetWidth: 3, offsetHeight: 4 };
+    expect(getElementDimensions(first).width).to.equal(1);
+    expect(getElementDimensions(second).width).to.equal(3);
+    first.offsetWidth = 5;
+    await Promise.resolve();
+    expect(getElementDimensions(first).width).to.equal(5);
   });
 });

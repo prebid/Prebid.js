@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logError, logWarn, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { isArray, logError, logWarn, replaceAuctionPrice, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -11,6 +11,17 @@ const BIDDER_VERSION = '2.1.0';
 const GVLID = 141;
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
+const deletionEndpoints = new Set();
+
+function rememberDeletionEndpoint(params) {
+  deletionEndpoints.add(getSignalURL(params, 'data-deletion/v2'));
+}
+
+export const _internal = {
+  resetDeletionEndpoints() {
+    deletionEndpoints.clear();
+  }
+};
 
 function getBidFloor(bidRequest) {
   let floorInfo = {};
@@ -27,8 +38,8 @@ function getBidFloor(bidRequest) {
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  const refererPage = deepAccess(bidderRequest, 'refererInfo.page');
-  const fallbackPage = deepAccess(bidderRequest, 'ortb2.site.page');
+  const refererPage = bidderRequest?.refererInfo?.page;
+  const fallbackPage = bidderRequest?.ortb2?.site?.page;
   let pageUrl = bidRequest?.params?.referrer || refererPage || fallbackPage || '';
 
   if (/^http:/i.test(pageUrl)) {
@@ -72,19 +83,19 @@ function getSignalURL(params, path) {
 }
 
 function getSchain(validBidRequest, bidderRequest) {
-  return deepAccess(validBidRequest, 'ortb2.source.ext.schain') ||
-    deepAccess(validBidRequest, 'ortb2.source.schain') ||
-    deepAccess(bidderRequest, 'ortb2.source.ext.schain') ||
-    deepAccess(bidderRequest, 'ortb2.source.schain') ||
+  return validBidRequest?.ortb2?.source?.ext?.schain ||
+    validBidRequest?.ortb2?.source?.schain ||
+    bidderRequest?.ortb2?.source?.ext?.schain ||
+    bidderRequest?.ortb2?.source?.schain ||
     validBidRequest.schain;
 }
 
 function getTid(validBidRequest, bidderRequest) {
-  const sourceTid = deepAccess(validBidRequest, 'ortb2.source.tid') ||
-    deepAccess(bidderRequest, 'ortb2.source.tid') ||
+  const sourceTid = validBidRequest?.ortb2?.source?.tid ||
+    bidderRequest?.ortb2?.source?.tid ||
     bidderRequest.auctionId ||
     null;
-  const impTid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid') ||
+  const impTid = validBidRequest?.ortb2Imp?.ext?.tid ||
     validBidRequest.transactionId ||
     null;
 
@@ -123,13 +134,14 @@ export const spec = {
     const effectiveType = connection?.effectiveType ?? '';
 
     const requests = validBidRequests.map(validBidRequest => {
+      rememberDeletionEndpoint(validBidRequest.params);
       let app;
       let site;
 
       const ortb2 = bidderRequest?.ortb2 || {};
       const ortb2Imp = validBidRequest?.ortb2Imp || {};
-      const ortb2Site = deepAccess(ortb2, 'site');
-      const ortb2App = deepAccess(ortb2, 'app');
+      const ortb2Site = ortb2?.site;
+      const ortb2App = ortb2?.app;
 
       // Backward-compatible behavior: keep legacy app/site logic, then enrich.
       if (typeof config.getConfig('app') === 'object') {
@@ -149,7 +161,7 @@ export const spec = {
       const gppConsent = bidderRequest?.gppConsent || null;
       const schain = getSchain(validBidRequest, bidderRequest);
       const userIdAsEids = validBidRequest?.userIdAsEids ||
-        deepAccess(validBidRequest, 'user.ext.eids') ||
+        validBidRequest?.user?.ext?.eids ||
         [];
 
       const bidForPayload = validBidRequest.mediaTypes?.[BANNER]
@@ -193,9 +205,9 @@ export const spec = {
         gdprConsent,
         uspConsent,
         gppConsent,
-        regs: deepAccess(ortb2, 'regs') || {},
-        user: deepAccess(ortb2, 'user') || {},
-        device: deepAccess(ortb2, 'device') || {}
+        regs: ortb2?.regs || {},
+        user: ortb2?.user || {},
+        device: ortb2?.device || {}
       };
 
       return {
@@ -228,7 +240,7 @@ export const spec = {
   },
 
   onTimeout: function(timeoutData) {
-    const params = deepAccess(timeoutData, '0.params.0');
+    const params = timeoutData?.[0]?.params?.[0];
     if (params && Object.keys(params).length > 0) {
       ajax(getSignalURL(params, 'timeout/v2'), null, timeoutData[0], {
         method: 'POST',
@@ -248,19 +260,26 @@ export const spec = {
   },
 
   onBidderError: function({ error, bidderRequest }) {
-    logWarn(`${BIDDER_CODE}: bidder endpoint error`, error?.status, deepAccess(bidderRequest, 'auctionId'));
+    logWarn(`${BIDDER_CODE}: bidder endpoint error`, error?.status, bidderRequest?.auctionId);
   },
 
   onDataDeletionRequest: function(bidderRequests) {
-    const params = deepAccess(bidderRequests, '0.bids.0.params');
-    if (!params?.supplyId) {
-      return;
-    }
+    bidderRequests.forEach(({ bids = [] }) => {
+      bids.forEach(({ params }) => {
+        if (params?.supplyId) {
+          rememberDeletionEndpoint(params);
+        }
+      });
+    });
 
-    ajax(getSignalURL(params, 'data-deletion/v2'), null, JSON.stringify({ bidderRequests }), {
-      method: 'POST',
-      withCredentials: false,
-      contentType: 'application/json',
+    deletionEndpoints.forEach(url => {
+      ajax(url, null, JSON.stringify({ bidderRequests }), {
+        method: 'POST',
+        withCredentials: false,
+        contentType: 'application/json',
+        // let the deletion signals complete even if the page unloads right after
+        keepalive: true,
+      });
     });
   }
 };

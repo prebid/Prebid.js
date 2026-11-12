@@ -18,9 +18,9 @@ const fixtures = JSON.parse(readFileSync(fileURLToPath(fixturesUrl), 'utf8'));
 describe('Generic Analytics skinny events v1 JSON Schema', () => {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   const validate = ajv.compile(schema);
-  const eventTypes = ['noBid', 'bidResponse', 'bidWon', 'bidRequested', 'bidTimeout'];
+  const eventTypes = ['noBid', 'bidResponse', 'bidWon', 'bidClick', 'bidClickInferred', 'bidRequested', 'bidTimeout'];
 
-  it('covers exactly the five built-in formatter event types', () => {
+  it('covers exactly the seven built-in formatter event types', () => {
     expect(Object.keys(fixtures).sort()).to.eql([...eventTypes].sort());
     expect(schema.oneOf.map(({ $ref }) => $ref.replace('#/$defs/', '')).sort())
       .to.eql([...eventTypes].sort());
@@ -57,6 +57,58 @@ describe('Generic Analytics skinny events v1 JSON Schema', () => {
         expect(validate(truncated), `${type} must require ${field}`).to.equal(false);
       }
     }
+
+    // click events take their correlation fields from the shared definition
+    for (const eventType of ['bidClick', 'bidClickInferred']) {
+      for (const field of schema.$defs.clickFields.required) {
+        const truncated = { ...fixtures[eventType] };
+        delete truncated[field];
+        expect(validate(truncated), `${eventType} must require ${field}`).to.equal(false);
+      }
+    }
+  });
+
+  describe('click events', () => {
+    it('accepts creative clicks without a native asset ID', () => {
+      const click = { ...fixtures.bidClick, method: 'creativeClick', mediaType: 'banner' };
+      delete click.assetId;
+      expect(validate(click), JSON.stringify(validate.errors)).to.equal(true);
+    });
+
+    it('accepts string asset IDs, null request IDs and omitted analytics labels', () => {
+      const click = { ...fixtures.bidClick, assetId: 'title', requestId: null };
+      delete click.analyticsLabels;
+      expect(validate(click), JSON.stringify(validate.errors)).to.equal(true);
+    });
+
+    it('accepts an asset ID on inferred clicks, as the TypeScript type does', () => {
+      expect(validate({ ...fixtures.bidClickInferred, assetId: 1 }), JSON.stringify(validate.errors)).to.equal(true);
+    });
+
+    it('rejects methods that do not belong to the event', () => {
+      for (const value of [
+        { ...fixtures.bidClick, method: 'iframeFocus' },
+        { ...fixtures.bidClick, method: 'click' },
+        { ...fixtures.bidClickInferred, method: 'creativeClick' },
+        { ...fixtures.bidClickInferred, method: 'nativeClick' },
+      ]) {
+        expect(validate(value), JSON.stringify(value)).to.equal(false);
+      }
+    });
+
+    it('rejects extra fields, leaked bid data and wrong field types', () => {
+      for (const value of [
+        { ...fixtures.bidClick, extraField: true },
+        { ...fixtures.bidClickInferred, extraField: true },
+        { ...fixtures.bidClick, clickUrl: 'https://adserver.example/click' },
+        { ...fixtures.bidClick, bid: {} },
+        { ...fixtures.bidClick, assetId: true },
+        { ...fixtures.bidClick, cpm: '1.50' },
+        { ...fixtures.bidClickInferred, source: 'somethingElse' },
+      ]) {
+        expect(validate(value), JSON.stringify(value)).to.equal(false);
+      }
+    });
   });
 
   it('permits omitted optional fields', () => {

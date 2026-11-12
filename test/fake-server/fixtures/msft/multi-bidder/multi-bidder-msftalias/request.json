@@ -1,0 +1,94 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/msft",
+    "body": {
+      "imp": [
+        {
+          "ext": {
+            "tid": "u31b0c6f6-452d-4748-b2ad-f5db59c56a2f",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13232392
+            }
+          },
+          "id": "aa604acf-fc04-41ad-92f0-f7aa75e1e60d",
+          "secure": 1,
+          "native": {
+            "request": "{\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":1,\"required\":1,\"img\":{\"type\":3}},{\"id\":2,\"required\":1,\"data\":{\"type\":1}}]}",
+            "ver": "1.2"
+          }
+        }
+      ],
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/multiple_bidders.html?pbjs_debug=true"
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 748,
+          "vph": 477
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "Windows"
+          },
+          "browsers": [
+            {
+              "brand": "Not:A-Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "156"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "156"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "uff6011f8-753c-478b-8944-859801cca1b0",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "ba05ecf3-c350-444e-9394-51f91b0fdcf7",
+      "test": 0,
+      "tmax": 10000,
+      "ext": {
+        "appnexus": {
+          "prebid": true,
+          "hb_source": 1,
+          "sdk": {
+            "version": "11.47.0-pre",
+            "source": "pbjs"
+          },
+          "referrer_detection": {
+            "rd_ref": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fmultiple_bidders.html%3Fpbjs_debug%3Dtrue",
+            "rd_top": true,
+            "rd_ifs": 0,
+            "rd_stk": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fmultiple_bidders.html%3Fpbjs_debug%3Dtrue"
+          }
+        }
+      }
+    }
+  }
+}

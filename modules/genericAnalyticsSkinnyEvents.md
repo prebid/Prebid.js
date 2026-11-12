@@ -20,6 +20,8 @@ and collects only the following events:
 | `bidRequested` | `auctionId`, `bidderRequestId`, `bidderCode`, `auctionStart`, `start`, `timeout`, `ortb2` (without EIDs), `eidsSources`, `bids` (see below) |
 | `bidResponse` | `auctionId`, `adUnitCode`, `transactionId`, `requestId`, `adId`, `bidder`, `bidderCode`, `cpm`, `currency`, `originalCpm`, `originalCurrency`, `mediaType`, `width`, `height`, `size`, `dealId`, `meta`, `adserverTargeting`, `floorData`, `requestTimestamp`, `responseTimestamp`, `timeToRespond`, `ttl`, `source` |
 | `bidWon` | same as `bidResponse`, plus `status` |
+| `bidClick` | `auctionId`, `adUnitCode`, `transactionId`, `requestId`, `adId`, `bidder`, `bidderCode`, `cpm`, `currency`, `mediaType`, `source`, `method` (`creativeClick` or `nativeClick`), and optional native `assetId` |
+| `bidClickInferred` | same click correlation fields, `method: iframeFocus`; no full bid or creative markup |
 | `noBid` | `auctionId`, `bidId`, `bidderRequestId`, `adUnitCode`, `bidder`, `source` |
 | `bidTimeout` | `bidderRequests`: the timed out bids grouped by bidder request, each with `auctionId`, `bidderRequestId`, `bidderCode`, `ortb2` (without EIDs), `eidsSources` and `bids` (see below) |
 
@@ -31,11 +33,11 @@ Instead of EIDs, `eidsSources` lists which ID sources were present (for example 
 
 Every payload also includes `eventType` (the name of the event) and `analyticsLabels`, if any are configured.
 
-
+The click events are emitted when `bidClickTracking` is enabled (`bidClickInferred` also needs the `bidClickTracking` module). Both preserve only lightweight bid correlation fields; the full bid, creative markup, and the ad-server click URL are omitted. The inferred click event is deliberately distinct from observed clicks.
 
 #### Public payload contract (v1)
 
-The built-in preset emits five JSON event shapes. Their versioned contract is published alongside this module:
+The built-in preset emits seven JSON event shapes. Their versioned contract is published alongside this module:
 
 - [JSON Schema v1](genericAnalyticsSkinnyEvents.v1.schema.json) for collectors and other non-TypeScript consumers.
 - TypeScript exports `SkinnyEventPayload` (a discriminated union),
@@ -57,11 +59,15 @@ passed in the `data` query parameter. A zero-CPM, non-deal `bidResponse` has no
 and `ortb2Imp` at individual bid-request level. For stored-impression requests
 sent to Prebid Server, the bidder request's `bidderCode` and individual bids'
 `bidder` may be `null` rather than a bidder name.
+`bidClick` and `bidClickInferred` share one set of click correlation fields
+(`clickFields` in the schema) and differ in `method`: `bidClick` is only
+`creativeClick` or `nativeClick`, and `bidClickInferred` is only `iframeFocus`.
+`assetId` (a number or string) is present only when a native click reported one.
 
 Nested OpenRTB fields are not separately reinvented in TypeScript: `ortb2` comes from `DeepPartial<ORTBRequest>` and `ortb2Imp` from `DeepPartial<ORTBImp>` in Prebid's shared OpenRTB 2.6 definitions (`src/types/ortb/request.d.ts`, wrapping `iab-openrtb/v26`). Compile-time assertions in `test/types/skinnyAnalyticsEvents.ts` enforce these relationships. The JSON Schema remains deliberately permissive within these extension-bearing nested objects; it does not validate every OpenRTB field at runtime.
 
 The wire contract is regression-tested by two existing CI suites: browser tests
-compare the five formatter outputs after `JSON.stringify`/`JSON.parse` with
+compare the seven formatter outputs after `JSON.stringify`/`JSON.parse` with
 `test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
 tests validate those same fixtures against this JSON Schema using Ajv 2020.
 This catches output changes independently of schema edits and rejects
@@ -71,7 +77,8 @@ unknown event types or fields with incorrect types.
 `schemaVersion` field to events. Schema versions are selected out-of-band by
 collectors. Incompatible changes to the preset's serialized shape should publish
 a new schema version rather than silently rewriting v1. The v1 schema sets
-`additionalProperties: false` on each event, so collectors that validate against
+`additionalProperties: false` on each event (`unevaluatedProperties: false` on
+the two click events, which reference the shared click fields), so collectors that validate against
 it reject a payload with an added top-level field: adding a field also requires
 a new schema version, unless collectors validate permissively. This contract
 does not imply a common schema for all Prebid.js analytics events or Prebid Server.
