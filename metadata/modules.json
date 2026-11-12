@@ -1746,13 +1746,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ivs",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "jjtech",
       "aliasOf": null,
       "gvlid": null,
