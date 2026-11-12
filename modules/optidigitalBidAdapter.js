@@ -11,6 +11,7 @@ import { getElementDimensions } from '../libraries/boundingClientRect/boundingCl
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./optidigitalBidAdapter.d.ts').OptidigitalBidParams} OptidigitalBidParams
  */
 
 const BIDDER_CODE = 'optidigital';

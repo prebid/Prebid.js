@@ -8,14 +8,12 @@ import { getDNT } from '../libraries/dnt/index.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'alkimi';
-const GVLID = 1169;
 const USER_ID_KEY = 'alkimiUserID';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {

@@ -157,7 +157,7 @@ function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
     // the sources are not null-safe yet, and are checked by `gulp ts`; errors in schema/ are checked below
     ignoreErrors: true,
   });
-  const errors = ts.getPreEmitDiagnostics(program).filter(d => d.file?.fileName.startsWith(dir + path.sep));
+  const errors = ts.getPreEmitDiagnostics(program).filter(d => d.file != null && path.resolve(d.file.fileName).startsWith(dir + path.sep));
   if (errors.length > 0) {
     throw new Error(ts.formatDiagnostics(errors, {
       getCanonicalFileName: f => f, getCurrentDirectory: () => __dirname, getNewLine: () => '\n',
