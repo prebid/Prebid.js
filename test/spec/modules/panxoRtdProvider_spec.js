@@ -16,8 +16,11 @@ const {
   load,
   onImplLoaded,
   onImplMessage,
-  onGetBidRequestData
+  onGetBidRequestData: getBidRequestData
 } = __TEST__;
+
+// Unit harness supplies the active lifecycle state that RTD core owns.
+const onGetBidRequestData = (...args) => getBidRequestData(...args, ...Array(Math.max(0, 5 - args.length)).fill(undefined), () => true);
 
 // Existing lifecycle cases advance the asynchronous preload explicitly. The
 // configuration-task cases below leave init pending to exercise its ordering.
@@ -1123,7 +1126,7 @@ describe('LAB02 QA RTD real external script loader', function () {
   function auction() {
     const req = request();
     const done = sandbox.spy();
-    provider.getBidRequestData(req, done, config, {}, 50);
+    provider.getBidRequestData(req, done, config, {}, 50, () => true);
     return { req, done };
   }
 
@@ -1209,7 +1212,7 @@ describe('LAB02 QA RTD standard activity lifecycle', function () {
   function auction() {
     const req = request();
     const done = sandbox.spy();
-    provider.getBidRequestData(req, done, config, {}, 50);
+    provider.getBidRequestData(req, done, config, {}, 50, () => true);
     return { req, done };
   }
   function completeLoad() {
@@ -1477,7 +1480,7 @@ describe('LAB02 QA RTD initial configuration task', function () {
   function auction() {
     const req = request();
     const done = sandbox.spy();
-    provider.getBidRequestData(req, done, config, {}, 50);
+    provider.getBidRequestData(req, done, config, {}, 50, () => true);
     return { req, done };
   }
 

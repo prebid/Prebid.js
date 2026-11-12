@@ -3,7 +3,7 @@
  *
  * The {@link module:modules/realTimeData} module is required.
  * The module injects the Panxo signal collection script, enriching bid requests
- * with AI traffic classification data and contextual signals for improved targeting.
+ * with the coarse AI-visit flag {ai: true}.
  * @module modules/panxoRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -342,9 +342,10 @@ function onDataDeletionRequest() {
  * @param {function} callback
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
- * @param {number} timeout remaining RTD wait budget supplied by Prebid
+ * @param {number} timeout RTD wait budget supplied by Prebid
+ * @param {function(): boolean} [isAuctionActive] core-owned RTD release state
  */
-function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent, timeout) {
+function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent, timeout, isAuctionActive) {
   const activeGeneration = generation;
   if (dataDeleted || !ensureImplementationSafely(activeGeneration) ||
       dataDeleted || activeGeneration !== generation) {
@@ -352,6 +353,7 @@ function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent, ti
     return;
   }
   let done = false;
+  let synchronous = true;
   let timer;
   function enrichAndDone(enrich = true) {
     if (done) return;
@@ -359,7 +361,11 @@ function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent, ti
     clearTimeout(timer);
     const pendingIndex = pendingCallbacks.indexOf(enrichAndDone);
     if (pendingIndex >= 0) pendingCallbacks.splice(pendingIndex, 1);
-    if (!enrich || dataDeleted || activeGeneration !== generation || !connectionAllowed(activeGeneration)) {
+    // A timeout relative to this provider cannot identify core's deadline:
+    // preceding providers may consume time, or core may release early.
+    // Older cores without lifecycle state can only be enriched synchronously.
+    if (!enrich || dataDeleted || activeGeneration !== generation || !connectionAllowed(activeGeneration) ||
+        (typeof isAuctionActive === 'function' ? !isAuctionActive() : !synchronous)) {
       callback();
       return;
     }
@@ -382,6 +388,7 @@ function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent, ti
 
   // Core continues the auction at its deadline; it does not flush our queue.
   // Release the retained request ourselves and never enrich it after expiry.
+  synchronous = false;
   pendingCallbacks.push(enrichAndDone);
   timer = setTimeout(() => enrichAndDone(false),
     Number.isFinite(timeout) && timeout > 0 ? timeout : 0);

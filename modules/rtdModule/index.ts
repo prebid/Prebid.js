@@ -248,7 +248,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
       }
     });
     try {
-      sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
+      sm.getBidRequestData(request, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout, () => !isDone);
     } catch (e) {
       // Without this, one throwing provider would take the whole loop down with it and every
       // provider behind it would lose its chance to enrich the auction. A provider that threw
