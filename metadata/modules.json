@@ -997,13 +997,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "qwarry",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "rakuten",
       "aliasOf": null,
       "gvlid": null,
