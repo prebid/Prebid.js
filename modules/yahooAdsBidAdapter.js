@@ -759,6 +759,7 @@ export const spec = {
       return response;
     }
     const seatbids = serverResponse.body.seatbid;
+    const usedAdIds = new Set();
     seatbids.forEach(seatbid => {
       if (!Array.isArray(seatbid.bid)) {
         return;
@@ -771,7 +772,6 @@ export const spec = {
         const bidRequest = getBidRequestForResponse(bidderRequest, bid.impid);
 
         const bidResponse = {
-          adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
           requestId: bid.impid,
           cpm: cpm,
           width: bid.w,
@@ -785,6 +785,14 @@ export const spec = {
             advertiserDomains: bid.adomain,
           }
         };
+
+        // adId falls back to impid, which repeats when the server answers one imp with several bids;
+        // on a repeat, leave adId unset so Prebid assigns a unique one and each bid stays renderable.
+        const adId = bid.adId || bid.impid || bid.crid;
+        if (!usedAdIds.has(adId)) {
+          usedAdIds.add(adId);
+          bidResponse.adId = adId;
+        }
 
         const responseAdmFormat = getResponseFormat(bid);
         if (responseAdmFormat === BANNER) {
