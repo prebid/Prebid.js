@@ -3111,13 +3111,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "silverpush",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "sublime",
       "aliasOf": null,
       "gvlid": 114,
