@@ -26,8 +26,9 @@ export const INTERNAL_REQUEST_SYM = Symbol('gptPreAuctionInternalRequest');
 export let _currentConfig: any = {};
 let hooksAdded = false;
 let unregisterGptRequestHook: (() => void) | null = null;
-let requestHookQueued = false;
+let queuedCmdRef: any = null;
 let requestBidsStubAdded = false;
+const interceptedAdUnitsByCode = new Map<string, AdUnit[]>();
 
 export function getSegments(fpd, sections, segtax) {
   return getSegmentsFn(fpd, sections, segtax);
@@ -222,7 +223,12 @@ export const gptRequestHook = async ({ slots }: { slots: GptSlot[] }) => {
     return;
   }
 
-  const configuredCodes = (pbjs.adUnits || []).map(adUnit => adUnit.code);
+  const globalAdUnits: AdUnit[] = pbjs.adUnits || [];
+  const configuredCodes = [
+    ...globalAdUnits.map(adUnit => adUnit.code),
+    ...Array.from(interceptedAdUnitsByCode.keys())
+  ].filter(uniques);
+
   const adUnitCodes = (slots || [])
     .flatMap(slot => configuredCodes.filter(isAdUnitCodeMatchingSlot(slot)))
     .filter(uniques);
@@ -231,10 +237,19 @@ export const gptRequestHook = async ({ slots }: { slots: GptSlot[] }) => {
     return;
   }
 
-  await pbjs.requestBids({
+  const requestBidsOptions: Record<string, any> = {
     adUnitCodes,
     [INTERNAL_REQUEST_SYM]: true
-  });
+  };
+
+  if (adUnitCodes.some(code => interceptedAdUnitsByCode.has(code))) {
+    requestBidsOptions.adUnits = adUnitCodes.flatMap(code =>
+      interceptedAdUnitsByCode.get(code) ||
+      globalAdUnits.filter(adUnit => adUnit.code === code)
+    );
+  }
+
+  await pbjs.requestBids(requestBidsOptions);
 
   if (typeof pbjs.setTargetingForGPTAsync === 'function') {
     pbjs.setTargetingForGPTAsync(adUnitCodes);
@@ -245,6 +260,23 @@ export const requestBidsStub = (next, reqBidOptions) => {
   if (reqBidOptions?.[INTERNAL_REQUEST_SYM]) {
     return next(reqBidOptions);
   }
+
+  const pbjs: any = getGlobal();
+  const globalAdUnits = new Set(pbjs.adUnits || []);
+  const incomingAdUnits: AdUnit[] = Array.isArray(reqBidOptions?.adUnits)
+    ? reqBidOptions.adUnits
+    : [];
+  const requestScopedGroups = new Map<string, AdUnit[]>();
+  incomingAdUnits.forEach((adUnit) => {
+    if (adUnit?.code && !globalAdUnits.has(adUnit)) {
+      const group = requestScopedGroups.get(adUnit.code) || [];
+      group.push(adUnit);
+      requestScopedGroups.set(adUnit.code, group);
+    }
+  });
+  requestScopedGroups.forEach((group, code) => {
+    interceptedAdUnitsByCode.set(code, group);
+  });
 
   logWarn(`${MODULE_NAME}: External pbjs.requestBids() call intercepted because requestHook.mode is 'test'.`);
 
@@ -265,6 +297,20 @@ export const requestBidsStub = (next, reqBidOptions) => {
   return next.bail(undefined);
 };
 
+const addRequestBidsStub = () => {
+  if (!requestBidsStubAdded) {
+    getHook('requestBids').before(requestBidsStub, REQUEST_BIDS_STUB_PRIORITY);
+    requestBidsStubAdded = true;
+  }
+};
+
+const removeRequestBidsStub = () => {
+  if (requestBidsStubAdded) {
+    getHook('requestBids').getHooks({ hook: requestBidsStub }).remove();
+    requestBidsStubAdded = false;
+  }
+};
+
 const registerGptRequestHookSync = () => {
   if (unregisterGptRequestHook || !isGptPubadsDefined()) {
     return false;
@@ -278,23 +324,42 @@ const registerGptRequestHookSync = () => {
 };
 
 const enableRequestHookTestMode = () => {
-  if (!requestBidsStubAdded) {
-    getHook('requestBids').before(requestBidsStub, REQUEST_BIDS_STUB_PRIORITY);
-    requestBidsStubAdded = true;
-  }
-
-  if (unregisterGptRequestHook || registerGptRequestHookSync() || requestHookQueued) {
+  if (unregisterGptRequestHook) {
+    addRequestBidsStub();
     return;
   }
 
+  if (isGptPubadsDefined()) {
+    if (registerGptRequestHookSync()) {
+      addRequestBidsStub();
+    } else {
+      logWarn(`${MODULE_NAME}: googletag.pubads().registerRequestHook is not available; skipping requestHook test mode.`);
+      removeRequestBidsStub();
+      interceptedAdUnitsByCode.clear();
+    }
+    return;
+  }
+
+  addRequestBidsStub();
+
   const googletagBootstrap: any = (window.googletag = window.googletag || ({ cmd: [] } as any));
   const cmdQueue = (googletagBootstrap.cmd = googletagBootstrap.cmd || []);
-  requestHookQueued = true;
+  if (queuedCmdRef === cmdQueue) {
+    return;
+  }
+  queuedCmdRef = cmdQueue;
 
   const registerWhenReady = () => {
-    requestHookQueued = false;
-    if (isRequestHookTestMode()) {
-      registerGptRequestHookSync();
+    if (queuedCmdRef === cmdQueue) {
+      queuedCmdRef = null;
+    }
+    if (!isRequestHookTestMode()) {
+      return;
+    }
+    if (!registerGptRequestHookSync()) {
+      logWarn(`${MODULE_NAME}: googletag.pubads().registerRequestHook is not available; disabling requestBids stub.`);
+      removeRequestBidsStub();
+      interceptedAdUnitsByCode.clear();
     }
   };
 
@@ -310,10 +375,8 @@ const disableRequestHookTestMode = () => {
     unregisterGptRequestHook();
     unregisterGptRequestHook = null;
   }
-  if (requestBidsStubAdded) {
-    getHook('requestBids').getHooks({ hook: requestBidsStub }).remove();
-    requestBidsStubAdded = false;
-  }
+  removeRequestBidsStub();
+  interceptedAdUnitsByCode.clear();
 };
 
 const handleSetGptConfig = moduleConfig => {
