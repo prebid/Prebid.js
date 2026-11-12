@@ -2649,13 +2649,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "kiviads",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "krushmedia",
       "aliasOf": null,
       "gvlid": null,
@@ -3494,20 +3487,6 @@
       "componentType": "bidder",
       "componentName": "leagueM",
       "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "lm_kiviads",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "kivi",
-      "aliasOf": "lm_kiviads",
       "gvlid": null,
       "disclosureURL": null
     },
