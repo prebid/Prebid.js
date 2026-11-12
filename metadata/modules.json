@@ -2334,13 +2334,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "mantis",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pigeoon",
       "aliasOf": null,
       "gvlid": null,
