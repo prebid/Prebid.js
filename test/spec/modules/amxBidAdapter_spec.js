@@ -833,6 +833,27 @@ describe('AmxBidAdapter', () => {
       expect(event.a).to.equal('div-gpt-ad');
     });
 
+    it('will report a timeout under the custom adUnitId, as the bid request does', () => {
+      spec.onTimeout([
+        {
+          bidder: 'example',
+          bidId: 'test-bid-id',
+          adUnitCode: 'div-gpt-ad',
+          params: {
+            tagId: 'tag-id',
+            adUnitId: 'custom-auid',
+          },
+          timeout: 300,
+          auctionId: utils.getUniqueIdentifierStr(),
+        },
+      ]);
+
+      const [request] = server.requests;
+      request.respond(204, { 'Content-Type': 'text/html' }, null);
+      const { e: [event] } = JSON.parse(request.requestBody);
+      expect(event.a).to.equal('custom-auid');
+    });
+
     it('will log an event for prebid win', () => {
       spec.onBidWon({
         bidder: 'example',
