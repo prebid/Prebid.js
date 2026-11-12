@@ -2705,13 +2705,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "qt",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "rocketlab",
       "aliasOf": null,
       "gvlid": null,
