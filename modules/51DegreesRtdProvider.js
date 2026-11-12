@@ -1,9 +1,8 @@
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { fetchExternalScript } from '../src/adloader.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  deepAccess,
   deepSetValue,
   formatQS,
   mergeDeep,
@@ -68,9 +67,9 @@ const ORTB_DEVICE_TYPE_MAP = new Map([
  */
 export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   // Resource key
-  let resourceKey = deepAccess(moduleConfig, 'params.resourceKey');
+  let resourceKey = moduleConfig?.params?.resourceKey;
   // On-premise JS URL
-  let onPremiseJSUrl = deepAccess(moduleConfig, 'params.onPremiseJSUrl');
+  let onPremiseJSUrl = moduleConfig?.params?.onPremiseJSUrl;
 
   // Trim the values
   if (typeof resourceKey === 'string') {
@@ -526,7 +525,7 @@ export const resolveIdUsage = (moduleConfig) => {
  * @returns {string|undefined}
  */
 export const resolveTcString = (userConsent) => {
-  const tc = deepAccess(userConsent, 'gdpr.consentString');
+  const tc = userConsent?.gdpr?.consentString;
   return (typeof tc === 'string' && tc.length > 0) ? tc : undefined;
 };
 
@@ -537,7 +536,7 @@ export const resolveTcString = (userConsent) => {
  * @returns {string|undefined}
  */
 export const resolveGpp = (userConsent) => {
-  const gpp = deepAccess(userConsent, 'gpp.gppString');
+  const gpp = userConsent?.gpp?.gppString;
   return (typeof gpp === 'string' && gpp.length > 0) ? gpp : undefined;
 };
 
@@ -626,8 +625,8 @@ const enrichFromData = (data, reqBidsConfigObj, tdlUrl, callback) => {
     // Don't clobber a publisher-observed device.ip / device.ipv6 with
     // our IP-derived value. Publisher signal wins.
     if (enrichment.device) {
-      if (deepAccess(global, 'device.ip')) delete enrichment.device.ip;
-      if (deepAccess(global, 'device.ipv6')) delete enrichment.device.ipv6;
+      if (global?.device?.ip) delete enrichment.device.ip;
+      if (global?.device?.ipv6) delete enrichment.device.ipv6;
     }
     mergeDeep(global, enrichment);
     logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
@@ -652,7 +651,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     }
   };
   try {
-    const tdlUrl = deepAccess(moduleConfig, 'params.tdlUrl');
+    const tdlUrl = moduleConfig?.params?.tdlUrl;
     const idUsage = resolveIdUsage(moduleConfig);
     const tcString = resolveTcString(userConsent);
     const gpp = resolveGpp(userConsent);
@@ -703,38 +702,26 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
       // Every branch below has to reach callbackOnce: a callback the module never
       // invokes stalls the auction for the whole auctionDelay, with nothing in the
       // log to attribute it to this module.
-      const tag = loadExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, {
-        success: () => {
-          logMessage('Successfully injected 51Degrees script');
-          const fod = /** @type {Object} */ (window.fod);
-          // A rejected request (unknown resource key, expired licence) still
-          // serves a script body, but one that defines only fod.errors. Calling
-          // complete() on it throws inside the loader, which swallows the error.
-          if (!fod || typeof fod.complete !== 'function') {
-            const errors = getPageFodErrors();
-            logError('Injected 51Degrees script did not provide a usable fod object' +
-              (errors ? ': ' + errors.join('; ') : ''));
-            callbackOnce();
-            return;
-          }
-          ownFod = fod;
-          // Convert and merge device data in the callback
-          fod.complete(onData);
-        },
-        // Blocked, offline, or a non-200 response. Only the object form of the
-        // callback gets told about this; a bare function is called on success only.
-        error: (e) => {
-          logError('Failed to load the 51Degrees script: ', e);
+      return fetchExternalScript(scriptURL, MODULE_TYPE_RTD, MODULE_NAME, document, { crossOrigin: 'anonymous' }).then(() => {
+        logMessage('Successfully injected 51Degrees script');
+        const fod = /** @type {Object} */ (window.fod);
+        // A rejected request (unknown resource key, expired licence) still
+        // serves a script body, but one that defines only fod.errors.
+        if (!fod || typeof fod.complete !== 'function') {
+          const errors = getPageFodErrors();
+          logError('Injected 51Degrees script did not provide a usable fod object' +
+            (errors ? ': ' + errors.join('; ') : ''));
           callbackOnce();
-        },
-      }, document, { crossOrigin: 'anonymous' });
-
-      // loadExternalScript returns nothing when activity controls deny the load,
-      // and in that case neither callback ever runs.
-      if (!tag) {
-        logError('Loading the 51Degrees script was not allowed');
+          return;
+        }
+        ownFod = fod;
+        // Convert and merge device data in the callback
+        fod.complete(onData);
+      }, (e) => {
+        // blocked, offline, a non-200 response, or denied by activity controls
+        logError('Failed to load the 51Degrees script: ', e);
         callbackOnce();
-      }
+      });
     }).catch((error) => {
       logError(error);
       callbackOnce();

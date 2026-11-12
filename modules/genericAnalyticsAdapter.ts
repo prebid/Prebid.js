@@ -5,6 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { module } from '../src/hook.js';
 import type { AnyFunction } from "../src/types/functions";
+import type { GVLIDs } from '../src/consentHandler.js';
 
 export type EventMapping = { [E in keyof Events]?: (payload: Events[E][0]) => any };
 
@@ -21,9 +22,9 @@ type BaseOptions = {
    */
   batchDelay?: number;
   /**
-   * Global vendor list ID to use for the purpose of GDPR purpose 7 enforcement
+   * Global vendor list ID(s) to use for the purpose of GDPR purpose 7 enforcement
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Map from event name to a custom format function. When provided, only events in this map will be collected,
    * using the data returned by their corresponding function.
@@ -104,14 +105,18 @@ const TYPES = {
   handler: 'function',
   batchSize: 'number',
   batchDelay: 'number',
-  gvlid: 'number',
   preset: 'string',
 };
 
 const MAX_CALL_DEPTH = 20;
 
+function isGvlid(gvlid) {
+  return typeof gvlid === 'number' ||
+    (Array.isArray(gvlid) && gvlid.length > 0 && gvlid.every(id => typeof id === 'number'));
+}
+
 type GenericAnalyticsAdapter = AnalyticsAdapterInstance<'generic'> & {
-  gvlid: (config) => number | undefined;
+  gvlid: (config) => GVLIDs | undefined;
 };
 
 type GenericAnalyticsConstructor = new () => GenericAnalyticsAdapter;
@@ -132,22 +137,26 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
       logError('options must specify either `url` or `handler`');
       return false;
     }
-    if (options.hasOwnProperty('method') && !['GET', 'POST'].includes(options.method)) {
+    if (Object.prototype.hasOwnProperty.call(options, 'method') && !['GET', 'POST'].includes(options.method)) {
       logError('options.method must be GET or POST');
       return false;
     }
     for (const [field, type] of Object.entries(TYPES)) {
       // eslint-disable-next-line valid-typeof
-      if (options.hasOwnProperty(field) && typeof options[field] !== type) {
+      if (Object.prototype.hasOwnProperty.call(options, field) && typeof options[field] !== type) {
         logError(`options.${field} must be a ${type}`);
         return false;
       }
     }
-    if (options.hasOwnProperty('preset') && !presets.hasOwnProperty(options.preset)) {
+    if (Object.prototype.hasOwnProperty.call(options, 'gvlid') && !isGvlid(options.gvlid)) {
+      logError('options.gvlid must be a number or a non-empty array of numbers');
+      return false;
+    }
+    if (Object.prototype.hasOwnProperty.call(options, 'preset') && !Object.prototype.hasOwnProperty.call(presets, options.preset)) {
       logError(`options.preset "${options.preset}" is not available; make sure the module that provides it is included`);
       return false;
     }
-    if (options.hasOwnProperty('events')) {
+    if (Object.prototype.hasOwnProperty.call(options, 'events')) {
       if (!isPlainObject(options.events)) {
         logError('options.events must be an object');
         return false;
@@ -163,6 +172,13 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
       }
     }
     return true;
+  }
+
+  function clearBatchTimer() {
+    if (timer != null) {
+      clearTimeout(timer);
+      timer = null;
+    }
   }
 
   function processBatch() {
@@ -219,14 +235,16 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
           parent.enableAnalytics.call(this, config);
         }
       },
+      disableAnalytics() {
+        clearBatchTimer();
+        batch = [];
+        parent.disableAnalytics.call(this);
+      },
       track(event) {
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
-          if (timer != null) {
-            clearTimeout(timer);
-            timer = null;
-          }
+          clearBatchTimer();
           if (batch.length >= options.batchSize) {
             processBatch();
           } else {

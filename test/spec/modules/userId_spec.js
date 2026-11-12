@@ -58,6 +58,15 @@ import {
 const assert = require('chai').assert;
 const expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+
+// The module writes the pubcid cookies on sharedId's domainOverride(): the page's root domain, which a page on a
+// real domain has (bs-local.com on a BrowserStack device) and localhost doesn't. Erase both that one and a host-only
+// one, or a cookie the module wrote outlives the test that erased it.
+function eraseCookie(name) {
+  coreStorage.setCookie(name, '', EXPIRED_COOKIE_DATE);
+  const domain = sharedIdSystemSubmodule.domainOverride?.();
+  if (domain) coreStorage.setCookie(name, '', EXPIRED_COOKIE_DATE, undefined, domain);
+}
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function () {
@@ -292,7 +301,7 @@ describe('User ID', function () {
       // reset mockGpt so nothing else interferes
       mockGpt.disable();
       mockGpt.enable();
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      eraseCookie('pubcid');
       coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 20000).toUTCString()));
       sinon.spy(coreStorage, 'setCookie');
       sinon.stub(utils, 'logWarn');
@@ -307,8 +316,8 @@ describe('User ID', function () {
     });
 
     after(function () {
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('pubcid_alt', '', EXPIRED_COOKIE_DATE);
+      eraseCookie('pubcid');
+      eraseCookie('pubcid_alt');
     });
 
     function getGlobalEids() {
@@ -337,32 +346,31 @@ describe('User ID', function () {
     });
 
     it('Check different cookies', async function () {
-      let pubcid1;
-      let pubcid2;
+      // Each auction's id comes from its EIDs rather than from reading the pubcid cookie back, which real Safari
+      // doesn't reliably return on the test page.
+      const pubcidOf = (eids) => {
+        expect(eids).to.have.length(1);
+        expect(eids[0].source).to.equal('pubcid.org');
+        expect(eids[0].uids).to.have.length(1);
+        expect(eids[0].uids[0].atype).to.equal(1);
+        expect(eids[0].uids[0].id).to.be.a('string').and.not.be.empty;
+        return eids[0].uids[0].id;
+      };
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids1 = await getGlobalEids();
-      pubcid1 = coreStorage.getCookie('pubcid'); // get first cookie
-      coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE); // erase cookie
-      expect(eids1).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid1, atype: 1 }]
-      }]);
+      const pubcid1 = pubcidOf(await getGlobalEids());
+      eraseCookie('pubcid'); // erase cookie
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
-      const eids2 = await getGlobalEids();
-      pubcid2 = coreStorage.getCookie('pubcid'); // get second cookie
-      expect(eids2).to.eql([{
-        source: 'pubcid.org',
-        uids: [{ id: pubcid2, atype: 1 }]
-      }]);
+      const pubcid2 = pubcidOf(await getGlobalEids());
+      // the erased cookie's id wasn't reused
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
@@ -392,6 +400,78 @@ describe('User ID', function () {
         source: 'pubcid.org',
         uids: [{ id: 'altpubcid200000', atype: 1 }]
       }]);
+    });
+
+    it('Extend cookie with pixelUrl: getUserIdsAsync resolves once the pixel loads', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { extend: true, pixelUrl: '/any/pubcid/url' });
+      // run submodule callbacks right away instead of after the first auction
+      customConfig.userSync.auctionDelay = 10;
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => setTimeout(done));
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+
+        const ids = await Promise.race([
+          getGlobal().getUserIdsAsync(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+        ]);
+        expect(ids).to.eql({ pubcid: 'altpubcid200000' });
+        sinon.assert.calledOnce(triggerPixel);
+        expect(triggerPixel.firstCall.args[0]).to.include('/any/pubcid/url');
+      } finally {
+        triggerPixel.restore();
+      }
+    });
+
+    it('First visit with pixelUrl: the cookie the server sets is not rewritten from script after the pixel', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { pixelUrl: '/any/pubcid/url' });
+      // run submodule callbacks right away instead of after the first auction
+      customConfig.userSync.auctionDelay = 10;
+
+      // record script writes to document.cookie, and when the pixel fired relative to them
+      let proto = Object.getPrototypeOf(document);
+      while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
+      const nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
+      const scriptWrites = [];
+      let writesBeforePixel = null;
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get() { return nativeCookie.get.call(document); },
+        set(value) {
+          scriptWrites.push(value);
+          nativeCookie.set.call(document, value);
+        }
+      });
+      // the endpoint sets the cookie from the server, then the pixel loads
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => {
+        writesBeforePixel = scriptWrites.length;
+        const id = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)[0];
+        nativeCookie.set.call(document, `pubcid=${id}; path=/`);
+        setTimeout(done);
+      });
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+
+        const ids = await Promise.race([
+          getGlobal().getUserIdsAsync(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+        ]);
+        sinon.assert.calledOnce(triggerPixel);
+        expect(ids.pubcid).to.be.a('string').and.not.be.empty;
+        expect(triggerPixel.firstCall.args[0]).to.include('/any/pubcid/url').and.include(ids.pubcid);
+        // getId's id was stored from script before the pixel...
+        expect(scriptWrites.slice(0, writesBeforePixel).some(w => w.startsWith('pubcid='))).to.be.true;
+        // ...but not again after it
+        expect(scriptWrites.slice(writesBeforePixel).filter(w => w.startsWith('pubcid='))).to.eql([]);
+      } finally {
+        delete document.cookie;
+        triggerPixel.restore();
+      }
     });
 
     it('Disable auto create', async function () {
@@ -2181,7 +2261,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
         }
       });
 
@@ -2223,7 +2303,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
           localStorage.removeItem('pubcid');
           localStorage.removeItem('pubcid_exp');
         }
@@ -2263,7 +2343,7 @@ describe('User ID', function () {
             uids: [{ id: 'testpubcid', atype: 1 }]
           }]);
         } finally {
-          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          eraseCookie('pubcid');
         }
       });
 
@@ -2531,13 +2611,13 @@ describe('User ID', function () {
         });
         sinon.stub(events, 'getEvents').returns([]);
         sinon.stub(utils, 'triggerPixel');
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        eraseCookie('pubcid');
       });
 
       afterEach(function () {
         events.getEvents.restore();
         utils.triggerPixel.restore();
-        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        eraseCookie('pubcid');
         resetConsentData();
         delete window.__tcfapi;
       });

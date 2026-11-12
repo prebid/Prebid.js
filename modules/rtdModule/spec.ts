@@ -1,4 +1,4 @@
-import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AllConsentData, GVLIDs } from "../../src/consentHandler.ts";
 import type { AdUnitCode, ByAdUnit, StorageDisclosure } from "../../src/types/common";
 import { EVENTS } from '../../src/constants.ts';
 import type { EventPayload } from "../../src/events.ts";
@@ -29,14 +29,19 @@ export type RTDProviderConfig<P extends RTDProvider> = BaseConfig<P> & (
     P extends keyof ProviderConfig ? ProviderConfig[P] : Record<string, unknown>
 );
 
-type RTDEvent = typeof EVENTS.AUCTION_INIT |
-    typeof EVENTS.AUCTION_END |
-    typeof EVENTS.BID_RESPONSE |
-    typeof EVENTS.BID_REQUESTED |
-    typeof EVENTS.BID_ACCEPTED;
+/**
+ * Map from the name of each event handler a submodule may define to the event it is called for.
+ */
+type RTDEventHandlerNames = {
+  onAuctionInitEvent: typeof EVENTS.AUCTION_INIT;
+  onAuctionEndEvent: typeof EVENTS.AUCTION_END;
+  onBidResponseEvent: typeof EVENTS.BID_RESPONSE;
+  onBidRequestEvent: typeof EVENTS.BID_REQUESTED;
+  onBidAcceptedEvent: typeof EVENTS.BID_ACCEPTED;
+};
 
 type EventHandlers<P extends RTDProvider> = {
-  [EV in RTDEvent]: (payload: EventPayload<EV>, config: RTDProviderConfig<P>, consent: AllConsentData) => void;
+  [H in keyof RTDEventHandlerNames]: (payload: EventPayload<RTDEventHandlerNames[H]>, config: RTDProviderConfig<P>, consent: AllConsentData) => void;
 };
 
 export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> & StorageDisclosure & {
@@ -45,9 +50,10 @@ export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> &
    */
   name: P;
   /**
-   * global vendor list ID for your submodule
+   * global vendor list ID for your submodule.
+   * May be a list, for submodules that act on behalf of several vendors; all of them then need a legal basis.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs;
   /**
    * Google Additional Consent provider ID, for vendors that are not on the GVL.
    * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string

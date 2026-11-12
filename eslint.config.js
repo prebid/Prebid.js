@@ -4,6 +4,7 @@ const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const chaiFriendly = require('eslint-plugin-chai-friendly');
+const mochaPlugin = require('eslint-plugin-mocha').default;
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
@@ -69,6 +70,9 @@ module.exports = [
   {
     ignores: [
       'integrationExamples/**/*',
+      // do not lint worktrees created by claude/gemini
+      '.claude/**',
+      '.gemini/**',
       // do not lint build-related stuff
       '*.js',
       '*.mjs',
@@ -78,7 +82,7 @@ module.exports = [
       'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
-      'web-bundler'
+      'web-bundler',
     ],
   },
   jsdoc.configs['flat/recommended'],
@@ -130,6 +134,7 @@ module.exports = [
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
+      'prebid/no-deep-access-import': 'warn',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/no-unresolved': 'error',
@@ -152,11 +157,11 @@ module.exports = [
         'error',
         {
           selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
       ],
       'no-restricted-imports': [
@@ -295,7 +300,13 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
@@ -308,9 +319,27 @@ module.exports = [
     }
   },
   {
+    files: [
+      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
+      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
+      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/adagioRtdProvider.js',
+      'modules/contxtfulRtdProvider.js'
+    ],
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/no-synchronous-layout-read': 'error',
+    }
+  },
+  {
     files: sourcePattern('test'),
     plugins: {
-      'chai-friendly': chaiFriendly
+      'chai-friendly': chaiFriendly,
+      'mocha': mochaPlugin
     },
     languageOptions: {
       globals: {
@@ -323,6 +352,10 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
+      // Mocha silently ignores it()/describe()/hooks called while a test or hook is running: their
+      // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
+      // (e.g. after()) registered inside a test; see AGENTS.md.
+      'mocha/no-nested-tests': 'error',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-useless-escape': 'off',
@@ -351,9 +384,9 @@ module.exports = [
   // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
   {
     files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
-      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
-      if (!p.match(/\.(js|ts|mjs)$/)) {
-        return `${p}/**/*.{js,ts,mjs}`;
+      // If path doesn't end with .js/.ts/.mjs/.mts, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs|mts)$/)) {
+        return `${p}/**/*.{js,ts,mjs,mts}`;
       }
       return p;
     }),
@@ -361,6 +394,8 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
           patterns: []
         }
       ],

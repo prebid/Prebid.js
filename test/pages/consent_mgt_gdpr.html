@@ -1,6 +1,6 @@
 <html>
 <head>
-  <script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=consentManagement&modules=gdprEnforcement"></script>
+  <script async src="http://localhost:4444/bundle?modules=msftBidAdapter&modules=consentManagement&modules=gdprEnforcement"></script>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script>
     (function (window, document) {
@@ -92,9 +92,9 @@
 
       // Replace this object to test a new Adapter!
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'msft',
         params: {
-          placementId: 13144370
+          placement_id: 13144370
         }
       }]
 
@@ -123,10 +123,10 @@
         }
       },
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'msft',
         params: {
-          placementId: 13232354,
-          allowSmallerSizes: true
+          placement_id: 13232354,
+          allow_smaller_sizes: true
         }
       }]
     }];

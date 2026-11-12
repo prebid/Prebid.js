@@ -1,11 +1,12 @@
 import { getBidRequest } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { getRtbBid, parseMediaType } from '../libraries/appnexusUtils/anUtils.js';
 import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js';
 import { getBidFloor } from '../libraries/xeUtils/bidderUtils.js';
 
@@ -32,7 +33,7 @@ export const spec = {
     const schain = bidRequest.ortb2?.source?.ext?.schain;
     const payload = {
       tags: [...tags],
-      ua: navigator.userAgent,
+      ua: bidderRequest.ortb2?.device?.ua,
       sdk: {
         version: '$prebid.version$',
       },
@@ -165,21 +166,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
-}
-
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
-    return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
-  } else {
-    return BANNER;
-  }
 }
 
 function isAmp() {
