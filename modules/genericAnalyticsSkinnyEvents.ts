@@ -316,12 +316,12 @@ export function bidTimeout(args: BidTimeoutInput | (Record<number, NoBidInput> &
 }
 
 /**
- * Wire payload types for the v1 skinny analytics preset. Unlike the input types
+ * Wire payload types for the skinny analytics preset. Unlike the input types
  * in `src/events`, these describe what the generic analytics handler receives
  * after the skinny event formatter has run.
  *
  * This discriminated union can be narrowed on `eventType`. The JSON Schema is generated from it
- * (schema/genericAnalyticsSkinnyEvents.v1.d.ts); changing it incompatibly requires a new schema version.
+ * (schema/genericAnalyticsSkinnyEvents.d.ts).
  */
 export type SkinnyEventPayloads = {
   [EVENTS.NO_BID]: SkinnyNoBid;

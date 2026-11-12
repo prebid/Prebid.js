@@ -9,9 +9,9 @@ const require = createRequire(import.meta.url);
 const Ajv2020 = createRequire(require.resolve('schema-utils'))('ajv/dist/2020').default;
 const { generateSchemas } = require('../../gulp.schema.js');
 // what the formatters emit, as asserted by test/spec/modules/genericAnalyticsSkinnyEvents_spec.js
-const fixtures = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/genericAnalyticsSkinnyEvents.v1.json', import.meta.url)), 'utf8'));
+const fixtures = JSON.parse(readFileSync(fileURLToPath(new URL('../fixtures/genericAnalyticsSkinnyEvents.json', import.meta.url)), 'utf8'));
 
-describe('Generic Analytics skinny events v1 JSON Schema', function () {
+describe('Generic Analytics skinny events JSON Schema', function () {
   this.timeout(60000);
   let schemas;
   before(() => {
@@ -24,7 +24,7 @@ describe('Generic Analytics skinny events v1 JSON Schema', function () {
       ['ortb2/request.schema.json', 'ortb2/imp.schema.json'].forEach(file => {
         ajv.addSchema(withOrtb ? schemas[file] : { $id: schemas[file].$id });
       });
-      const validate = ajv.compile(schemas['genericAnalyticsSkinnyEvents.v1.schema.json']);
+      const validate = ajv.compile(schemas['genericAnalyticsSkinnyEvents.schema.json']);
       Object.values(fixtures).forEach(event => {
         expect(validate(event), JSON.stringify(validate.errors)).to.be.true;
       });

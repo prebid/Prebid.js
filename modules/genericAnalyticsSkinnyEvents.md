@@ -35,11 +35,11 @@ Every payload also includes `eventType` (the name of the event) and `analyticsLa
 
 The click events are emitted when `bidClickTracking` is enabled (`bidClickInferred` also needs the `bidClickTracking` module). Both preserve only lightweight bid correlation fields; the full bid, creative markup, and the ad-server click URL are omitted. The inferred click event is deliberately distinct from observed clicks.
 
-#### Public payload contract (v1)
+#### Public payload contract
 
-The built-in preset emits seven JSON event shapes. Their versioned contract is published alongside this module:
+The built-in preset emits seven JSON event shapes. Their contract is published alongside this module:
 
-- JSON Schema v1, `prebid.js/schema/genericAnalyticsSkinnyEvents.v1.schema.json` in the NPM package, for collectors
+- JSON Schema, `prebid.js/schema/genericAnalyticsSkinnyEvents.schema.json` in the NPM package, for collectors
   and other non-TypeScript consumers. It is generated from the TypeScript types by `gulp build`.
 - TypeScript exports `SkinnyEventPayload` (a discriminated union),
   `SkinnyEventPayloads` (event-name-to-payload mapping), and `SkinnyEventType`,
@@ -71,26 +71,26 @@ OpenRTB 2.6 declares and accept any other field. To skip OpenRTB validation, reg
 under their `$id` instead, e.g. with Ajv:
 
 ```javascript
-['ortb2/request.schema.json', 'ortb2/imp.schema.json'].forEach(file => ajv.addSchema({ $id: `${baseUrl}${file}` }));
+[requestSchema, impSchema].forEach(({ $id }) => ajv.addSchema({ $id }));
 ```
 
-where `baseUrl` is the location of the event schema's `$id`. `ortb2` and `ortb2Imp` must still be objects.
+Their `$id` can be older than the event schema's (see versioning below), so take it from the ORTB schemas, or from the
+event schema's `$ref`s resolved against its `$id`. `ortb2` and `ortb2Imp` must still be objects.
 The schemas use union types (`"type": ["string", "number"]`), which Ajv's strict mode rejects unless `allowUnionTypes` is set.
 
 The wire contract is regression-tested by two existing CI suites: browser tests
 compare the seven formatter outputs after `JSON.stringify`/`JSON.parse` with
-`test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
+`test/fixtures/genericAnalyticsSkinnyEvents.json`, and the Node build-logic
 tests validate those same fixtures against the generated JSON Schema using Ajv 2020.
 This catches output changes independently of schema edits and rejects
 unknown event types or fields with incorrect types.
 
-**Versioning policy:** v1 describes existing output; it is not a request to add a
-`schemaVersion` field to events. Schema versions are selected out-of-band by
-collectors. Incompatible changes to the preset's serialized shape should publish
-a new schema version rather than silently rewriting v1. The v1 schema sets
-`additionalProperties: false` on each event, so collectors that validate against
-it reject a payload with an added top-level field: adding a field also requires
-a new schema version, unless collectors validate permissively. This contract
+**Versioning:** the schema's `$id` is its version. It is the schema's URL in the release that introduced it
+(e.g. `https://cdn.jsdelivr.net/npm/prebid.js@11.50.0/dist/schema/genericAnalyticsSkinnyEvents.schema.json`),
+and a release that does not change what the schema accepts publishes the previous release's schema unchanged, `$id`
+included. Collectors can therefore pin an `$id` and treat a different one as a contract change. Events do not carry a
+`schemaVersion` field. Each event sets `additionalProperties: false`, so adding a field is a contract change too:
+collectors that validate against the previous schema reject a payload with an added top-level field. This contract
 does not imply a common schema for all Prebid.js analytics events or Prebid Server.
 
 #### Build

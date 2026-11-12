@@ -46,6 +46,9 @@ const {values: argv, tokens} = parseArgs({
     distUrlBase: {type: 'string'},
     bundleName: {type: 'string'},
     tag: {type: 'string'},
+    out: {type: 'string'},
+    against: {type: 'string'},
+    report: {type: 'string'},
   },
 });
 

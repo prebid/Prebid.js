@@ -42,6 +42,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const {precompile} = require('./gulp.precompilation.js');
 const {tsConsumer, TS_MIN, TS_CURRENT} = require('./gulp.consumerTypes.js');
 const {buildSchemas} = require('./gulp.schema.js');
+const {checkSchemaTask, reuseSchemasTask} = require('./gulp.schemaCompat.js');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -651,6 +652,9 @@ gulp.task('update-codeql', function (done) {
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('ts-consumer-packed', gulp.series('setup-npmignore', tsConsumer('pack', [TS_MIN, TS_CURRENT])));
 gulp.task('build-schema', gulp.series('ts', buildSchemas('dist/schema')));
+gulp.task('generate-schemas', buildSchemas(argv.out ?? 'dist/schema'));
+// exits successfully only if the schemas are compatible with those in --against (a directory or npm version; defaults to the previous release)
+gulp.task('check-schema', checkSchemaTask({against: argv.against, report: argv.report, version: prebid.version}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist, 'build-schema'));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
 // `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file
@@ -661,7 +665,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist, 'build-sch
 // complete.
 gulp.task('build-release', gulp.series('clean-cache', 'update-codeql', 'build', updateCreativeExample, 'update-browserslist'));
 // prepare NPM release - 'build' to generate files in dist/; 'setup-npmignore' to make sure 'dist' is published in NPM
-gulp.task('prepare-release', gulp.series('clean-cache', 'build', 'setup-npmignore'));
+gulp.task('prepare-release', gulp.series('clean-cache', 'build', reuseSchemasTask({outDir: 'dist/schema', version: prebid.version}), 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));

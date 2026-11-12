@@ -2,7 +2,7 @@ import { GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
 import { bidClick, bidClickInferred, bidRequested, bidResponse, bidTimeout, bidWon, eidsSources, noBid, PRESET_NAME, stripEids } from '../../../modules/genericAnalyticsSkinnyEvents.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
-import fixtures from '../../fixtures/genericAnalyticsSkinnyEvents.v1.json';
+import fixtures from '../../fixtures/genericAnalyticsSkinnyEvents.json';
 
 // Test JSON as actually sent to a collector, not JS objects containing undefined.
 const onWire = (payload) => JSON.parse(JSON.stringify(payload));
@@ -82,7 +82,7 @@ describe('Generic analytics skinny events', () => {
   });
 
   describe('noBid', () => {
-    it('matches the published v1 fixture', () => {
+    it('matches the published fixture', () => {
       expect(onWire(noBid({
         auctionId: 'auction',
         bidId: 'bid',
@@ -167,7 +167,7 @@ describe('Generic analytics skinny events', () => {
       };
     });
 
-    it('serializes bid responses and wins according to the v1 fixtures', () => {
+    it('serializes bid responses and wins according to the fixtures', () => {
       expect(onWire(bidResponse(bid))).to.eql(fixtures.bidResponse);
       expect(onWire(bidWon(bid))).to.eql(fixtures.bidWon);
     });
@@ -187,7 +187,7 @@ describe('Generic analytics skinny events', () => {
       });
     });
 
-    it('serializes observed and inferred clicks according to the v1 fixtures', () => {
+    it('serializes observed and inferred clicks according to the fixtures', () => {
       const nativeBid = { ...bid, mediaType: 'native', clickUrl: 'https://adserver.example/click', native: {} };
       expect(onWire(bidClick({
         bid: nativeBid,
@@ -322,7 +322,7 @@ describe('Generic analytics skinny events', () => {
       };
     }
 
-    describe('serialized v1 contract', () => {
+    describe('serialized contract', () => {
       it('matches the published bidRequested fixture', () => {
         expect(onWire(bidRequested({
           auctionId: 'auction',
