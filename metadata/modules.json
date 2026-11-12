@@ -2600,13 +2600,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "appMonstaMedia",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "appStockSSP",
       "aliasOf": null,
       "gvlid": 1223,
