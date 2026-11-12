@@ -230,11 +230,9 @@ function buildImp(bidRequest, ortb2) {
     floorSizes = getAdUnitSizes(bidRequest);
   }
 
-  if (bidRequest.params.currency && bidRequest.params.currency !== '') {
-    CUR = bidRequest.params.currency;
-  }
+  const currency = (bidRequest.params.currency && bidRequest.params.currency !== '') ? bidRequest.params.currency : 'USD';
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, currency);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
@@ -268,7 +266,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}
