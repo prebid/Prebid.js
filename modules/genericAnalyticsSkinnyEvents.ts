@@ -71,6 +71,63 @@ export type SkinnyBidWon = SkinnyBidFields & {
   status: Bid['status'];
 };
 
+type BidClickInput = EventPayload<typeof EVENTS.BID_CLICK>;
+type BidClickInferredInput = EventPayload<typeof EVENTS.BID_CLICK_INFERRED>;
+type ClickInput = (BidClickInput | BidClickInferredInput) & AnalyticsLabels;
+
+export type SkinnyClickFields = Pick<Bid,
+  'auctionId' | 'adUnitCode' | 'transactionId' | 'requestId' | 'adId' |
+  'bidder' | 'bidderCode' | 'cpm' | 'currency' | 'mediaType' | 'source'
+> & {
+  method: ClickInput['method'];
+  assetId?: ClickInput['assetId'];
+} & AnalyticsLabels;
+
+export type SkinnyBidClick = SkinnyClickFields & {
+  eventType: typeof EVENTS.BID_CLICK;
+  // observed clicks: 'creativeClick' | 'nativeClick'
+  method: BidClickInput['method'];
+};
+
+export type SkinnyBidClickInferred = SkinnyClickFields & {
+  eventType: typeof EVENTS.BID_CLICK_INFERRED;
+  // inferred clicks: 'iframeFocus'
+  method: BidClickInferredInput['method'];
+};
+
+function clickFields<T extends ClickInput>({ bid, method, assetId, analyticsLabels }: T): SkinnyClickFields & { method: T['method'] } {
+  return {
+    auctionId: bid.auctionId,
+    adUnitCode: bid.adUnitCode,
+    transactionId: bid.transactionId,
+    requestId: bid.requestId,
+    adId: bid.adId,
+    bidder: bid.bidder,
+    bidderCode: bid.bidderCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    mediaType: bid.mediaType,
+    source: bid.source,
+    method,
+    ...(assetId != null ? { assetId } : {}),
+    analyticsLabels,
+  };
+}
+
+export function bidClick(args: BidClickInput & AnalyticsLabels): SkinnyBidClick {
+  return {
+    eventType: EVENTS.BID_CLICK,
+    ...clickFields(args),
+  };
+}
+
+export function bidClickInferred(args: BidClickInferredInput & AnalyticsLabels): SkinnyBidClickInferred {
+  return {
+    eventType: EVENTS.BID_CLICK_INFERRED,
+    ...clickFields(args),
+  };
+}
+
 type BidWithExtras = Bid & AnalyticsLabels & { floorData?: BidFloorData };
 
 function bidFields(bid: BidWithExtras): SkinnyBidFields {
@@ -270,6 +327,8 @@ export type SkinnyEventPayloads = {
   [EVENTS.NO_BID]: SkinnyNoBid;
   [EVENTS.BID_RESPONSE]: SkinnyBidResponse;
   [EVENTS.BID_WON]: SkinnyBidWon;
+  [EVENTS.BID_CLICK]: SkinnyBidClick;
+  [EVENTS.BID_CLICK_INFERRED]: SkinnyBidClickInferred;
   [EVENTS.BID_REQUESTED]: SkinnyBidRequested;
   [EVENTS.BID_TIMEOUT]: SkinnyBidTimeout;
 };
@@ -281,6 +340,8 @@ export const skinnyEvents = {
   [EVENTS.NO_BID]: noBid,
   [EVENTS.BID_RESPONSE]: bidResponse,
   [EVENTS.BID_WON]: bidWon,
+  [EVENTS.BID_CLICK]: bidClick,
+  [EVENTS.BID_CLICK_INFERRED]: bidClickInferred,
   [EVENTS.BID_REQUESTED]: bidRequested,
   [EVENTS.BID_TIMEOUT]: bidTimeout,
 } satisfies EventMapping;

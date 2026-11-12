@@ -18,6 +18,10 @@ export interface SkinnyBidResponse extends Override<S.SkinnyBidResponse, { adser
 /** @additionalProperties false */
 export interface SkinnyBidWon extends Override<S.SkinnyBidWon, { adserverTargeting?: AdserverTargeting }> {}
 /** @additionalProperties false */
+export interface SkinnyBidClick extends Serialized<S.SkinnyBidClick> {}
+/** @additionalProperties false */
+export interface SkinnyBidClickInferred extends Serialized<S.SkinnyBidClickInferred> {}
+/** @additionalProperties false */
 export interface SkinnyBidRequested extends Override<S.SkinnyBidRequested, { ortb2: OpenRTBRequest; bids: SkinnyBidRequest[] }> {}
 /** @additionalProperties false */
 export interface SkinnyTimedOutBidderRequest extends Override<S.SkinnyTimedOutBidderRequest, { ortb2: OpenRTBRequest; bids: SkinnyBidRequest[] }> {}
@@ -25,5 +29,9 @@ export interface SkinnyTimedOutBidderRequest extends Override<S.SkinnyTimedOutBi
 export interface SkinnyBidTimeout extends Override<S.SkinnyBidTimeout, { bidderRequests: SkinnyTimedOutBidderRequest[] }> {}
 
 /** Event payloads sent by the generic analytics adapter with `preset: 'skinny'`. */
-export type SkinnyEvent = SkinnyNoBid | SkinnyBidResponse | SkinnyBidWon | SkinnyBidRequested | SkinnyBidTimeout
+export type SkinnyEvent = SkinnyNoBid | SkinnyBidResponse | SkinnyBidWon | SkinnyBidClick | SkinnyBidClickInferred | SkinnyBidRequested | SkinnyBidTimeout
+// fails to compile when the preset sends an event type that SkinnyEvent leaves out
+type Covered<T extends SkinnyEvent['eventType']> = T
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type AllEventTypesCovered = Covered<S.SkinnyEventType>
 export type { SkinnyEvent as default }

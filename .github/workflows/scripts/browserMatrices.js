@@ -28,8 +28,18 @@ function vitestRunners(browsers) {
     .flatMap(({name, runner: {runsOn, vitest}}) => byShard({name, runsOn, ...vitest}));
 }
 
-function vitestBrowserstack(browsers, listSpecs = specsMatching) {
-  return Object.values(browsers)
+// the account's parallel sessions; keep in sync with maxInstances in wdio.conf.js
+const BROWSERSTACK_SESSIONS = 5;
+
+// Lanes are concurrency groups shared by every BrowserStack job in every run, so the strictest entry's limit applies to all.
+// The ES5 e2e job holds a session per browser in browsers-es5.json at once.
+function vitestBrowserstackLanes(browsers, es5Browsers) {
+  const limits = Object.values(browsers).map(def => def.browserstack?.vitest?.maxParallel).filter(Boolean);
+  return Math.max(1, Math.min(...limits, BROWSERSTACK_SESSIONS - Object.keys(es5Browsers).length));
+}
+
+function vitestBrowserstack(browsers, es5Browsers, listSpecs = specsMatching) {
+  const jobs = Object.values(browsers)
     .filter(def => def.browserstack?.vitest)
     .flatMap(({name, browserstack: bs}) => {
       const entry = {
@@ -46,12 +56,8 @@ function vitestBrowserstack(browsers, listSpecs = specsMatching) {
       }
       return byShard({...entry, shards: bs.vitest.shards}).map(e => ({...e, label: `shard ${e.shard}/${e.shards}`}));
     });
+  const lanes = vitestBrowserstackLanes(browsers, es5Browsers);
+  return jobs.map((job, i) => ({...job, lane: i % lanes + 1}));
 }
 
-// GitHub can't vary max-parallel per matrix entry, so the BrowserStack job takes the strictest entry's
-function vitestBrowserstackMaxParallel(browsers) {
-  const limits = Object.values(browsers).map(def => def.browserstack?.vitest?.maxParallel).filter(Boolean);
-  return limits.length ? Math.min(...limits) : vitestBrowserstack(browsers).length || 1;
-}
-
-module.exports = {e2eBrowsers, vitestRunners, vitestBrowserstack, vitestBrowserstackMaxParallel, specsMatching};
+module.exports = {e2eBrowsers, vitestRunners, vitestBrowserstack, specsMatching};

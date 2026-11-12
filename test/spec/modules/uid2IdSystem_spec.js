@@ -2,6 +2,7 @@ import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
+import { Uid2ApiClient } from 'libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -501,6 +502,44 @@ describe(`UID2 module`, function () {
           });
         });
       });
+      const expectRefreshRejection = async (responseBody) => {
+        const client = new Uid2ApiClient({ baseUrl: 'https://prod.uidapi.com' }, 'test-client', () => {}, () => {});
+        configureUid2Response(refreshApiUrl, 200, responseBody);
+        const response = respondWhenRequested(refreshApiUrl);
+        const promise = client.callRefreshApi(apiHelpers.makeTokenResponse(initialToken, true, true));
+        await response;
+        await promise.then(
+          () => { throw new Error('refresh promise should reject'); },
+          (error) => expect(error).to.equal('UID2 shared library - Call to UID2 API failed')
+        );
+      };
+
+      it('should reject the refresh promise when Web Crypto key import fails', async function() {
+        window.crypto.subtle.importKey.rejects(new Error('import failed'));
+        try {
+          await expectRefreshRejection(btoa('0123456789ab{}'));
+        } finally {
+          window.crypto.subtle.importKey.callsFake(() => Promise.resolve());
+        }
+      });
+
+      it('should reject the refresh promise when the decrypted response is not JSON', async function() {
+        await expectRefreshRejection(btoa('0123456789abnot json'));
+      });
+
+      it('should report a specific forbidden error for an invalid HTTP origin response', async function() {
+        testSandbox.stub(utils, 'logError');
+        const response = JSON.stringify({ status: 'invalid_http_origin', message: 'origin is not allowed' });
+        configureUid2CstgResponse(403, response);
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 100 }));
+        const responseHandled = respondWhenRequested(cstgApiUrl);
+        const bid = await runAuction();
+        await responseHandled;
+
+        expectNoIdentity(bid);
+        sinon.assert.calledWithMatch(utils.logError, sinon.match.any, /Forbidden: origin is not allowed/);
+      });
+
       it('Should receive an optout response when the user has opted out.', async function() {
         const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
         configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));

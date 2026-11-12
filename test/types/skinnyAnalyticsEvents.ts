@@ -9,6 +9,8 @@ import type {
   SkinnyNoBid,
   SkinnyBidResponse,
   SkinnyBidWon,
+  SkinnyBidClick,
+  SkinnyBidClickInferred,
   SkinnyBidRequested,
   SkinnyBidTimeout,
   SkinnyBidRequestFields,
@@ -21,8 +23,8 @@ import type { DeepPartial } from '../../src/types/objects.d.ts';
 type Assert<T extends true> = T;
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 
-export type AllFiveEvents = Assert<Equal<
-  SkinnyEventType, 'noBid' | 'bidResponse' | 'bidWon' | 'bidRequested' | 'bidTimeout'
+export type AllSevenEvents = Assert<Equal<
+  SkinnyEventType, 'noBid' | 'bidResponse' | 'bidWon' | 'bidClick' | 'bidClickInferred' | 'bidRequested' | 'bidTimeout'
 >>;
 
 export type MapPayloads = Assert<Equal<
@@ -31,6 +33,8 @@ export type MapPayloads = Assert<Equal<
     noBid: SkinnyNoBid;
     bidResponse: SkinnyBidResponse;
     bidWon: SkinnyBidWon;
+    bidClick: SkinnyBidClick;
+    bidClickInferred: SkinnyBidClickInferred;
     bidRequested: SkinnyBidRequested;
     bidTimeout: SkinnyBidTimeout;
   }
@@ -55,6 +59,51 @@ export type StoredImpressionNoBidCode = Assert<Equal<
 export type DiscriminatedUnion = Assert<Equal<
   Extract<SkinnyEventPayload, { eventType: 'bidWon' }>, SkinnyBidWon
 >>;
+
+export type DiscriminatedClickUnion = Assert<Equal<
+  Extract<SkinnyEventPayload, { eventType: 'bidClickInferred' }>, SkinnyBidClickInferred
+>>;
+
+// The schema's per-event method enums mirror these exactly.
+export type ObservedClickMethods = Assert<Equal<
+  SkinnyBidClick['method'], 'creativeClick' | 'nativeClick'
+>>;
+
+export type InferredClickMethods = Assert<Equal<
+  SkinnyBidClickInferred['method'], 'iframeFocus'
+>>;
+
+export type ClickAssetId = Assert<Equal<
+  SkinnyBidClick['assetId'], number | string | undefined
+>>;
+
+const CLICK_FIELDS = {
+  auctionId: 'auction',
+  adUnitCode: 'adUnit',
+  transactionId: 'tid',
+  requestId: 'request',
+  adId: 'ad',
+  bidder: 'bidder',
+  bidderCode: 'bidderCode',
+  cpm: 1.5,
+  currency: 'USD',
+  mediaType: 'banner',
+  source: 'client',
+} as const;
+
+export const invalidObservedClick: SkinnyBidClick = {
+  ...CLICK_FIELDS,
+  eventType: 'bidClick',
+  // @ts-expect-error - iframeFocus is only reported as bidClickInferred
+  method: 'iframeFocus'
+};
+
+export const invalidInferredClick: SkinnyBidClickInferred = {
+  ...CLICK_FIELDS,
+  eventType: 'bidClickInferred',
+  // @ts-expect-error - observed click methods are only reported as bidClick
+  method: 'creativeClick'
+};
 
 /**
  * These assertions make the shared Prebid OpenRTB 2.6 types the source of

@@ -1,4 +1,4 @@
-import { buildUrl, deepAccess, parseSizesInput } from '../src/utils.js';
+import { buildUrl, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -236,13 +236,13 @@ function getHostname(bidderRequest) {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (bidRequest?.mediaTypes?.banner) {
     return BANNER;
   }
-  if (deepAccess(bidRequest, 'mediaTypes.video')) {
+  if (bidRequest?.mediaTypes?.video) {
     return VIDEO;
   }
-  if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  if (bidRequest?.mediaTypes?.native) {
     return NATIVE;
   }
 }
@@ -467,7 +467,7 @@ function getNativeAssets(response, nativeConfig) {
           imgSize[1] = response.Height || 250;
         }
 
-        const url = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
+        const url = getImageUrl(adJson, adJson?.Content?.Preview?.Thumbnail?.Image, imgSize[0], imgSize[1]);
         if (url) {
           native[key] = {
             url,
@@ -485,7 +485,7 @@ function getNativeAssets(response, nativeConfig) {
           iconSize[1] = 50;
         }
 
-        const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
+        const icurl = getImageUrl(adJson, adJson?.Content?.Preview?.Sponsor?.Logo?.Resource, iconSize[0], iconSize[1]);
 
         if (icurl) {
           native[key] = {
@@ -496,10 +496,10 @@ function getNativeAssets(response, nativeConfig) {
         }
         break;
       case 'privacyIcon':
-        native[key] = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
+        native[key] = getImageUrl(adJson, adJson?.Content?.Preview?.Credit?.Logo?.Resource, 25, 25);
         break;
       case 'privacyLink':
-        native[key] = deepAccess(adJson, 'Content.Preview.Credit.Url');
+        native[key] = adJson?.Content?.Preview?.Credit?.Url;
         break;
     }
   });

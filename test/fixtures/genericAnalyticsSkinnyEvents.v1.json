@@ -108,6 +108,43 @@
     },
     "status": "rendered"
   },
+  "bidClick": {
+    "eventType": "bidClick",
+    "auctionId": "auction",
+    "adUnitCode": "adUnit",
+    "transactionId": "tid",
+    "requestId": "request",
+    "adId": "ad",
+    "bidder": "bidder",
+    "bidderCode": "bidderCode",
+    "cpm": 1.5,
+    "currency": "USD",
+    "mediaType": "native",
+    "source": "client",
+    "method": "nativeClick",
+    "assetId": 3,
+    "analyticsLabels": {
+      "label": "value"
+    }
+  },
+  "bidClickInferred": {
+    "eventType": "bidClickInferred",
+    "auctionId": "auction",
+    "adUnitCode": "adUnit",
+    "transactionId": "tid",
+    "requestId": "request",
+    "adId": "ad",
+    "bidder": "bidder",
+    "bidderCode": "bidderCode",
+    "cpm": 1.5,
+    "currency": "USD",
+    "mediaType": "banner",
+    "source": "client",
+    "method": "iframeFocus",
+    "analyticsLabels": {
+      "label": "value"
+    }
+  },
   "bidRequested": {
     "eventType": "bidRequested",
     "auctionId": "auction",

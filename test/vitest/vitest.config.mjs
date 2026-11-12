@@ -16,6 +16,9 @@
 //   VITEST_CHANNEL=chrome|msedge            installed Google Chrome / Microsoft Edge (chromium only)
 //   VITEST_EXECUTABLE_PATH=<path>           a fixed binary, e.g. Chrome 113 from @puppeteer/browsers
 //
+// VITEST_DEBUG=1 (watch mode only) adds a 'debug' instance that runs nothing on its own: opening the /debug.html page
+// it prints, in any browser, runs the same specs there, with its devtools (see debug.mjs).
+//
 // VITEST_BROWSERSTACK=1 runs on a BrowserStack browser through WebdriverIO instead (#16006). It needs
 // BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY, and a BrowserStack Local tunnel: globalSetup.mjs starts one
 // unless BROWSERSTACK_LOCAL_IDENTIFIER names a running one (CI starts it with browserstack/github-actions). The
@@ -40,6 +43,7 @@ import InfraFailureReporter from './infraFailureReporter.mjs';
 import { DIST, DIST_ENTRIES, nativeSpecs } from './plugins.mjs';
 import { RAW } from './globalSetup.mjs';
 import { envFlag } from './env.mjs';
+import { DEBUG_INSTANCE, debugPage, withDebugInstance } from './debug.mjs';
 
 // CommonJS; required rather than imported so Vite doesn't bundle it into the config
 const { specFiles } = createRequire(import.meta.url)('./specs.js');
@@ -59,8 +63,15 @@ const chunk = process.env.TEST_CHUNK || (shard ? `shard-${shard}` : '1');
 // `vitest` without `run` (`npm run test:vitest:watch`, `gulp serve-and-test`) re-runs the specs whose imports
 // change, which needs Vite's file watcher; one-shot runs leave it off.
 const watching = !process.env.CI && !process.argv.slice(2).some(arg => arg === 'run' || arg === '--run');
+const WATCHED = [DIST, path.join(root, 'test/vitest'), path.join(root, 'web-bundler')];
+// the watched trees and their ancestors, which the watcher has to descend through
+const watchedPath = (p) => {
+  const abs = path.resolve(root, p);
+  return WATCHED.some(dir => abs === dir || abs.startsWith(dir + path.sep) || dir.startsWith(abs + path.sep));
+};
 
 const browserstack = envFlag('VITEST_BROWSERSTACK');
+const debug = envFlag('VITEST_DEBUG');
 const browserName = process.env.VITEST_BROWSER || (browserstack ? 'safari' : 'chromium');
 // real Safari on this machine: Playwright only drives its own WebKit build, so this goes through WebdriverIO
 const localSafari = !browserstack && browserName === 'safari';
@@ -148,8 +159,7 @@ async function browserProvider() {
         idleTimeout: 300,
         consoleLogs: 'errors',
         networkLogs: false,
-        // TODO: back to false once a recording shows why iOS closes the page partway through a shard
-        video: !!bsDevice,
+        video: false,
       },
     },
   });
@@ -206,7 +216,7 @@ export default defineConfig({
     __VITEST_WEBKIT__: JSON.stringify(['webkit', 'safari'].includes(browserName) || !!bsDevice),
   },
   publicDir: false,
-  plugins: [nativeSpecs({ coverage: envFlag('VITEST_COVERAGE'), specStubs: envFlag('VITEST_NATIVE_STUBS', true), cacheModules: !watching })],
+  plugins: [nativeSpecs({ coverage: envFlag('VITEST_COVERAGE'), specStubs: envFlag('VITEST_NATIVE_STUBS', true), cacheModules: !watching }), ...(debug ? [debugPage()] : [])],
   resolve: {
     alias: [
       // bare paths resolve against dist/src, as webpack's resolve.modules (webpack.conf.js) does for the builds
@@ -231,7 +241,9 @@ export default defineConfig({
     ],
   },
   server: {
-    ...(watching ? {} : { watch: null }),
+    // Vitest matches every file created under the watched tree against each spec's glob, which pins a CPU for
+    // half a minute when a build writes into the repo alongside it (`gulp serve-and-test`).
+    ...(watching ? { watch: { ignored: [(p) => !watchedPath(p)] } } : { watch: null }),
     // Vite answers only requests for localhost unless told otherwise
     ...(host ? { allowedHosts: [host] } : {}),
   },
@@ -266,12 +278,16 @@ export default defineConfig({
       headless: !browserstack && !localSafari,
       // Vitest shows its UI in a headed browser unless CI is set, and scales the test iframe down inside it, which
       // breaks specs that measure layout
-      ...(browserstack ? { ui: false } : {}),
+      ...(browserstack || debug ? { ui: false } : {}),
       // Playwright's Chromium already passes the karma-chrome-launcher flags that matter (no popup blocking, no
       // background timer throttling) and --no-sandbox, as Karma's ChromeNoSandbox launcher did
-      provider: await browserProvider(),
+      provider: debug ? withDebugInstance(await browserProvider()) : await browserProvider(),
       // named after the channel when there is one, so the reporter says "msedge" rather than "chromium"
-      instances: [{ browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName }],
+      instances: [
+        { browser: browserName, name: browserstack ? `${browserName} ${bsLabel} (BrowserStack)` : process.env.VITEST_CHANNEL || browserName },
+        // matches no file: debug.mjs runs the other instance's specs here when the debug page asks
+        ...(debug ? [{ browser: browserName, name: DEBUG_INSTANCE, headless: false, include: ['debug.mjs runs these on request'] }] : []),
+      ],
       screenshotFailures: false,
       // A BrowserStack session may queue when all device slots are occupied.
       ...(browserstack ? { connectTimeout: 300000 } : {}),

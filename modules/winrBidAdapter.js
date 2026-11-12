@@ -2,9 +2,6 @@ import {
   deepAccess,
   getBidRequest,
   getParameterByName,
-  isArray,
-  isNumber,
-  isPlainObject,
   logError
 } from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -13,7 +10,14 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
-import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import {
+  convertUserParams,
+  getAppDeviceObj,
+  getAppIdObj,
+  getRtbBid,
+  hasMemberId,
+  isErrorResponse
+} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
@@ -151,47 +155,13 @@ export const spec = {
     }
 
     if (userObjBid) {
-      Object.keys(userObjBid.params.user)
-        .filter((param) => USER_PARAMS.includes(param))
-        .forEach((param) => {
-          const uparam = convertCamelToUnderscore(param);
-          if (
-            param === 'segments' &&
-            isArray(userObjBid.params.user[param])
-          ) {
-            const segs = [];
-            userObjBid.params.user[param].forEach((val) => {
-              if (isNumber(val)) {
-                segs.push({ id: val });
-              } else if (isPlainObject(val)) {
-                segs.push(val);
-              }
-            });
-            userObj[uparam] = segs;
-          } else if (param !== 'segments') {
-            userObj[uparam] = userObjBid.params.user[param];
-          }
-        });
+      Object.assign(userObj, convertUserParams(userObjBid.params.user, USER_PARAMS));
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
@@ -274,12 +244,7 @@ export const spec = {
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) {
-        errorMessage += `: ${serverResponse.error}`;
-      }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 
@@ -468,20 +433,12 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
-}
-
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType !== BANNER) {
     return false;
   }
   return BANNER;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
 }
 
 registerBidder(spec);

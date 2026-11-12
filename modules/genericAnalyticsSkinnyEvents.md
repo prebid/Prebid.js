@@ -20,6 +20,8 @@ and collects only the following events:
 | `bidRequested` | `auctionId`, `bidderRequestId`, `bidderCode`, `auctionStart`, `start`, `timeout`, `ortb2` (without EIDs), `eidsSources`, `bids` (see below) |
 | `bidResponse` | `auctionId`, `adUnitCode`, `transactionId`, `requestId`, `adId`, `bidder`, `bidderCode`, `cpm`, `currency`, `originalCpm`, `originalCurrency`, `mediaType`, `width`, `height`, `size`, `dealId`, `meta`, `adserverTargeting`, `floorData`, `requestTimestamp`, `responseTimestamp`, `timeToRespond`, `ttl`, `source` |
 | `bidWon` | same as `bidResponse`, plus `status` |
+| `bidClick` | `auctionId`, `adUnitCode`, `transactionId`, `requestId`, `adId`, `bidder`, `bidderCode`, `cpm`, `currency`, `mediaType`, `source`, `method` (`creativeClick` or `nativeClick`), and optional native `assetId` |
+| `bidClickInferred` | same click correlation fields, `method: iframeFocus`; no full bid or creative markup |
 | `noBid` | `auctionId`, `bidId`, `bidderRequestId`, `adUnitCode`, `bidder`, `source` |
 | `bidTimeout` | `bidderRequests`: the timed out bids grouped by bidder request, each with `auctionId`, `bidderRequestId`, `bidderCode`, `ortb2` (without EIDs), `eidsSources` and `bids` (see below) |
 
@@ -31,11 +33,11 @@ Instead of EIDs, `eidsSources` lists which ID sources were present (for example 
 
 Every payload also includes `eventType` (the name of the event) and `analyticsLabels`, if any are configured.
 
-
+The click events are emitted when `bidClickTracking` is enabled (`bidClickInferred` also needs the `bidClickTracking` module). Both preserve only lightweight bid correlation fields; the full bid, creative markup, and the ad-server click URL are omitted. The inferred click event is deliberately distinct from observed clicks.
 
 #### Public payload contract (v1)
 
-The built-in preset emits five JSON event shapes. Their versioned contract is published alongside this module:
+The built-in preset emits seven JSON event shapes. Their versioned contract is published alongside this module:
 
 - JSON Schema v1, `prebid.js/schema/genericAnalyticsSkinnyEvents.v1.schema.json` in the NPM package, for collectors
   and other non-TypeScript consumers. It is generated from the TypeScript types by `gulp build`.
@@ -58,6 +60,10 @@ passed in the `data` query parameter. A zero-CPM, non-deal `bidResponse` has no
 and `ortb2Imp` at individual bid-request level. For stored-impression requests
 sent to Prebid Server, the bidder request's `bidderCode` and individual bids'
 `bidder` may be `null` rather than a bidder name.
+`bidClick` and `bidClickInferred` share one set of click correlation fields
+and differ in `method`: `bidClick` is only
+`creativeClick` or `nativeClick`, and `bidClickInferred` is only `iframeFocus`.
+`assetId` (a number or string) is present only when a native click reported one.
 
 Nested OpenRTB objects (`ortb2`, `ortb2Imp`) are described by separate schemas, `schema/ortb2/request.schema.json`
 and `schema/ortb2/imp.schema.json`, which the event schema references with `$ref`. They validate the fields
@@ -72,7 +78,7 @@ where `baseUrl` is the location of the event schema's `$id`. `ortb2` and `ortb2I
 The schemas use union types (`"type": ["string", "number"]`), which Ajv's strict mode rejects unless `allowUnionTypes` is set.
 
 The wire contract is regression-tested by two existing CI suites: browser tests
-compare the five formatter outputs after `JSON.stringify`/`JSON.parse` with
+compare the seven formatter outputs after `JSON.stringify`/`JSON.parse` with
 `test/fixtures/genericAnalyticsSkinnyEvents.v1.json`, and the Node build-logic
 tests validate those same fixtures against the generated JSON Schema using Ajv 2020.
 This catches output changes independently of schema edits and rejects
