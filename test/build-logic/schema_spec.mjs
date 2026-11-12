@@ -9,8 +9,20 @@ const { generateSchemas } = require('../../gulp.schema.js');
 describe('JSON schema generation', function () {
   this.timeout(60000);
 
+  function fixture(name) {
+    return fileURLToPath(new URL(`../fixtures/schema/${name}`, import.meta.url));
+  }
+
+  it('includes module augmentations from files the schema types do not import', () => {
+    const schema = generateSchemas({ dir: fixture('augmentation') })['root.schema.json'];
+    expect(schema.$defs.SchemaFixtureBase.required).to.have.members(['declared', 'augmented']);
+  });
+
+  it('fails when a root type name is not unique', () => {
+    expect(() => generateSchemas({ dir: fixture('duplicateName') })).to.throw(/'ORTBRequest' is used for more than one type/);
+  });
+
   it('fails when a schema would describe a bare type parameter', () => {
-    const dir = fileURLToPath(new URL('../fixtures/schema/typeParameter', import.meta.url));
-    expect(() => generateSchemas({ dir })).to.throw(/type parameter\(s\) 'V'/);
+    expect(() => generateSchemas({ dir: fixture('typeParameter') })).to.throw(/type parameter\(s\) 'V'/);
   });
 });

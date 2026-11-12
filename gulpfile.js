@@ -659,7 +659,7 @@ gulp.task('update-codeql', function (done) {
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$/\\/dist\\/src\\/test/g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('ts-consumer-packed', gulp.series('setup-npmignore', tsConsumer('pack', [TS_MIN, TS_CURRENT])));
-gulp.task('build-schema', buildSchemas('dist/schema'));
+gulp.task('build-schema', gulp.series('ts', buildSchemas('dist/schema')));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', setupDist, 'build-schema'));
 // build for release - in addition to 'build', run tasks that update the codebase to be included in a release commit
 // `clean-cache` first, as belt and braces rather than to fix a known gap: the key covers file

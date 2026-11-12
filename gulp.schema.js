@@ -15,12 +15,15 @@ const {version} = require('./package.json');
 const SCHEMA_DIR = path.resolve(__dirname, 'schema');
 const DEFAULT_BASE_URL = `https://cdn.jsdelivr.net/npm/prebid.js@${version}/dist/schema/`;
 
-function compilerOptions() {
-  const configFile = path.resolve(__dirname, 'tsconfig-strict.json');
-  const {config} = ts.readConfigFile(configFile, ts.sys.readFile);
-  const {options} = ts.parseJsonConfigFileContent(config, ts.sys, __dirname);
-  // schema types are written against the sources, not the published declarations tsconfig-strict.json is for
-  return {...options, allowImportingTsExtensions: true, noEmit: true};
+/**
+ * The sources as `gulp ts` compiles them - all of them, so that every module augmentation applies - but with
+ * strictNullChecks, without which `T | null` is just `T`.
+ */
+function sourceProject() {
+  const {config} = ts.readConfigFile(path.resolve(__dirname, 'tsconfig.json'), ts.sys.readFile);
+  const {options, fileNames} = ts.parseJsonConfigFileContent(config, ts.sys, __dirname);
+  const {outDir, tsBuildInfoFile, declaration, emitDeclarationOnly, ...rest} = options;
+  return {fileNames, options: {...rest, strictNullChecks: true, noEmit: true}};
 }
 
 function schemaFiles(dir) {
@@ -87,13 +90,14 @@ function toDraft2020(node, resolveRef) {
  */
 function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
   const files = schemaFiles(dir);
-  const program = ts.createProgram(files, compilerOptions());
+  const {fileNames, options} = sourceProject();
+  const program = ts.createProgram([...new Set([...fileNames, ...files])], options);
   const generator = TJS.buildGenerator(program, {
     required: true,
     strictNullChecks: true,
     ref: true,
     topRef: false,
-    // the sources are not strict yet (see tsconfig.json); errors in schema/ are checked below
+    // the sources are not null-safe yet, and are checked by `gulp ts`; errors in schema/ are checked below
     ignoreErrors: true,
   });
   const errors = ts.getPreEmitDiagnostics(program).filter(d => d.file?.fileName.startsWith(dir + path.sep));
@@ -109,6 +113,10 @@ function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
   );
   const typeParameters = typeParameterIds(program);
   const generated = Object.fromEntries(Object.keys(roots).map(name => {
+    // the generator looks types up by name, across the whole program
+    if (new Set(generator.getSymbols(name).map(({symbol}) => symbol)).size > 1) {
+      throw new Error(`Type name '${name}' is used for more than one type; JSON schema root types must have unique names`);
+    }
     const schema = generator.getSchemaForSymbol(name);
     checkTypeParameters(name, schema, generator, typeParameters);
     return [name, schema];
