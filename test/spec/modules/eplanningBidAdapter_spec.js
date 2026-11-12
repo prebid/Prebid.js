@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-import { internal, resetWinDimensions } from 'src/utils.js';
+import { internal, resetWinDimensions, getWindowTop } from 'src/utils.js';
 import { hook } from '../../../src/hook.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
@@ -921,7 +921,7 @@ describe('E-Planning Adapter', function () {
     it('should return crs parameter with document charset', function () {
       let expected;
       try {
-        expected = window.top.document.characterSet;
+        expected = getWindowTop().document.characterSet;
       } catch (e) {
         expected = document.characterSet;
       }
@@ -1146,10 +1146,6 @@ describe('E-Planning Adapter', function () {
       element.id = id || ADUNIT_CODE_VIEW;
       element.style.width = '50px';
       element.style.height = '50px';
-      if (frameElement) {
-        frameElement.style.width = '100px';
-        frameElement.style.height = '100px';
-      }
       element.style.background = 'black';
       document.body.appendChild(element);
     }
@@ -1239,8 +1235,8 @@ describe('E-Planning Adapter', function () {
       if (document.getElementById(ADUNIT_CODE_VIEW)) {
         document.body.removeChild(element);
       }
-      window.top.localStorage.removeItem(storageIdRender);
-      window.top.localStorage.removeItem(storageIdView);
+      getWindowTop().localStorage.removeItem(storageIdRender);
+      getWindowTop().localStorage.removeItem(storageIdView);
     });
 
     it('should create the url correctly without LocalStorage', function() {
@@ -1421,8 +1417,8 @@ describe('E-Planning Adapter', function () {
           if (document.getElementById(ac)) {
             document.body.removeChild(document.getElementById(ac));
           }
-          window.top.localStorage.removeItem(ac);
-          window.top.localStorage.removeItem(ac);
+          getWindowTop().localStorage.removeItem(ac);
+          getWindowTop().localStorage.removeItem(ac);
         });
       });
       it('all visibles', function() {

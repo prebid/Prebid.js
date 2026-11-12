@@ -1034,12 +1034,6 @@ function createElement(id) {
   div.style.height = '50px';
   div.style.background = 'black';
 
-  // Adjust frame dimensions if running within an iframe
-  if (frameElement) {
-    frameElement.style.width = '100px';
-    frameElement.style.height = '100px';
-  }
-
   window.document.body.appendChild(div);
 
   return div;

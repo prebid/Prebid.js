@@ -393,13 +393,6 @@ describe('Sublime Adapter', function () {
     };
 
     it('should get correct bid response', function () {
-      // Mock the fire method
-      top.window.sublime = {
-        analytics: {
-          fire: function () { }
-        }
-      };
-
       const expectedResponse = [
         {
           requestId: '',

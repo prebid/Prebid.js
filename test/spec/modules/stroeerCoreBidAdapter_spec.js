@@ -154,10 +154,12 @@ describe('stroeerCore bid adapter', function () {
     win.self = win;
 
     if (!parent) {
+      // eslint-disable-next-line prebid/no-window-top -- a fake window
       win.parent = win;
     }
 
     if (!top) {
+      // eslint-disable-next-line prebid/no-window-top -- a fake window
       win.top = win;
     }
 

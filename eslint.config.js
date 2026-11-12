@@ -301,7 +301,9 @@ module.exports = [
   }),
   {
     // creative/ is built on its own, without src/utils.js
-    files: ['src', 'modules', 'libraries'].flatMap(sourcePattern),
+    files: ['src', 'modules', 'libraries', 'test'].flatMap(sourcePattern),
+    // test/vitest is the harness around the spec frames; e2e specs run in the page under test
+    ignores: ['test/spec/creative/**', 'test/vitest/**', 'test/spec/e2e/**'],
     plugins: {
       prebid,
     },
