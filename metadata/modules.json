@@ -5249,13 +5249,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "stn",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "onebidtech",
       "aliasOf": null,
       "gvlid": 149,
