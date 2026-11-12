@@ -1,4 +1,4 @@
-import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import { logWarn, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -299,7 +299,7 @@ function retrieveAd(decision, unitId, unitName) {
 }
 
 function handleEids(data, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  let bidUserIdAsEids = validBidRequests?.[0]?.userIdAsEids;
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);

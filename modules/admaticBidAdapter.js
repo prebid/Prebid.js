@@ -3,7 +3,7 @@ import { Renderer } from '../src/Renderer.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
+import { getBidIdParameter, getValue, isArray, logError } from '../src/utils.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 import { interpretNativeAd } from '../libraries/precisoUtils/bidNativeUtils.js';
@@ -203,7 +203,7 @@ export const spec = {
             resbid.native = interpretNativeAd(bid.party_tag);
           };
 
-          const context = deepAccess(bidRequest, 'mediatype.context');
+          const context = bidRequest?.mediatype?.context;
           if (resbid.mediaType === 'video' && context === 'outstream') {
             resbid.renderer = createOutstreamVideoRenderer(bid);
           }
@@ -301,7 +301,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
     if (bidRequest.getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
-        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
+        const bannerSizes = parseSizes(bidRequest?.mediaTypes?.banner?.sizes);
         bannerSizes.forEach(bannerSize => {
           slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER });
         });
@@ -309,7 +309,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
-        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+        const videoSizes = parseSizes(bidRequest?.mediaTypes?.video?.playerSize);
         videoSizes.forEach(videoSize => {
           slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO });
         });
@@ -367,7 +367,7 @@ function buildRequestObject(bid) {
 
   reqObj.ext = reqObj.ext || {};
 
-  if (deepAccess(bid, 'ortb2Imp.ext')) {
+  if (bid?.ortb2Imp?.ext) {
     Object.assign(reqObj.ext, bid.ortb2Imp.ext);
     reqObj.ext.ortb2Imp = bid.ortb2Imp;
   }
@@ -384,10 +384,10 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  const videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  const nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
-  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const playerSize = bid?.mediaTypes?.video?.playerSize;
+  const videoSizes = bid?.mediaTypes?.video?.sizes;
+  const nativeSizes = bid?.mediaTypes?.native?.sizes;
+  const bannerSizes = bid?.mediaTypes?.banner?.sizes;
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     const mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
