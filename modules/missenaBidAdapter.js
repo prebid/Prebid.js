@@ -26,6 +26,7 @@ import { getViewportSize } from '../libraries/viewport/viewport.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ * @typedef {import('./missenaBidAdapter.d.ts').MissenaBidParams} MissenaBidParams
  */
 
 const BIDDER_CODE = 'missena';
