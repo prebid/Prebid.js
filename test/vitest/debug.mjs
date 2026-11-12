@@ -20,8 +20,13 @@ function publish(url) {
   waiters = [];
 }
 
-function next(after) {
-  return latest && latest.seq > after ? Promise.resolve(latest) : new Promise(resolve => waiters.push(resolve));
+// `signal` drops the waiter when the long-poll goes away, instead of keeping it until the next publish
+function next(after, signal) {
+  if (latest && latest.seq > after) return Promise.resolve(latest);
+  return new Promise(resolve => {
+    waiters.push(resolve);
+    signal.addEventListener('abort', () => { waiters = waiters.filter(fn => fn !== resolve); });
+  });
 }
 
 async function run() {
@@ -140,10 +145,10 @@ export function debugPage() {
           res.setHeader('Content-Type', 'text/html');
           res.end(PAGE);
         } else if (url.pathname === NEXT) {
-          let closed = false;
-          req.on('close', () => { closed = true; });
-          next(Number(url.searchParams.get('after')) || 0).then(session => {
-            if (closed) return;
+          const closed = new AbortController();
+          req.on('close', () => closed.abort());
+          next(Number(url.searchParams.get('after')) || 0, closed.signal).then(session => {
+            if (closed.signal.aborted) return;
             res.setHeader('Content-Type', 'application/json');
             res.setHeader('Cache-Control', 'no-store');
             res.end(JSON.stringify(session));
