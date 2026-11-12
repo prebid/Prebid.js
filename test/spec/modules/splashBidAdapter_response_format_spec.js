@@ -28,7 +28,6 @@ function makeBid(format, bidId = `${format}-bid`) {
 function buildRequest(bids) {
   const requests = spec.buildRequests(bids, {
     bidderCode: 'splash',
-    allowTopWindowRenderers: true,
     bidderRequestId: 'splash-response-format-request',
     auctionId: 'splash-response-format-auction',
     timeout: 1500,

@@ -14,12 +14,12 @@ function buildInterstitial(adm) {
     bidId: BID_ID,
     adUnitCode: SLOT_ID,
     params: { publisherId: '725', placementId: '100023', displayFormat: 'interstitial' },
+    rendererSupport: { banner: { renderer: true, safeRenderer: true } },
     mediaTypes: { banner: { sizes: [[320, 480]] } },
     ortb2Imp: {},
   };
   const requests = spec.buildRequests([bid], {
     bidderCode: 'splash',
-    allowTopWindowRenderers: true,
     bidderRequestId: 'splash-controls-request',
     auctionId: 'splash-controls-auction',
     timeout: 1500,

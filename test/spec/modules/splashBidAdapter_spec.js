@@ -21,6 +21,10 @@ const SIZES = { standard: [300, 600], parallax: [700, 1600], interstitial: [320,
 const FORMATS = Object.keys(PLACEMENTS);
 const OWNER = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const FRAME_STYLE_ID = 'splash-prebid-interstitial-frame-style';
+const TOP_WINDOW_SUPPORT = { banner: { renderer: true, safeRenderer: true } };
+const RENDERER_ONLY_SUPPORT = { banner: { renderer: true, safeRenderer: false } };
+const SAFE_RENDERER_SUPPORT = { banner: { renderer: false, safeRenderer: true } };
+const NO_RENDERER_SUPPORT = { banner: { renderer: false, safeRenderer: false } };
 const CONTROLS = '<div data-froc-interstitial-controls-ready="1"><button class="froc-display-close" type="button">Close</button></div>';
 const SSP_CREATIVE = '<!DOCTYPE html><html><head></head><body><div class="froc-standard-display"><script>window.sspReady = true;</script></div></body></html>';
 const SSP_WRAPPED = '<iframe srcdoc="' + SSP_CREATIVE.replace(/"/g, '&quot;') + '"></iframe>';
@@ -46,7 +50,6 @@ function makeBid({ format = 'standard', params = {}, ...overrides } = {}) {
 function makeBidderRequest(overrides = {}) {
   return {
     bidderCode: 'splash',
-    allowTopWindowRenderers: true,
     bidderRequestId: 'bidder-request-1',
     auctionId: 'auction-1',
     timeout: 1500,
@@ -57,7 +60,10 @@ function makeBidderRequest(overrides = {}) {
 }
 
 function buildRequest(bid = makeBid(), bidderRequest = makeBidderRequest()) {
-  const requests = spec.buildRequests([bid], bidderRequest);
+  const adapterBid = bid.params.displayFormat && !Object.prototype.hasOwnProperty.call(bid, 'rendererSupport')
+    ? { ...bid, rendererSupport: RENDERER_ONLY_SUPPORT }
+    : bid;
+  const requests = spec.buildRequests([adapterBid], bidderRequest);
   expect(requests).to.have.length(1);
   return requests[0];
 }
@@ -171,8 +177,7 @@ describe('splashBidAdapter', () => {
       });
     });
 
-    it('validates parameters independently of publisher rendering policy', () => {
-      config.setConfig({ allowTopWindowRenderers: false });
+    it('validates parameters independently of renderer support', () => {
       FORMATS.forEach(format => {
         expect(spec.isBidRequestValid(makeBid({ format, safeRenderer: { url: 'https://publisher.example/safe.js' } }))).to.equal(true);
       });
@@ -189,8 +194,12 @@ describe('splashBidAdapter', () => {
       if (!requests.length) return 'not requested';
       const format = bid.params.displayFormat || 'standard';
       const [response] = respond(requests[0], [makeServerBid(format)]);
+      if (response.safeRenderer && response.renderer) {
+        const [width, height] = SIZES[format];
+        expect(response.safeRenderer).to.deep.equal({ url: SAFE_URL, config: { format, creativeSize: { width, height } } });
+        return 'safe-and-top-window';
+      }
       if (response.safeRenderer) {
-        expect(response).not.to.have.property('renderer');
         const [width, height] = SIZES[format];
         expect(response.safeRenderer).to.deep.equal({ url: SAFE_URL, config: { format, creativeSize: { width, height } } });
         return 'safe';
@@ -198,65 +207,54 @@ describe('splashBidAdapter', () => {
       return response.renderer ? 'top-window' : 'default';
     }
 
-    function presentations(policy, overrides = () => ({})) {
-      return FORMATS.map(format => presentation(makeBid({ format, ...overrides(format) }), makeBidderRequest({ allowTopWindowRenderers: policy })));
+    function presentations(rendererSupport, overrides = () => ({})) {
+      return FORMATS.map(format => presentation(makeBid({ format, rendererSupport, ...overrides(format) })));
     }
 
-    it('uses the top-window renderers when core permits them and nothing replaces them', () => {
-      expect(presentations(true)).to.deep.equal(['default', 'top-window', 'top-window']);
+    it('prefers the page-level renderer when core permits both, preserving full-format behavior', () => {
+      expect(presentations(TOP_WINDOW_SUPPORT)).to.deep.equal(['default', 'top-window', 'top-window']);
+    });
+
+    it('offers the top-window renderer alone when core permits only it', () => {
+      expect(presentations(RENDERER_ONLY_SUPPORT)).to.deep.equal(['default', 'top-window', 'top-window']);
     });
 
     it('still requests Parallax and Interstitial with the Safe Renderer when top-window renderers are disabled', () => {
-      expect(presentations(false)).to.deep.equal(['default', 'safe', 'safe']);
+      expect(presentations(SAFE_RENDERER_SUPPORT)).to.deep.equal(['default', 'safe', 'safe']);
       sinon.assert.notCalled(warn);
     });
 
-    [undefined, null, 'true', 1].forEach(policy => {
-      it(`uses the Safe Renderer without a valid core permission (${String(policy)})`, () => {
-        expect(presentations(policy)).to.deep.equal(['default', 'safe', 'safe']);
-      });
+    it('uses Safe Renderer when rendererSupport is missing on older core versions', () => {
+      expect(presentations(undefined)).to.deep.equal(['default', 'safe', 'safe']);
     });
 
-    it('uses only the permission supplied by core, not global configuration', () => {
+    it('follows rendererSupport rather than a global setting', () => {
       config.setConfig({ allowTopWindowRenderers: false });
-      expect(presentation(makeBid({ format: 'parallax' }))).to.equal('top-window');
-      config.setConfig({ allowTopWindowRenderers: true });
-      expect(presentation(makeBid({ format: 'interstitial' }), makeBidderRequest({ allowTopWindowRenderers: false }))).to.equal('safe');
+      expect(presentation(makeBid({ format: 'parallax', rendererSupport: RENDERER_ONLY_SUPPORT }))).to.equal('top-window');
+      expect(presentation(makeBid({ format: 'interstitial', rendererSupport: SAFE_RENDERER_SUPPORT }))).to.equal('safe');
     });
 
-    it('takes precedence over a backupOnly publisher Safe Renderer on the banner or the bid', () => {
-      const safeRenderer = { url: 'https://publisher.example/safe.js', backupOnly: true };
-      expect(presentations(true, format => ({ mediaTypes: { banner: { sizes: [SIZES[format]], safeRenderer } } }))).to.deep.equal(['default', 'safe', 'safe']);
-      expect(presentations(true, () => ({ safeRenderer }))).to.deep.equal(['default', 'safe', 'safe']);
+    it('does not attach an adapter renderer when core reports that neither renderer will be used', () => {
+      expect(presentations(NO_RENDERER_SUPPORT)).to.deep.equal(['default', 'default', 'default']);
     });
 
-    it('keeps requesting Parallax and Interstitial when a publisher Safe Renderer replaces the adapter\'s', () => {
-      const safeRenderer = { url: 'https://publisher.example/safe.js' };
-      expect(presentations(true, format => ({ mediaTypes: { banner: { sizes: [SIZES[format]], safeRenderer } } }))).to.deep.equal(['default', 'safe', 'safe']);
-      expect(presentations(false, () => ({ safeRenderer }))).to.deep.equal(['default', 'safe', 'safe']);
+    it('uses the Safe Renderer fallback when core reports it is supported', () => {
+      expect(presentations(SAFE_RENDERER_SUPPORT)).to.deep.equal(['default', 'safe', 'safe']);
       sinon.assert.notCalled(warn);
-      // Core uses a Safe Renderer only when it has a URL.
-      expect(presentation(makeBid({ format: 'parallax', safeRenderer: {} }))).to.equal('top-window');
     });
 
-    it('uses the Safe Renderer when a publisher renderer would replace the top-window renderer', () => {
+    it('follows the per-request core signal when publisher renderer settings exist', () => {
       const renderer = { render() {} };
-      expect(presentations(true, format => ({ mediaTypes: { banner: { sizes: [SIZES[format]], renderer } } }))).to.deep.equal(['default', 'safe', 'safe']);
-      expect(presentations(true, () => ({ renderer }))).to.deep.equal(['default', 'safe', 'safe']);
-      expect(presentation(makeBid({ format: 'parallax', renderer: { render: 'invalid-but-truthy' } }))).to.equal('safe');
-      // A backup-only renderer or one without a render function leaves the top-window renderer in place.
-      expect(presentation(makeBid({ format: 'parallax', mediaTypes: { banner: { sizes: [SIZES.parallax], renderer: { ...renderer, backupOnly: true } } } }))).to.equal('top-window');
-      expect(presentation(makeBid({ format: 'interstitial', renderer: { ...renderer, backupOnly: true } }))).to.equal('top-window');
-      expect(presentation(makeBid({ format: 'parallax', renderer: { url: 'https://cdn.example/renderer.js' } }))).to.equal('top-window');
+      expect(presentations(SAFE_RENDERER_SUPPORT, format => ({ mediaTypes: { banner: { sizes: [SIZES[format]], renderer } } }))).to.deep.equal(['default', 'safe', 'safe']);
     });
 
     it('gives each bid its own Safe Renderer and keeps both out of OpenRTB', () => {
-      const bids = ['parallax', 'interstitial'].map(format => makeBid({ format }));
-      const [request] = spec.buildRequests(bids, makeBidderRequest({ allowTopWindowRenderers: false }));
+      const bids = ['parallax', 'interstitial'].map(format => makeBid({ format, rendererSupport: SAFE_RENDERER_SUPPORT }));
+      const [request] = spec.buildRequests(bids, makeBidderRequest({ bids }));
       const responses = respond(request, ['parallax', 'interstitial'].map(format => makeServerBid(format)));
       expect(responses.map(response => response.safeRenderer.config.format)).to.deep.equal(['parallax', 'interstitial']);
       expect(responses[0].safeRenderer).not.to.equal(responses[1].safeRenderer);
-      ['safeRenderer', 'allowTopWindowRenderers', 'splash-safe-renderer'].forEach(text => expect(JSON.stringify(request.data)).not.to.contain(text));
+      ['safeRenderer', 'rendererSupport', 'splash-safe-renderer'].forEach(text => expect(JSON.stringify(request.data)).not.to.contain(text));
     });
 
     it('points to the Safe Renderer version built from this source', () => {
@@ -264,7 +262,7 @@ describe('splashBidAdapter', () => {
     });
 
     it('keeps the negotiated Parallax size separate from the creative canvas for safe scaling', () => {
-      const request = buildRequest(makeBid({ format: 'parallax' }), makeBidderRequest({ allowTopWindowRenderers: false }));
+      const request = buildRequest(makeBid({ format: 'parallax', rendererSupport: SAFE_RENDERER_SUPPORT }));
       const [bid] = respond(request, [makeServerBid('parallax', { ext: { splash: { slot: { width: 350, height: 800 } } } })]);
       expect(request.data.imp[0].banner).to.include({ w: 700, h: 1600 });
       expect(bid).to.include({ width: 350, height: 800 });
@@ -273,7 +271,7 @@ describe('splashBidAdapter', () => {
 
     [undefined, 0, -1, Infinity].forEach(width => {
       it(`leaves canvas sizing to core when a response has no usable width (${String(width)})`, () => {
-        const request = buildRequest(makeBid({ format: 'parallax' }), makeBidderRequest({ allowTopWindowRenderers: false }));
+        const request = buildRequest(makeBid({ format: 'parallax', rendererSupport: SAFE_RENDERER_SUPPORT }));
         const [bid] = respond(request, [makeServerBid('parallax', { w: width })]);
         expect(bid.safeRenderer.config).to.deep.equal({ format: 'parallax' });
       });
@@ -281,14 +279,14 @@ describe('splashBidAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    it('requests every format in a mixed request when top-window renderers are disabled, without mutating inputs', () => {
-      const bids = FORMATS.map(format => makeBid({ format, allowTopWindowRenderers: true }));
-      const request = makeBidderRequest({ bids, allowTopWindowRenderers: false });
+    it('requests every format in a mixed request without sending renderer policy or mutating inputs', () => {
+      const bids = FORMATS.map(format => makeBid({ format, rendererSupport: TOP_WINDOW_SUPPORT }));
+      const request = makeBidderRequest({ bids });
       const snapshot = JSON.stringify({ bids, request });
       const requests = spec.buildRequests(bids, request);
       expect(requests).to.have.length(1);
       expect(requests[0].data.imp.map(imp => imp.id)).to.deep.equal(['standard-bid', 'parallax-bid', 'interstitial-bid']);
-      expect(JSON.stringify(requests[0].data)).not.to.contain('allowTopWindowRenderers');
+      expect(JSON.stringify(requests[0].data)).not.to.contain('rendererSupport');
       expect(JSON.stringify({ bids, request })).to.equal(snapshot);
     });
 
@@ -664,8 +662,8 @@ describe('splashBidAdapter', () => {
       const logError = sandbox.stub(utils, 'logError');
       const requests = spec.buildRequests([
         makeBid(),
-        makeBid({ format: 'interstitial' }),
-        makeBid({ format: 'parallax', params: { publisherId: '726' } }),
+        makeBid({ format: 'interstitial', rendererSupport: TOP_WINDOW_SUPPORT }),
+        makeBid({ format: 'parallax', rendererSupport: TOP_WINDOW_SUPPORT, params: { publisherId: '726' } }),
       ], makeBidderRequest());
       expect(requests).to.have.length(2);
       const body = {

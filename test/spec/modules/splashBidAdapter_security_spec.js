@@ -41,10 +41,11 @@ describe('splashBidAdapter creative isolation', () => {
       bidId: 'security-bid',
       adUnitCode: slot.id,
       params: { publisherId: '725', placementId: '100022', displayFormat: format },
+      rendererSupport: { banner: { renderer: true, safeRenderer: true } },
       mediaTypes: { banner: { sizes: [[320, 480]] } },
       ortb2Imp: {},
     };
-    const request = spec.buildRequests([bid], { bidderRequestId: 'security-request', ortb2: {}, allowTopWindowRenderers: true })[0];
+    const request = spec.buildRequests([bid], { bidderRequestId: 'security-request', ortb2: {} })[0];
     const response = spec.interpretResponse({
       body: {
         cur: 'PLN',

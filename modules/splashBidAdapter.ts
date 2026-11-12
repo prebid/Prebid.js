@@ -43,8 +43,6 @@ const PARALLAX = 'parallax';
 const INTERSTITIAL = 'interstitial';
 const DISPLAY_FORMATS = [STANDARD, PARALLAX, INTERSTITIAL];
 const SAFE_RENDERER_URL = 'https://cdn.splashandroll.com/runtime/prebid/safe-renderer/1.0.0/splash-safe-renderer.js';
-const TOP_WINDOW = 'top-window';
-const SAFE = 'safe';
 
 export type SplashDisplayFormat = 'standard' | 'parallax' | 'interstitial';
 
@@ -68,6 +66,17 @@ declare module '../src/adUnits' {
 }
 
 type SplashBidRequest = BidRequest<typeof BIDDER_CODE>;
+
+type SplashRendererSupport = {
+  banner?: {
+    renderer?: boolean;
+    safeRenderer?: boolean;
+  };
+};
+
+type SplashBidRequestWithRendererSupport = SplashBidRequest & {
+  rendererSupport?: SplashRendererSupport;
+};
 
 interface SplashBidExt {
   splash?: {
@@ -142,7 +151,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       if (format === PARALLAX && slotWidth > 0 && slotHeight > 0) {
         Object.assign(bidResponse, { width: slotWidth, height: slotHeight });
       }
-      if (customPresentation(context.bidRequest, context.bidderRequest) === SAFE) {
+      const support = customRendererSupport(context.bidRequest);
+      if (support.safeRenderer === true) {
         const width = Number(bid.w);
         const height = Number(bid.h);
         const creativeSize = Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0 ? { width, height } : undefined;
@@ -150,7 +160,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
           url: SAFE_RENDERER_URL,
           config: { format, ...(creativeSize ? { creativeSize } : {}) },
         };
-      } else {
+      }
+      if (support.renderer === true) {
         bidResponse.renderer = createRenderer(format, context.bidRequest, {
           slotHeight,
           creativeHeight: Number(bid.h) || 0,
@@ -222,24 +233,15 @@ function displayFormatOf(params: SplashBidParams): SplashDisplayFormat {
   return params.displayFormat || STANDARD;
 }
 
-function replacesAdapterRenderer(renderer): boolean {
-  return !!(renderer && renderer.render && renderer.backupOnly !== true);
-}
-
 /**
- * How core will render a Parallax or Interstitial bid for this request. Core prefers any Safe Renderer on the bid,
- * replaces the bid's renderers with publisher ones that are not backupOnly, and drops top-window renderers unless
- * `allowTopWindowRenderers` permits them. The top-window renderer is used only with that permission from core and
- * nothing to replace it. Publisher overrides are resolved by core without withholding the bid.
+ * Prefer the page-level renderer to preserve Splash's full-format behavior when core permits it.
+ * Older core versions do not provide rendererSupport, so use the isolated Safe Renderer fallback.
  */
-function customPresentation(bid: SplashBidRequest, bidderRequest: unknown): typeof TOP_WINDOW | typeof SAFE {
-  const safeRenderers = [bid.mediaTypes?.banner?.safeRenderer, bid.safeRenderer]
-    .filter(safeRenderer => safeRenderer && safeRenderer.url);
-  const allowTopWindowRenderers = bidderRequest && typeof bidderRequest === 'object' &&
-    (bidderRequest as { allowTopWindowRenderers?: unknown }).allowTopWindowRenderers === true;
-  const topWindow = allowTopWindowRenderers && !safeRenderers.length &&
-    !replacesAdapterRenderer(bid.mediaTypes?.banner?.renderer) && !replacesAdapterRenderer(bid.renderer);
-  return topWindow ? TOP_WINDOW : SAFE;
+function customRendererSupport(bid: SplashBidRequest): NonNullable<SplashRendererSupport['banner']> {
+  const support = (bid as SplashBidRequestWithRendererSupport).rendererSupport?.banner;
+  if (!support) return { renderer: false, safeRenderer: true };
+  if (support.renderer === true) return { renderer: true, safeRenderer: false };
+  return { renderer: false, safeRenderer: support.safeRenderer === true };
 }
 
 function resolveEndpoint(endpoint: unknown): string {
