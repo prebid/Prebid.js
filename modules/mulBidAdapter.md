@@ -99,7 +99,7 @@ var adUnits = [
 
 The MonetiseUp adapter supports Video ads via both direct VAST XML (`vastXml`) and VAST URLs (`vastUrl`).
 - **Instream**: Video ads support standard `instream` player contexts.
-- **Outstream**: For `outstream` context, a publisher-defined renderer (e.g. `renderer: { url, render }`) or `useCacheKey` must be supplied on the ad unit.
+- **Outstream**: For `outstream` context, a publisher-defined renderer (e.g. `renderer: { url, render }`) or `useCacheKey` must be supplied on the ad unit. If omitted on a multi-format ad unit, the unsupported outstream format is omitted and banner demand is preserved.
 
 # User Sync and Device Storage Disclosure
 

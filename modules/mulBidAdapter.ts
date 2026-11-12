@@ -21,13 +21,21 @@ declare module '../src/adUnits' {
   }
 }
 
+function hasValidOutstream(bid: { mediaTypes?: any; renderer?: any }): boolean {
+  if (bid.mediaTypes?.video?.context === 'outstream') {
+    return !!(bid.renderer || bid.mediaTypes?.video?.renderer || bid.mediaTypes?.video?.useCacheKey);
+  }
+  return true;
+}
+
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Validates whether or not the bid request has required publisher params.
-   * For outstream video, enforces that a publisher-defined renderer or useCacheKey is provided.
+   * For outstream video, enforces that a publisher-defined renderer or useCacheKey is provided
+   * unless banner is also configured (in which case unsupported outstream is omitted in buildRequests).
    */
   isBidRequestValid: function (bid: { params?: MulBidParams; mediaTypes?: any; renderer?: any }): boolean {
     const hasRequiredParams = !!(bid && bid.params && (bid.params.placement || bid.params.placementId || bid.params.zoneId));
@@ -35,11 +43,12 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       return false;
     }
 
-    if (bid.mediaTypes?.video?.context === 'outstream') {
-      const hasRenderer = !!(bid.renderer || bid.mediaTypes?.video?.renderer);
-      if (!hasRenderer && !bid.mediaTypes?.video?.useCacheKey) {
-        return false;
-      }
+    const hasBanner = !!(bid.mediaTypes?.banner || (!bid.mediaTypes?.video && (bid as any).sizes));
+    const hasValidVideo = !bid.mediaTypes?.video || hasValidOutstream(bid);
+
+    // If outstream video lacks a renderer/useCacheKey and there is no banner demand to fall back on, reject the bid
+    if (!hasValidVideo && !hasBanner) {
+      return false;
     }
 
     return true;
@@ -52,13 +61,14 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     const bids = validBidRequests.map((bid) => {
       const bannerMedia = bid.mediaTypes?.banner;
       const videoMedia = bid.mediaTypes?.video;
+      const isVideoSupported = !!videoMedia && hasValidOutstream(bid);
       const sizes = bannerMedia?.sizes || bid.sizes || [];
 
       // Determine floor across supported media types
       let floor = 0;
       let floorCurrency = 'USD';
       if (typeof bid.getFloor === 'function') {
-        const queryMediaType = videoMedia && !bannerMedia ? VIDEO : (bannerMedia ? BANNER : '*');
+        const queryMediaType = isVideoSupported && !bannerMedia ? VIDEO : (bannerMedia ? BANNER : '*');
         const floorInfo = bid.getFloor({ currency: 'USD', mediaType: queryMediaType, size: '*' });
         floor = floorInfo?.floor || 0;
         floorCurrency = floorInfo?.currency || 'USD';
@@ -82,7 +92,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         };
       }
 
-      if (videoMedia) {
+      if (isVideoSupported) {
         bidItem.video = {
           playerSize: videoMedia.playerSize || sizes,
           context: videoMedia.context || 'instream',

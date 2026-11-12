@@ -134,6 +134,22 @@ describe('mulBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(outstreamBidWithCacheKey)).to.be.true;
     });
+
+    it('should return true for multi-format ad unit with banner even if outstream video lacks renderer or useCacheKey', function () {
+      const hybridBid = {
+        params: { placementId: 'test-hybrid' },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(hybridBid)).to.be.true;
+    });
   });
 
   describe('buildRequests', function () {
@@ -189,6 +205,29 @@ describe('mulBidAdapter', function () {
       const dataFallback = JSON.parse(reqFallback.data);
       expect(dataFallback.bids[0].floor).to.equal(0.85);
       expect(dataFallback.bids[0].floorCurrency).to.equal('EUR');
+    });
+
+    it('should omit unsupported outstream video format and preserve banner format for multi-format bid', function () {
+      const hybridBidWithoutRenderer = {
+        bidder: 'mul',
+        bidId: 'hybrid-123',
+        params: { placementId: 'test-hybrid' },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        }
+      };
+      const req = spec.buildRequests([hybridBidWithoutRenderer], bidderRequest);
+      const data = JSON.parse(req.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.bids[0].bidId).to.equal('hybrid-123');
+      expect(data.bids[0].banner).to.deep.equal({ sizes: [[300, 250]] });
+      expect(data.bids[0].video).to.be.undefined;
     });
   });
 
