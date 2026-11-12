@@ -5221,13 +5221,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "greenbids",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "grid",
       "aliasOf": null,
       "gvlid": 686,

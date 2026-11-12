@@ -66,7 +66,6 @@ const VENDOR_LIBRARIES = [
   'dxUtils',
   'intentIqConstants',
   'intentIqUtils',
-  'pageInfosUtils',
   'teqblazeUtils',
   'utiqUtils',
   'vizionikUtils',
