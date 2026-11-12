@@ -23,10 +23,10 @@ function compilerOptions() {
   return {...options, allowImportingTsExtensions: true, noEmit: true};
 }
 
-function schemaFiles() {
-  return fs.readdirSync(SCHEMA_DIR, {recursive: true})
+function schemaFiles(dir) {
+  return fs.readdirSync(dir, {recursive: true})
     .filter(file => file.endsWith('.d.ts'))
-    .map(file => path.join(SCHEMA_DIR, file));
+    .map(file => path.join(dir, file));
 }
 
 function defaultExportName(program, file) {
@@ -36,6 +36,29 @@ function defaultExportName(program, file) {
   if (symbol == null) return null;
   if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
   return symbol.name;
+}
+
+function typeParameterIds(program) {
+  const checker = program.getTypeChecker();
+  const ids = new Set();
+  const visit = (node) => {
+    if (ts.isTypeParameterDeclaration(node)) ids.add(checker.getTypeAtLocation(node).id);
+    ts.forEachChild(node, visit);
+  };
+  program.getSourceFiles().forEach(visit);
+  return ids;
+}
+
+/**
+ * typescript-json-schema reads some types (such as those of index signatures) from their declaration rather than
+ * their instantiation, which turns uses of a generic's parameters into definitions for the bare parameter.
+ */
+function checkTypeParameters(root, schema, generator, typeParameters) {
+  // typeIdsByName is reset by each getSchemaForSymbol call
+  const leaked = Object.keys(schema.definitions ?? {}).filter(name => typeParameters.has(generator.typeIdsByName[name]));
+  if (leaked.length > 0) {
+    throw new Error(`The JSON schema for '${root}' would describe type parameter(s) ${leaked.map(n => `'${n}'`).join(', ')} rather than the types they are instantiated with. This happens with generic index signatures; use a non-generic type in its place.`);
+  }
 }
 
 function toDraft2020(node, resolveRef) {
@@ -59,10 +82,11 @@ function toDraft2020(node, resolveRef) {
 /**
  * @param {Object} [options]
  * @param {string} [options.baseUrl] base for the `$id` of each schema
+ * @param {string} [options.dir] directory containing the `.d.ts` files to generate schemas from
  * @returns {Object.<string, Object>} map from output path (relative to the base) to schema
  */
-function generateSchemas({baseUrl = DEFAULT_BASE_URL} = {}) {
-  const files = schemaFiles();
+function generateSchemas({baseUrl = DEFAULT_BASE_URL, dir = SCHEMA_DIR} = {}) {
+  const files = schemaFiles(dir);
   const program = ts.createProgram(files, compilerOptions());
   const generator = TJS.buildGenerator(program, {
     required: true,
@@ -72,7 +96,7 @@ function generateSchemas({baseUrl = DEFAULT_BASE_URL} = {}) {
     // the sources are not strict yet (see tsconfig.json); errors in schema/ are checked below
     ignoreErrors: true,
   });
-  const errors = ts.getPreEmitDiagnostics(program).filter(d => d.file?.fileName.startsWith(SCHEMA_DIR + path.sep));
+  const errors = ts.getPreEmitDiagnostics(program).filter(d => d.file?.fileName.startsWith(dir + path.sep));
   if (errors.length > 0) {
     throw new Error(ts.formatDiagnostics(errors, {
       getCanonicalFileName: f => f, getCurrentDirectory: () => __dirname, getNewLine: () => '\n',
@@ -80,10 +104,15 @@ function generateSchemas({baseUrl = DEFAULT_BASE_URL} = {}) {
   }
   const roots = Object.fromEntries(
     files
-      .map(file => [defaultExportName(program, file), path.relative(SCHEMA_DIR, file).split(path.sep).join('/').replace(/\.d\.ts$/, '.schema.json')])
+      .map(file => [defaultExportName(program, file), path.relative(dir, file).split(path.sep).join('/').replace(/\.d\.ts$/, '.schema.json')])
       .filter(([name]) => name != null)
   );
-  const generated = Object.fromEntries(Object.keys(roots).map(name => [name, generator.getSchemaForSymbol(name)]));
+  const typeParameters = typeParameterIds(program);
+  const generated = Object.fromEntries(Object.keys(roots).map(name => {
+    const schema = generator.getSchemaForSymbol(name);
+    checkTypeParameters(name, schema, generator, typeParameters);
+    return [name, schema];
+  }));
   return Object.fromEntries(Object.entries(roots).map(([name, output]) => {
     const {definitions = {}, $schema, ...root} = generated[name];
     const defs = {};

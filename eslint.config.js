@@ -376,8 +376,10 @@ module.exports = [
       }
   },
   {
-    files: ['schema/**/*.d.ts'],
+    files: ['schema/**/*.d.ts', 'test/fixtures/schema/**/*.d.ts'],
     rules: {
+      // these declare types to generate JSON schemas from, not the types of a module
+      'prebid/declaration-filename': 'off',
       // named, empty interfaces are what gives generated JSON schema definitions their names
       '@typescript-eslint/no-empty-object-type': ['error', {allowInterfaces: 'with-single-extends'}],
       // typescript-json-schema reads JSON schema keywords from JSDoc tags
