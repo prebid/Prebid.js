@@ -116,10 +116,6 @@ describe('H12 Media Adapter', function () {
     div.id = id;
     div.style.width = '50px';
     div.style.height = '50px';
-    if (frameElement) {
-      frameElement.style.width = '100px';
-      frameElement.style.height = '100px';
-    }
     div.style.background = 'black';
     document.body.appendChild(div);
     return div;
@@ -155,10 +151,6 @@ describe('H12 Media Adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    sandbox.stub(frameElement, 'getBoundingClientRect').returns({
-      left: 10,
-      top: 10,
-    });
     clearCache();
   });
 

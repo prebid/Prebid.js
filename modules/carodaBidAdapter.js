@@ -12,7 +12,9 @@ import {
   logError,
   mergeDeep,
   sizeTupleToRtbSize,
-  sizesToSizeTuples
+  sizesToSizeTuples,
+  getParentWindow,
+  getWindowTop,
 } from '../src/utils.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
@@ -146,8 +148,8 @@ function getFirstWithKey (collection, key) {
 function getTopUsableWindow () {
   let res = window;
   try {
-    while (window.top !== res && res.parent.location.href.length) {
-      res = res.parent;
+    while (getWindowTop() !== res && getParentWindow(res).location.href.length) {
+      res = getParentWindow(res);
     }
   } catch (e) {}
   return res;

@@ -1,4 +1,4 @@
-import { isGptPubadsDefined, logError } from '../../src/utils.js';
+import { isGptPubadsDefined, logError, getWindowTop } from '../../src/utils.js';
 import { setKeyValue as setGptKeyValue } from '../../libraries/gptUtils/gptUtils.js';
 import { getSlotTargeting } from '../../src/utils/gptTargeting.js';
 
@@ -188,7 +188,7 @@ export function getRahbByTs(rahb, timestamp) {
 }
 
 export function getPredictorData(storage, _moduleParams, timestamp, pvid) {
-  const win = window.top;
+  const win = getWindowTop();
   const doc = win.document;
   const { brtd, bus } = getLocalStorageData(storage);
   const convertedBus = convertBusData(bus);

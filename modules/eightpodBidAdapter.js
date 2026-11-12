@@ -6,6 +6,7 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_BIDDER } from '../src/activities/modules.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
+import { getWindowTopOf } from '../src/utils.js';
 
 export const BIDDER_CODE = 'eightpod';
 export const GVLID = 1497;
@@ -193,7 +194,7 @@ export function getPageKeywords(win = window) {
   let element;
 
   try {
-    element = win.top.document.querySelector('meta[name="keywords"]');
+    element = getWindowTopOf(win).document.querySelector('meta[name="keywords"]');
   } catch (e) {
     element = document.querySelector('meta[name="keywords"]');
   }

@@ -1,4 +1,4 @@
-import { getBidRequest } from '../src/utils.js';
+import { getBidRequest, getParentWindow } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -170,7 +170,7 @@ function bidToTag(bid) {
 
 function isAmp() {
   try {
-    const ampContext = window.context || window.parent.context;
+    const ampContext = window.context || getParentWindow(window).context;
     if (ampContext && ampContext.pageViewId) {
       return ampContext;
     }

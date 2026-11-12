@@ -1,7 +1,7 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { logError, parseUrl, _each } from '../src/utils.js';
+import { logError, parseUrl, _each, getWindowTop } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
@@ -386,7 +386,7 @@ export function ExpiringQueue(callback, ttl) {
 // TODO: this should reuse logic from refererDetection
 function getNavigationInfo() {
   try {
-    return getLocationAndReferrer(self.top);
+    return getLocationAndReferrer(getWindowTop());
   } catch (e) {
     return getLocationAndReferrer(self);
   }

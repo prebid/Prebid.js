@@ -6,6 +6,7 @@ const noExtraFunctionArgs = require('./noExtraFunctionArgs.js');
 const augmentationReachable = require('./augmentationReachable.js');
 const noDeepAccessImport = require('./noDeepAccessImport.js');
 const noSynchronousLayoutRead = require('./noSynchronousLayoutRead.js');
+const noWindowTop = require('./noWindowTop.js');
 
 const COMPARISON_OPERATORS = new Set(['<', '<=', '>', '>=']);
 
@@ -55,6 +56,7 @@ module.exports = {
     'no-extra-function-args': noExtraFunctionArgs,
     'augmentation-reachable': augmentationReachable,
     'no-synchronous-layout-read': noSynchronousLayoutRead,
+    'no-window-top': noWindowTop,
     'validate-imports': {
       meta: {
         docs: {

@@ -2,13 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getWinDimensions, getWindowTop } from '../src/utils.js';
 
 export const storage = getStorageManager({ bidderCode: 'mantis' });
 
 function inIframe() {
   try {
-    return window.self !== window.top && !window.mantis_link;
+    return window.self !== getWindowTop() && !window.mantis_link;
   } catch (e) {
     return true;
   }
@@ -170,9 +170,9 @@ function buildMantisUrl(path, data, domain) {
   }
   if (!inIframe()) {
     try {
-      params.title = window.top.document.title;
-      params.referrer = window.top.document.referrer;
-      params.url = window.top.document.location.href;
+      params.title = getWindowTop().document.title;
+      params.referrer = getWindowTop().document.referrer;
+      params.url = getWindowTop().document.location.href;
     } catch (ex) {
     }
   } else {

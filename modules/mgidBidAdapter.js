@@ -29,6 +29,7 @@ import {
   setOnAny,
   triggerNurlWithCpm,
   triggerPixel,
+  getWindowTop,
 } from '../src/utils.js';
 
 /**
@@ -392,7 +393,7 @@ function populateRequest(request, context) {
   }
   if (!isNumber(deepAccess(request.device, 'pxratio'))) {
     let topWindow;
-    try { topWindow = window.top; } catch (e) { topWindow = window; }
+    try { topWindow = getWindowTop(); } catch (e) { topWindow = window; }
     deepSetValue(request, 'device.pxratio', getDevicePixelRatio(topWindow));
   }
   if (!isInteger(deepAccess(request.device, 'connectiontype'))) {

@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 
 import { setConfig as setCurrencyConfig } from '../../../modules/currency.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 describe('Caroda adapter', function () {
   let bids = [];
@@ -50,7 +51,7 @@ describe('Caroda adapter', function () {
           'ctok': 'adf232eef344'
         }
       }];
-      window.top.carodaPageViewId = 12345;
+      getWindowTop().carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://prebid.caroda.io/api/hb?entry_id=12345');
@@ -71,7 +72,7 @@ describe('Caroda adapter', function () {
           'test': 1
         }
       }];
-      window.top.carodaPageViewId = 12345;
+      getWindowTop().carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
       const data = JSON.parse(request.data);
       assert.equal(data.test, 1);
@@ -85,7 +86,7 @@ describe('Caroda adapter', function () {
           'placementId': 'opzafe342f'
         }
       }];
-      window.top.carodaPageViewId = 12345;
+      getWindowTop().carodaPageViewId = 12345;
       const request = spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } })[0];
       const data = JSON.parse(request.data);
       assert.equal(data.placement_id, 'opzafe342f');

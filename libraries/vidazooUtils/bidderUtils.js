@@ -6,7 +6,8 @@ import {
   parseSizesInput,
   parseUrl,
   uniques,
-  getWinDimensions, deepClone
+  getWinDimensions, deepClone,
+  getWindowTop,
 } from '../../src/utils.js';
 import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { chunk } from '../chunk/chunk.js';
@@ -32,7 +33,7 @@ export function createSessionId() {
 
 export function getTopWindowQueryParams() {
   try {
-    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    const parsedUrl = parseUrl(getWindowTop().document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';

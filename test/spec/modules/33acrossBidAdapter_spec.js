@@ -952,6 +952,10 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when nested iframes', function() {
+      beforeEach(function() {
+        internal.getWindowTop.returns({});
+      });
+
       it('returns \'nm\'', function() {
         const serverRequest = this.buildServerRequest(
           new TtxRequestBuilder()

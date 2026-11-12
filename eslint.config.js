@@ -300,6 +300,16 @@ module.exports = [
     }
   }),
   {
+    // creative/ is built on its own, without src/utils.js
+    files: ['src', 'modules', 'libraries'].flatMap(sourcePattern),
+    plugins: {
+      prebid,
+    },
+    rules: {
+      'prebid/no-window-top': 'error',
+    }
+  },
+  {
     files: [
       '**/*BidAdapter.{js,mjs,ts,mts}',
       '**/*BidAdapter/**/*.{js,mjs,ts,mts}'

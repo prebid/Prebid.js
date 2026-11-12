@@ -172,7 +172,32 @@ function isValidGPTSingleSize(singleSize) {
 }
 
 export function getWindowTop() {
+  // eslint-disable-next-line prebid/no-window-top
   return window.top;
+}
+
+/**
+ * The top window of `win`'s frame tree.
+ */
+export function getWindowTopOf(win) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win === internal.getWindowSelf() ? internal.getWindowTop() : win.top;
+}
+
+/**
+ * `win`'s parent window. Like `window.top.parent`, the parent of getWindowTop() is itself.
+ */
+export function getParentWindow(win) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win === internal.getWindowTop() ? win : win.parent;
+}
+
+/**
+ * The element embedding `win`, or null for getWindowTop().
+ */
+export function getFrameElement(win) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win === internal.getWindowTop() ? null : win.frameElement;
 }
 
 export function getWindowSelf() {

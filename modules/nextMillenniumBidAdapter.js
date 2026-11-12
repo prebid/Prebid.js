@@ -11,6 +11,7 @@ import {
   parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
+  getParentWindow,
 } from '../src/utils.js';
 
 import { getAd } from '../libraries/targetVideoUtils/bidderUtils.js';
@@ -542,8 +543,8 @@ function getTopWindow(curWindow, nesting = 0) {
   };
 
   try {
-    if (curWindow.parent.document) {
-      return getTopWindow(curWindow.parent.window, ++nesting);
+    if (getParentWindow(curWindow).document) {
+      return getTopWindow(getParentWindow(curWindow).window, ++nesting);
     };
   } catch (err) {
     return curWindow;

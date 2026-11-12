@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, ENDPOINT_URL } from 'modules/greenbidsBidAdapter.js';
-import { getScreenOrientation } from 'src/utils.js';
+import { getScreenOrientation, getWindowTop } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { getDevicePixelRatio } from '../../../libraries/devicePixelRatio/devicePixelRatio.js';
 const AD_SCRIPT = '<script type="text/javascript" class="greenbids" async="true" src="https://greenbids.ai/settings"></script>"';
 
@@ -44,6 +45,12 @@ describe('greenbidsBidAdapter', () => {
 
   const adapter = newBidder(spec);
   let sandbox;
+
+  function stubInaccessibleTop() {
+    const top = { get document() { throw new Error('cross-origin'); } };
+    sandbox.stub(utils, 'getWindowTop').returns(top);
+    sandbox.stub(utils.internal, 'getWindowTop').returns(top);
+  }
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
@@ -287,7 +294,7 @@ describe('greenbidsBidAdapter', () => {
     it('should add screenOrientation info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
-      const orientation = getScreenOrientation(window.top);
+      const orientation = getScreenOrientation(getWindowTop());
 
       if (orientation) {
         expect(payload.screenOrientation).to.exist;
@@ -302,7 +309,7 @@ describe('greenbidsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.historyLength).to.exist;
-      expect(payload.historyLength).to.deep.equal(window.top.history.length);
+      expect(payload.historyLength).to.deep.equal(getWindowTop().history.length);
     });
 
     it('should add viewportHeight info to payload', function () {
@@ -310,7 +317,7 @@ describe('greenbidsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.viewportHeight).to.exist;
-      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+      expect(payload.viewportHeight).to.deep.equal(getWindowTop().visualViewport.height);
     });
 
     it('should add viewportWidth info to payload', function () {
@@ -318,7 +325,7 @@ describe('greenbidsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.viewportWidth).to.exist;
-      expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+      expect(payload.viewportWidth).to.deep.equal(getWindowTop().visualViewport.width);
     });
 
     it('should add viewportHeight info to payload', function () {
@@ -326,7 +333,7 @@ describe('greenbidsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.viewportHeight).to.exist;
-      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+      expect(payload.viewportHeight).to.deep.equal(getWindowTop().visualViewport.height);
     });
 
     it('should add ortb2 device data to payload', function () {
@@ -360,7 +367,7 @@ describe('greenbidsBidAdapter', () => {
   describe('pageTitle', function () {
     it('should add pageTitle info to payload based on document title', function () {
       const testText = 'This is a title';
-      sandbox.stub(window.top.document, 'title').value(testText);
+      sandbox.stub(getWindowTop().document, 'title').value(testText);
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -371,8 +378,8 @@ describe('greenbidsBidAdapter', () => {
 
     it('should add pageTitle info to payload based on open-graph title', function () {
       const testText = 'This is a title from open-graph';
-      sandbox.stub(window.top.document, 'title').value('');
-      sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: testText });
+      sandbox.stub(getWindowTop().document, 'title').value('');
+      sandbox.stub(getWindowTop().document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: testText });
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -383,7 +390,7 @@ describe('greenbidsBidAdapter', () => {
 
     it('should add pageTitle info to payload sliced on 300 first characters', function () {
       const testText = Array(500).join('a');
-      sandbox.stub(window.top.document, 'title').value(testText);
+      sandbox.stub(getWindowTop().document, 'title').value(testText);
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -392,9 +399,9 @@ describe('greenbidsBidAdapter', () => {
       expect(payload.pageTitle).to.have.length(300);
     });
 
-    it('should add pageTitle info to payload when fallbacking from window.top', function () {
+    it('should add pageTitle info to payload when fallbacking from getWindowTop()', function () {
       const testText = 'This is a fallback title';
-      sandbox.stub(window.top.document, 'querySelector').throws();
+      stubInaccessibleTop();
       sandbox.stub(document, 'title').value(testText);
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
@@ -408,7 +415,7 @@ describe('greenbidsBidAdapter', () => {
   describe('pageDescription', function () {
     it('should add pageDescription info to payload based on open-graph description', function () {
       const testText = 'This is a description';
-      sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+      sandbox.stub(getWindowTop().document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -419,7 +426,7 @@ describe('greenbidsBidAdapter', () => {
 
     it('should add pageDescription info to payload based on open-graph description', function () {
       const testText = 'This is a description from open-graph';
-      sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:description"]').returns({ content: testText });
+      sandbox.stub(getWindowTop().document, 'querySelector').withArgs('meta[property="og:description"]').returns({ content: testText });
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -430,7 +437,7 @@ describe('greenbidsBidAdapter', () => {
 
     it('should add pageDescription info to payload sliced on 300 first characters', function () {
       const testText = Array(500).join('a');
-      sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+      sandbox.stub(getWindowTop().document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -439,9 +446,9 @@ describe('greenbidsBidAdapter', () => {
       expect(payload.pageDescription).to.have.length(300);
     });
 
-    it('should add pageDescription info to payload when fallbacking from window.top', function () {
+    it('should add pageDescription info to payload when fallbacking from getWindowTop()', function () {
       const testText = 'This is a fallback description';
-      sandbox.stub(window.top.document, 'querySelector').throws();
+      stubInaccessibleTop();
       sandbox.stub(document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
 
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);

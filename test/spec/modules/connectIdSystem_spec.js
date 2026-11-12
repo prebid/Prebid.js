@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { connectIdSubmodule, storage } from 'modules/connectIdSystem.js';
 import { server } from '../../mocks/xhr.js';
-import { parseQS, parseUrl } from 'src/utils.js';
+import { parseQS, parseUrl, getWindowTop } from 'src/utils.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 // the top page without its query: http://localhost:9876/ under Karma, bs-local.com on a BrowserStack device
-const TEST_SERVER_URL = `${window.top.location.origin}/`;
+const TEST_SERVER_URL = getWindowTop().location.href.split('?')[0];
 
 // The module writes its cookie on the broadest domain that takes it ('.com' before '.bs-local.com'), checking each
 // write by reading it back, which getCookieStub never confirms: so one write per level of the page's host.

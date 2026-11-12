@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getWinDimensions, getWindowTop } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium';
 const GVLID = 62;
@@ -250,9 +250,9 @@ function arrayUnique (array) {
 }
 
 function getGumGumParams () {
-  if (!window.top) return null;
+  if (!getWindowTop()) return null;
 
-  const urlParams = new URLSearchParams(window.top.location.search);
+  const urlParams = new URLSearchParams(getWindowTop().location.search);
   const ggParams = {
     'ggAdbuyid': urlParams.get('gg_adbuyid'),
     'ggDealid': urlParams.get('gg_dealid'),
