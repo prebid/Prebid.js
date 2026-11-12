@@ -2670,13 +2670,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "iqzone",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "kiviads",
       "aliasOf": null,
       "gvlid": null,
