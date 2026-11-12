@@ -9,10 +9,6 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-/**
- * @typedef {import('./oguryBidAdapter.d.ts').OguryBidParams} OguryBidParams
- */
-
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;
 const DEFAULT_TIMEOUT = 1000;

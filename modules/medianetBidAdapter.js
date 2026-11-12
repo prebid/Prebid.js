@@ -32,7 +32,6 @@ import { coppaDataHandler } from '../src/consentHandler.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
- * @typedef {import('./medianetBidAdapter.d.ts').MedianetBidParams} MedianetBidParams
  */
 
 const BIDDER_CODE = MEDIANET;

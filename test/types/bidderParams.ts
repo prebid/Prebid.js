@@ -16,18 +16,6 @@ export const sovrnVideo: BidderParams['sovrn'] = { tagid: '315045', bidfloor: '0
 // @ts-expect-error - tagid is required
 export const sovrnMissingTagid: BidderParams['sovrn'] = { bidfloor: 0.01 };
 
-export const adagio: BidderParams['adagio'] = {
-  placement: 'in_article',
-  adUnitElementId: 'article_outstream',
-  debug: { enabled: true, cpm: 3.00 },
-  video: { api: [2], playbackMethod: [6], skip: 0 },
-  native: { context: 1, plcmttype: 2 },
-  splitKeyword: 'splitrule-one',
-  dl: { placement: '1234' }
-};
-// @ts-expect-error - useAdUnitCodeAsPlacement is a boolean
-export const adagioStringFlag: BidderParams['adagio'] = { useAdUnitCodeAsPlacement: 'true' };
-
 export const amx: BidderParams['amx'] = { testMode: true, tagId: 'cHJlYmlkLm9yZw' };
 // @ts-expect-error - tagId must be a string
 export const amxNumericTagId: BidderParams['amx'] = { tagId: 123 };
@@ -35,11 +23,6 @@ export const amxNumericTagId: BidderParams['amx'] = { tagId: 123 };
 export const rtbhouse: BidderParams['rtbhouse'] = { region: 'prebid-eu', publisherId: 'PREBID_TEST_ID', bidfloor: 0.01 };
 // @ts-expect-error - region must be one of the RTB House regions
 export const rtbhouseBadRegion: BidderParams['rtbhouse'] = { region: 'eu', publisherId: 'PREBID_TEST_ID' };
-
-export const medianet: BidderParams['medianet'] = { cid: '8CUX0H51C', crid: '776755783', site: { page: 'http://smoketesting.net/prebidtest/', domain: 'smoketesting.net', ref: 'http://smoketesting.net/prebidtest/' } };
-export const trustedstack: BidderParams['trustedstack'] = { cid: '8CUX0H51C', crid: 451466393 };
-// @ts-expect-error - cid must be a string
-export const medianetNumericCid: BidderParams['medianet'] = { cid: 8, crid: '451466393' };
 
 export const onetag: BidderParams['onetag'] = { pubId: '386276e072' };
 // @ts-expect-error - pubId is required
@@ -93,13 +76,6 @@ export const nativo: BidderParams['nativo'] = {
 };
 // @ts-expect-error - url is a string
 export const nativoNumericUrl: BidderParams['ntv'] = { url: 42 };
-
-export const ogury: BidderParams['ogury'] = {
-  assetKey: 'OGY-CA41D116484F',
-  adUnitId: '2c4d61d0-90aa-0139-0cda-0242ac120004'
-};
-// @ts-expect-error - gravity must be one of the documented positions
-export const oguryBadGravity: BidderParams['ogury'] = { assetKey: 'OGY-CA41D116484F', adUnitId: 'x', gravity: 'LEFT' };
 
 export const improvedigital: BidderParams['improvedigital'] = { publisherId: 950, placementId: 22137694, keyValues: { testKey: ['testValue'] } };
 // @ts-expect-error - publisherId is required
