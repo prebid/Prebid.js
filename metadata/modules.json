@@ -4178,13 +4178,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adpartner",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "mediaimpact",
       "aliasOf": null,
       "gvlid": null,
