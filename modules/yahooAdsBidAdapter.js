@@ -753,51 +753,49 @@ export const spec = {
     }
     const seatbids = serverResponse.body.seatbid;
     seatbids.forEach(seatbid => {
-      let bid;
-
-      try {
-        bid = seatbid.bid[0];
-      } catch (e) {
-        return response;
+      if (!Array.isArray(seatbid.bid)) {
+        return;
       }
 
-      const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
-      // In singleRequestMode the server request carries the whole bidder request, not this bid's own request;
-      // per-bid settings (params.ttl, the ad unit's video context and renderer) come from the bid request it answers.
-      const bidRequest = getBidRequestForResponse(bidderRequest, bid.impid);
+      seatbid.bid.forEach(bid => {
+        const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+        // In singleRequestMode the server request carries the whole bidder request, not this bid's own request;
+        // per-bid settings (params.ttl, the ad unit's video context and renderer) come from the bid request it answers.
+        const bidRequest = getBidRequestForResponse(bidderRequest, bid.impid);
 
-      const bidResponse = {
-        adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
-        requestId: bid.impid,
-        cpm: cpm,
-        width: bid.w,
-        height: bid.h,
-        creativeId: bid.crid || 0,
-        currency: bid.cur || DEFAULT_CURRENCY,
-        dealId: bid.dealid ? bid.dealid : null,
-        netRevenue: true,
-        ttl: getTtl(bidRequest),
-        meta: {
-          advertiserDomains: bid.adomain,
+        const bidResponse = {
+          adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
+          requestId: bid.impid,
+          cpm: cpm,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.crid || 0,
+          currency: bid.cur || DEFAULT_CURRENCY,
+          dealId: bid.dealid ? bid.dealid : null,
+          netRevenue: true,
+          ttl: getTtl(bidRequest),
+          meta: {
+            advertiserDomains: bid.adomain,
+          }
+        };
+
+        const responseAdmFormat = getResponseFormat(bid);
+        if (responseAdmFormat === BANNER) {
+          bidResponse.mediaType = BANNER;
+          bidResponse.ad = bid.adm;
+          bidResponse.meta.mediaType = BANNER;
+        } else if (responseAdmFormat === VIDEO) {
+          bidResponse.mediaType = VIDEO;
+          bidResponse.meta.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
         }
-      };
 
-      const responseAdmFormat = getResponseFormat(bid);
-      if (responseAdmFormat === BANNER) {
-        bidResponse.mediaType = BANNER;
-        bidResponse.ad = bid.adm;
-        bidResponse.meta.mediaType = BANNER;
-      } else if (responseAdmFormat === VIDEO) {
-        bidResponse.mediaType = VIDEO;
-        bidResponse.meta.mediaType = VIDEO;
-        bidResponse.vastXml = bid.adm;
-      }
+        if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' && !bidRequest.renderer && bidResponse.mediaType === VIDEO) {
+          bidResponse.renderer = createRenderer(bidRequest, bidResponse) || undefined;
+        }
 
-      if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' && !bidRequest.renderer && bidResponse.mediaType === VIDEO) {
-        bidResponse.renderer = createRenderer(bidRequest, bidResponse) || undefined;
-      }
-
-      response.push(bidResponse);
+        response.push(bidResponse);
+      });
     });
 
     return response;
