@@ -4,6 +4,10 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('./resetdigitalBidAdapter.d.ts').ResetdigitalBidParams} ResetdigitalBidParams
+ */
+
 const BIDDER_CODE = 'resetdigital';
 const CURRENCY = 'USD';
 
