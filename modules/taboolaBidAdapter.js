@@ -416,11 +416,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data, context) {
     deepSetValue(data, 'regs.coppa', 1);
   }
 
-  const ortb2 = bidderRequest.ortb2 || {
-    bcat: [],
-    badv: [],
-    wlang: []
-  };
+  const ortb2 = bidderRequest.ortb2 || {};
 
   deepSetValue(data, 'source.fd', 1);
 
