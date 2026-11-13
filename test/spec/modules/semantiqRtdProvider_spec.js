@@ -13,17 +13,20 @@ const flushPromises = async () => {
 describe('semantiqRtdProvider', () => {
   let clock;
   let getDataFromSessionStorage;
+  let setDataInSessionStorage;
   let getWindowLocationStub;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers();
     getDataFromSessionStorage = sinon.stub(storage, 'getDataFromSessionStorage').returns(null);
+    setDataInSessionStorage = sinon.stub(storage, 'setDataInSessionStorage');
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns(new URL('https://example.com/article'));
   });
 
   afterEach(() => {
     clock.restore();
     getDataFromSessionStorage.restore();
+    setDataInSessionStorage.restore();
     getWindowLocationStub.restore();
   });
 
@@ -301,6 +304,29 @@ describe('semantiqRtdProvider', () => {
       expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({ site: { keywords: 'server=true' } });
     });
 
+    it('requests keywords from the server if the cached keywords are empty', async () => {
+      getDataFromSessionStorage.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { ctx_segment: [], adnz_news_type: [] } }));
+
+      const reqBidsConfigObj = {
+        adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+        ortb2Fragments: {
+          global: {},
+        }
+      };
+
+      const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(reqBidsConfigObj, resolve, { params: {} }, {}));
+
+      server.requests[0].respond(
+        200,
+        { 'Content-Type': 'application/json' },
+        JSON.stringify({ server: 'true' })
+      );
+
+      await promise;
+
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({ site: { keywords: 'server=true' } });
+    });
+
     it('requests keywords from the server if the cached data is missing in the storage', async () => {
       const reqBidsConfigObj = {
         adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
@@ -331,6 +357,38 @@ describe('semantiqRtdProvider', () => {
 
       expect(onDoneSpy.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({ site: { keywords: 'sentiment=negative,ctx_segment=C001,ctx_segment=C002' } });
+      expect(setDataInSessionStorage.calledOnceWith('adnz_semantiq', JSON.stringify({
+        url: 'https://example.com/article',
+        keywords: { sentiment: 'negative', ctx_segment: ['C001', 'C002'] },
+      }))).to.be.true;
+    });
+
+    [
+      { ctx_segment: [], adnz_news_type: [] },
+      { sentiment: null, iab_category_id: null, iab_category: '', ctx_segment: [] },
+      { ctx_segment: [''], sentiment: ' ' },
+      {},
+    ].forEach((keywords) => {
+      it(`does not cache an empty response: ${JSON.stringify(keywords)}`, async () => {
+        const reqBidsConfigObj = {
+          adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+          ortb2Fragments: {
+            global: {},
+          },
+        };
+
+        const promise = new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(reqBidsConfigObj, resolve, { params: {} }, {}));
+
+        server.requests[0].respond(
+          200,
+          { 'Content-Type': 'application/json' },
+          JSON.stringify(keywords)
+        );
+
+        await promise;
+
+        expect(setDataInSessionStorage.called).to.be.false;
+      });
     });
 
     it('merges ORTB site keywords if they are present', async () => {
