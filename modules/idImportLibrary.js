@@ -20,7 +20,7 @@ const OBSERVER_CONFIG = {
   attributes: true,
   attributeOldValue: false,
   childList: true,
-  attirbuteFilter: ['value'],
+  attributeFilter: ['value'],
   characterData: true,
   characterDataOldValue: false
 };
@@ -40,7 +40,7 @@ function createLogError(prefix) {
 }
 
 function getEmail(value) {
-  const matched = value.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
+  const matched = value.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
   if (!matched) {
     return null;
   }
