@@ -41,7 +41,9 @@ export type IframeRemovalDelays = {
   all?: number | false;
 };
 
-export interface UserSyncConfig {
+// P is used by the userId module's augmentation.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface UserSyncConfig<P extends string = string> {
   /**
    * Enable/disable the user syncing feature. Default: true.
    */
