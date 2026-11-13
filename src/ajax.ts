@@ -153,7 +153,7 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     // Updating request options with new Request(oldRequest, newOptions):
     //  on Firefox, will default newOptions.keepalive = false
     //  on Safari, will not allow keepalive = true to become = false
-    const keepalive = resource?._keepalive ?? options?.keepalive ?? resource?.keepalive;
+    const keepalive = options?.keepalive ?? resource?._keepalive ?? resource?.keepalive;
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
       to = dep.timeout(timeout, resource);
