@@ -12,6 +12,37 @@ Connect to smartx for bids.
 
 This adapter requires setup and approval from the smartclip team.
 
+# Video parameters
+
+Each video field in the request comes from the bidder params first, then from `mediaTypes.video` on the ad unit, then from the default below. An empty string counts as not set.
+
+| Field | Default |
+| --- | --- |
+| `mimes` | `['application/javascript', 'video/mp4', 'video/webm']` |
+| `linearity` | `1` |
+| `minduration` | `0` |
+| `maxduration` | `500` |
+| `startdelay` | `0` |
+| `minbitrate` | `0` |
+| `maxbitrate` | `3500` |
+| `delivery` | `[2]` |
+| `pos` | `1` |
+| `api` | `[2]` |
+| `protocols` | `[2, 3, 5, 6]` |
+
+`plcmt`, `skip`, `skipmin`, `skipafter`, `battr`, `playbackend` and `playbackmethod` have no default and are only sent when set. Prebid sets `plcmt` to 4 on outstream ad units and to 2 when `playbackmethod` starts muted (2 or 6), so declare it on the ad unit when that guess is wrong.
+
+```
+    mediaTypes: {
+        video: {
+            context: 'instream',
+            playerSize: [640, 360],
+            plcmt: 1,
+            skip: 1
+        }
+    }
+```
+
 # Test Parameters - Use case #1 - Out-Stream example and default rendering options
 ```
     var adUnits = [{
