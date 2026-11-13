@@ -273,9 +273,10 @@ function isNotEmptyStr(value) {
 
 function generateOpenRtbObject(bidderRequest, bid) {
   if (bidderRequest) {
+    const floorData = getFloorModuleData(bid);
     let outBoundBidRequest = {
       id: generateUUID(),
-      cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
+      cur: [floorData.currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       cattax: bidderRequest.ortb2?.cattax || 1,
       ...(bidderRequest.ortb2?.wlangb && { wlangb: bidderRequest.ortb2.wlangb }),
       imp: [],
