@@ -31,7 +31,7 @@ export function normalizeEmail(email) {
   if (!email || !email.length) return;
 
   const parsedEmail = email.trim().toLowerCase();
-  if (parsedEmail.indexOf(' ') > 0) return;
+  if (/\s/.test(parsedEmail)) return;
 
   const parts = parsedEmail.split('@');
   if (parts.length !== 2 || parts.some(part => part === '')) return;
