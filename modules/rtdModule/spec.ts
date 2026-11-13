@@ -66,7 +66,9 @@ export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> &
    */
   init: (config: RTDProviderConfig<P>, consent: AllConsentData) => boolean;
   getTargetingData?: (adUnitCodes: AdUnitCode[], config: RTDProviderConfig<P>, consent: AllConsentData, auction: EventPayload<typeof EVENTS.AUCTION_END>) => ByAdUnit<TargetingMap<any>>;
-  getBidRequestData?: (request: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<P>, consent: AllConsentData, timeout: number) => void;
+  getBidRequestData?: (request: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<P>, consent: AllConsentData, timeout: number,
+    /** False once RTD releases this request, including an early release. */
+    isAuctionActive?: () => boolean) => void;
   onDataDeletionRequest?: (config: RTDProviderConfig<P>) => void;
 };
 
