@@ -100,6 +100,11 @@ export const spec = {
       const sitekey = getBidIdParameter('sitekey', bid.params);
       const domain = getBidIdParameter('domain', bid.params);
       const cat = getBidIdParameter('cat', bid.params) || [''];
+      // Prebid core keeps only one of app and site, app first, so an app request
+      // carries no ortb2.site and goes out with an app object instead of a site.
+      const fpdApp = deepAccess(bid, 'ortb2.app');
+      const isApp = !isEmpty(fpdApp);
+      const fpdContent = deepAccess(bid, isApp ? 'ortb2.app.content' : 'ortb2.site.content') || {};
       let pubcid = null;
       const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
       const contentWidth = playerSize[0][0];
@@ -166,10 +171,40 @@ export const spec = {
 
       const cur = getBidIdParameter('cur', bid.params) || ['EUR'];
 
+      const content = {
+        ...fpdContent,
+        ext: {
+          ...fpdContent.ext,
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          },
+          ...(sitekey ? { sitekey } : {})
+        }
+      };
+
       const requestPayload = {
         id: generateUUID(),
         imp: smartxReq,
-        site: {
+        device: device,
+        at: at,
+        cur: cur,
+        ext: {}
+      };
+
+      if (isApp) {
+        // the publisher's app, with siteId and publisherId set the way they are on site
+        requestPayload.app = {
+          ...fpdApp,
+          id: siteId,
+          publisher: {
+            ...fpdApp.publisher,
+            id: publisherId
+          },
+          content: content
+        };
+      } else {
+        requestPayload.site = {
           id: siteId,
           page: page,
           cat: cat,
@@ -177,20 +212,9 @@ export const spec = {
           publisher: {
             id: publisherId
           },
-          content: {
-            ext: {
-              prebid: {
-                name: 'pbjs',
-                version: '$prebid.version$'
-              }
-            }
-          }
-        },
-        device: device,
-        at: at,
-        cur: cur,
-        ext: {}
-      };
+          content: content
+        };
+      }
 
       const userExt = {};
 
@@ -204,11 +228,6 @@ export const spec = {
             }
           };
         }
-      }
-
-      // Add sitekey if available
-      if (sitekey) {
-        requestPayload.site.content.ext.sitekey = sitekey;
       }
 
       // Add common id if available

@@ -394,6 +394,156 @@ describe('The smartx adapter', function () {
 
       expect(request.data.site.content.ext.sitekey).to.equal('foo');
     });
+
+    it('should pass first party content from ortb2', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: {
+          content: {
+            id: 'vod-8891-e03',
+            episode: 3,
+            season: '12',
+            series: 'Nordlicht',
+            genre: 'drama',
+            cat: ['IAB1-7'],
+            data: [{
+              name: 'publisher.example',
+              segment: [{
+                id: 'sports'
+              }]
+            }]
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content).to.deep.equal({
+        id: 'vod-8891-e03',
+        episode: 3,
+        season: '12',
+        series: 'Nordlicht',
+        genre: 'drama',
+        cat: ['IAB1-7'],
+        data: [{
+          name: 'publisher.example',
+          segment: [{
+            id: 'sports'
+          }]
+        }],
+        ext: {
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      });
+    });
+
+    it('should keep the first party content ext next to the prebid stamp and the sitekey', function () {
+      var request;
+
+      bid.params.sitekey = 'foo';
+      bid.ortb2 = {
+        site: {
+          content: {
+            id: 'vod-8891-e03',
+            ext: {
+              custom: 'bar'
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content.ext).to.deep.equal({
+        custom: 'bar',
+        sitekey: 'foo',
+        prebid: {
+          name: 'pbjs',
+          version: '$prebid.version$'
+        }
+      });
+    });
+
+    it('should send an app object instead of site on app requests', function () {
+      var request;
+
+      bid.params.siteId = 'site-7';
+      bid.params.publisherId = 'pub-3';
+      bid.ortb2 = {
+        app: {
+          bundle: 'com.example.tv',
+          name: 'Example TV',
+          publisher: {
+            name: 'Example'
+          },
+          content: {
+            id: 'vod-8891-e03',
+            series: 'Nordlicht'
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data).to.not.have.property('site');
+      expect(request.data.app).to.deep.equal({
+        bundle: 'com.example.tv',
+        name: 'Example TV',
+        id: 'site-7',
+        publisher: {
+          name: 'Example',
+          id: 'pub-3'
+        },
+        content: {
+          id: 'vod-8891-e03',
+          series: 'Nordlicht',
+          ext: {
+            prebid: {
+              name: 'pbjs',
+              version: '$prebid.version$'
+            }
+          }
+        }
+      });
+    });
+
+    it('should put the sitekey into the app content on app requests', function () {
+      var request;
+
+      bid.params.sitekey = 'foo';
+      bid.ortb2 = {
+        app: {
+          bundle: 'com.example.tv'
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.content.ext).to.deep.equal({
+        sitekey: 'foo',
+        prebid: {
+          name: 'pbjs',
+          version: '$prebid.version$'
+        }
+      });
+    });
+
+    it('should send only the prebid stamp when there is no first party content', function () {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content).to.deep.equal({
+        ext: {
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      });
+    });
   });
 
   describe('interpretResponse', function () {

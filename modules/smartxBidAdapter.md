@@ -171,3 +171,26 @@ This adapter requires setup and approval from the smartclip team.
         }],
     }];
 ```
+
+# First party data
+
+The publisher's `ortb2.site.content` goes out as `site.content`. The `sitekey` param is added as `site.content.ext.sitekey`.
+
+When `ortb2.app` is set, the request carries an `app` object instead of `site`. It is the publisher's `ortb2.app` with `id` set to `siteId` and `publisher.id` set to `publisherId`, and `ortb2.app.content` goes out as `app.content`.
+
+```
+    pbjs.setConfig({
+        ortb2: {
+            site: {
+                content: {
+                    id: 'episode-123',
+                    title: 'Episode title',
+                    series: 'Series name',
+                    genre: 'Comedy',
+                    language: 'de',
+                    livestream: 0
+                }
+            }
+        }
+    });
+```
