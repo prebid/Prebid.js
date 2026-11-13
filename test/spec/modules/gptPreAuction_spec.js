@@ -1,14 +1,21 @@
+import 'src/prebid.js';
 import {
   appendGptSlots,
   _currentConfig,
+  gptRequestHook,
+  INTERNAL_REQUEST_SYM,
   makeBidRequestsHook,
   getAuctionsIdsFromTargeting,
   getSegments,
   getSignals,
   getSignalsArrayByAuctionsIds,
-  getSignalsIntersection
+  getSignalsIntersection,
+  requestBidsStub
 } from 'modules/gptPreAuction.js';
 import { config } from 'src/config.js';
+import { getHook } from 'src/hook.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { taxonomies } from '../../../libraries/gptUtils/gptUtils.js';
 
@@ -481,6 +488,368 @@ describe('GPT pre-auction module', () => {
     it('should return properly formatted object for getSignalsIntersection invoked with empty array', () => {
       const signals = getSignalsIntersection([]);
       expect(Object.keys(signals)).to.contain.members(taxonomies);
+    });
+  });
+
+  describe('requestHook integration', () => {
+    it('does not register GPT request hook or stub requestBids when mode is disabled or invalid', () => {
+      config.setConfig({ gptPreAuction: { enabled: true } });
+      expect(window.googletag._requestHooks).to.have.length(0);
+      expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+
+      config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'disabled' } } });
+      expect(window.googletag._requestHooks).to.have.length(0);
+
+      config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'invalid' } } });
+      expect(window.googletag._requestHooks).to.have.length(0);
+      expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+    });
+
+    it('synchronously registers GPT request hook and avoids duplicate registrations when mode is test', () => {
+      config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+      config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+
+      expect(window.googletag._requestHooks).to.have.length(1);
+      expect(window.googletag._requestHooks[0].hook).to.equal(gptRequestHook);
+      expect(window.googletag._requestHooks[0].hookId).to.match(/^gpt-pre-auction-v/);
+      expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(1);
+    });
+
+    it('prepends hook registration to googletag.cmd when GPT is not yet ready', () => {
+      const savedGoogletag = window.googletag;
+      const order = [];
+      try {
+        window.googletag = {
+          cmd: [() => order.push('pendingDisplay')]
+        };
+
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(window.googletag.cmd).to.have.length(2);
+
+        const queuedCmds = window.googletag.cmd.slice();
+        window.googletag = savedGoogletag;
+        window.googletag._requestHooks = [];
+
+        queuedCmds.forEach(fn => {
+          fn();
+          if (window.googletag._requestHooks.length === 1 && order.length === 0) {
+            order.push('hookRegistered');
+          }
+        });
+
+        expect(order).to.deep.equal(['hookRegistered', 'pendingDisplay']);
+        expect(window.googletag._requestHooks).to.have.length(1);
+      } finally {
+        window.googletag = savedGoogletag;
+      }
+    });
+
+    it('initializes googletag.cmd when googletag is undefined and skips registration if disabled before cmd runs', () => {
+      const savedGoogletag = window.googletag;
+      try {
+        window.googletag = undefined;
+
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(window.googletag).to.be.an('object');
+        expect(window.googletag.cmd).to.be.an('array').with.lengthOf(1);
+
+        const queuedFn = window.googletag.cmd[0];
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'disabled' } } });
+
+        window.googletag = savedGoogletag;
+        window.googletag._requestHooks = [];
+        queuedFn();
+
+        expect(window.googletag._requestHooks).to.have.length(0);
+      } finally {
+        window.googletag = savedGoogletag;
+      }
+    });
+
+    it('falls back to googletag.cmd.push when cmd is a non-array command queue', () => {
+      const savedGoogletag = window.googletag;
+      try {
+        const pushed = [];
+        window.googletag = {
+          cmd: {
+            push: fn => pushed.push(fn)
+          }
+        };
+
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(pushed).to.have.length(1);
+
+        window.googletag = savedGoogletag;
+        window.googletag._requestHooks = [];
+        pushed[0]();
+        expect(window.googletag._requestHooks).to.have.length(1);
+      } finally {
+        window.googletag = savedGoogletag;
+      }
+    });
+
+    it('maps slots via isAdUnitCodeMatchingSlot, deduplicates codes, requests bids, and applies GPT targeting', async () => {
+      const pbjs = getGlobal();
+      const prevAdUnits = pbjs.adUnits;
+      try {
+        pbjs.adUnits = [
+          { code: 'slotCode1' },
+          { code: 'div2' },
+          { code: 'div2' },
+          { code: 'CUSTOM_SLOT_3' },
+          { code: 'unmatchedCode' }
+        ];
+        config.setConfig({
+          customGptSlotMatching: slot => adUnitCode =>
+            adUnitCode === slot.getAdUnitPath() ||
+            adUnitCode === slot.getSlotElementId() ||
+            (slot.getAdUnitPath() === 'slotCode3' && adUnitCode === 'CUSTOM_SLOT_3')
+        });
+
+        const requestBidsSpy = sandbox.stub(pbjs, 'requestBids').resolves({ bids: {} });
+        const setTargetingSpy = sandbox.stub(pbjs, 'setTargetingForGPTAsync');
+
+        await gptRequestHook({
+          slots: [
+            makeSlot({ code: 'slotCode1', divId: 'div1' }),
+            makeSlot({ code: 'slotCode2', divId: 'div2' }),
+            makeSlot({ code: 'slotCode2', divId: 'div2' }),
+            makeSlot({ code: 'slotCode3', divId: 'div3' })
+          ]
+        });
+
+        sinon.assert.calledOnce(requestBidsSpy);
+        const reqOpts = requestBidsSpy.firstCall.args[0];
+        expect(reqOpts.adUnitCodes).to.deep.equal(['slotCode1', 'div2', 'CUSTOM_SLOT_3']);
+        expect(reqOpts[INTERNAL_REQUEST_SYM]).to.equal(true);
+        sinon.assert.calledOnceWithExactly(setTargetingSpy, ['slotCode1', 'div2', 'CUSTOM_SLOT_3']);
+      } finally {
+        pbjs.adUnits = prevAdUnits;
+        config.resetConfig();
+      }
+    });
+
+    it('early-returns without invoking requestBids when no ad units match the requested slots', async () => {
+      const pbjs = getGlobal();
+      const prevAdUnits = pbjs.adUnits;
+      try {
+        pbjs.adUnits = [{ code: 'otherAdUnit' }];
+        const requestBidsSpy = sandbox.stub(pbjs, 'requestBids').resolves({ bids: {} });
+        const setTargetingSpy = sandbox.stub(pbjs, 'setTargetingForGPTAsync');
+
+        await gptRequestHook({
+          slots: [makeSlot({ code: 'slotCode1', divId: 'div1' })]
+        });
+
+        sinon.assert.notCalled(requestBidsSpy);
+        sinon.assert.notCalled(setTargetingSpy);
+      } finally {
+        pbjs.adUnits = prevAdUnits;
+      }
+    });
+
+    it('stubs external promise-based requestBids calls in test mode and resolves immediately', async () => {
+      const pbjs = getGlobal();
+      const warnSpy = sandbox.spy(utils, 'logWarn');
+      const startAuctionSpy = sinon.spy();
+      const startAuctionHook = (next, opts) => {
+        startAuctionSpy(opts);
+        return next.bail(undefined);
+      };
+      getHook('startAuction').before(startAuctionHook, 100);
+
+      try {
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+
+        const result = await pbjs.requestBids({ adUnitCodes: ['div1'] });
+
+        expect(result).to.deep.equal({
+          bids: {},
+          timedOut: false,
+          auctionId: undefined
+        });
+        sinon.assert.calledOnce(warnSpy);
+        sinon.assert.notCalled(startAuctionSpy);
+      } finally {
+        getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
+      }
+    });
+
+    it('invokes bidsBackHandler safely on external calls while allowing internal hook requestBids through', async () => {
+      const pbjs = getGlobal();
+      const prevAdUnits = pbjs.adUnits;
+      const errorSpy = sandbox.spy(utils, 'logError');
+      const startAuctionSpy = sinon.spy();
+      const startAuctionHook = (next, opts) => {
+        startAuctionSpy(opts);
+        opts.defer.resolve({ bids: { div1: { bids: [] } }, timedOut: false, auctionId: 'auc-1' });
+        return next.bail(undefined);
+      };
+      getHook('startAuction').before(startAuctionHook, 100);
+      const setTargetingSpy = sandbox.stub(pbjs, 'setTargetingForGPTAsync');
+
+      try {
+        pbjs.adUnits = [{ code: 'div1', bids: [] }];
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+
+        // 1. Throwing bidsBackHandler is caught and logged without rejecting the stubbed promise
+        const throwResult = await pbjs.requestBids({
+          adUnitCodes: ['div1'],
+          bidsBackHandler: () => {
+            throw new Error('publisher callback boom');
+          }
+        });
+        expect(throwResult).to.deep.equal({ bids: {}, timedOut: false, auctionId: undefined });
+        sinon.assert.calledOnce(errorSpy);
+        sinon.assert.notCalled(startAuctionSpy);
+
+        // 2. Callback-based publisher flow triggers GPT request hook -> runs real internal auction once
+        let hookPromise;
+        const pubBidsBackHandler = sinon.spy(() => {
+          hookPromise = window.googletag._requestHooks[0].hook({
+            slots: [makeSlot({ code: '/1111/home', divId: 'div1' })]
+          });
+        });
+
+        await pbjs.requestBids({
+          adUnitCodes: ['div1'],
+          bidsBackHandler: pubBidsBackHandler
+        });
+        await hookPromise;
+
+        sinon.assert.calledOnce(pubBidsBackHandler);
+        sinon.assert.calledOnce(startAuctionSpy);
+        expect(startAuctionSpy.firstCall.args[0].adUnitCodes).to.deep.equal(['div1']);
+        expect(startAuctionSpy.firstCall.args[0].bidsBackHandler).to.equal(undefined);
+        sinon.assert.calledOnceWithExactly(setTargetingSpy, ['div1']);
+      } finally {
+        pbjs.adUnits = prevAdUnits;
+        getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
+      }
+    });
+
+    it('unregisters GPT request hook and requestBids stub when disabled and supports toggling back on', async () => {
+      const pbjs = getGlobal();
+      const startAuctionSpy = sinon.spy();
+      const startAuctionHook = (next, opts) => {
+        startAuctionSpy(opts);
+        opts.defer.resolve({ bids: {}, timedOut: false, auctionId: 'auc-real' });
+        return next.bail(undefined);
+      };
+      getHook('startAuction').before(startAuctionHook, 100);
+
+      try {
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(window.googletag._requestHooks).to.have.length(1);
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(1);
+
+        // Transition mode -> 'disabled'
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'disabled' } } });
+        expect(window.googletag._requestHooks).to.have.length(0);
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+
+        const resAfterDisable = await pbjs.requestBids({ adUnitCodes: ['div1'] });
+        expect(resAfterDisable.auctionId).to.equal('auc-real');
+        sinon.assert.calledOnce(startAuctionSpy);
+
+        // Toggle back to 'test', then disable entire gptPreAuction module
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(window.googletag._requestHooks).to.have.length(1);
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(1);
+
+        config.setConfig({ gptPreAuction: { enabled: false } });
+        expect(window.googletag._requestHooks).to.have.length(0);
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+      } finally {
+        getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
+      }
+    });
+
+    it('does not install requestBids stub when GPT is ready without registerRequestHook support', async () => {
+      const pbjs = getGlobal();
+      const warnSpy = sandbox.spy(utils, 'logWarn');
+      const startAuctionSpy = sinon.spy();
+      const startAuctionHook = (next, opts) => {
+        startAuctionSpy(opts);
+        opts.defer.resolve({ bids: {}, timedOut: false, auctionId: 'auc-fallback' });
+        return next.bail(undefined);
+      };
+      getHook('startAuction').before(startAuctionHook, 100);
+      sandbox.stub(window.googletag, 'pubads').returns({ getSlots: () => [] });
+
+      try {
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+        sinon.assert.calledOnce(warnSpy);
+
+        const res = await pbjs.requestBids({ adUnitCodes: ['div1'] });
+        expect(res.auctionId).to.equal('auc-fallback');
+        sinon.assert.calledOnce(startAuctionSpy);
+      } finally {
+        getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
+      }
+    });
+
+    it('removes queued requestBids stub when GPT initializes without registerRequestHook support', () => {
+      const savedGoogletag = window.googletag;
+      const warnSpy = sandbox.spy(utils, 'logWarn');
+      try {
+        window.googletag = { cmd: [] };
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(1);
+
+        const queuedFn = window.googletag.cmd[0];
+        window.googletag = {
+          ...savedGoogletag,
+          pubads: () => ({ getSlots: () => [] })
+        };
+        queuedFn();
+        expect(getHook('requestBids').getHooks({ hook: requestBidsStub }).length).to.equal(0);
+        sinon.assert.calledOnce(warnSpy);
+      } finally {
+        window.googletag = savedGoogletag;
+      }
+    });
+
+    it('retains request-scoped adUnits from intercepted requestBids calls for the hook auction', async () => {
+      const pbjs = getGlobal();
+      const prevAdUnits = pbjs.adUnits;
+      const startAuctionSpy = sinon.spy();
+      const startAuctionHook = (next, opts) => {
+        startAuctionSpy(opts);
+        opts.defer.resolve({ bids: {}, timedOut: false, auctionId: 'auc-req-scoped' });
+        return next.bail(undefined);
+      };
+      getHook('startAuction').before(startAuctionHook, 100);
+      const setTargetingSpy = sandbox.stub(pbjs, 'setTargetingForGPTAsync');
+
+      try {
+        pbjs.adUnits = [];
+        config.setConfig({ gptPreAuction: { enabled: true, requestHook: { mode: 'test' } } });
+
+        const reqScopedAdUnits = [
+          { code: 'div1', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] },
+          { code: 'unmatchedDiv', mediaTypes: { banner: { sizes: [[728, 90]] } }, bids: [] }
+        ];
+
+        await pbjs.requestBids({ adUnits: reqScopedAdUnits });
+        sinon.assert.notCalled(startAuctionSpy);
+
+        await window.googletag._requestHooks[0].hook({
+          slots: [makeSlot({ code: '/1111/home', divId: 'div1' })]
+        });
+
+        sinon.assert.calledOnce(startAuctionSpy);
+        const auctionOpts = startAuctionSpy.firstCall.args[0];
+        expect(auctionOpts.adUnitCodes).to.deep.equal(['div1']);
+        expect(auctionOpts.adUnits).to.have.length(1);
+        expect(auctionOpts.adUnits[0].code).to.equal('div1');
+        sinon.assert.calledOnceWithExactly(setTargetingSpy, ['div1']);
+      } finally {
+        pbjs.adUnits = prevAdUnits;
+        getHook('startAuction').getHooks({ hook: startAuctionHook }).remove();
+      }
     });
   });
 });

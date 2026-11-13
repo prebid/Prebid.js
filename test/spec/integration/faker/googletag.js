@@ -50,6 +50,7 @@ export function enable() {
   window.googletag = {
     _slots: [],
     _callbackMap: {},
+    _requestHooks: [],
     _ppid: undefined,
     cmd: [],
     pubads: function () {
@@ -86,6 +87,17 @@ export function enable() {
         addEventListener: function (eventName, cb) {
           self._callbackMap[eventName] = self._callbackMap[eventName] || [];
           self._callbackMap[eventName].push(cb);
+        },
+
+        registerRequestHook: function (hook, hookId) {
+          var entry = { hook: hook, hookId: hookId };
+          self._requestHooks.push(entry);
+          return function () {
+            var idx = self._requestHooks.indexOf(entry);
+            if (idx !== -1) {
+              self._requestHooks.splice(idx, 1);
+            }
+          };
         }
       };
     }
