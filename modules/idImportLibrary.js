@@ -40,7 +40,7 @@ function createLogError(prefix) {
 }
 
 function getEmail(value) {
-  const matched = value.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
+  const matched = value.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
   if (!matched) {
     return null;
   }
