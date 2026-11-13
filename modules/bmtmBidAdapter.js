@@ -1,4 +1,4 @@
-import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject } from '../src/utils.js';
+import { generateUUID, deepAccess, logWarn, deepSetValue, isPlainObject, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getDNT } from '../libraries/dnt/index.js';
@@ -177,8 +177,8 @@ function buildSite(bidderRequest) {
 function buildDevice() {
   return {
     ua: navigator.userAgent,
-    w: window.top.screen.width,
-    h: window.top.screen.height,
+    w: getWindowTop().screen.width,
+    h: getWindowTop().screen.height,
     js: 1,
     language: navigator.language,
     dnt: getDNT() ? 1 : 0,

@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/justpremiumBidAdapter.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 describe('justpremium adapter', function () {
   let sandbox;
@@ -113,10 +114,10 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.zone).to.not.equal('undefined');
       expect(bidderRequest.refererInfo.referer).to.equal('https://justpremium.com');
       expect(jpxRequest.schain).to.deep.equal(schainConfig);
-      expect(jpxRequest.sw).to.equal(window.top.screen.width);
-      expect(jpxRequest.sh).to.equal(window.top.screen.height);
-      expect(jpxRequest.ww).to.equal(window.top.innerWidth);
-      expect(jpxRequest.wh).to.equal(window.top.innerHeight);
+      expect(jpxRequest.sw).to.equal(getWindowTop().screen.width);
+      expect(jpxRequest.sh).to.equal(getWindowTop().screen.height);
+      expect(jpxRequest.ww).to.equal(getWindowTop().innerWidth);
+      expect(jpxRequest.wh).to.equal(getWindowTop().innerHeight);
       expect(jpxRequest.c).to.not.equal('undefined');
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone);
       expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined');

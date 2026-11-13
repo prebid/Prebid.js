@@ -8,7 +8,8 @@ import {
   logWarn,
   parseQueryStringParameters,
   parseSizesInput,
-  triggerPixel
+  triggerPixel,
+  getWindowTop,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -294,7 +295,7 @@ function getUuid() {
 
 function getOgUrl() {
   try {
-    const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
+    const ogURLElement = getWindowTop().document.querySelector('meta[property="og:url"]');
     return ogURLElement ? ogURLElement.content : null;
   } catch (e) {
     const ogURLElement = document.querySelector('meta[property="og:url"]');

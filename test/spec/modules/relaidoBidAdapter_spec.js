@@ -6,6 +6,7 @@ import { Renderer } from 'src/Renderer.js';
 import { getCoreStorageManager } from '../../../src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as mockGpt from '../integration/faker/googletag.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
@@ -450,7 +451,7 @@ describe('RelaidoAdapter', function () {
     it('should get canonicalUrl (ogUrl:true)', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -520,7 +521,7 @@ describe('RelaidoAdapter', function () {
     it('should not get canonicalUrl (ogUrl:false)', function () {
       bidRequest.params.ogUrl = false;
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -532,7 +533,7 @@ describe('RelaidoAdapter', function () {
 
     it('should not get canonicalUrl (ogUrl:nothing)', function () {
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });

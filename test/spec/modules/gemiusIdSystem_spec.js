@@ -8,6 +8,7 @@ describe('GemiusId module', function () {
 
   beforeEach(function () {
     mockWindow = {
+      location: { href: 'https://example.com/' },
       gemius_cmd: sinon.stub()
     };
     getWindowTopStub = sinon.stub(utils, 'getWindowTop').returns(mockWindow);

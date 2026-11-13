@@ -9,7 +9,7 @@
  */
 
 import { config } from './config.js';
-import { logWarn } from './utils.js';
+import { getParentWindow, getWindowTopOf, logWarn } from './utils.js';
 
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
@@ -22,7 +22,7 @@ export function ensureProtocol(url, win = window) {
   }
   let windowProto = win.location.protocol;
   try {
-    windowProto = win.top.location.protocol;
+    windowProto = getWindowTopOf(win).location.protocol;
   } catch (e) {}
   if (/^\/\//.exec(url)) {
     // url uses relative protocol ("//example.com")
@@ -125,6 +125,7 @@ export function detectReferer(win) {
     const stack: string[] = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
+    const top = getWindowTopOf(win);
 
     let currentWindow;
     let bestLocation: string;
@@ -143,7 +144,7 @@ export function detectReferer(win) {
       let foundLocation = null;
 
       inAmpFrame = false;
-      currentWindow = currentWindow ? currentWindow.parent : win;
+      currentWindow = currentWindow ? getParentWindow(currentWindow) : win;
 
       try {
         currentLocation = currentWindow.location.href || null;
@@ -162,7 +163,7 @@ export function detectReferer(win) {
 
             valuesFromAmp = true;
 
-            if (currentWindow === win.top) {
+            if (currentWindow === top) {
               reachedTop = true;
             }
 
@@ -180,7 +181,7 @@ export function detectReferer(win) {
             if (referrer) {
               foundLocation = referrer;
 
-              if (currentWindow === win.top) {
+              if (currentWindow === top) {
                 reachedTop = true;
               }
             }
@@ -188,7 +189,7 @@ export function detectReferer(win) {
 
           if (!foundLocation && ancestors && ancestors[level - 1]) {
             foundLocation = ancestors[level - 1];
-            if (currentWindow === win.top) {
+            if (currentWindow === top) {
               hasTopLocation = true;
             }
           }
@@ -203,7 +204,7 @@ export function detectReferer(win) {
           bestLocation = foundLocation;
           valuesFromAmp = false;
 
-          if (currentWindow === win.top) {
+          if (currentWindow === top) {
             reachedTop = true;
 
             const canonicalUrl = getCanonicalUrl(currentWindow.document);
@@ -221,13 +222,13 @@ export function detectReferer(win) {
 
       stack.push(foundLocation);
       level++;
-    } while (currentWindow !== win.top && level < maxNestedIframes);
+    } while (currentWindow !== top && level < maxNestedIframes);
 
     stack.reverse();
 
     let ref: string;
     try {
-      ref = win.top.document.referrer;
+      ref = top.document.referrer;
     } catch (e) {}
 
     const location: string = reachedTop || hasTopLocation ? bestLocation : null;
@@ -296,7 +297,7 @@ export function detectReferer(win) {
 // - we are the top window
 // - canonical URL tag and window location have not changed
 export function cacheWithLocation(fn, win = window) {
-  if (win.top !== win) return fn;
+  if (getWindowTopOf(win) !== win) return fn;
   let canonical, href, value;
   return function () {
     const newCanonical = getCanonicalUrl(win.document);

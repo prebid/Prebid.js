@@ -1,4 +1,4 @@
-import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone } from '../src/utils.js';
+import { logWarn, isPlainObject, isStr, isArray, isFn, inIframe, mergeDeep, deepSetValue, logError, deepClone, getParentWindow } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -140,8 +140,8 @@ export const spec = {
         if (win.vx.cs_loaded) {
           dsloaded = 1;
         }
-        if (win !== win.parent) {
-          win = win.parent;
+        if (win !== getParentWindow(win)) {
+          win = getParentWindow(win);
         } else {
           break;
         }

@@ -10,6 +10,7 @@ import {
   isFn,
   isStr,
   isPlainObject,
+  getWindowTop,
 } from '../src/utils.js';
 
 const BIDDER_CODE = 'playstream';
@@ -349,9 +350,9 @@ function getPageContext() {
   const ctx = { width: 0, height: 0, topframe: false };
 
   try {
-    ctx.width = window.top.screen.width;
-    ctx.height = window.top.screen.height;
-    window.top.location.toString();
+    ctx.width = getWindowTop().screen.width;
+    ctx.height = getWindowTop().screen.height;
+    getWindowTop().location.toString();
     ctx.topframe = true;
   } catch (error) {
     logMessage('Error getting top frame context', error);

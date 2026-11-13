@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { logError, logInfo, triggerPixel } from '../src/utils.js';
+import { logError, logInfo, triggerPixel, getWindowTop } from '../src/utils.js';
 
 const BIDDER_CODE = 'ampliffy';
 const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
@@ -90,7 +90,7 @@ const getCacheBuster = () => Math.floor(Math.random() * (9999999999 - 1000000000
 // For testing purposes
 let currentUrl = null;
 export function getCurrentURL() {
-  if (!currentUrl) currentUrl = top.location.href;
+  if (!currentUrl) currentUrl = getWindowTop().location.href;
   return currentUrl;
 }
 export function setCurrentURL(url) {

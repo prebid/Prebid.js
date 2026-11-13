@@ -1,5 +1,5 @@
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
-import { deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined } from '../src/utils.js';
+import { deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -250,7 +250,7 @@ export const spec = {
     };
 
     // ADD REF URL IF FOUND
-    if (self === top && document.referrer) {
+    if (!inIframe() && document.referrer) {
       site.ref = document.referrer;
     }
 

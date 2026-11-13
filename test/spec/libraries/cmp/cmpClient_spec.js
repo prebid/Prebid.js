@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-window-top -- fake window trees */
 import { CMP_POLL_INTERVAL, cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {

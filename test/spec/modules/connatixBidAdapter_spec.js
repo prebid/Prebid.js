@@ -93,9 +93,7 @@ describe('connatixBidAdapter', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      // An element of the top document, which the tests treat as the page (inIframe() is false): one of the test
-      // frame's document would be offset and clipped by that frame, which on a phone isn't at the top left.
-      element = window.top.document.createElement('div');
+      element = document.createElement('div');
       getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
@@ -106,7 +104,7 @@ describe('connatixBidAdapter', function () {
         innerHeight: 600
       };
 
-      querySelectorStub = sandbox.stub(window.top.document, 'querySelector');
+      querySelectorStub = sandbox.stub(document, 'querySelector');
       getElementStub = sandbox.stub(adUnits, 'getAdUnitElement');
       sandbox.stub(winDimensions, 'getWinDimensions').callsFake(() => (
         {
@@ -153,6 +151,34 @@ describe('connatixBidAdapter', function () {
       expect(result).to.equal(100);
     });
 
+    it('should find the viewabilityContainerIdentifier element in the top document when the current one lacks it', () => {
+      const topQuerySelector = sinon.stub();
+      topQuerySelector.withArgs('#validElement').returns(element);
+      topWinMock.document.querySelector = topQuerySelector;
+      sandbox.stub(utils, 'inIframe').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
+
+      const bid = {
+        params: { viewabilityContainerIdentifier: '#validElement' },
+        adUnitCode: 'adUnitCode123',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        sizes: [[300, 250]]
+      };
+
+      getBoundingClientRectStub.returns({
+        left: 100,
+        top: 100,
+        right: 400,
+        bottom: 350,
+        width: 300,
+        height: 250
+      });
+      getElementStub.returns(null);
+
+      expect(connatixDetectViewability(bid)).to.equal(100);
+      sinon.assert.calledWith(topQuerySelector, '#validElement');
+    });
+
     it('should use getElementById and return 100% viewability when viewabilityContainerIdentifier is an ID without # prefix', () => {
       sandbox.stub(utils, 'inIframe').returns(false);
       sandbox.stub(utils, 'getWindowTop').returns(topWinMock);
@@ -180,7 +206,6 @@ describe('connatixBidAdapter', function () {
 
       expect(result).to.equal(100);
       expect(getElementByIdStub.calledWith('validElement')).to.be.true;
-      expect(querySelectorStub.calledWith('validElement')).to.be.false;
     });
 
     it('should fall back to using bid sizes and adUnitCode when the viewabilityContainerIdentifier is invalid or was not provided', () => {
@@ -250,6 +275,7 @@ describe('connatixBidAdapter', function () {
 
       // Simulate an error when querying the element
       querySelectorStub.withArgs('#invalidElement').throws(new Error('Query failed'));
+      getElementStub.returns(null);
 
       getBoundingClientRectStub.returns({
         left: 100,

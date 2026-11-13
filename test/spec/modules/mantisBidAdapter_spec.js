@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage, sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('MantisAdapter', function () {
   const sandbox = sinon.createSandbox();
@@ -175,6 +176,7 @@ describe('MantisAdapter', function () {
     });
 
     it('detect amp', function () {
+      sandbox.stub(utils, 'getWindowTop').returns({});
       var oldContext = window.context;
 
       window.context = {};

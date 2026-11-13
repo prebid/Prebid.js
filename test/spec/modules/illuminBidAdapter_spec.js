@@ -21,6 +21,7 @@ import {
   getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -320,7 +321,7 @@ describe('IlluminBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
           sua: {
@@ -425,7 +426,7 @@ describe('IlluminBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           mediaTypes: [BANNER],
           gpid: '0123456789',
           uqs: getTopWindowQueryParams(),

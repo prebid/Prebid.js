@@ -1,4 +1,4 @@
-import { _each, deepClone, pick, deepSetValue, logError, logInfo } from '../src/utils.js';
+import { _each, deepClone, pick, deepSetValue, logError, logInfo, getWindowTop } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -452,7 +452,7 @@ function getPagePerformance() {
   let timing;
 
   try {
-    timing = window.top.performance.timing;
+    timing = getWindowTop().performance.timing;
   } catch (e) { }
 
   if (!timing) {
@@ -471,7 +471,7 @@ function getPagePerformance() {
 
 function getTopWindowReferrer() {
   try {
-    return window.top.document.referrer;
+    return getWindowTop().document.referrer;
   } catch (e) {
     return '';
   }

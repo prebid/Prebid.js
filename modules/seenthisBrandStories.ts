@@ -1,6 +1,6 @@
 import { EVENTS } from "../src/constants.js";
 import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
-import { getWinDimensions } from "../src/utils.js";
+import { getWinDimensions, getParentWindow, getWindowTop } from "../src/utils.js";
 import * as events from "../src/events.js";
 
 export const DEFAULT_MARGINS = "16px";
@@ -42,11 +42,12 @@ export function getFrameByEvent(event: MessageEvent) {
   const isAncestor = (childWindow: Window, frameWindow: Window) => {
     if (frameWindow === childWindow) {
       return true;
-    } else if (childWindow === window.top) {
+    } else if (childWindow === getWindowTop()) {
       return false;
     }
-    if (!childWindow?.parent) return false;
-    return isAncestor(childWindow.parent, frameWindow);
+    const parentWindow = childWindow && getParentWindow(childWindow);
+    if (!parentWindow) return false;
+    return isAncestor(parentWindow, frameWindow);
   };
   const iframeThatMatchesSource = Array.from(
     document.getElementsByTagName("iframe")

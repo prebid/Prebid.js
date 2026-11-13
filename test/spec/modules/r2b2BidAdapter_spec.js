@@ -288,7 +288,7 @@ describe('R2B2 adapter', function () {
       expect(imp[0]).to.be.an('object');
       const bid = imp[0];
       expect(bid.id).to.equal('20917a54ee9858');
-      expect(bid.banner).to.deep.equal({ topframe: 0, format: [{ w: 300, h: 250 }] });
+      expect(bid.banner).to.deep.equal({ topframe: 1, format: [{ w: 300, h: 250 }] });
       expect(bid.ext).to.be.an('object');
       expect(bid.ext.r2b2).to.deep.equal({ d: 'example.com', g: 'generic', p: '300x250', m: 1 });
     });

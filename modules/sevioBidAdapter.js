@@ -7,6 +7,7 @@ import { config } from "../src/config.js";
 import { getDomComplexity, getPageDescription, getPageTitle } from "../libraries/fpdUtils/pageInfo.js";
 import { getBrowserLanguage } from "../libraries/fpdUtils/deviceInfo.js";
 import * as converter from '../libraries/ortbConverter/converter.js';
+import { getWindowTopOf } from '../src/utils.js';
 
 const PREBID_VERSION = '$prebid.version$';
 const ADAPTER_VERSION = '1.0.2';
@@ -265,7 +266,7 @@ export const spec = {
     // (!) that avoids top-level side effects (the thing that can stop registerBidder from running)
     const computeTTFB = (w = (typeof window !== 'undefined' ? window : undefined)) => {
       try {
-        const wt = (() => { try { return w?.top ?? w; } catch { return w; } })();
+        const wt = (() => { try { return (w && getWindowTopOf(w)) ?? w; } catch { return w; } })();
         const p = wt?.performance || wt?.webkitPerformance || wt?.msPerformance || wt?.mozPerformance;
         if (!p) return '';
 

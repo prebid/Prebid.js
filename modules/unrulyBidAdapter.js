@@ -1,4 +1,4 @@
-import { deepAccess, logError } from '../src/utils.js';
+import { deepAccess, logError, getParentWindow } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -13,20 +13,20 @@ function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
   if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.');
 
-  parent.window.unruly = parent.window.unruly || {};
-  parent.window.unruly['native'] = parent.window.unruly['native'] || {};
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
-  parent.window.unruly['native'].adSlotId = requestId;
-  parent.window.unruly['native'].supplyMode = 'prebid';
+  getParentWindow(window).unruly = getParentWindow(window).unruly || {};
+  getParentWindow(window).unruly['native'] = getParentWindow(window).unruly['native'] || {};
+  getParentWindow(window).unruly['native'].siteId = getParentWindow(window).unruly['native'].siteId || exchangeRenderer.config.siteId;
+  getParentWindow(window).unruly['native'].adSlotId = requestId;
+  getParentWindow(window).unruly['native'].supplyMode = 'prebid';
 }
 
 function configureRendererQueue() {
-  parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
-  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
+  getParentWindow(window).unruly['native'].prebid = getParentWindow(window).unruly['native'].prebid || {};
+  getParentWindow(window).unruly['native'].prebid.uq = getParentWindow(window).unruly['native'].prebid.uq || [];
 }
 
 function notifyRenderer(bidResponseBid) {
-  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
+  getParentWindow(window).unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
 
 const UNRULY_RENDERER_HOST_PATTERN = /(^|\.)unrulymedia\.com$/;

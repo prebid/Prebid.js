@@ -9,11 +9,6 @@ const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout';
 
 describe('OguryBidAdapter', () => {
-  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
-  after(() => {
-    delete window.top.OG_PREBID_BID_OBJECT;
-  });
-
   let bidRequests, bidderRequestBase, ortb2;
 
   const currentLocation = 'https://mwtt.ogury.tech/advanced';
@@ -1048,14 +1043,14 @@ describe('OguryBidAdapter', () => {
         h: 101
       };
       spec.onBidWon(bidSample);
-      expect(window.top.OG_PREBID_BID_OBJECT).to.deep.equal(bidSample);
+      expect(utils.getWindowTop().OG_PREBID_BID_OBJECT).to.deep.equal(bidSample);
     });
   });
 
   describe('getWindowContext', function() {
     it('Should return top window if exist', function() {
       const res = spec.getWindowContext();
-      expect(res).to.equal(window.top);
+      expect(res).to.equal(utils.getWindowTop());
       expect(res).to.not.be.undefined;
     });
 

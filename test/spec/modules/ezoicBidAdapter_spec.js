@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ezoicBidAdapter.js';
 import { resetWinDimensions } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://g.ezoic.net/ezoic/prebid/adapter';
 const SYNC_URL = 'https://g.ezoic.net/ezoic/prebid/adapter/usersync-frame';
@@ -266,10 +267,7 @@ describe('Ezoic adapter', function () {
 
   describe('buildRequests', function () {
     it('posts Prebid and ORTB metadata to the fixed adapter endpoint', function () {
-      // Karma runs specs inside an iframe, so `window.top` (what
-      // getWinDimensions actually reads via canAccessWindowTop) is the outer
-      // browser window, not the local `window` binding.
-      sandbox.stub(window.top, 'innerWidth').value(1280);
+      sandbox.stub(utils.getWindowTop(), 'innerWidth').value(1280);
       resetWinDimensions();
       const bidderRequest = getBidderRequest({
         ortb2: {

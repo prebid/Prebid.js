@@ -24,6 +24,8 @@ import {
   getWindowTop,
   inIframe,
   isSafeFrameWindow,
+  getFrameElement,
+  getParentWindow,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -254,13 +256,13 @@ function getElementFromTopWindowRecurs(element, currentWindow) {
     if (getWindowTop() === currentWindow) {
       return element;
     } else {
-      const frame = currentWindow.frameElement;
+      const frame = getFrameElement(currentWindow);
       const frameClientRect = getBoundingClientRect(frame);
       const elementClientRect = getBoundingClientRect(element);
       if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
         return undefined;
       }
-      return getElementFromTopWindowRecurs(frame, currentWindow.parent);
+      return getElementFromTopWindowRecurs(frame, getParentWindow(currentWindow));
     }
   } catch (err) {
     logError(MODULE, err);

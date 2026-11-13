@@ -1,6 +1,6 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { internal, resetWinDimensions } from '../../../src/utils.js';
+import { resetWinDimensions } from '../../../src/utils.js';
 import * as adUnits from 'src/utils/adUnits';
 
 var marsAdapter = spec;
@@ -501,7 +501,6 @@ describe('marsmedia adapter tests', function () {
 
     context('when element is fully in view', function() {
       it('returns 100', function() {
-        sandbox.stub(internal, 'getWindowTop').returns(win);
         resetWinDimensions();
         Object.assign(element, { width: 600, height: 400 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
@@ -521,7 +520,6 @@ describe('marsmedia adapter tests', function () {
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
-        sandbox.stub(internal, 'getWindowTop').returns(win);
         resetWinDimensions();
         Object.assign(element, { width: 800, height: 800 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);

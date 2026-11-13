@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { getWinDimensions } from '../src/utils.js';
+import { getWinDimensions, getWindowTop } from '../src/utils.js';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -116,13 +116,13 @@ function brandSafety(badWords, maxScore) {
 
   try {
     let score = 0;
-    const decodedUrl = decodeURI(window.top.location.href.substring(window.top.location.origin.length));
+    const decodedUrl = decodeURI(getWindowTop().location.href.substring(getWindowTop().location.origin.length));
     const wordsAndNumbersInUrl = decodedUrl
       .replaceAll(/[-,._/?=&#%]/g, ' ')
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();
-    const content = window.top.document.body.textContent.toLowerCase();
+    const content = getWindowTop().document.body.textContent.toLowerCase();
     // \p{L} matches a single unicode code point in the category 'letter'. Matches any kind of letter from any language.
     const regexp = new RegExp('[\\p{L}]+', 'gu');
     const wordsMatched = content.match(regexp);

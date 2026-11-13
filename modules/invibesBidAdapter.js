@@ -1,4 +1,4 @@
-import { getWinDimensions, logInfo } from '../src/utils.js';
+import { getWinDimensions, logInfo, getParentWindow, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -478,9 +478,9 @@ function getTopMostWindow() {
   let res = window;
 
   try {
-    while (top !== res) {
-      if (res.parent.location.href.length) {
-        res = res.parent;
+    while (getWindowTop() !== res) {
+      if (getParentWindow(res).location.href.length) {
+        res = getParentWindow(res);
       }
     }
   } catch (e) {

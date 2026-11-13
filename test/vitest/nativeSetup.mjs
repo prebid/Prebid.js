@@ -25,6 +25,8 @@ for (const start = performance.now(); (await barrier(), document.cookie);) {
   expiringAssignments(document.cookie, location).forEach(assignment => { document.cookie = assignment; });
 }
 
+// before test_deps.js, so that the modules it loads see it too
+await import('test/helpers/windowTop.js');
 await import('test/test_deps.js');
 await import('test/pipeline_setup.js');
 await loadLater();
