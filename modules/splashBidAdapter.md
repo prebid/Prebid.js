@@ -23,11 +23,11 @@ Standard Display uses Prebid's default rendering. If core reports neither Splash
 
 | Name | Scope | Description | Example | Type |
 | ---- | ----- | ----------- | ------- | ---- |
-| `publisherId` | required | Splash publisher ID. Non-empty. | `'YOUR_PUBLISHER_ID'` | `string` |
-| `placementId` | required | Splash placement ID, sent as `imp.tagid`. Non-empty. | `'YOUR_PLACEMENT_ID'` | `string` |
+| `publisherId` | required | Splash publisher ID. Non-empty. | `'725'` | `string` |
+| `placementId` | required | Splash placement ID, sent as `imp.tagid`. Non-empty. | `'100022'` | `string` |
 | `displayFormat` | required for Parallax and Interstitial | The placement's Splash format: `'standard'` (default), `'parallax'` or `'interstitial'`. It is not inferred from sizes or the creative. Any other value makes the bid invalid. | `'parallax'` | `string` |
 | `bidfloor` | optional | Floor in PLN, used only when no floor is set by the Price Floors module or `ortb2Imp`. Must be greater than 0. | `3` | `number` |
-| `endpoint` | optional | Environment-specific Splash auction endpoint for test placements. If omitted, the adapter uses the production endpoint. Obtain test endpoint details from your Splash contact. | — | `string` |
+| `endpoint` | optional | Exact auction URL. The adapter accepts the production URL or the Splash staging URL below; any other value logs a warning and falls back to production. If omitted, production is used. | `'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'` | `string` |
 
 ## Formats
 
@@ -45,7 +45,7 @@ With the top-window renderer, Safari and iOS Chrome keep the Parallax frame phys
 
 ## Test Parameters
 
-Use publisher and placement IDs supplied for your integration environment, with a separate ad unit for each format. Parallax inventory may be device-specific; confirm the campaign's targeting when testing. To validate renderer selection, use a Prebid.js build containing this adapter and the matching `rendererSupport` core contract in [#16138](https://github.com/prebid/Prebid.js/pull/16138). The hosted test page is maintained separately from this module documentation.
+The Splash staging test inventory uses publisher `725` and placements `100021` (Standard Display, 300x600), `100022` (Parallax, 700x1600) and `100023` (Interstitial, 320x480). The Parallax test campaign is mobile-only; use a mobile device or mobile emulation. Set the staging endpoint on each test bid. Renderer policy is applied when the Prebid.js build provides the `rendererSupport` metadata; older builds use the compatibility fallback described above. The hosted test page is maintained separately from this module documentation.
 
 ```javascript
 const adUnits = [
@@ -55,10 +55,11 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: 'YOUR_PUBLISHER_ID',
-        placementId: 'YOUR_STANDARD_DISPLAY_PLACEMENT_ID',
+        publisherId: '725',
+        placementId: '100021',
         displayFormat: 'standard',
-        bidfloor: 3
+        bidfloor: 3,
+        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
       }
     }]
   },
@@ -68,10 +69,11 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: 'YOUR_PUBLISHER_ID',
-        placementId: 'YOUR_PARALLAX_PLACEMENT_ID',
+        publisherId: '725',
+        placementId: '100022',
         displayFormat: 'parallax',
-        bidfloor: 3
+        bidfloor: 3,
+        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
       }
     }]
   },
@@ -82,10 +84,11 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: 'YOUR_PUBLISHER_ID',
-        placementId: 'YOUR_INTERSTITIAL_PLACEMENT_ID',
+        publisherId: '725',
+        placementId: '100023',
         displayFormat: 'interstitial',
-        bidfloor: 3
+        bidfloor: 3,
+        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
       }
     }]
   }
