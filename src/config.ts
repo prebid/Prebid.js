@@ -627,11 +627,12 @@ export function newConfig() {
    * Internal functions for core to execute some synchronous code while having an active bidder set.
    */
   function runWithBidder(bidder, fn) {
+    const prevBidder = currBidder;
     currBidder = bidder;
     try {
       return fn();
     } finally {
-      resetBidder();
+      currBidder = prevBidder;
     }
   }
   function callbackWithBidder(bidder) {
