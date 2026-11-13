@@ -35,6 +35,11 @@ export type OptableHandleRtd = (
   reqBidsConfigObj: StartAuctionOptions,
   optableExtraData: OptableRtdConfig,
   mergeFn: OptableMergeFn,
+  /**
+   * `params.instance`: property name of the SDK instance on `window.optable`,
+   * or `null` for the default (`window.optable.instance`).
+   */
+  instance?: string | null,
 ) => void | Promise<void>;
 
 export interface OptableRtdProviderParams {
@@ -49,14 +54,19 @@ export interface OptableRtdProviderParams {
    */
   adserverTargeting?: boolean;
   /**
-   * Property name on `window.optable` for the SDK instance used for ad-server
-   * targeting. Defaults to `'instance'` (`window.optable.instance`).
+   * Property name on `window.optable` for the SDK instance, used to tell
+   * whether the bundle has loaded and for ad-server targeting. Defaults to
+   * `'instance'` (`window.optable.instance`).
    */
   instance?: string;
   /**
    * Optional custom handler that enriches the bid request with Optable data.
-   * When omitted, the module waits for the `optable-targeting:change` event
-   * (or cached targeting) and merges `ortb2` into the global fragment.
+   * It is called as soon as the auction starts, whether or not the Optable
+   * bundle has loaded, and decides for itself whether to wait for it (for
+   * example through `window.optable.cmd`). When omitted, the module uses
+   * the bundle's `window.optable.rtd.handleRtd` if available; before the bundle
+   * loads, it merges targeting data cached on a previous page, or waits for the
+   * bundle if there is none.
    */
   handleRtd?: OptableHandleRtd | null;
 }
