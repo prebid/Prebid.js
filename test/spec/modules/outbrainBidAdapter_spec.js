@@ -186,16 +186,31 @@ describe('Outbrain Adapter', function () {
         };
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
-      it('should fail if bcat does not include strings', function () {
-        const bid = {
+      describe('bcat and badv', function () {
+        // otherwise valid, so these tests reach the bcat and badv checks
+        const bidWith = (params) => ({
           bidder: 'outbrain',
-          params: {
-            tagid: 123,
-            bcat: ['a', 2, 'c']
-          },
+          params: { publisher: { id: 'publisher-id' }, ...params },
           ...nativeBidRequestParams,
-        };
-        expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
+        beforeEach(function () {
+          config.setConfig({ outbrain: { bidderUrl: 'https://bidder-url.com' } });
+        });
+        afterEach(function () {
+          config.resetConfig();
+        });
+
+        ['bcat', 'badv'].forEach(param => {
+          it(`should succeed if ${param} is a list of strings`, function () {
+            expect(spec.isBidRequestValid(bidWith({ [param]: ['a', 'b'] }))).to.equal(true);
+          });
+          it(`should fail if ${param} does not include strings`, function () {
+            expect(spec.isBidRequestValid(bidWith({ [param]: ['a', 2, 'c'] }))).to.equal(false);
+          });
+          it(`should fail, not throw, if ${param} is an object rather than an array`, function () {
+            expect(spec.isBidRequestValid(bidWith({ [param]: { 0: 'a' } }))).to.equal(false);
+          });
+        });
       });
       it('should succeed with outbrain config', function () {
         const bid = {
@@ -597,6 +612,25 @@ describe('Outbrain Adapter', function () {
         const res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data);
         expect(resData.imp[0].bidfloor).to.equal(1.23);
+      });
+
+      [
+        ['native', () => nativeBidRequestParams, 'native'],
+        ['video', () => videoBidRequestParams, 'video'],
+        ['banner', () => displayBidRequestParams, 'banner'],
+      ].forEach(([name, params, mediaType]) => {
+        it(`should request the ${name} floor for a ${name} imp`, function () {
+          const bidRequest = {
+            ...commonBidRequest,
+            ...params(),
+          };
+          bidRequest.getFloor = sinon.stub().returns({ currency: 'USD', floor: 1.23 });
+
+          const res = spec.buildRequests([bidRequest], commonBidderRequest);
+          const resData = JSON.parse(res.data);
+          sinon.assert.calledWithMatch(bidRequest.getFloor, { mediaType });
+          expect(resData.imp[0].bidfloor).to.equal(1.23);
+        });
       });
 
       it('should transform string sizes to numbers', function () {
