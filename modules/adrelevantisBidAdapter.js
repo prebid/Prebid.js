@@ -1,11 +1,8 @@
 import { Renderer } from '../src/Renderer.js';
 import {
   createTrackPixelHtml,
-  deepAccess,
   deepClone,
   getBidRequest,
-  isArray,
-  isArrayOfNums,
   isEmpty,
   isStr,
   logError,
@@ -17,6 +14,15 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import {
+  buildNativeRequest,
+  getAppDeviceObj,
+  getAppIdObj,
+  getRtbBid,
+  handleOutstreamRendererEvents,
+  isErrorResponse,
+  parseMediaType
+} from '../libraries/appnexusUtils/anUtils.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 import { hasUserInfo, hasAppDeviceInfo, hasAppId } from '../libraries/adrelevantisUtils/bidderUtils.js';
@@ -36,24 +42,6 @@ const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'languag
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-
-const NATIVE_MAPPING = {
-  body: 'description',
-  body2: 'desc2',
-  cta: 'ctatext',
-  image: {
-    serverName: 'main_image',
-    requiredParams: { required: true }
-  },
-  icon: {
-    serverName: 'icon',
-    requiredParams: { required: true }
-  },
-  sponsoredBy: 'sponsored_by',
-  privacyLink: 'privacy_link',
-  salePrice: 'saleprice',
-  displayUrl: 'displayurl'
-};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -96,23 +84,9 @@ export const spec = {
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     const payload = {
       tags: [...tags],
@@ -153,7 +127,7 @@ export const spec = {
     if (ortb2Site) {
       payload.fpd = {
         keywords: ortb2Site.keywords || '',
-        category: deepAccess(ortb2Site, 'ext.data.category') || ''
+        category: ortb2Site?.ext?.data?.category || ''
       };
     }
 
@@ -170,10 +144,7 @@ export const spec = {
   interpretResponse: function(serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 
@@ -274,10 +245,6 @@ function outstreamRender(bid) {
   });
 }
 
-function handleOutstreamRendererEvents(bid, id, eventName) {
-  bid.renderer.handleVideoEvent({ id, eventName });
-}
-
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
@@ -317,7 +284,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    const videoContext = bidRequest?.mediaTypes?.video?.context;
     switch (videoContext) {
       case OUTSTREAM:
         bid.adResponse = serverBid;
@@ -327,7 +294,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
-          const rendererOptions = deepAccess(videoBid, 'renderer.options');
+          const rendererOptions = videoBid?.renderer?.options;
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
         break;
@@ -424,7 +391,7 @@ function bidToTag(bid) {
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
-    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = bid?.mediaTypes?.banner?.pos || bid?.mediaTypes?.video?.pos;
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -454,7 +421,7 @@ function bidToTag(bid) {
     tag.category = bid.params.category;
   }
 
-  if (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+  if (bid.mediaType === NATIVE || bid?.mediaTypes?.[NATIVE]) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);
@@ -466,8 +433,8 @@ function bidToTag(bid) {
     }
   }
 
-  const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-  const context = deepAccess(bid, 'mediaTypes.video.context');
+  const videoMediaType = bid?.mediaTypes?.[VIDEO];
+  const context = bid?.mediaTypes?.video?.context;
 
   tag.hb_source = 1;
   if (bid.mediaType === VIDEO || videoMediaType) {
@@ -501,57 +468,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
-}
-
-function buildNativeRequest(params) {
-  const request = {};
-
-  // map standard prebid native asset identifier to /ut parameters
-  // e.g., tag specifies `body` but /ut only knows `description`.
-  // mapping may be in form {tag: '<server name>'} or
-  // {tag: {serverName: '<server name>', requiredParams: {...}}}
-  Object.keys(params).forEach(key => {
-    // check if one of the <server name> forms is used, otherwise
-    // a mapping wasn't specified so pass the key straight through
-    const requestKey =
-      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-      NATIVE_MAPPING[key] ||
-      key;
-
-    // required params are always passed on request
-    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
-    request[requestKey] = Object.assign({}, requiredParams, params[key]);
-
-    // convert the sizes of image/icon assets to proper format (if needed)
-    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
-    if (isImageAsset && request[requestKey].sizes) {
-      const sizes = request[requestKey].sizes;
-      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
-        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
-      }
-    }
-
-    if (requestKey === NATIVE_MAPPING.privacyLink) {
-      request.privacy_supported = true;
-    }
-  });
-
-  return request;
-}
-
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
-    return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
-  } else {
-    return BANNER;
-  }
 }
 
 registerBidder(spec);

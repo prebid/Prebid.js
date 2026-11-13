@@ -20,6 +20,10 @@ import { adUnitSetupChecks } from '../src/prebid.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ * @typedef {import('./sizeMappingV2.d.ts').BannerSizeConfig} BannerSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').VideoSizeConfig} VideoSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').NativeSizeConfig} NativeSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').BidderSizeConfig} BidderSizeConfig
  */
 
 // Allows for stubbing of these functions while writing unit tests.

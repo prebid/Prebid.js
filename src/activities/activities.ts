@@ -65,3 +65,17 @@ export const ACTIVITY_ACCESS_REQUEST_CREDENTIALS = 'accessRequestCredentials';
  * acceptBid: a bid is about to be accepted.
  */
 export const ACTIVITY_ADD_BID_RESPONSE = 'acceptBid';
+
+export type Activity = typeof ACTIVITY_ACCESS_DEVICE
+  | typeof ACTIVITY_SYNC_USER
+  | typeof ACTIVITY_ENRICH_UFPD
+  | typeof ACTIVITY_ENRICH_EIDS
+  | typeof ACTIVITY_FETCH_BIDS
+  | typeof ACTIVITY_REPORT_ANALYTICS
+  | typeof ACTIVITY_TRANSMIT_EIDS
+  | typeof ACTIVITY_TRANSMIT_UFPD
+  | typeof ACTIVITY_TRANSMIT_PRECISE_GEO
+  | typeof ACTIVITY_TRANSMIT_TID
+  | typeof ACTIVITY_LOAD_EXTERNAL_SCRIPT
+  | typeof ACTIVITY_ACCESS_REQUEST_CREDENTIALS
+  | typeof ACTIVITY_ADD_BID_RESPONSE;

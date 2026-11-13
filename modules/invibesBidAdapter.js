@@ -5,6 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./invibesBidAdapter.d.ts').InvibesBidParams} InvibesBidParams
  */
 
 const CONSTANTS = {
@@ -65,7 +66,7 @@ let _customUserSync;
 let _disableUserSyncs;
 
 function updateInfiniteScrollFlag() {
-  const { scrollHeight } = document.documentElement;
+  const { scrollHeight } = getWinDimensions(window).document.documentElement;
 
   if (invibes.originalURL === undefined) {
     invibes.originalURL = window.location.href;

@@ -1,6 +1,6 @@
 import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, logError } from '../src/utils.js';
+import { deepAccess, getWinDimensions, logError } from '../src/utils.js';
 import { registerBidder, type AdapterRequest, type BidderSpec, type ExtendedResponse } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
@@ -161,8 +161,8 @@ const resolveOutstreamMount = (
 
   const creativeWindow = creativeDocument?.defaultView;
   const creativeFrameHasUsableSize = !!creativeWindow &&
-    creativeWindow.innerWidth >= MIN_FALLBACK_VIEWPORT_PX &&
-    creativeWindow.innerHeight >= MIN_FALLBACK_VIEWPORT_PX;
+    getWinDimensions(creativeWindow).innerWidth >= MIN_FALLBACK_VIEWPORT_PX &&
+    getWinDimensions(creativeWindow).innerHeight >= MIN_FALLBACK_VIEWPORT_PX;
   if (creativeFrameHasUsableSize && creativeDocument.body) return { container: creativeDocument.body, doc: creativeDocument };
 
   return null;

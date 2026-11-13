@@ -250,13 +250,21 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   return outputObject;
 };
 
+/**
+ * The bid request a server bid answers: in singleRequestMode, the bidder request's bid whose bidId is the bid's impid;
+ * otherwise (one server request per bid) the request itself.
+ */
+function getBidRequestForResponse(bidderRequest, impid) {
+  return (Array.isArray(bidderRequest?.bids) && bidderRequest.bids.find(bid => bid.bidId === impid)) || bidderRequest;
+}
+
 function getTtl(bidderRequest) {
   const globalTTL = getConfigValue(bidderRequest, 'ttl');
   return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
 function validateTTL(ttl) {
-  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL;
+  return (isNumber(ttl) && ttl > 0 && ttl <= 3600) ? ttl : DEFAULT_BID_TTL;
 };
 
 function isNotEmptyStr(value) {
@@ -754,6 +762,9 @@ export const spec = {
       }
 
       const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+      // In singleRequestMode the server request carries the whole bidder request, not this bid's own request;
+      // per-bid settings (params.ttl, the ad unit's video context and renderer) come from the bid request it answers.
+      const bidRequest = getBidRequestForResponse(bidderRequest, bid.impid);
 
       const bidResponse = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
@@ -765,7 +776,7 @@ export const spec = {
         currency: bid.cur || DEFAULT_CURRENCY,
         dealId: bid.dealid ? bid.dealid : null,
         netRevenue: true,
-        ttl: getTtl(bidderRequest),
+        ttl: getTtl(bidRequest),
         meta: {
           advertiserDomains: bid.adomain,
         }
@@ -782,8 +793,8 @@ export const spec = {
         bidResponse.vastXml = bid.adm;
       }
 
-      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer && bidResponse.mediaType === VIDEO) {
-        bidResponse.renderer = createRenderer(bidderRequest, bidResponse) || undefined;
+      if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' && !bidRequest.renderer && bidResponse.mediaType === VIDEO) {
+        bidResponse.renderer = createRenderer(bidRequest, bidResponse) || undefined;
       }
 
       response.push(bidResponse);

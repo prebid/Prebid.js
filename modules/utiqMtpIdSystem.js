@@ -117,32 +117,35 @@ export const utiqMtpIdSubmodule = {
       ) {
         config.params.maxDelayTime = 1000;
       }
-      // Current delay and delay step in milliseconds
-      let currentDelay = 0;
+      // Measure elapsed time, not the number of polling callbacks: browsers can throttle timers.
       const delayStep = 50;
       const result = (callback) => {
-        const data = getUtiqFromStorage();
-        if (!data.utiqMtp) {
-          if (currentDelay > config.params.maxDelayTime) {
+        // userId passes a stored-value getter as the second callback argument.
+        // Keep the start time private so that argument cannot override the deadline.
+        const startedAt = Date.now();
+        const poll = () => {
+          // Check the deadline before storage: an ID arriving after maxDelayTime must not be used.
+          if (Date.now() - startedAt > config.params.maxDelayTime) {
             logInfo(
               `${LOG_PREFIX}: No utiq value set after ${config.params.maxDelayTime} max allowed delay time`
             );
             callback(null);
-          } else {
-            currentDelay += delayStep;
-            setTimeout(() => {
-              result(callback);
-            }, delayStep);
+            return;
           }
-        } else {
-          const dataToReturn = { utiqMtp: data.utiqMtp };
-          logInfo(
-            `${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(
-              dataToReturn
-            )}`
-          );
-          callback(dataToReturn);
-        }
+          const data = getUtiqFromStorage();
+          if (!data.utiqMtp) {
+            setTimeout(poll, delayStep);
+          } else {
+            const dataToReturn = { utiqMtp: data.utiqMtp };
+            logInfo(
+              `${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(
+                dataToReturn
+              )}`
+            );
+            callback(dataToReturn);
+          }
+        };
+        poll();
       };
       return { callback: result };
     }

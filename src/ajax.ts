@@ -79,8 +79,26 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   if (options.keepalive) {
     // do not set the "real" keepalive flag as Safari won't allow us to change it
     (request as any)._keepalive = true;
+    // record the body size now, so that the fetcher doesn't need to read it back asynchronously
+    (request as any)._bodySize = bodySize(rqOpts.body);
   }
   return request;
+}
+
+/**
+ * Size in bytes of a request body, if it can be known synchronously.
+ */
+function bodySize(body): number | undefined {
+  if (body == null) return 0;
+  if (typeof body === 'string') return new Blob([body]).size;
+  return undefined;
+}
+
+function knownBodySize(resource, options): number | undefined {
+  if (options?.body != null) return bodySize(options.body);
+  if (resource?._bodySize != null) return resource._bodySize;
+  if (typeof resource === 'string' || resource instanceof URL) return 0;
+  return undefined;
 }
 
 function callerContext(callers = []) {
@@ -158,9 +176,8 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     }
     let pm;
     if (keepalive) {
-      // requests can be "used" only once - and blob() counts as usage, so clone the request
-      pm = request.clone().blob().then(blob => {
-        if (blob.size > KEEPALIVE_MAX_BODY_SIZE) {
+      const send = (size: number) => {
+        if (size > KEEPALIVE_MAX_BODY_SIZE) {
           logWarn(`Ignoring keepalive: request body exceeds ${KEEPALIVE_MAX_BODY_SIZE} bytes`, request);
         } else {
           request = dep.makeRequest(request, {
@@ -168,7 +185,16 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
           });
         }
         return dep.fetch(request);
-      });
+      };
+      const size = knownBodySize(resource, options);
+      if (size != null) {
+        // start the request synchronously: keepalive requests are often sent as the page is being unloaded
+        // (e.g. on pagehide), and some browsers (Firefox) drop requests started after the handler returns
+        pm = new Promise(resolve => resolve(send(size)));
+      } else {
+        // requests can be "used" only once - and blob() counts as usage, so clone the request
+        pm = request.clone().blob().then(blob => send(blob.size));
+      }
     } else {
       pm = dep.fetch(request);
     }

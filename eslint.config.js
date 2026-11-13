@@ -134,6 +134,7 @@ module.exports = [
       'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
       'prebid/no-extra-function-args': 'error',
+      'prebid/no-deep-access-import': 'warn',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
       'import/no-unresolved': 'error',
@@ -315,6 +316,23 @@ module.exports = [
           ]
         }
       ]
+    }
+  },
+  {
+    files: [
+      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
+      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
+      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/adagioRtdProvider.js',
+      'modules/contxtfulRtdProvider.js'
+    ],
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/no-synchronous-layout-read': 'error',
     }
   },
   {

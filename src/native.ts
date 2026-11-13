@@ -10,8 +10,7 @@ import {
   logError,
   logWarn,
   pick,
-  politeTriggerPixel,
-  triggerPixel
+  politeTriggerPixel
 } from './utils.js';
 import { validateSizes } from './utils/objects.js';
 
@@ -387,7 +386,7 @@ export function fireImpressionTrackers(nativeResponse, bidResponse, { runMarkup 
   }
 }
 
-export function fireClickTrackers(nativeResponse, assetId = null, { fetchURL = triggerPixel } = {}) {
+export function fireClickTrackers(nativeResponse, assetId = null, { fetchURL = (url) => politeTriggerPixel(url, 'include', true) } = {}) {
   // legacy click tracker
   if (!assetId) {
     (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));

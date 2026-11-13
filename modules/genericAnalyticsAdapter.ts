@@ -126,7 +126,7 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
     return new (GenericAnalytics as unknown as GenericAnalyticsConstructor)();
   }
 
-  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint' });
+  const parent = AnalyticsAdapter<'generic'>({ analyticsType: 'endpoint', flushOnPageHide: true });
   const { logError, logWarn } = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
@@ -137,26 +137,26 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
       logError('options must specify either `url` or `handler`');
       return false;
     }
-    if (options.hasOwnProperty('method') && !['GET', 'POST'].includes(options.method)) {
+    if (Object.prototype.hasOwnProperty.call(options, 'method') && !['GET', 'POST'].includes(options.method)) {
       logError('options.method must be GET or POST');
       return false;
     }
     for (const [field, type] of Object.entries(TYPES)) {
       // eslint-disable-next-line valid-typeof
-      if (options.hasOwnProperty(field) && typeof options[field] !== type) {
+      if (Object.prototype.hasOwnProperty.call(options, field) && typeof options[field] !== type) {
         logError(`options.${field} must be a ${type}`);
         return false;
       }
     }
-    if (options.hasOwnProperty('gvlid') && !isGvlid(options.gvlid)) {
+    if (Object.prototype.hasOwnProperty.call(options, 'gvlid') && !isGvlid(options.gvlid)) {
       logError('options.gvlid must be a number or a non-empty array of numbers');
       return false;
     }
-    if (options.hasOwnProperty('preset') && !presets.hasOwnProperty(options.preset)) {
+    if (Object.prototype.hasOwnProperty.call(options, 'preset') && !Object.prototype.hasOwnProperty.call(presets, options.preset)) {
       logError(`options.preset "${options.preset}" is not available; make sure the module that provides it is included`);
       return false;
     }
-    if (options.hasOwnProperty('events')) {
+    if (Object.prototype.hasOwnProperty.call(options, 'events')) {
       if (!isPlainObject(options.events)) {
         logError('options.events must be an object');
         return false;
@@ -172,6 +172,13 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
       }
     }
     return true;
+  }
+
+  function clearBatchTimer() {
+    if (timer != null) {
+      clearTimeout(timer);
+      timer = null;
+    }
   }
 
   function processBatch() {
@@ -228,14 +235,23 @@ export function GenericAnalytics(): GenericAnalyticsAdapter {
           parent.enableAnalytics.call(this, config);
         }
       },
+      disableAnalytics() {
+        clearBatchTimer();
+        batch = [];
+        parent.disableAnalytics.call(this);
+      },
+      onPageHide() {
+        // the page may be going away; send the incomplete batch now instead of after batchDelay
+        clearBatchTimer();
+        if (batch.length > 0) {
+          processBatch();
+        }
+      },
       track(event) {
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
-          if (timer != null) {
-            clearTimeout(timer);
-            timer = null;
-          }
+          clearBatchTimer();
           if (batch.length >= options.batchSize) {
             processBatch();
           } else {

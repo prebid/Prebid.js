@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { deepAccess, getWinDimensions, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,6 +11,7 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./optidigitalBidAdapter.d.ts').OptidigitalBidParams} OptidigitalBidParams
  */
 
 const BIDDER_CODE = 'optidigital';
@@ -57,7 +59,7 @@ export const spec = {
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions(window).document.documentElement.clientWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
@@ -217,8 +219,9 @@ function buildImp(bidRequest, ortb2) {
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth;
-      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight;
+      const rect = getElementDimensions(getAdContainer(bidRequest.params.divId));
+      imp.adContainerWidth = rect.width;
+      imp.adContainerHeight = rect.height;
     }
   }
 

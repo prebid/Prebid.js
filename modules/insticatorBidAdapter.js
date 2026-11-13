@@ -5,6 +5,10 @@ import { deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, 
 import { getStorageManager } from '../src/storageManager.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('./insticatorBidAdapter.d.ts').InsticatorBidParams} InsticatorBidParams
+ */
+
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb';
 const USER_ID_KEY = 'hb_insticator_uid';
