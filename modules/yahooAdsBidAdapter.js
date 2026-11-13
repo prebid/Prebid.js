@@ -739,11 +739,12 @@ export const spec = {
     }
 
     if (getConfigValue(bidderRequest, 'singleRequestMode') === true) {
-      const payload = generateOpenRtbObject(bidderRequest, filteredBidRequests[0]);
+      const singleRequestBid = filteredBidRequests[0];
+      const payload = generateOpenRtbObject(bidderRequest, singleRequestBid);
       filteredBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
       });
-      return [generateServerRequest({ payload, requestOptions, bidderRequest })];
+      return [generateServerRequest({ payload, requestOptions, bidderRequest: singleRequestBid })];
     }
 
     return filteredBidRequests.map(bid => {
