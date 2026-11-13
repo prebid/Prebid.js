@@ -2,11 +2,22 @@ import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { VIDEO } from 'src/mediaTypes.js';
+import { Renderer } from 'src/Renderer.js';
 import { getCoreStorageManager } from '../../../src/storageManager.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
+const EXPIRED_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+
+function restoreCookie(storage, key, value) {
+  if (value === null) {
+    storage.setCookie(key, '', EXPIRED_DATE);
+  } else {
+    storage.setCookie(key, value);
+  }
+}
 
 describe('RelaidoAdapter', function () {
   let bidRequest;
@@ -251,7 +262,6 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
       expect(data.canonical_url).to.equal('https://publisher.com/home');
-      expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
       expect(request.ad_unit_code).to.equal(bidRequest.adUnitCode);
@@ -314,6 +324,90 @@ describe('RelaidoAdapter', function () {
       expect(request.width).to.equal(1);
     });
 
+    it('should take params.video.playerSize when mediaTypes.video.playerSize is missing', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream'
+        }
+      };
+      bidRequest.params.video = {
+        playerSize: [
+          [640, 360]
+        ]
+      };
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.media_type).to.equal('video');
+      expect(request.width).to.equal(640);
+      expect(request.height).to.equal(360);
+    });
+
+    it('should take 1x1 size when the playerSize is Array[Number, Number]', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [1, 1]
+        }
+      };
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.media_type).to.equal('video');
+      expect(request.width).to.equal(1);
+      expect(request.height).to.equal(1);
+    });
+
+    it('should set banner_sizes to null when mediaTypes.banner.sizes is not an array', function () {
+      bidRequest.mediaTypes.banner = {};
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.media_type).to.equal('video');
+      expect(request.banner_sizes).to.be.null;
+    });
+
+    it('should use the uuid stored in the cookie when storage is allowed', function () {
+      const oldBidderSettings = getGlobal().bidderSettings;
+      const storage = getCoreStorageManager();
+      const oldUuid = storage.getCookie(UUID_KEY);
+      const storedUuid = 'stored-relaido-uuid';
+      getGlobal().bidderSettings = { relaido: { storageAllowed: true } };
+      storage.setCookie(UUID_KEY, storedUuid);
+      try {
+        const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = JSON.parse(bidRequests.data);
+        expect(data.uuid).to.equal(storedUuid);
+        expect(generateUUIDStub.called).to.equal(false);
+      } finally {
+        restoreCookie(storage, UUID_KEY, oldUuid);
+        getGlobal().bidderSettings = oldBidderSettings;
+      }
+    });
+
+    it('should generate and store a new uuid when the uuid cookie is missing and storage is allowed', function () {
+      const oldBidderSettings = getGlobal().bidderSettings;
+      const storage = getCoreStorageManager();
+      const oldUuid = storage.getCookie(UUID_KEY);
+      const newUuid = 'new-relaido-uuid';
+      getGlobal().bidderSettings = { relaido: { storageAllowed: true } };
+      storage.setCookie(UUID_KEY, '', EXPIRED_DATE);
+      generateUUIDStub.returns(newUuid);
+      try {
+        const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = JSON.parse(bidRequests.data);
+        expect(data.uuid).to.equal(newUuid);
+        expect(generateUUIDStub.called).to.equal(true);
+        expect(storage.getCookie(UUID_KEY)).to.equal(newUuid);
+      } finally {
+        restoreCookie(storage, UUID_KEY, oldUuid);
+        getGlobal().bidderSettings = oldBidderSettings;
+      }
+    });
+
     it('The referrer should be the last', function () {
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(bidRequests.data);
@@ -364,7 +458,63 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       expect(data.canonical_url).to.equal('http://localhost:9999/fb-test');
-      expect(data.canonical_url_hash).to.equal('cd106829f866d60ee4ed43c6e2a5d0a5212ffc97');
+    });
+
+    it('should get canonicalUrl from the current document when window.top is not accessible (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      const ogUrlElement = { content: 'http://localhost:9999/fb-test-fallback' };
+      if (window.top.document === document) {
+        // window.top.document.querySelector is called first, document.querySelector second
+        let calls = 0;
+        sandbox.stub(document, 'querySelector').callsFake(() => {
+          calls++;
+          if (calls === 1) {
+            throw new Error('cross-origin');
+          }
+          return ogUrlElement;
+        });
+      } else {
+        sandbox.stub(window.top.document, 'querySelector').throws(new Error('cross-origin'));
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:url"]').returns(ogUrlElement);
+      }
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.equal('http://localhost:9999/fb-test-fallback');
+    });
+
+    it('should not get canonicalUrl when og:url meta is missing (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      sandbox.stub(window.top.document, 'querySelector').returns(null);
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+    });
+
+    it('should not get canonicalUrl when window.top is not accessible and og:url meta is missing (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      if (window.top.document === document) {
+        // window.top.document.querySelector is called first, document.querySelector second
+        let calls = 0;
+        sandbox.stub(document, 'querySelector').callsFake(() => {
+          calls++;
+          if (calls === 1) {
+            throw new Error('cross-origin');
+          }
+          return null;
+        });
+      } else {
+        sandbox.stub(window.top.document, 'querySelector').throws(new Error('cross-origin'));
+        sandbox.stub(document, 'querySelector').returns(null);
+      }
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
     });
 
     it('should not get canonicalUrl (ogUrl:false)', function () {
@@ -378,7 +528,6 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       expect(data.canonical_url).to.be.null;
-      expect(data.canonical_url_hash).to.be.null;
     });
 
     it('should not get canonicalUrl (ogUrl:nothing)', function () {
@@ -391,7 +540,6 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       expect(data.canonical_url).to.be.null;
-      expect(data.canonical_url_hash).to.be.null;
     });
   });
 
@@ -462,6 +610,22 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.playerUrl).to.equal(serverResponse.body.ads[0].playerUrl);
+    });
+
+    it('should set empty advertiserDomains when adomain is missing', function () {
+      delete serverResponse.body.ads[0].adomain;
+      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      expect(bidResponses[0].meta.advertiserDomains).to.deep.equal([]);
+    });
+
+    it('should log a warning when renderer.setRender throws', function () {
+      sandbox.stub(Renderer.prototype, 'setRender').throws(new Error('setRender failed'));
+      const logWarnStub = sandbox.stub(utils, 'logWarn');
+      const bidResponses = spec.interpretResponse(serverResponse, serverRequest);
+      expect(bidResponses).to.have.lengthOf(1);
+      expect(bidResponses[0].renderer).to.be.instanceOf(Renderer);
+      expect(logWarnStub.calledWith('renderer.setRender Error')).to.equal(true);
     });
 
     it('should not build bid response', function () {

@@ -7,7 +7,7 @@
 	<title>Prebid.js Native Example</title>
 
 	<!-- Prebid.js -->
-	<script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter"></script>
+	<script async src="http://localhost:4444/bundle?modules=msftBidAdapter"></script>
 
 	<!-- Google Publisher Tag -->
 	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
@@ -34,10 +34,10 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13232354,
-					allowSmallerSizes: true
+					placement_id: 13232354,
+					allow_smaller_sizes: true
 				}
 			}]
 		}, {
@@ -65,10 +65,10 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13232354,
-					allowSmallerSizes: true
+					placement_id: 13232354,
+					allow_smaller_sizes: true
 				}
 			}]
 		}];

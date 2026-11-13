@@ -1756,6 +1756,25 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           });
         });
 
+        [1, 3600].forEach(param => {
+          it(`should accept a ttl of ${param}, the ends of the documented 1 - 3600 range`, () => {
+            const { serverResponse, bidderRequest } = generateResponseMock('banner');
+            config.setConfig({ yahooAds: { ttl: param } });
+            const response = spec.interpretResponse(serverResponse, { bidderRequest });
+            expect(response[0].ttl).to.equal(param);
+          });
+        });
+
+        it('should use the answered bid\'s params.ttl when the response is for the whole bidder request (singleRequestMode)', () => {
+          // earlier tests leave a global yahooAds.ttl, which would take precedence
+          config.resetConfig();
+          const { serverResponse, bidderRequest } = generateResponseMock('banner');
+          bidderRequest.bids[0].bidId = serverResponse.body.seatbid[0].bid[0].impid;
+          bidderRequest.bids[0].params.ttl = 900;
+          const response = spec.interpretResponse(serverResponse, { bidderRequest });
+          expect(response[0].ttl).to.equal(900);
+        });
+
         it('should give precedence to Global ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
@@ -1792,6 +1811,24 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.equal('outstream');
         expect(bidderRequest.renderer).to.be.undefined;
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].renderer).to.not.be.undefined;
+      });
+
+      it('should create a renderer from the answered bid\'s outstream context when the response is for the whole bidder request (singleRequestMode)', () => {
+        config.setConfig({
+          yahooAds: {
+            mode: VIDEO
+          }
+        });
+        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
+        bidderRequest.bids[0].bidId = serverResponse.body.seatbid[0].bid[0].impid;
+        bidderRequest.bids[0].mediaTypes = {
+          video: {
+            context: 'outstream'
+          }
+        };
+        const response = spec.interpretResponse(serverResponse, { bidderRequest });
         expect(response[0].mediaType).to.equal('video');
         expect(response[0].renderer).to.not.be.undefined;
       });
@@ -2242,6 +2279,92 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(data.imp[0].video.poddur).to.be.undefined;
       expect(data.imp[0].video.slotinpod).to.be.undefined;
       expect(data.imp[0].video.mincpmpersec).to.be.undefined;
+    });
+  });
+
+  describe('content.data, filtered requests and multi-bid seatbids:', () => {
+    it('should send every ortb2.site.content.data segment, not just the last one', () => {
+      const ortb2 = {
+        site: {
+          content: {
+            data: [
+              { name: 'provider-a', segment: [{ id: '1' }] },
+              { name: 'provider-b', segment: [{ id: '2' }] }
+            ]
+          }
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.site.content.data).to.deep.equal(ortb2.site.content.data);
+    });
+
+    it('should send every ortb2.app.content.data segment, not just the last one', () => {
+      const ortb2 = {
+        app: {
+          content: {
+            data: [
+              { name: 'provider-a', segment: [{ id: '1' }] },
+              { id: 'provider-b', ext: { segtax: 4 } }
+            ]
+          }
+        }
+      };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      expect(data.app.content.data).to.deep.equal(ortb2.app.content.data);
+    });
+
+    [true, undefined].forEach(singleRequestMode => {
+      it(`should return no requests when every bid is filtered out by mode (singleRequestMode: ${singleRequestMode})`, () => {
+        config.setConfig({ yahooAds: { singleRequestMode } });
+        // default mode is banner, so a video-only ad unit is filtered out
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ adUnitType: 'video' });
+        expect(spec.buildRequests(validBidRequests, bidderRequest)).to.deep.equal([]);
+      });
+    });
+
+    it('should return every bid in a seatbid, each with its own request\'s settings', () => {
+      const { serverResponse, bidderRequest } = generateResponseMock('banner');
+      const { bidRequest: bidRequest2 } = generateBuildRequestMock({ bidId: 'second-bid-id', adUnitCode: 'second-ad-unit' });
+      bidderRequest.bids[0].bidId = serverResponse.body.seatbid[0].bid[0].impid;
+      bidderRequest.bids[0].params.ttl = 400;
+      bidRequest2.params.ttl = 500;
+      bidderRequest.bids.push(bidRequest2);
+      serverResponse.body.seatbid[0].bid.push({
+        ...serverResponse.body.seatbid[0].bid[0],
+        impid: 'second-bid-id',
+        price: 2,
+        crid: 'second-creative'
+      });
+
+      const response = spec.interpretResponse(serverResponse, { bidderRequest });
+      expect(response).to.have.lengthOf(2);
+      expect(response.map(bid => bid.requestId)).to.deep.equal([serverResponse.body.seatbid[0].bid[0].impid, 'second-bid-id']);
+      expect(response.map(bid => bid.adId)).to.deep.equal([serverResponse.body.seatbid[0].bid[0].impid, 'second-bid-id']);
+      expect(response.map(bid => bid.cpm)).to.deep.equal([1, 2]);
+      expect(response.map(bid => bid.ttl)).to.deep.equal([400, 500]);
+    });
+
+    it('should not reuse an adId when several bids answer the same imp', () => {
+      const { serverResponse, bidderRequest } = generateResponseMock('banner');
+      const firstBid = serverResponse.body.seatbid[0].bid[0];
+      serverResponse.body.seatbid[0].bid.push({ ...firstBid, price: 2, crid: 'other-creative' });
+
+      const response = spec.interpretResponse(serverResponse, { bidderRequest });
+      expect(response).to.have.lengthOf(2);
+      expect(response[0].adId).to.equal(firstBid.impid);
+      expect(response[1]).to.not.have.property('adId');
+      expect(response[1].requestId).to.equal(firstBid.impid);
+    });
+
+    it('should skip seatbids without a bid array and keep parsing the rest', () => {
+      const { serverResponse, bidderRequest } = generateResponseMock('banner');
+      serverResponse.body.seatbid.unshift(null, { seat: 'empty' }, { seat: 'not-an-array', bid: {} }, { seat: 'no-bids', bid: [] }, { seat: 'null-bid', bid: [null] });
+
+      const response = spec.interpretResponse(serverResponse, { bidderRequest });
+      expect(response).to.have.lengthOf(1);
+      expect(response[0].requestId).to.equal(serverResponse.body.seatbid[5].bid[0].impid);
     });
   });
 });

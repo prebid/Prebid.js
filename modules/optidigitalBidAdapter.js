@@ -11,13 +11,14 @@ import { getElementDimensions } from '../libraries/boundingClientRect/boundingCl
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./optidigitalBidAdapter.d.ts').OptidigitalBidParams} OptidigitalBidParams
  */
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
 const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
-let CUR = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 let isSynced = false;
 
 export const spec = {
@@ -50,10 +51,7 @@ export const spec = {
       return [];
     }
 
-    const ortb2 = bidderRequest.ortb2 || {
-      bcat: [],
-      badv: []
-    };
+    const ortb2 = bidderRequest.ortb2 || {};
 
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
@@ -229,11 +227,9 @@ function buildImp(bidRequest, ortb2) {
     floorSizes = getAdUnitSizes(bidRequest);
   }
 
-  if (bidRequest.params.currency && bidRequest.params.currency !== '') {
-    CUR = bidRequest.params.currency;
-  }
+  const currency = (bidRequest.params.currency && bidRequest.params.currency !== '') ? bidRequest.params.currency : DEFAULT_CURRENCY;
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, currency);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
@@ -267,7 +263,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}

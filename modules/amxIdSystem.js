@@ -9,7 +9,7 @@ import { uspDataHandler } from '../src/adapterManager.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { deepAccess, logError } from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
@@ -109,7 +109,7 @@ export const amxIdSubmodule = {
     const ref = getRefererInfo();
 
     const params = {
-      tagId: deepAccess(config, 'params.tagId', ''),
+      tagId: config?.params?.tagId ?? '',
 
       ref: ref.ref,
       u: ref.location,

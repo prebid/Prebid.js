@@ -31,9 +31,15 @@ const browsers = Object.values(allBrowsers)
  *
  * That is a real limitation: triplelift bids would not render on firefox 65. Excluding
  * the spec records it honestly instead of adjusting the fixture to hide it.
+ *
+ * bidClick same tab: the analytics request is sent with `fetch(..., {keepalive: true})` as the
+ * page unloads. Chrome before 66 and Firefox before 133 don't support keepalive and cancel the
+ * request when the page navigates away, so the click doesn't reach analytics there.
  */
+const SAME_TAB_CLICK = 'test/spec/e2e/modules/e2e_bidClick_same_tab.spec.js';
 const UNSUPPORTED_SPECS = {
-  'firefox@65.0': ['test/spec/e2e/triplelift_banner/**'],
+  'chrome@50.0': [SAME_TAB_CLICK],
+  'firefox@65.0': ['test/spec/e2e/triplelift_banner/**', SAME_TAB_CLICK],
 };
 
 function getCapabilities() {

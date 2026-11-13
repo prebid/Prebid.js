@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/playgamaBidAdapter.js';
+import { config } from 'src/config.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { internal, resetWinDimensions } from 'src/utils.js';
 
@@ -133,6 +134,18 @@ describe('playgamaBidAdapter', function () {
         device: { pxratio: window.devicePixelRatio },
         user: {},
       });
+    });
+
+    it('sends a device pixel ratio of 1 when the publisher disables that fingerprinting API', function () {
+      const ratio = sinon.stub(window, 'devicePixelRatio').get(() => 2);
+      try {
+        expect(JSON.parse(spec.buildRequests([withParams({})], {})[0].data).device).to.deep.equal({ pxratio: 2 });
+        config.setConfig({ disableFingerprintingApis: ['devicepixelratio'] });
+        expect(JSON.parse(spec.buildRequests([withParams({})], {})[0].data).device).to.deep.equal({ pxratio: 1 });
+      } finally {
+        config.resetConfig();
+        ratio.restore();
+      }
     });
 
     it('routes to the staging SSP when params.env is staging', function () {

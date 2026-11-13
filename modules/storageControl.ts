@@ -148,7 +148,7 @@ export type StorageControlConfig = {
 
 declare module '../src/config' {
   interface Config {
-    storageControl: StorageControlConfig
+    storageControl?: StorageControlConfig
   }
 }
 

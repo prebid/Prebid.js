@@ -1,7 +1,6 @@
 import { Renderer } from '../src/Renderer.js';
 import {
   createTrackPixelHtml,
-  deepAccess,
   deepClone,
   getBidRequest,
   isEmpty,
@@ -128,7 +127,7 @@ export const spec = {
     if (ortb2Site) {
       payload.fpd = {
         keywords: ortb2Site.keywords || '',
-        category: deepAccess(ortb2Site, 'ext.data.category') || ''
+        category: ortb2Site?.ext?.data?.category || ''
       };
     }
 
@@ -285,7 +284,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    const videoContext = bidRequest?.mediaTypes?.video?.context;
     switch (videoContext) {
       case OUTSTREAM:
         bid.adResponse = serverBid;
@@ -295,7 +294,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
         if (rtbBid.renderer_url) {
           const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
-          const rendererOptions = deepAccess(videoBid, 'renderer.options');
+          const rendererOptions = videoBid?.renderer?.options;
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
         break;
@@ -392,7 +391,7 @@ function bidToTag(bid) {
   if (bid.params.position) {
     tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   } else {
-    const mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    const mediaTypePos = bid?.mediaTypes?.banner?.pos || bid?.mediaTypes?.video?.pos;
     // only support unknown, atf, and btf values for position at this time
     if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
       // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
@@ -422,7 +421,7 @@ function bidToTag(bid) {
     tag.category = bid.params.category;
   }
 
-  if (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`)) {
+  if (bid.mediaType === NATIVE || bid?.mediaTypes?.[NATIVE]) {
     tag.ad_types.push(NATIVE);
     if (tag.sizes.length === 0) {
       tag.sizes = transformSizes([1, 1]);
@@ -434,8 +433,8 @@ function bidToTag(bid) {
     }
   }
 
-  const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-  const context = deepAccess(bid, 'mediaTypes.video.context');
+  const videoMediaType = bid?.mediaTypes?.[VIDEO];
+  const context = bid?.mediaTypes?.video?.context;
 
   tag.hb_source = 1;
   if (bid.mediaType === VIDEO || videoMediaType) {

@@ -14,13 +14,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
-import sha1 from 'crypto-js/sha1';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getPageTargetingMap, getSlotTargetingMap } from '../src/utils/gptTargeting.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.2.2';
+const ADAPTER_VERSION = '1.2.3';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -80,10 +79,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidder = bidRequest.bidder;
     }
 
-    if (!bidder) {
-      bidder = bidRequest.bidder;
-    }
-
     if (!count) {
       count = bidRequest.bidRequestsCount;
     }
@@ -122,7 +117,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     pv: '$prebid.version$',
     imuid: null,
     canonical_url: canonicalUrl,
-    canonical_url_hash: getCanonicalUrlHash(canonicalUrl),
     ref: bidderRequest.refererInfo.page
   });
 
@@ -313,10 +307,6 @@ function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
     return (isOgUrlOption) ? getOgUrl() : null;
   }
   return canonicalUrl;
-}
-
-function getCanonicalUrlHash(canonicalUrl) {
-  return (canonicalUrl) ? sha1(canonicalUrl).toString() : null;
 }
 
 function hasBannerMediaType(bid) {
