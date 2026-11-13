@@ -724,13 +724,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "holid",
-      "aliasOf": null,
-      "gvlid": 1177,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "hyperbrainz",
       "aliasOf": null,
       "gvlid": null,
@@ -1802,6 +1795,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "holid",
+      "aliasOf": null,
+      "gvlid": 1177,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "hubvisor",
       "aliasOf": null,
       "gvlid": 1112,
@@ -2490,7 +2490,7 @@
       "componentType": "bidder",
       "componentName": "between",
       "aliasOf": null,
-      "gvlid": 724,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -3045,6 +3045,13 @@
       "aliasOf": null,
       "gvlid": 31,
       "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "playgama",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": "local://modules/playgamaBidAdapterDisclosure.json"
     },
     {
       "componentType": "bidder",
@@ -4353,20 +4360,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pubstack",
-      "aliasOf": null,
-      "gvlid": 1408,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "pubstack_server",
-      "aliasOf": "pubstack",
-      "gvlid": 1408,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adtarget",
       "aliasOf": null,
       "gvlid": 779,
@@ -4397,7 +4390,7 @@
       "componentType": "bidder",
       "componentName": "alkimi",
       "aliasOf": null,
-      "gvlid": 1169,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4752,6 +4745,83 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "aivertise",
+      "aliasOf": null,
+      "gvlid": 1654,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bid9",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "criteo",
+      "aliasOf": null,
+      "gvlid": 91,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "gamoshi",
+      "aliasOf": null,
+      "gvlid": 644,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "gambid",
+      "aliasOf": "gamoshi",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "cleanmedianet",
+      "aliasOf": "gamoshi",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "inmobi",
+      "aliasOf": null,
+      "gvlid": 333,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "monetsite",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ozone",
+      "aliasOf": null,
+      "gvlid": 524,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "startio",
+      "aliasOf": null,
+      "gvlid": 1216,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "synapsehx",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "exco",
       "aliasOf": null,
       "gvlid": null,
@@ -4776,6 +4846,20 @@
       "componentName": "opsco",
       "aliasOf": null,
       "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubstack",
+      "aliasOf": null,
+      "gvlid": 1408,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubstack_server",
+      "aliasOf": "pubstack",
+      "gvlid": 1408,
       "disclosureURL": null
     },
     {
@@ -4985,7 +5069,7 @@
       "componentType": "bidder",
       "componentName": "nextMillennium",
       "aliasOf": null,
-      "gvlid": 1060,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5006,62 +5090,6 @@
       "componentType": "bidder",
       "componentName": "craft",
       "aliasOf": "craft",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "criteo",
-      "aliasOf": null,
-      "gvlid": 91,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "gamoshi",
-      "aliasOf": null,
-      "gvlid": 644,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "gambid",
-      "aliasOf": "gamoshi",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "cleanmedianet",
-      "aliasOf": "gamoshi",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "inmobi",
-      "aliasOf": null,
-      "gvlid": 333,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "ozone",
-      "aliasOf": null,
-      "gvlid": 524,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "startio",
-      "aliasOf": null,
-      "gvlid": 1216,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "synapsehx",
-      "aliasOf": null,
       "gvlid": null,
       "disclosureURL": null
     },
@@ -5167,7 +5195,7 @@
       "componentType": "bidder",
       "componentName": "deepintent",
       "aliasOf": null,
-      "gvlid": 541,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5601,7 +5629,7 @@
       "componentType": "bidder",
       "componentName": "resetdigital",
       "aliasOf": null,
-      "gvlid": 1162,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -6864,6 +6892,11 @@
       "componentType": "analytics",
       "componentName": "pubxai",
       "gvlid": null
+    },
+    {
+      "componentType": "analytics",
+      "componentName": "xe",
+      "gvlid": 1383
     },
     {
       "componentType": "analytics",

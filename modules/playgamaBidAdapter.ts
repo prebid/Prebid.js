@@ -7,6 +7,7 @@ import { Renderer } from '../src/Renderer.js';
 import type { RendererOptions } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getWinDimensions, prefixLog } from '../src/utils.js';
+import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 
 const BIDDER_CODE = 'playgama';
 const PGID_COOKIE = '_pgid';
@@ -300,7 +301,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           floors: readFloors(bid),
         })),
         bidder_request: { ...bidderRequest, bids: undefined },
-        device: { pxratio: window.devicePixelRatio ?? 1 },
+        // through the shared accessor, so `disableFingerprintingApis: ['devicepixelratio']` is honoured
+        device: { pxratio: getDevicePixelRatio(window) ?? 1 },
         user: { id: pgid },
       }),
       options: { contentType: 'text/plain' },

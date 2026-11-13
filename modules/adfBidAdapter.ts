@@ -1,6 +1,6 @@
 import { registerBidder, type AdapterRequest, type AdapterResponse, type BidderSpec, type ExtendedResponse, type ServerResponse } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, setOnAny } from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
+import { deepSetValue, setOnAny } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import type { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
@@ -107,7 +107,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = deepAccess(bid, 'ext.prebid.type');
+    context.mediaType = bid?.ext?.prebid?.type as MediaType;
     const bidResponse = buildBidResponse(bid, context);
 
     bidResponse.meta = bidResponse.meta || {};
@@ -116,7 +116,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     // Outstream renderer
     if (bidResponse.mediaType === VIDEO &&
         !context.bidRequest.renderer &&
-        deepAccess(context.bidRequest, 'mediaTypes.video.context') === 'outstream') {
+        context.bidRequest?.mediaTypes?.video?.context === 'outstream') {
       bidResponse.renderer = Renderer.install({
         id: context.bidRequest.bidId,
         url: OUTSTREAM_RENDERER_URL,

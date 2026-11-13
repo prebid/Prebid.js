@@ -4,7 +4,7 @@
 import * as vitest from 'vitest';
 import * as chai from 'chai';
 import sinon from 'sinon';
-import { commands } from 'vitest/browser';
+import { commands, server } from 'vitest/browser';
 import { cookieSettler } from './cookies.mjs';
 
 const DEFAULT_TIMEOUT = 3000; // Mocha's timeout under Karma (client.mocha.timeout)
@@ -132,8 +132,13 @@ function macrotask() {
 vitest.beforeEach(() => macrotask());
 
 const cookieAccessor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+// The debug page (DEBUG_INSTANCE in debug.mjs) may be open in any browser, not the one __VITEST_WEBKIT__ was compiled for.
+// Chromium-based browsers also claim AppleWebKit, but all have "Chrome/" (on iOS, CriOS etc. are WebKit).
+const webkit = server.config.name === 'debug'
+  ? /AppleWebKit\//.test(navigator.userAgent) && !/Chrom(e|ium)\//.test(navigator.userAgent)
+  : typeof __VITEST_WEBKIT__ !== 'undefined' && __VITEST_WEBKIT__;
 // In WebKit, a runnable after one that wrote cookies starts once document.cookie stops showing stale values (cookies.mjs)
-const cookies = typeof __VITEST_WEBKIT__ !== 'undefined' && __VITEST_WEBKIT__ ? cookieSettler({
+const cookies = webkit ? cookieSettler({
   read: () => cookieAccessor.get.call(document),
   now: realNow,
   wait: () => new Promise(resolve => realSetTimeout(resolve, 1)),
@@ -173,7 +178,8 @@ function runNow(fn, { suite, timeout, title, vctx, kind }) {
     function arm() {
       realClearTimeout(timer);
       const ms = runnable.timeout;
-      if (ms > 0 && ms < NO_TIMEOUT) {
+      // under the debug page (DEBUG_INSTANCE in debug.mjs), a test paused at a breakpoint would time out
+      if (ms > 0 && ms < NO_TIMEOUT && server.config.name !== 'debug') {
         timer = realSetTimeout(() => finish(new Error(
           `Timeout of ${ms}ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves. (${title})`
         )), ms);

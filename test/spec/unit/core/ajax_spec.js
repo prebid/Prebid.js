@@ -376,6 +376,27 @@ describe('ajax', () => {
         });
       });
     });
+    describe('when the body size is known', () => {
+      Object.entries({
+        'ajax POST': () => ajax(EXAMPLE_URL, () => {}, 'x'.repeat(1024), { method: 'POST', keepalive: true }),
+        'ajax GET': () => ajax(EXAMPLE_URL, () => {}, null, { method: 'GET', keepalive: true }),
+        'fetch with a string body': () => fetch(EXAMPLE_URL, { method: 'POST', body: 'x'.repeat(1024), keepalive: true }),
+        'fetch without a body': () => fetch(EXAMPLE_URL, { keepalive: true }),
+      }).forEach(([t, fn]) => {
+        it(`${t} should start the request synchronously, with keepalive`, () => {
+          fn();
+          sinon.assert.calledOnce(dep.fetch);
+          expect(dep.fetch.firstCall.args[0].keepalive).to.be.true;
+        });
+      });
+
+      it('should not use keepalive for a large body', () => {
+        ajax(EXAMPLE_URL, () => {}, 'x'.repeat(65537), { method: 'POST', keepalive: true });
+        sinon.assert.calledOnce(dep.fetch);
+        expect(dep.fetch.firstCall.args[0].keepalive).to.be.false;
+      });
+    });
+
     it('should not try to get body size for requests that do not ask for keepalive', () => {
       fetch(EXAMPLE_URL, { body: 'test', method: 'POST' });
       return request.promise.then(req => {

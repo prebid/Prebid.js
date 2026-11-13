@@ -9,6 +9,7 @@ import {
 import { gppDataHandler } from '../../src/adapterManager.js';
 import { logInfo } from '../../src/utils.js';
 import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
+import type { Activity } from '../../src/activities/activities.ts';
 
 export interface MSPAConfig {
   /**
@@ -167,7 +168,7 @@ export function setupRules(api, sids, rules = CONSENT_RULES, normalizeConsent = 
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`);
   Object.entries(rules).forEach(([activity, denies]) => {
-    unreg.push(registerRule(activity, ruleName, mspaRule(
+    unreg.push(registerRule(activity as Activity, ruleName, mspaRule(
       sids,
       () => normalizeConsent(flatSection(getConsentData()?.parsedSections?.[api])),
       denies,

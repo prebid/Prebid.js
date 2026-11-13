@@ -25,6 +25,7 @@ var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
+const { disclosureSummary } = require('./gulp.disclosureSummary.js');
 const rename = require('gulp-rename');
 const merge = require('merge-stream');
 const { resolveDependencies } = require('./web-bundler/dependencies.mjs');
@@ -279,23 +280,6 @@ function wrapWithHeaderAndFooter(dev, modules, sourcemaps = false) {
   }
 }
 
-function disclosureSummary(modules, summaryFileName) {
-  const stream = new PassThrough({ objectMode: true });
-  import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
-    const summary = getStorageDisclosureSummary(modules, (moduleName) => {
-      const metadataPath = `./metadata/modules/${moduleName}.json`;
-      if (fs.existsSync(metadataPath)) {
-        return JSON.parse(fs.readFileSync(metadataPath).toString());
-      } else {
-        return null;
-      }
-    })
-    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
-    stream.push(null);
-  })
-  return stream;
-}
-
 function getFilesToBundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
@@ -369,10 +353,11 @@ function setupDist() {
 // If --browserstack is given, it will run once on each browsers.json entry that has `browserstack`, or with --browsers
 //   on the entries named, e.g. --browserstack --browsers=iphone_14,chrome; an entry with `vitest.specsMatching` runs
 //   only the spec files matching it, unless --file is given
+// If --debug is given, it runs in watch mode, and opening the debug.html page it prints runs the tests again in that browser.
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
-  ['watch', 'file', 'browserstack', 'notest'].forEach(opt => {
+  ['watch', 'file', 'browserstack', 'debug', 'notest'].forEach(opt => {
     options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
   })
 
@@ -435,11 +420,13 @@ async function runVitest(options) {
     const env = Object.assign({}, options.env, browserEnv,
       options.coverage ? {VITEST_COVERAGE: '1'} : {},
       options.browserstack ? {VITEST_BROWSERSTACK: '1'} : {},
+      options.debug ? {VITEST_DEBUG: '1'} : {},
       options.file || entryFiles ? {TEST_CHUNKS: undefined, TEST_CHUNK: undefined, TEST_PAT: undefined} : {});
     // --file, or the entry's specsMatching, narrows the run to those specs (as Vitest file filters); else every spec runs
     const files = options.file ? options.file.split(',') : entryFiles ?? [];
     // in watch mode Vite serves dist/src, so a re-precompiled file re-runs the specs that import it
-    await npmRun(options.watch ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
+    // the debug page runs specs on request, which needs the server to stay up
+    await npmRun(options.watch || options.debug ? 'test:vitest:watch' : 'test:vitest', env, shard ? [...files, shard] : files);
   }
 }
 

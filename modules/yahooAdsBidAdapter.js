@@ -250,13 +250,21 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   return outputObject;
 };
 
+/**
+ * The bid request a server bid answers: in singleRequestMode, the bidder request's bid whose bidId is the bid's impid;
+ * otherwise (one server request per bid) the request itself.
+ */
+function getBidRequestForResponse(bidderRequest, impid) {
+  return (Array.isArray(bidderRequest?.bids) && bidderRequest.bids.find(bid => bid.bidId === impid)) || bidderRequest;
+}
+
 function getTtl(bidderRequest) {
   const globalTTL = getConfigValue(bidderRequest, 'ttl');
   return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
 function validateTTL(ttl) {
-  return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL;
+  return (isNumber(ttl) && ttl > 0 && ttl <= 3600) ? ttl : DEFAULT_BID_TTL;
 };
 
 function isNotEmptyStr(value) {
@@ -531,6 +539,9 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     }
 
     if (siteContentDataArray && isArray(siteContentDataArray)) {
+      if (!isArray(outBoundBidRequest.site.content.data)) {
+        outBoundBidRequest.site.content.data = [];
+      }
       siteContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
@@ -539,7 +550,6 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
       });
     };
@@ -547,6 +557,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
+      outBoundBidRequest.app = outBoundBidRequest.app || {};
+      outBoundBidRequest.app.content = outBoundBidRequest.app.content || {};
+      if (!isArray(outBoundBidRequest.app.content.data)) {
+        outBoundBidRequest.app.content.data = [];
+      }
       appContentDataArray.forEach(dataObject => {
         let newDataObject = {};
         const allowedContentDataStringKeys = ['id', 'name'];
@@ -555,11 +570,6 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('string', allowedContentDataStringKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('array', allowedContentDataArrayKeys, dataObject, newDataObject);
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
-        outBoundBidRequest.app = {
-          content: {
-            data: []
-          }
-        };
         outBoundBidRequest.app.content.data.push(newDataObject);
       });
     };
@@ -723,6 +733,11 @@ export const spec = {
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 
+    if (isEmpty(filteredBidRequests)) {
+      logWarn('buildRequests: all bids were filtered out by mode; returning no requests');
+      return [];
+    }
+
     if (getConfigValue(bidderRequest, 'singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, filteredBidRequests[0]);
       filteredBidRequests.forEach(bid => {
@@ -744,49 +759,62 @@ export const spec = {
       return response;
     }
     const seatbids = serverResponse.body.seatbid;
+    const usedAdIds = new Set();
     seatbids.forEach(seatbid => {
-      let bid;
-
-      try {
-        bid = seatbid.bid[0];
-      } catch (e) {
-        return response;
+      // skip malformed seats and bids without losing the valid ones
+      if (!Array.isArray(seatbid?.bid)) {
+        return;
       }
 
-      const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
-
-      const bidResponse = {
-        adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
-        requestId: bid.impid,
-        cpm: cpm,
-        width: bid.w,
-        height: bid.h,
-        creativeId: bid.crid || 0,
-        currency: bid.cur || DEFAULT_CURRENCY,
-        dealId: bid.dealid ? bid.dealid : null,
-        netRevenue: true,
-        ttl: getTtl(bidderRequest),
-        meta: {
-          advertiserDomains: bid.adomain,
+      seatbid.bid.forEach(bid => {
+        if (!isPlainObject(bid)) {
+          return;
         }
-      };
+        const cpm = (bid.ext && bid.ext.encp) ? bid.ext.encp : bid.price;
+        // In singleRequestMode the server request carries the whole bidder request, not this bid's own request;
+        // per-bid settings (params.ttl, the ad unit's video context and renderer) come from the bid request it answers.
+        const bidRequest = getBidRequestForResponse(bidderRequest, bid.impid);
 
-      const responseAdmFormat = getResponseFormat(bid);
-      if (responseAdmFormat === BANNER) {
-        bidResponse.mediaType = BANNER;
-        bidResponse.ad = bid.adm;
-        bidResponse.meta.mediaType = BANNER;
-      } else if (responseAdmFormat === VIDEO) {
-        bidResponse.mediaType = VIDEO;
-        bidResponse.meta.mediaType = VIDEO;
-        bidResponse.vastXml = bid.adm;
-      }
+        const bidResponse = {
+          requestId: bid.impid,
+          cpm: cpm,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.crid || 0,
+          currency: bid.cur || DEFAULT_CURRENCY,
+          dealId: bid.dealid ? bid.dealid : null,
+          netRevenue: true,
+          ttl: getTtl(bidRequest),
+          meta: {
+            advertiserDomains: bid.adomain,
+          }
+        };
 
-      if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer && bidResponse.mediaType === VIDEO) {
-        bidResponse.renderer = createRenderer(bidderRequest, bidResponse) || undefined;
-      }
+        // adId falls back to impid, which repeats when the server answers one imp with several bids;
+        // on a repeat, leave adId unset so Prebid assigns a unique one and each bid stays renderable.
+        const adId = bid.adId || bid.impid || bid.crid;
+        if (!usedAdIds.has(adId)) {
+          usedAdIds.add(adId);
+          bidResponse.adId = adId;
+        }
 
-      response.push(bidResponse);
+        const responseAdmFormat = getResponseFormat(bid);
+        if (responseAdmFormat === BANNER) {
+          bidResponse.mediaType = BANNER;
+          bidResponse.ad = bid.adm;
+          bidResponse.meta.mediaType = BANNER;
+        } else if (responseAdmFormat === VIDEO) {
+          bidResponse.mediaType = VIDEO;
+          bidResponse.meta.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
+        }
+
+        if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream' && !bidRequest.renderer && bidResponse.mediaType === VIDEO) {
+          bidResponse.renderer = createRenderer(bidRequest, bidResponse) || undefined;
+        }
+
+        response.push(bidResponse);
+      });
     });
 
     return response;

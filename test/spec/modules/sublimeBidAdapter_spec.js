@@ -159,6 +159,11 @@ const USER_AGENT = {
 };
 
 describe('Sublime Adapter', function () {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.sublime;
+  });
+
   describe('detectDevice', function () {
     it('should correctly detect device', function () {
       const uaStub = sinon.stub(window.navigator, 'userAgent');

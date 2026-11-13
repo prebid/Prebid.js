@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -8,14 +8,12 @@ import { getDNT } from '../libraries/dnt/index.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'alkimi';
-const GVLID = 1169;
 const USER_ID_KEY = 'alkimiUserID';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -42,12 +40,12 @@ export const spec = {
         exp: bidRequest.params.exp,
         bidFloor: floorInfo.floor,           // Floor amount
         currency: floorInfo.currency,        // Floor currency (NEW)
-        sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
-        playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
+        sizes: prepareSizes(bidRequest?.mediaTypes?.banner?.sizes),
+        playerSizes: prepareSizes(bidRequest?.mediaTypes?.video?.playerSize),
         impMediaTypes: formatTypes,
         adUnitCode: bidRequest.adUnitCode,
-        video: deepAccess(bidRequest, 'mediaTypes.video'),
-        banner: deepAccess(bidRequest, 'mediaTypes.banner'),
+        video: bidRequest?.mediaTypes?.video,
+        banner: bidRequest?.mediaTypes?.banner,
         ext: bidRequest.ortb2Imp?.ext
       });
       bidIds.push(bidRequest.bidId);
@@ -246,8 +244,8 @@ function getBidFloor(bidRequest, formatTypes) {
 
 const getFormatType = bidRequest => {
   let formats = [];
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner');
-  if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video');
+  if (bidRequest?.mediaTypes?.banner) formats.push('Banner');
+  if (bidRequest?.mediaTypes?.video) formats.push('Video');
   return formats;
 };
 
