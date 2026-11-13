@@ -12,7 +12,7 @@ Bid adapter for Splash Standard Display, Parallax and Interstitial banner invent
 
 ## Disclosure
 
-Disclosure: Parallax and Interstitial support Splash's page-level Renderer and Safe Renderer. For each bid request and media type, core reports through `rendererSupport.banner` whether it will use a bidder-provided `renderer` or `safeRenderer`, accounting for publisher settings and renderer policy. The adapter prefers the page-level Renderer when core permits it, preserving the full Parallax and Interstitial behavior; otherwise it uses Safe Renderer when core permits that path. When both flags are true, the adapter supplies only the page-level Renderer so core's Safe Renderer precedence does not replace the requested format behavior. If neither is supported, it leaves rendering to core and publisher configuration. If the signal is absent (older core), the adapter supplies Safe Renderer as a compatibility fallback.
+Disclosure: Parallax and Interstitial support Splash's page-level Renderer and Safe Renderer. For each bid request and media type, core reports through `rendererSupport.banner` whether a bidder-provided `renderer` or `safeRenderer` is eligible under renderer policy and publisher configuration; this signal does not confirm that the creative rendered successfully. The adapter prefers the page-level Renderer when core permits it, preserving full Parallax and Interstitial behavior; otherwise it uses Safe Renderer when core permits that path. When both flags are true, the adapter supplies only the page-level Renderer because core prefers Safe Renderer if both are present. If neither is supported, it leaves rendering to core and publisher configuration. If the signal is absent (older core), the adapter supplies Safe Renderer as a compatibility fallback. Core retains final precedence: an applicable publisher Safe Renderer remains authoritative, while Splash Safe Renderer takes precedence over a publisher renderer that is not marked `backupOnly`.
 
 * The top-window [Renderer](https://docs.prebid.org/dev-docs/renderer.html), bundled with the adapter, adds Splash-owned elements (iframe, SVG clip, styles) to the page. Interstitial shows a full-screen overlay with a **Pomiń** (Skip ad) button, closes with Escape or after at most five minutes, and locks page scrolling while open.
 * The [Safe Renderer](https://docs.prebid.org/dev-docs/renderer.html), returned as `bid.safeRenderer`, is a script that Prebid loads from `https://cdn.splashandroll.com/runtime/prebid/safe-renderer/1.0.0/splash-safe-renderer.js` into the ad's frame. It changes only that frame's document. Parallax is reduced to a presentation fitted inside the frame, preserving the creative's aspect ratio without the scrolling effect. Interstitial keeps a trusted toolbar with an optional countdown and **Pomiń** above the sandboxed creative, which is scaled to fit the remaining space. The creative's close, Escape and the five-minute limit remove the ad from the frame; a container around the frame, such as an ad server interstitial, is closed by its owner.
@@ -23,11 +23,11 @@ Standard Display uses Prebid's default rendering. If core reports neither Splash
 
 | Name | Scope | Description | Example | Type |
 | ---- | ----- | ----------- | ------- | ---- |
-| `publisherId` | required | Splash publisher ID. Non-empty. | `'725'` | `string` |
-| `placementId` | required | Splash placement ID, sent as `imp.tagid`. Non-empty. | `'100021'` | `string` |
+| `publisherId` | required | Splash publisher ID. Non-empty. | `'YOUR_PUBLISHER_ID'` | `string` |
+| `placementId` | required | Splash placement ID, sent as `imp.tagid`. Non-empty. | `'YOUR_PLACEMENT_ID'` | `string` |
 | `displayFormat` | required for Parallax and Interstitial | The placement's Splash format: `'standard'` (default), `'parallax'` or `'interstitial'`. It is not inferred from sizes or the creative. Any other value makes the bid invalid. | `'parallax'` | `string` |
 | `bidfloor` | optional | Floor in PLN, used only when no floor is set by the Price Floors module or `ortb2Imp`. Must be greater than 0. | `3` | `number` |
-| `endpoint` | optional | Splash staging endpoint for test placements: `https://ssp.emisja.stg.froc.mc2.rocks/auction/splash`; any other value uses the production endpoint (`https://ssp.splashandroll.com/auction/splash`). | `'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'` | `string` |
+| `endpoint` | optional | Environment-specific Splash auction endpoint for test placements. If omitted, the adapter uses the production endpoint. Obtain test endpoint details from your Splash contact. | — | `string` |
 
 ## Formats
 
@@ -45,7 +45,7 @@ With the top-window renderer, Safari and iOS Chrome keep the Parallax frame phys
 
 ## Test Parameters
 
-Splash staging inventory is publisher `725` with placements `100021` (Standard 300x600), `100022` (Parallax 700x1600) and `100023` (Interstitial 320x480); the Parallax test campaign is mobile-only, so use a mobile device or device emulation with a mobile user agent. Review all three formats at <https://one.tcpip.pl/public/prebid-official-sandbox.html?format=standard&renderer_policy=disabled&safe_renderer=cdn> (`format=standard|parallax|interstitial`). The demo defaults to top-window rendering when `renderer_policy` is omitted. Use `renderer_policy=disabled` to exercise Safe Renderer; use `renderer_policy=bidder-enabled` to allow Splash's top-window renderer while global top-window rendering is disabled. A publisher Safe Renderer still takes precedence.
+Use publisher and placement IDs supplied for your integration environment, with a separate ad unit for each format. Parallax inventory may be device-specific; confirm the campaign's targeting when testing. To validate renderer selection, use a Prebid.js build containing this adapter and the matching `rendererSupport` core contract in [#16138](https://github.com/prebid/Prebid.js/pull/16138). The hosted test page is maintained separately from this module documentation.
 
 ```javascript
 const adUnits = [
@@ -55,11 +55,10 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: '725',
-        placementId: '100021',
+        publisherId: 'YOUR_PUBLISHER_ID',
+        placementId: 'YOUR_STANDARD_DISPLAY_PLACEMENT_ID',
         displayFormat: 'standard',
-        bidfloor: 3,
-        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
+        bidfloor: 3
       }
     }]
   },
@@ -69,11 +68,10 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: '725',
-        placementId: '100022',
+        publisherId: 'YOUR_PUBLISHER_ID',
+        placementId: 'YOUR_PARALLAX_PLACEMENT_ID',
         displayFormat: 'parallax',
-        bidfloor: 3,
-        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
+        bidfloor: 3
       }
     }]
   },
@@ -84,11 +82,10 @@ const adUnits = [
     bids: [{
       bidder: 'splash',
       params: {
-        publisherId: '725',
-        placementId: '100023',
+        publisherId: 'YOUR_PUBLISHER_ID',
+        placementId: 'YOUR_INTERSTITIAL_PLACEMENT_ID',
         displayFormat: 'interstitial',
-        bidfloor: 3,
-        endpoint: 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash'
+        bidfloor: 3
       }
     }]
   }
