@@ -1,10 +1,16 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const PREBID_VERSION = '$prebid.version$'
+/**
+ * @typedef {import('../src/adapterManager.js').BidRequest} BidRequest
+ * @typedef {import('./kargoBidAdapter.d.ts').KargoBidderParams} KargoBidderParams
+ * @typedef {BidRequest & {params: KargoBidderParams}} KargoBidRequest
+ */
+
+const PREBID_VERSION = '$prebid.version$';
 
 const BIDDER = Object.freeze({
   CODE: 'kargo',
@@ -16,18 +22,11 @@ const BIDDER = Object.freeze({
   SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
 });
 
-const STORAGE = getStorageManager({bidderCode: BIDDER.CODE});
+const STORAGE = getStorageManager({ bidderCode: BIDDER.CODE });
 
 const CURRENCY = Object.freeze({
   KEY: 'currency',
   US_DOLLAR: 'USD',
-});
-
-const REQUEST_KEYS = Object.freeze({
-  USER_DATA: 'ortb2.user.data',
-  SOCIAL_CANVAS: 'params.socialCanvas',
-  SUA: 'ortb2.device.sua',
-  TDID_ADAPTER: 'userId.tdid',
 });
 
 const SUA = Object.freeze({
@@ -59,6 +58,10 @@ let sessionId,
   lastPageUrl,
   requestCounter;
 
+/**
+ * @param {KargoBidRequest} bid
+ * @returns {boolean}
+ */
 function isBidRequestValid(bid) {
   if (!bid || !bid.params) {
     return false;
@@ -73,11 +76,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   const impressions = [];
 
   _each(validBidRequests, bid => {
-    impressions.push(getImpression(bid))
+    impressions.push(getImpression(bid));
   });
 
   const firstBidRequest = validBidRequests[0];
-  const tdidAdapter = deepAccess(firstBidRequest, REQUEST_KEYS.TDID_ADAPTER);
+  const tdidAdapter = firstBidRequest?.userId?.tdid;
 
   const metadata = getAllMetadata(bidderRequest);
 
@@ -100,48 +103,45 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   // Add site.cat if it exists
-  if (firstBidRequest.ortb2?.site?.cat != null) {
+  if (firstBidRequest.ortb2?.site?.cat !== null && firstBidRequest.ortb2?.site?.cat !== undefined) {
     krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
   }
 
   // Add schain - check for schain in the new location
   const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
   if (schain && schain.nodes) {
-    krakenParams.schain = schain
+    krakenParams.schain = schain;
   }
 
   // Add user data object if available
-  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
+  krakenParams.user.data = firstBidRequest?.ortb2?.user?.data || [];
 
-  const reqCount = getRequestCount()
-  if (reqCount != null) {
-    krakenParams.requestCount = reqCount;
-  }
+  krakenParams.requestCount = getRequestCount();
 
   // Add currency if not USD
-  if (currency != null && currency != CURRENCY.US_DOLLAR) {
+  if ((currency !== null && currency !== undefined) && currency !== CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }
 
-  if (metadata.rawCRB != null) {
-    krakenParams.rawCRB = metadata.rawCRB
+  if (metadata.rawCRB !== null && metadata.rawCRB !== undefined) {
+    krakenParams.rawCRB = metadata.rawCRB;
   }
 
-  if (metadata.rawCRBLocalStorage != null) {
-    krakenParams.rawCRBLocalStorage = metadata.rawCRBLocalStorage
+  if (metadata.rawCRBLocalStorage !== null && metadata.rawCRBLocalStorage !== undefined) {
+    krakenParams.rawCRBLocalStorage = metadata.rawCRBLocalStorage;
   }
 
   // Pull Social Canvas segments and embed URL
-  const socialCanvas = deepAccess(firstBidRequest, REQUEST_KEYS.SOCIAL_CANVAS);
+  const socialCanvas = firstBidRequest?.params?.socialCanvas;
 
-  if (socialCanvas != null) {
+  if (socialCanvas !== null && socialCanvas !== undefined) {
     krakenParams.socan = socialCanvas;
   }
 
   // User Agent Client Hints / SUA
-  const uaClientHints = deepAccess(firstBidRequest, REQUEST_KEYS.SUA);
+  const uaClientHints = firstBidRequest?.ortb2?.device?.sua;
   if (uaClientHints) {
-    const suaValidAttributes = []
+    const suaValidAttributes = [];
 
     SUA_ATTRIBUTES.forEach(suaKey => {
       const suaValue = uaClientHints[suaKey];
@@ -150,7 +150,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
 
       // Do not pass any empty strings
-      if (typeof suaValue == 'string' && suaValue.trim() === '') {
+      if (typeof suaValue === 'string' && suaValue.trim() === '') {
         return;
       }
 
@@ -166,12 +166,13 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
   }
 
-  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null
-  const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) != null
-  const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) != null
+  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) !== undefined;
+  const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) !== undefined;
+  const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) !== null && getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) !== undefined;
 
-  const page = {}
+  const page = {};
   if (validPageId) {
+    // TODO: consider using the Prebid-generated page view ID instead of generating a custom one
     page.id = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID);
   }
   if (validPageTimestamp) {
@@ -198,7 +199,6 @@ function buildRequests(validBidRequests, bidderRequest) {
 
 function interpretResponse(response, bidRequest) {
   const bids = response.body;
-  const fledgeAuctionConfigs = [];
   const bidResponses = [];
 
   if (isEmpty(bids) || typeof bids !== 'object') {
@@ -229,7 +229,7 @@ function interpretResponse(response, bidRequest) {
       meta: meta
     };
 
-    if (meta.mediaType == VIDEO) {
+    if (meta.mediaType === VIDEO) {
       if (adUnit.admUrl) {
         bidResponse.vastUrl = adUnit.admUrl;
       } else {
@@ -240,23 +240,9 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
-
-    if (adUnit.auctionConfig) {
-      fledgeAuctionConfigs.push({
-        bidId: bidID,
-        config: adUnit.auctionConfig
-      })
-    }
   }
 
-  if (fledgeAuctionConfigs.length > 0) {
-    return {
-      bids: bidResponses,
-      paapi: fledgeAuctionConfigs
-    }
-  } else {
-    return bidResponses;
-  }
+  return bidResponses;
 }
 
 function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
@@ -267,11 +253,11 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
   var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
 
-  var gppString = (gppConsent && gppConsent.consentString) ? gppConsent.consentString : '';
+  var gppString = (gppConsent && gppConsent.gppString) ? gppConsent.gppString : '';
   var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
 
   // don't sync if opted out via usPrivacy
-  if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
+  if (typeof usPrivacy === 'string' && usPrivacy.length === 4 && usPrivacy[0] === '1' && usPrivacy[2] === 'Y') {
     return syncs;
   }
   if (syncOptions.iframeEnabled && seed && clientId) {
@@ -284,13 +270,13 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
         .replace('{US_PRIVACY}', usPrivacy || '')
         .replace('{GPP_STRING}', gppString)
         .replace('{GPP_SID}', gppApplicableSections)
-    })
+    });
   }
   return syncs;
 }
 
 function onTimeout(timeoutData) {
-  if (timeoutData == null) {
+  if (timeoutData === null || timeoutData === undefined) {
     return;
   }
 
@@ -390,30 +376,30 @@ function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
   }
 
   // Kargo ID
-  if (crb.lexId != null) {
+  if (crb.lexId !== null && crb.lexId !== undefined) {
     userIds.kargoID = crb.lexId;
   }
 
   // Client ID
-  if (crb.clientId != null) {
+  if (crb.clientId !== null && crb.clientId !== undefined) {
     userIds.clientID = crb.clientId;
   }
 
   // Opt Out
-  if (crb.optOut != null) {
+  if (crb.optOut !== null && crb.optOut !== undefined) {
     userIds.optOut = crb.optOut;
   }
 
   // User ID Sub-Modules (userIdAsEids)
-  if (eids != null) {
+  if (eids !== null && eids !== undefined) {
     userIds.sharedIDEids = eids;
   }
 
   // GPP
   if (gpp) {
     const parsedGPP = {};
-    if (gpp.consentString) {
-      parsedGPP.gppString = gpp.consentString;
+    if (gpp.gppString) {
+      parsedGPP.gppString = gpp.gppString;
     }
     if (gpp.applicableSections) {
       parsedGPP.applicableSections = gpp.applicableSections;
@@ -485,11 +471,11 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
   if (gpid) {
     imp.fpd = {
       gpid: gpid
-    }
+    };
   }
 
   // Add full ortb2Imp object as backup
@@ -527,7 +513,7 @@ function getImpression(bid) {
     }
   }
 
-  return imp
+  return imp;
 }
 
 export const spec = {

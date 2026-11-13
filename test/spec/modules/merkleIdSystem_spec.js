@@ -1,10 +1,10 @@
 import * as ajaxLib from 'src/ajax.js';
 import * as utils from 'src/utils.js';
-import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
+import { merkleIdSubmodule } from 'modules/merkleIdSystem.js';
 
 import sinon from 'sinon';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
 
 const expect = require('chai').expect;
 
@@ -35,10 +35,11 @@ function mockResponse(
   response = (url, successCallback) => successCallback(responseText)) {
   return function() {
     return response;
-  }
+  };
 }
 
 describe('Merkle System', function () {
+  let sandbox;
   describe('merkleIdSystem.decode()', function() {
     it('provides multiple Merkle IDs (EID) from a stored object', function() {
       const storage = {
@@ -62,38 +63,33 @@ describe('Merkle System', function () {
     });
 
     it('can decode legacy stored object', function() {
-      const merkleId = {'pam_id': {'id': 'testmerkleId', 'keyID': 1}};
+      const merkleId = { 'pam_id': { 'id': 'testmerkleId', 'keyID': 1 } };
 
       expect(merkleIdSubmodule.decode(merkleId)).to.deep.equal({
-        merkleId: {'id': 'testmerkleId', 'keyID': 1}
+        merkleId: { 'id': 'testmerkleId', 'keyID': 1 }
       });
-    })
+    });
 
     it('returns undefined', function() {
       const merkleId = {};
       expect(merkleIdSubmodule.decode(merkleId)).to.be.undefined;
-    })
+    });
   });
 
   describe('Merkle System getId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
-    let ajaxStub;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('getId() should fail on missing sv_pubid', function () {
@@ -159,7 +155,7 @@ describe('Merkle System', function () {
         storage: STORAGE_PARAMS
       };
 
-      const submoduleCallback = merkleIdSubmodule.getId(config, {gdpr: {gdprApplies: true}});
+      const submoduleCallback = merkleIdSubmodule.getId(config, { gdpr: { gdprApplies: true } });
       expect(submoduleCallback).to.be.undefined;
       expect(utils.logError.args[0][0]).to.exist.and.to.equal('User ID - merkleId submodule does not currently handle consent strings');
     });
@@ -167,23 +163,18 @@ describe('Merkle System', function () {
 
   describe('Merkle System extendId()', function () {
     const callbackSpy = sinon.spy();
-    let sandbox;
-    let ajaxStub;
 
     beforeEach(function () {
       sandbox = sinon.createSandbox();
-      sinon.stub(utils, 'logInfo');
-      sinon.stub(utils, 'logWarn');
-      sinon.stub(utils, 'logError');
+      sandbox.stub(utils, 'logInfo');
+      sandbox.stub(utils, 'logWarn');
+      sandbox.stub(utils, 'logError');
       callbackSpy.resetHistory();
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
+      sandbox.stub(ajaxLib, 'qualifiedAjaxBuilder').callsFake(mockResponse(JSON.stringify(MOCK_RESPONSE)));
     });
 
     afterEach(function () {
-      utils.logInfo.restore();
-      utils.logWarn.restore();
-      utils.logError.restore();
-      ajaxStub.restore();
+      sandbox.restore();
     });
 
     it('extendId() get storedid', function () {
@@ -208,7 +199,7 @@ describe('Merkle System', function () {
       };
 
       const yesterday = new Date(Date.now() - 86400000).toUTCString();
-      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const storedId = { value: 'Merkle_Stored_ID', date: yesterday };
 
       const id = merkleIdSubmodule.extendId(config, undefined,
         storedId);
@@ -225,7 +216,7 @@ describe('Merkle System', function () {
       };
 
       const yesterday = new Date(Date.now() - 86400000).toUTCString();
-      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const storedId = { value: 'Merkle_Stored_ID', date: yesterday };
 
       const submoduleCallback = merkleIdSubmodule.extendId(config, undefined,
         storedId).callback;
@@ -243,7 +234,7 @@ describe('Merkle System', function () {
       };
 
       const yesterday = new Date(Date.now() - 86400000).toUTCString();
-      const storedId = {value: 'Merkle_Stored_ID', date: yesterday};
+      const storedId = { value: 'Merkle_Stored_ID', date: yesterday };
 
       const submoduleCallback = merkleIdSubmodule.extendId(config, undefined, storedId).callback;
       submoduleCallback(callbackSpy);
@@ -287,13 +278,14 @@ describe('Merkle System', function () {
             ssp: 'ssp2'
           }
         }]
-      }
+      };
 
       const newEids = createEidsArray(userId);
       expect(newEids.length).to.equal(2);
       expect(newEids[0]).to.deep.equal({
         source: 'ssp1.merkleinc.com',
-        uids: [{id: 'some-random-id-value',
+        uids: [{
+          id: 'some-random-id-value',
           atype: 3,
           ext: {
             enc: 1,
@@ -305,7 +297,8 @@ describe('Merkle System', function () {
       });
       expect(newEids[1]).to.deep.equal({
         source: 'ssp2.merkleinc.com',
-        uids: [{id: 'another-random-id-value',
+        uids: [{
+          id: 'another-random-id-value',
           atype: 3,
           ext: {
             third: 4,
@@ -316,5 +309,5 @@ describe('Merkle System', function () {
         }]
       });
     });
-  })
+  });
 });

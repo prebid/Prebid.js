@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/cpmstarBidAdapter.js';
 import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 
 const valid_bid_requests = [{
   'bidder': 'cpmstar',
@@ -44,12 +43,12 @@ describe('Cpmstar Bid Adapter', function () {
       function () {
         var bid = { params: { placementId: 123456 } };
         expect(spec.isBidRequestValid(bid)).to.equal(true);
-      })
+      });
 
     it('should return false since the bid is invalid', function () {
       var bid = { params: { placementId: '' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
-    })
+    });
 
     it('should return a valid player size', function () {
       var bid = {
@@ -58,10 +57,10 @@ describe('Cpmstar Bid Adapter', function () {
             playerSize: [[960, 540]]
           }
         }
-      }
+      };
       expect(spec.getPlayerSize(bid)[0]).to.equal(960);
       expect(spec.getPlayerSize(bid)[1]).to.equal(540);
-    })
+    });
 
     it('should return a default player size', function () {
       var bid = {
@@ -70,10 +69,10 @@ describe('Cpmstar Bid Adapter', function () {
             playerSize: null
           }
         }
-      }
+      };
       expect(spec.getPlayerSize(bid)[0]).to.equal(640);
       expect(spec.getPlayerSize(bid)[1]).to.equal(440);
-    })
+    });
   });
 
   describe('buildRequests', function () {
@@ -121,9 +120,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0].url).to.include('us_privacy=1YYY');
     });
     it('should produce a request with support for COPPA', function () {
-      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
-      var requests = spec.buildRequests(valid_bid_requests, bidderRequest);
-      config.getConfig.restore();
+      var requests = spec.buildRequests(valid_bid_requests, { ...bidderRequest, ortb2: { regs: { coppa: 1 } } });
       expect(requests[0]).to.have.property('url');
       expect(requests[0].url).to.include('tfcd=1');
     });
@@ -166,7 +163,7 @@ describe('Cpmstar Bid Adapter', function () {
     };
 
     it('should return a valid bidresponse array', function () {
-      var r = spec.interpretResponse(serverResponse, request)
+      var r = spec.interpretResponse(serverResponse, request);
       var c = serverResponse.body[0].creatives[0];
       expect(r[0].length).to.not.equal(0);
       expect(r[0].requestId).equal(c.requestid);
@@ -181,7 +178,7 @@ describe('Cpmstar Bid Adapter', function () {
     });
 
     it('should return a valid bidresponse array from a non-array-body', function () {
-      var r = spec.interpretResponse({ body: serverResponse.body[0] }, request)
+      var r = spec.interpretResponse({ body: serverResponse.body[0] }, request);
       var c = serverResponse.body[0].creatives[0];
       expect(r[0].length).to.not.equal(0);
       expect(r[0].requestId).equal(c.requestid);

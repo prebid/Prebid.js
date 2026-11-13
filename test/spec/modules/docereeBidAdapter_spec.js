@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/docereeBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/docereeBidAdapter.js';
 import { config } from '../../../src/config.js';
 import * as utils from 'src/utils.js';
 
@@ -55,7 +55,7 @@ describe('BidlabBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests([bid]);
-    serverRequest = serverRequest[0]
+    serverRequest = serverRequest[0];
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -100,9 +100,27 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.currency).to.equal('USD');
       expect(dataItem.creativeId).to.equal('DOC_7jm9j5eqkl0xvc5w');
       expect(dataItem.meta.advertiserDomains).to.be.an('array').that.is.not.empty;
-      expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com')
+      expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com');
     });
-  })
+
+    it('should return no bids when cpmBid is 0 or the creative is missing', function () {
+      const noBid = {
+        body: {
+          DIVID: 'DOC_7jm9j5eqkl0xvc5w',
+          guid: 'G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q',
+          cpmBid: 0,
+          width: 0,
+          height: 0,
+        }
+      };
+      expect(spec.interpretResponse(noBid)).to.be.an('array').that.is.empty;
+    });
+
+    it('should return no bids for an empty response body', function () {
+      expect(spec.interpretResponse({ body: '' })).to.be.an('array').that.is.empty;
+      expect(spec.interpretResponse({})).to.be.an('array').that.is.empty;
+    });
+  });
   describe('onBidWon', function () {
     beforeEach(function() {
       sinon.stub(utils, 'triggerPixel');
@@ -115,7 +133,7 @@ describe('BidlabBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon({});
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });
@@ -131,7 +149,7 @@ describe('BidlabBidAdapter', function () {
     });
     it('should return nothing', function () {
       var response = spec.onBidWon([]);
-      expect(response).to.be.an('undefined')
+      expect(response).to.be.an('undefined');
       expect(utils.triggerPixel.called).to.equal(true);
     });
   });

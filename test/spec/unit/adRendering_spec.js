@@ -3,20 +3,23 @@ import * as utils from 'src/utils.js';
 import {
   deferRendering,
   doRender,
-  getBidToRender,
   emitAdRenderSucceeded,
   getRenderingData,
   handleCreativeEvent,
+  reportBidClick,
   handleNativeMessage,
-  handleRender, markWinningBid, renderIfDeferred
+  handleRender, markWinningBid, renderAdDirect, renderIfDeferred, userActivation,
 } from '../../../src/adRendering.js';
+import { getPreparedBidForAuction } from '../../../src/auction.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
-import {expect} from 'chai/index.mjs';
-import {config} from 'src/config.js';
-import {VIDEO} from '../../../src/mediaTypes.js';
-import {auctionManager} from '../../../src/auctionManager.js';
+import { expect } from 'chai/index.mjs';
+import { config } from 'src/config.js';
+import { VIDEO } from '../../../src/mediaTypes.js';
+import { auctionManager } from '../../../src/auctionManager.js';
 import adapterManager from '../../../src/adapterManager.js';
-import {filters} from 'src/targeting.js';
+import { bidFilters } from 'src/targeting/filters.js';
+import * as creativeRenderers from 'src/creativeRenderers.js';
+import { PbPromise } from 'src/utils/promise.js';
 import {
   EVENT_TYPE_IMPRESSION,
   EVENT_TYPE_WIN,
@@ -30,33 +33,11 @@ describe('adRendering', () => {
     sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'logWarn');
     sandbox.stub(utils, 'logError');
-  })
+  });
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
-  describe('getBidToRender', () => {
-    beforeEach(() => {
-      sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
-    });
-    it('should default to bid from auctionManager', () => {
-      return getBidToRender('adId', true, Promise.resolve(null)).then((res) => {
-        expect(res).to.eql('auction-bid');
-        sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
-      });
-    });
-    it('should give precedence to override promise', () => {
-      return getBidToRender('adId', true, Promise.resolve('override')).then((res) => {
-        expect(res).to.eql('override');
-        sinon.assert.notCalled(auctionManager.findBidByAdId);
-      })
-    });
-    it('should return undef when override rejects', () => {
-      return getBidToRender('adId', true, Promise.reject(new Error('any reason'))).then(res => {
-        expect(res).to.not.exist;
-      })
-    })
-  })
   describe('getRenderingData', () => {
     let bidResponse;
     beforeEach(() => {
@@ -79,7 +60,7 @@ describe('adRendering', () => {
         });
         it('replaces CLICKTHROUGH macro', () => {
           bidResponse[prop] = 'pre${CLICKTHROUGH}post';
-          const result = getRenderingData(bidResponse, {clickUrl: 'clk'});
+          const result = getRenderingData(bidResponse, { clickUrl: 'clk' });
           expect(result[prop]).to.eql('preclkpost');
         });
         it('defaults CLICKTHROUGH to empty string', () => {
@@ -89,7 +70,80 @@ describe('adRendering', () => {
         });
       });
     });
-  })
+  });
+
+  describe('bid click deduplication', () => {
+    let bid;
+    beforeEach(() => {
+      bid = { adId: 'bid-click-' + Math.random(), adUnitCode: 'slot', bidder: 'test', mediaType: 'banner', clickUrl: 'https://click.example.com' };
+      sandbox.stub(events, 'emit');
+      sandbox.stub(utils, 'politeTriggerPixel');
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+    });
+    afterEach(() => config.setConfig({ bidClickTracking: { enabled: false } }));
+
+    it('emits and fires a tracker only once if observed click precedes inference', () => {
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl, 'include', true);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: bid.adId, method: 'creativeClick' }));
+    });
+
+    it('emits and fires a tracker only once if inference precedes observed click', () => {
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.calledOnceWithExactly(utils.politeTriggerPixel, bid.clickUrl, 'include', true);
+      sinon.assert.calledOnceWithExactly(events.emit, EVENTS.BID_CLICK_INFERRED, sinon.match({ adId: bid.adId, method: 'iframeFocus' }));
+    });
+
+    it('does not fire a second tracker or event for repeated clicks', () => {
+      reportBidClick(bid, 'creativeClick');
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+      sinon.assert.calledOnce(events.emit);
+    });
+
+    it('emits analytics event but does not fire a tracker in event-only mode', () => {
+      config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: false } });
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not report when disabled', () => {
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('ignores banner clicks before the user has interacted with the page, without using up the bid', () => {
+      userActivation.hasBeenActive.returns(false);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(false);
+      expect(reportBidClick(bid, 'iframeFocus')).to.equal(false);
+      sinon.assert.notCalled(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+      userActivation.hasBeenActive.returns(true);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.calledOnce(utils.politeTriggerPixel);
+    });
+
+    it('emits the event but does not fire a tracker when user activation is not supported', () => {
+      userActivation.hasBeenActive.returns(undefined);
+      expect(reportBidClick(bid, 'creativeClick')).to.equal(true);
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+
+    it('does not fire click URL if creative has CLICKTHROUGH macro', () => {
+      bid.ad = '<a href="${CLICKTHROUGH}">Ad</a>';
+      reportBidClick(bid, 'creativeClick');
+      sinon.assert.calledOnce(events.emit);
+      sinon.assert.notCalled(utils.politeTriggerPixel);
+    });
+  });
 
   describe('rendering logic', () => {
     let bidResponse, renderFn, resizeFn, adId;
@@ -100,7 +154,7 @@ describe('adRendering', () => {
       adId = 123;
       bidResponse = {
         adId
-      }
+      };
     });
 
     function expectAdRenderFailedEvent(reason) {
@@ -114,13 +168,13 @@ describe('adRendering', () => {
       }
       before(() => {
         getRenderingData.before(getRenderingDataHook, 999);
-      })
+      });
       after(() => {
-        getRenderingData.getHooks({hook: getRenderingDataHook}).remove();
+        getRenderingData.getHooks({ hook: getRenderingDataHook }).remove();
       });
       beforeEach(() => {
         getRenderingDataStub = sinon.stub();
-      })
+      });
 
       describe('when the ad has a renderer', () => {
         let bidResponse;
@@ -131,90 +185,249 @@ describe('adRendering', () => {
               url: 'some-custom-renderer',
               render: sinon.stub()
             }
-          }
+          };
         });
 
         it('does not invoke renderFn, but the renderer instead', () => {
-          doRender({renderFn, bidResponse});
+          doRender({ renderFn, bidResponse });
           sinon.assert.notCalled(renderFn);
           sinon.assert.called(bidResponse.renderer.render);
         });
 
         it('allows rendering on the main document', () => {
-          doRender({renderFn, bidResponse, isMainDocument: true});
+          doRender({ renderFn, bidResponse, isMainDocument: true });
           sinon.assert.notCalled(renderFn);
           sinon.assert.called(bidResponse.renderer.render);
-        })
+        });
 
-        it('emits AD_RENDER_SUCCEDED', () => {
-          doRender({renderFn, bidResponse});
+        it('emits AD_RENDER_SUCCEDED once the renderer has rendered', async () => {
+          let rendered;
+          bidResponse.renderer.render.returns(new Promise(resolve => { rendered = resolve; }));
+          doRender({ renderFn, bidResponse });
+          await Promise.resolve();
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match.has('bid', sinon.match.same(bidResponse)));
+          rendered();
+          await new Promise(resolve => setTimeout(resolve));
           sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+            bid: bidResponse,
+            adId: bidResponse.adId
+          }));
+        });
+
+        it('emits AD_RENDER_FAILED instead when the renderer fails', async () => {
+          bidResponse.renderer.render.returns(Promise.reject(new Error('renderer failed')));
+          doRender({ renderFn, bidResponse });
+          await new Promise(resolve => setTimeout(resolve));
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match.has('bid', sinon.match.same(bidResponse)));
+          sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({
+            reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+            message: 'renderer failed',
             bid: bidResponse,
             adId: bidResponse.adId
           }));
         });
       });
 
+      describe('when the ad has a safe renderer URL', () => {
+        it('does not emit AD_RENDER_SUCCEDED immediately', () => {
+          getRenderingDataStub.returns({ safeRenderer: { url: 'mock-url-safe-renderer' } });
+          let bidWithSafeRenderer = {
+            adId: 'mock-ad-id',
+            safeRenderer: { url: 'mock-url-safe-renderer' }
+          };
+          doRender({ renderFn, bidResponse: bidWithSafeRenderer });
+          sinon.assert.neverCalledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED);
+        });
+
+        it('prepareBidForRendering: safeRenderer.getConfig(bid) overrides static safeRenderer.config', () => {
+          const publisherConfig = { player: 'pub', theme: 'dark' };
+          const getConfig = sinon.stub().returns(publisherConfig);
+          const bidWithSafeRenderer = {
+            adId: 'safe-config-priority',
+            cpm: 2.5,
+            safeRenderer: {
+              url: 'https://cdn.example/safe.js',
+              config: { player: 'bidder', theme: 'light', onlyOnBid: true },
+              getConfig,
+            },
+          };
+
+          doRender({ renderFn, resizeFn, bidResponse: bidWithSafeRenderer });
+
+          sinon.assert.calledOnce(getConfig);
+          sinon.assert.calledWithExactly(getConfig, bidWithSafeRenderer);
+          sinon.assert.calledOnce(renderFn);
+          const payload = renderFn.firstCall.args[0];
+          expect(payload.safeRenderer.config).to.eql(publisherConfig);
+          expect(payload.safeRenderer.url).to.equal('https://cdn.example/safe.js');
+        });
+      });
+
       if (FEATURES.VIDEO) {
         it('should emit AD_RENDER_FAILED on video bids', () => {
           bidResponse.mediaType = VIDEO;
-          doRender({renderFn, bidResponse});
-          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
+          doRender({ renderFn, bidResponse });
+          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT);
         });
       }
 
       it('should emit AD_RENDER_FAILED when renderer-less bid is being rendered on the main document', () => {
-        doRender({renderFn, bidResponse, isMainDocument: true});
+        doRender({ renderFn, bidResponse, isMainDocument: true });
         expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT);
       });
 
       it('invokes renderFn with rendering data', () => {
-        const data = {ad: 'creative'};
+        const data = { ad: 'creative' };
         getRenderingDataStub.returns(data);
-        doRender({renderFn, resizeFn, bidResponse});
+        doRender({ renderFn, resizeFn, bidResponse });
         sinon.assert.calledWith(renderFn, sinon.match({
           adId: bidResponse.adId,
           ...data
-        }))
+        }));
       });
 
       it('invokes resizeFn with w/h from rendering data', () => {
-        getRenderingDataStub.returns({width: 123, height: 321});
-        doRender({renderFn, resizeFn, bidResponse});
+        getRenderingDataStub.returns({ width: 123, height: 321 });
+        doRender({ renderFn, resizeFn, bidResponse });
         sinon.assert.calledWith(resizeFn, 123, 321);
       });
 
       it('does not invoke resizeFn if rendering data has no w/h', () => {
         getRenderingDataStub.returns({});
-        doRender({renderFn, resizeFn, bidResponse});
+        doRender({ renderFn, resizeFn, bidResponse });
         sinon.assert.notCalled(resizeFn);
-      })
+      });
+    });
+
+    describe('renderAdDirect, when legacyRender is enabled', () => {
+      const SAFE_RENDERER_URL = 'https://example.com/renderer.js';
+      let doc, bid, creativeRender;
+
+      // the creative renderer is picked up and invoked asynchronously; wait for that chain to
+      // settle so the assertions see its final state and nothing leaks past the test.
+      const settled = () => new Promise((resolve) => setTimeout(resolve));
+
+      function mockDoc() {
+        const el = { insertBefore: sinon.stub(), firstChild: null };
+        const mock = {
+          write: sinon.stub(),
+          close: sinon.stub(),
+          readyState: 'complete',
+          body: { appendChild: sinon.stub() },
+          createElement: sinon.stub().returns({ style: {} }),
+          getElementsByTagName: sinon.stub().returns([el]),
+        };
+        mock.defaultView = { document: mock };
+        return mock;
+      }
+
+      beforeEach(() => {
+        bid = {
+          adId: 'legacy-ad-id',
+          ad: '<div>markup</div>',
+          creativeId: 'creative-id',
+          bidder: 'mockBidder',
+        };
+        doc = mockDoc();
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake((id) => id === bid.adId ? bid : undefined);
+        // stub out the creative renderer: the real one builds an iframe on the top document and
+        // loads safeRenderer.url from it, which would leak DOM, network and late events into
+        // the rest of the suite.
+        creativeRender = sinon.stub();
+        sandbox.stub(creativeRenderers, 'getCreativeRenderer').returns(PbPromise.resolve(creativeRender));
+        config.setConfig({ auctionOptions: { legacyRender: true } });
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+        // renderFn appends a creative comment to the render document; take it back off the real
+        // one, which the main-document case below has to use.
+        Array.from(document.documentElement.childNodes)
+          .filter((node) => node.nodeType === Node.COMMENT_NODE && node.textContent.includes(bid.creativeId))
+          .forEach((node) => node.remove());
+      });
+
+      it('writes the ad directly when the bid has no safe renderer', async () => {
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.calledWith(doc.write, bid.ad);
+        sinon.assert.called(doc.close);
+        sinon.assert.notCalled(creativeRenderers.getCreativeRenderer);
+        sinon.assert.notCalled(creativeRender);
+      });
+
+      it('runs the creative renderer, and does not write the ad, when the bid has a safe renderer', async () => {
+        bid.safeRenderer = { url: SAFE_RENDERER_URL };
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.notCalled(doc.write);
+        sinon.assert.calledWith(creativeRenderers.getCreativeRenderer, bid);
+        sinon.assert.calledOnce(creativeRender);
+        expect(creativeRender.firstCall.args[0]).to.deep.include({
+          adId: bid.adId,
+          safeRenderer: { url: SAFE_RENDERER_URL, config: undefined },
+        });
+      });
+
+      it('does not write the ad when the bid has a safe renderer without a url', async () => {
+        // the branch is keyed on the presence of a safe renderer, matching getCreativeRendererSource,
+        // rather than on its url - so a malformed safeRenderer does not silently fall back to
+        // document.write.
+        bid.safeRenderer = { config: {} };
+        renderAdDirect(doc, bid.adId);
+        await settled();
+        sinon.assert.notCalled(doc.write);
+        sinon.assert.calledOnce(creativeRender);
+      });
+
+      it('does not write to the main document that safeRenderer.url exempted from the guard', async () => {
+        bid.safeRenderer = { url: SAFE_RENDERER_URL };
+        sandbox.stub(utils, 'inIframe').returns(false);
+        const write = sandbox.stub(document, 'write');
+        const close = sandbox.stub(document, 'close');
+        renderAdDirect(document, bid.adId);
+        await settled();
+        sinon.assert.notCalled(write);
+        sinon.assert.notCalled(close);
+        sinon.assert.calledOnce(creativeRender);
+      });
+
+      if (FEATURES.VIDEO) {
+        it('does not write a video bid that safeRenderer.url exempted from the guard', async () => {
+          bid.mediaType = VIDEO;
+          bid.safeRenderer = { url: SAFE_RENDERER_URL };
+          renderAdDirect(doc, bid.adId);
+          await settled();
+          sinon.assert.notCalled(doc.write);
+          sinon.assert.calledOnce(creativeRender);
+        });
+      }
     });
 
     describe('markWinningBid', () => {
       let bid;
       beforeEach(() => {
-        bid = {adId: '123'};
-        sandbox.stub(utils, 'triggerPixel');
+        bid = { adId: '123' };
+        sandbox.stub(utils, 'politeTriggerPixel');
       });
       it('should fire BID_WON', () => {
         markWinningBid(bid);
         sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
-      })
+      });
       it('should fire win tracking pixels', () => {
-        bid.eventtrackers = [{event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker'}];
+        bid.eventtrackers = [{ event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker' }];
         markWinningBid(bid);
-        sinon.assert.calledWith(utils.triggerPixel, 'tracker');
+        sinon.assert.calledWith(utils.politeTriggerPixel, 'tracker');
       });
       it('should NOT fire non-win or non-pixel trackers', () => {
         bid.eventtrackers = [
-          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_JS, url: 'ignored'},
-          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored'}
+          { event: EVENT_TYPE_WIN, method: TRACKER_METHOD_JS, url: 'ignored' },
+          { event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored' }
         ];
         markWinningBid(bid);
-        sinon.assert.notCalled(utils.triggerPixel);
+        sinon.assert.notCalled(utils.politeTriggerPixel);
       });
-    })
+    });
 
     describe('deferRendering', () => {
       let fn, markWin;
@@ -223,10 +436,10 @@ describe('adRendering', () => {
       }
       before(() => {
         markWinningBid.before(markWinHook);
-      })
+      });
       after(() => {
-        markWinningBid.getHooks({hook: markWinHook}).remove();
-      })
+        markWinningBid.getHooks({ hook: markWinHook }).remove();
+      });
       beforeEach(() => {
         fn = sinon.stub();
         markWin = sinon.stub();
@@ -242,7 +455,7 @@ describe('adRendering', () => {
       [undefined, false].forEach(defer => {
         describe(`when bid has deferRendering = ${defer}`, () => {
           if (defer != null) {
-            beforeEach(() => { bidResponse.deferRendering = defer })
+            beforeEach(() => { bidResponse.deferRendering = defer; });
           }
           it('should run fn and mark bid as rendered', () => {
             deferRendering(bidResponse, fn);
@@ -292,42 +505,53 @@ describe('adRendering', () => {
           deferRendering(bidResponse, fn);
           deferRendering(bidResponse, fn);
           sinon.assert.calledOnce(markWin);
-        })
-      })
+        });
+      });
     });
     describe('renderIfDeferred', () => {
       it('should not choke on unmarked bids', () => {
         renderIfDeferred(bidResponse);
         expect(bidResponse.status).to.not.equal(BID_STATUS.RENDERED);
-      })
+      });
     });
     describe('handleRender', () => {
-      let doRenderStub
+      let doRenderStub;
       function doRenderHook(next, ...args) {
         next.bail(doRenderStub(...args));
       }
       before(() => {
         doRender.before(doRenderHook, 999);
-      })
+      });
       after(() => {
-        doRender.getHooks({hook: doRenderHook}).remove();
-      })
+        doRender.getHooks({ hook: doRenderHook }).remove();
+      });
       beforeEach(() => {
         sandbox.stub(auctionManager, 'addWinningBid');
         doRenderStub = sinon.stub();
-      })
+      });
+      it('stores viewUrl on the bid response before rendering hooks run', () => {
+        handleRender({ adId, bidResponse, options: { viewUrl: 'https://view.example.com' } });
+        expect(bidResponse.viewUrl).to.eql('https://view.example.com');
+        sinon.assert.called(doRenderStub);
+      });
+      it('stores clickUrl on the bid response before rendering hooks run', () => {
+        handleRender({ adId, bidResponse, options: { clickUrl: 'https://click.example.com' } });
+        expect(bidResponse.clickUrl).to.eql('https://click.example.com');
+        sinon.assert.called(doRenderStub);
+      });
+
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
-          handleRender({adId});
+          handleRender({ adId });
           expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD);
           sinon.assert.notCalled(doRenderStub);
         });
         it('on exceptions', () => {
           doRenderStub.throws(new Error());
-          handleRender({adId, bidResponse});
+          handleRender({ adId, bidResponse });
           expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.EXCEPTION);
         });
-      })
+      });
 
       describe('when bid was already rendered', () => {
         beforeEach(() => {
@@ -335,40 +559,237 @@ describe('adRendering', () => {
         });
         afterEach(() => {
           config.resetConfig();
-        })
+        });
         it('should emit STALE_RENDER', () => {
-          handleRender({adId, bidResponse});
+          handleRender({ adId, bidResponse });
           sinon.assert.calledWith(events.emit, EVENTS.STALE_RENDER, bidResponse);
           sinon.assert.called(doRenderStub);
         });
         it('should skip rendering if suppressStaleRender', () => {
-          config.setConfig({auctionOptions: {suppressStaleRender: true}});
-          handleRender({adId, bidResponse});
+          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
-        })
+        });
+        it('preserves click and view URLs when a repeated render is suppressed', () => {
+          bidResponse.clickUrl = 'https://first.example/click';
+          bidResponse.viewUrl = 'https://first.example/view';
+          config.setConfig({ auctionOptions: { suppressStaleRender: true } });
+          handleRender({
+            adId,
+            bidResponse,
+            options: {
+              clickUrl: 'https://second.example/click',
+              viewUrl: 'https://second.example/view'
+            }
+          });
+          expect(bidResponse.clickUrl).to.equal('https://first.example/click');
+          expect(bidResponse.viewUrl).to.equal('https://first.example/view');
+          sinon.assert.notCalled(doRenderStub);
+        });
       });
 
       describe('when bid has already expired', () => {
-        const isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        let isBidNotExpiredStub;
         beforeEach(() => {
+          isBidNotExpiredStub = sinon.stub(bidFilters, 'isBidNotExpired');
           isBidNotExpiredStub.returns(false);
         });
         afterEach(() => {
           isBidNotExpiredStub.restore();
-        })
+        });
         it('should emit EXPIRED_RENDER', () => {
-          handleRender({adId, bidResponse});
+          handleRender({ adId, bidResponse });
           sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
           sinon.assert.called(doRenderStub);
         });
         it('should skip rendering if suppressExpiredRender', () => {
-          config.setConfig({auctionOptions: {suppressExpiredRender: true}});
-          handleRender({adId, bidResponse});
+          config.setConfig({ auctionOptions: { suppressExpiredRender: true } });
+          handleRender({ adId, bidResponse });
           sinon.assert.notCalled(doRenderStub);
-        })
+        });
       });
-    })
-  })
+    });
+  });
+
+  describe('allowTopWindowRenderers', () => {
+    /** Minimal index stub so `getPreparedBidForAuction` can resolve publisher renderers from the bid request. */
+    function makeIndexStub({ requestRenderer, requestSafeRenderer }) {
+      return {
+        getAdUnit: sinon.stub().returns({}),
+        getBidRequest: sinon.stub().returns({
+          ...(requestRenderer && { renderer: requestRenderer }),
+          ...(requestSafeRenderer && { safeRenderer: requestSafeRenderer }),
+        }),
+        getMediaTypes: sinon.stub().returns({}),
+      };
+    }
+
+    beforeEach(() => {
+      sandbox.stub(events, 'emit');
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    it('when false, strips bid.renderer so top-window publisher renderers are not installed', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const renderStub = sinon.stub();
+      const idx = makeIndexStub({
+        requestRenderer: {
+          url: 'https://publisher/renderer.js',
+          render: renderStub,
+          options: {},
+        },
+        requestSafeRenderer: { url: 'https://publisher/safe.js' },
+      });
+      const bid = {
+        bidderCode: 'appnexus',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-1',
+        cpm: 1.5,
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+
+      expect(prepared.renderer).to.equal(null);
+      expect(prepared.safeRenderer).to.deep.include({ url: 'https://publisher/safe.js' });
+    });
+
+    it('when false, clears an adapter-preinstalled renderer on the bid', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const adapterRender = sinon.stub();
+      const idx = makeIndexStub({});
+      const bid = {
+        bidderCode: 'demo',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-2',
+        cpm: 1,
+        renderer: { url: 'https://bidder/outstream.js', render: adapterRender },
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+      expect(prepared.renderer).to.equal(null);
+    });
+
+    it('when true, installs publisher renderer from the bid request onto the bid', () => {
+      config.setConfig({ allowTopWindowRenderers: true });
+      const renderStub = sinon.stub();
+      const idx = makeIndexStub({
+        requestRenderer: {
+          url: 'https://publisher/renderer.js',
+          render: renderStub,
+          options: {},
+        },
+      });
+      const bid = {
+        bidderCode: 'appnexus',
+        adUnitCode: 'div-1',
+        mediaType: 'banner',
+        requestId: 'req-3',
+        cpm: 2,
+      };
+      const prepared = getPreparedBidForAuction(bid, { index: idx });
+
+      expect(prepared.renderer).to.be.an('object');
+      expect(prepared.renderer.url).to.equal('https://publisher/renderer.js');
+    });
+  });
+
+  Object.entries({
+    renderer: (url) => ({ url, render: () => null }),
+    safeRenderer: (url) => ({ url }),
+  }).forEach(([prop, makeConfig]) => {
+    describe(`${prop} selection`, () => {
+      const BIDDER = makeConfig('https://bidder/renderer.js');
+      const MT = makeConfig('https://publisher/mediatype.js');
+      const REQ = makeConfig('https://publisher/request.js');
+      const AU = makeConfig('https://publisher/adunit.js');
+
+      function prepare({ mediaType = {}, request = {}, adUnit = {}, bidRenderer } = {}) {
+        const index = {
+          getAdUnit: sinon.stub().returns(adUnit),
+          getBidRequest: sinon.stub().returns(request),
+          getMediaTypes: sinon.stub().returns({ video: mediaType }),
+        };
+        const bid = { mediaType: 'video', ...(bidRenderer && { [prop]: bidRenderer }) };
+        return getPreparedBidForAuction(bid, { index })[prop]?.url;
+      }
+
+      beforeEach(() => {
+        sandbox.stub(events, 'emit');
+      });
+
+      Object.entries({
+        'media type': (r) => ({ mediaType: { [prop]: r } }),
+        'bid request': (r) => ({ request: { [prop]: r } }),
+        'ad unit': (r) => ({ adUnit: { [prop]: r } }),
+      }).forEach(([level, setup]) => {
+        describe(`backupOnly ${level} ${prop}`, () => {
+          const pub = { ...makeConfig('https://publisher/backup.js'), backupOnly: true };
+
+          it(`yields to the bidder ${prop}`, () => {
+            expect(prepare({ ...setup(pub), bidRenderer: BIDDER })).to.equal(BIDDER.url);
+          });
+
+          it('is used when the bidder set none', () => {
+            expect(prepare(setup(pub))).to.equal(pub.url);
+          });
+        });
+
+        it(`non-backupOnly ${level} ${prop} overrides the bidder's`, () => {
+          const pub = makeConfig('https://publisher/override.js');
+          expect(prepare({ ...setup(pub), bidRenderer: BIDDER })).to.equal(pub.url);
+        });
+      });
+
+      it('falls through from a backupOnly media type config to a non-backupOnly request one', () => {
+        expect(prepare({
+          mediaType: { [prop]: { ...MT, backupOnly: true } },
+          request: { [prop]: REQ },
+          bidRenderer: BIDDER,
+        })).to.equal(REQ.url);
+      });
+
+      it('falls through from a backupOnly media type config to a non-backupOnly ad unit one', () => {
+        expect(prepare({
+          mediaType: { [prop]: { ...MT, backupOnly: true } },
+          adUnit: { [prop]: AU },
+          bidRenderer: BIDDER,
+        })).to.equal(AU.url);
+      });
+
+      it('falls through from a backupOnly request config to a non-backupOnly ad unit one', () => {
+        expect(prepare({
+          request: { [prop]: { ...REQ, backupOnly: true } },
+          adUnit: { [prop]: AU },
+          bidRenderer: BIDDER,
+        })).to.equal(AU.url);
+      });
+
+      it('prefers the media type config over the request one', () => {
+        expect(prepare({ mediaType: { [prop]: MT }, request: { [prop]: REQ } })).to.equal(MT.url);
+      });
+
+      it('prefers the request config over the ad unit one', () => {
+        expect(prepare({ request: { [prop]: REQ }, adUnit: { [prop]: AU } })).to.equal(REQ.url);
+      });
+    });
+  });
+
+  it('safeRenderer selection is not affected by mediaTypes renderer.backupOnly', () => {
+    sandbox.stub(events, 'emit');
+    const safeRenderer = { url: 'https://publisher/mediatype.js' };
+    const index = {
+      getAdUnit: sinon.stub().returns({}),
+      getBidRequest: sinon.stub().returns({}),
+      getMediaTypes: sinon.stub().returns({
+        video: { renderer: { url: 'r.js', render: sinon.stub(), backupOnly: true }, safeRenderer }
+      }),
+    };
+    const bid = { mediaType: 'video', safeRenderer: { url: 'https://bidder/safe.js' } };
+    expect(getPreparedBidForAuction(bid, { index }).safeRenderer).to.equal(safeRenderer);
+  });
 
   describe('handleCreativeEvent', () => {
     let bid;
@@ -376,7 +797,7 @@ describe('adRendering', () => {
       sandbox.stub(events, 'emit');
       bid = {
         status: BID_STATUS.RENDERED
-      }
+      };
     });
     it('emits AD_RENDER_FAILED with given reason', () => {
       handleCreativeEvent({ event: EVENTS.AD_RENDER_FAILED, info: { reason: 'reason', message: 'message' } }, bid);
@@ -388,37 +809,82 @@ describe('adRendering', () => {
       sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ bid }));
     });
 
+    it('emits an observed click only when tracking is enabled for banners', () => {
+      sandbox.stub(userActivation, 'hasBeenActive').returns(true);
+      bid.adId = 'click-id';
+      bid.adUnitCode = 'banner-slot';
+      bid.bidder = 'test';
+      bid.mediaType = 'banner';
+      config.setConfig({ bidClickTracking: { enabled: true } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.calledWith(events.emit, EVENTS.BID_CLICK, sinon.match({ adId: 'click-id', method: 'creativeClick' }));
+      events.emit.resetHistory();
+      config.setConfig({ bidClickTracking: { enabled: false } });
+      handleCreativeEvent({ event: EVENTS.BID_CLICK, method: 'creativeClick' }, bid);
+      sinon.assert.notCalled(events.emit);
+    });
+
     it('logs an error on other events', () => {
-      handleCreativeEvent({event: 'unsupported'}, bid);
+      handleCreativeEvent({ event: 'unsupported' }, bid);
       sinon.assert.called(utils.logError);
       sinon.assert.notCalled(events.emit);
     });
   });
 
-  describe('handleNativeMessage', () => {
-    if (!FEATURES.NATIVE) return;
-    let bid;
-    beforeEach(() => {
-      bid = {
-        adId: '123'
-      };
-    })
+  if (FEATURES.NATIVE) {
+    describe('handleNativeMessage', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {
+          adId: '123'
+        };
+      });
 
-    it('should resize', () => {
-      const resizeFn = sinon.stub();
-      handleNativeMessage({action: 'resizeNativeHeight', height: 100}, bid, {resizeFn});
-      sinon.assert.calledWith(resizeFn, undefined, 100);
+      it('reports the native click event once, preserves the asset ID, and fires bidder trackers on every click', () => {
+        bid.mediaType = 'native';
+        bid.bidder = 'nativeBidder';
+        bid.native = { clickUrl: 'https://advertiser.example/landing' };
+        const fireTrackers = sinon.stub();
+        const emit = sandbox.stub(events, 'emit');
+        config.setConfig({ bidClickTracking: { enabled: true, fireTrackers: true } });
+        const click = { action: 'click', assetId: 3 };
+        handleNativeMessage(click, bid, { fireTrackers });
+        handleNativeMessage(click, bid, { fireTrackers });
+        sinon.assert.calledTwice(fireTrackers);
+        sinon.assert.alwaysCalledWithExactly(fireTrackers, click, bid);
+        sinon.assert.calledOnceWithExactly(emit, EVENTS.BID_CLICK, sinon.match({ method: 'nativeClick', assetId: 3, adId: '123' }));
+        config.setConfig({ bidClickTracking: { enabled: false } });
+      });
+
+      it('reports every native click event when deduplication is explicitly disabled', () => {
+        bid.mediaType = 'native';
+        bid.native = { clickUrl: 'https://advertiser.example/landing' };
+        const fireTrackers = sinon.stub();
+        sandbox.stub(events, 'emit');
+        config.setConfig({ bidClickTracking: { enabled: true, dedupeNativeClicks: false } });
+        handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+        handleNativeMessage({ action: 'click' }, bid, { fireTrackers });
+        sinon.assert.calledTwice(fireTrackers);
+        sinon.assert.calledTwice(events.emit);
+        config.setConfig({ bidClickTracking: { enabled: false } });
+      });
+
+      it('should resize', () => {
+        const resizeFn = sinon.stub();
+        handleNativeMessage({ action: 'resizeNativeHeight', height: 100 }, bid, { resizeFn });
+        sinon.assert.calledWith(resizeFn, undefined, 100);
+      });
+
+      it('should fire trackers', () => {
+        const data = {
+          action: 'click'
+        };
+        const fireTrackers = sinon.stub();
+        handleNativeMessage(data, bid, { fireTrackers });
+        sinon.assert.calledWith(fireTrackers, data, bid);
+      });
     });
-
-    it('should fire trackers', () => {
-      const data = {
-        action: 'click'
-      };
-      const fireTrackers = sinon.stub();
-      handleNativeMessage(data, bid, {fireTrackers});
-      sinon.assert.calledWith(fireTrackers, data, bid);
-    })
-  })
+  }
 
   describe('onAdRenderSucceeded', () => {
     let mockAdapterSpec, bids;

@@ -35,7 +35,7 @@ describe('Parent Module', function() {
       const submodule = parentModule.getSubmodule(unrecognizedId);
       expect(submodule).to.be.undefined;
     });
-  })
+  });
 });
 
 describe('Submodule Builder', function () {

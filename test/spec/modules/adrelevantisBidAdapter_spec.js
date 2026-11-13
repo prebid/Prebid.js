@@ -1,9 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrelevantisBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
-import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ssp.adrelevantis.com/prebid';
 
@@ -73,7 +71,7 @@ describe('AdrelevantisAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].private_sizes).to.exist;
-      expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 300, height: 250 }]);
     });
 
     it('should add source and verison to the tag', function () {
@@ -102,7 +100,7 @@ describe('AdrelevantisAdapter', function () {
     it('should populate the ad_types array on outstream requests', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
-      bidRequest.mediaTypes.video = {context: 'outstream'};
+      bidRequest.mediaTypes.video = { context: 'outstream' };
 
       const request = spec.buildRequests([bidRequest], {});
       const payload = JSON.parse(request.data);
@@ -226,12 +224,12 @@ describe('AdrelevantisAdapter', function () {
         site: {
           keywords: 'US Open',
           ext: {
-            data: {category: 'sports/tennis'}
+            data: { category: 'sports/tennis' }
           }
         }
       };
 
-      const request = spec.buildRequests([bidRequest], {ortb2});
+      const request = spec.buildRequests([bidRequest], { ortb2 });
       const payload = JSON.parse(request.data);
 
       expect(payload.fpd.keywords).to.equal('US Open');
@@ -244,22 +242,22 @@ describe('AdrelevantisAdapter', function () {
         {
           mediaType: 'native',
           nativeParams: {
-            title: {required: true},
-            body: {required: true},
-            body2: {required: true},
-            image: {required: true, sizes: [100, 100]},
-            icon: {required: true},
-            cta: {required: false},
-            rating: {required: true},
-            sponsoredBy: {required: true},
-            privacyLink: {required: true},
-            displayUrl: {required: true},
-            address: {required: true},
-            downloads: {required: true},
-            likes: {required: true},
-            phone: {required: true},
-            price: {required: true},
-            salePrice: {required: true}
+            title: { required: true },
+            body: { required: true },
+            body2: { required: true },
+            image: { required: true, sizes: [100, 100] },
+            icon: { required: true },
+            cta: { required: false },
+            rating: { required: true },
+            sponsoredBy: { required: true },
+            privacyLink: { required: true },
+            displayUrl: { required: true },
+            address: { required: true },
+            downloads: { required: true },
+            likes: { required: true },
+            phone: { required: true },
+            price: { required: true },
+            salePrice: { required: true }
           }
         }
       );
@@ -268,22 +266,22 @@ describe('AdrelevantisAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        title: {required: true},
-        description: {required: true},
-        desc2: {required: true},
-        main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
-        icon: {required: true},
-        ctatext: {required: false},
-        rating: {required: true},
-        sponsored_by: {required: true},
-        privacy_link: {required: true},
-        displayurl: {required: true},
-        address: {required: true},
-        downloads: {required: true},
-        likes: {required: true},
-        phone: {required: true},
-        price: {required: true},
-        saleprice: {required: true},
+        title: { required: true },
+        description: { required: true },
+        desc2: { required: true },
+        main_image: { required: true, sizes: [{ width: 100, height: 100 }] },
+        icon: { required: true },
+        ctatext: { required: false },
+        rating: { required: true },
+        sponsored_by: { required: true },
+        privacy_link: { required: true },
+        displayurl: { required: true },
+        address: { required: true },
+        downloads: { required: true },
+        likes: { required: true },
+        phone: { required: true },
+        price: { required: true },
+        saleprice: { required: true },
         privacy_supported: true
       });
       expect(payload.tags[0].hb_source).to.equal(1);
@@ -303,14 +301,14 @@ describe('AdrelevantisAdapter', function () {
 
       let request = spec.buildRequests([bidRequest], {});
       let payload = JSON.parse(request.data);
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
+      expect(payload.tags[0].sizes).to.deep.equal([{ width: 150, height: 100 }, { width: 300, height: 250 }]);
 
       delete bidRequest.sizes;
 
       request = spec.buildRequests([bidRequest], {});
       payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+      expect(payload.tags[0].sizes).to.deep.equal([{ width: 1, height: 1 }]);
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
@@ -327,7 +325,7 @@ describe('AdrelevantisAdapter', function () {
               singleValNum: 123,
               emptyStr: '',
               emptyArr: [''],
-              badValue: {'foo': 'bar'} // should be dropped
+              badValue: { 'foo': 'bar' } // should be dropped
             }
           }
         }
@@ -442,7 +440,7 @@ describe('AdrelevantisAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           topmostLocation: 'http://example.com/page.html',
@@ -454,7 +452,7 @@ describe('AdrelevantisAdapter', function () {
             'http://example.com/iframe2.html'
           ]
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -467,20 +465,14 @@ describe('AdrelevantisAdapter', function () {
       });
     });
 
-    it('should populate coppa if set in config', function () {
+    it('should populate coppa if set in ortb2', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-
-      const request = spec.buildRequests([bidRequest], {});
+      const request = spec.buildRequests([bidRequest], { ortb2: { regs: { coppa: 1 } } });
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
-
-      config.getConfig.restore();
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -555,8 +547,8 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -572,7 +564,7 @@ describe('AdrelevantisAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -603,11 +595,12 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastXml');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -638,11 +631,12 @@ describe('AdrelevantisAdapter', function () {
             }
           }
         }]
-      }
+      };
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result[0]).to.have.property('vastUrl');
-      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('vastTrackers');
+      expect(result[0].vastTrackers).to.have.property('impression').that.is.an('array');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
@@ -687,9 +681,9 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
+      };
 
-      const result = spec.interpretResponse({ body: response1 }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response1 }, { bidderRequest });
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
@@ -717,7 +711,7 @@ describe('AdrelevantisAdapter', function () {
         }]
       };
 
-      const result = spec.interpretResponse({ body: outstreamResponse }, {bidderRequest});
+      const result = spec.interpretResponse({ body: outstreamResponse }, { bidderRequest });
       expect(result[0].renderer.config).to.deep.equal(
         bidderRequest.bids[0].renderer.options
       );
@@ -733,8 +727,8 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
-      const result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: responseWithDeal }, { bidderRequest });
       expect(Object.keys(result[0].adrelevantis)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
 
@@ -747,9 +741,9 @@ describe('AdrelevantisAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      }
-      const result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    })
+    });
   });
 });

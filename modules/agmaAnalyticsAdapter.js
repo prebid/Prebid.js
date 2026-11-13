@@ -27,10 +27,10 @@ const pageViewId = generateUUID();
 // Helper functions
 const getScreen = () => {
   try {
-    const {width: x, height: y} = getViewportSize();
+    const { width: x, height: y } = getViewportSize();
     return { x, y };
   } catch (e) {
-    return {x: 0, y: 0};
+    return { x: 0, y: 0 };
   }
 };
 
@@ -48,7 +48,7 @@ export const getOrtb2Data = (options = {}) => {
     return {
       site: win.agma?.ortb2?.site ?? options.ortb2?.site ?? configData.ortb2?.site,
       user: win.agma?.ortb2?.user ?? options.ortb2?.user ?? configData.ortb2?.user,
-    }
+    };
   } catch (e) {
     return {};
   }
@@ -56,7 +56,7 @@ export const getOrtb2Data = (options = {}) => {
 
 export const getTiming = () => {
   // Timing API V2
-  let ttfb = 0;
+  let ttfb;
   try {
     const entry = performance.getEntriesByType('navigation')[0];
     ttfb = Math.round(entry.responseStart - entry.startTime);

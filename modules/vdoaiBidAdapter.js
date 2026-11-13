@@ -1,4 +1,4 @@
-import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject, sizesToSizeTuples } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -7,9 +7,12 @@ import { ajax } from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('./vdoaiBidAdapter.d.ts').VdoaiBidRequestParams} VdoaiBidRequestParams
+ * @typedef {BidRequest & { params: VdoaiBidRequestParams }} VdoaiBidRequest
  */
 
 const BIDDER_CODE = 'vdoai';
+const GVLID = 1561;
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -30,20 +33,39 @@ function vdoIsBidResponseValid(vdoresponse) {
   return false;
 }
 
+/**
+ * @param {VdoaiBidRequest} bid The bid request to get floor data from.
+ * @return {?number} The bid floor.
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidfloor || null;
+  }
+
+  const floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.params.adUnitType || '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return bid.params.bidfloor || null;
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} vdobid The bid params to validate.
+   * @param {VdoaiBidRequest} vdobid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (vdobid) => {
-    logMessage('vdobid', vdobid);
-    return Boolean(vdobid.bidId && vdobid.params && vdobid.params.host && vdobid.params.adUnitType &&
-      (vdobid.params.adUnitId || vdobid.params.adUnitId === 0));
+    return Boolean(vdobid.bidId && vdobid.params && vdobid.params.host && vdobid.params.adUnitType && vdobid.params.adUnitId);
   },
 
   /**
@@ -60,7 +82,7 @@ export const spec = {
       logMessage(e);
       winTop = window;
     }
-    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host')
+    const placements = groupBy(vdoValidBidRequests.map(bidRequest => vdoBuildPlacement(bidRequest)), 'host');
     return Object.keys(placements)
       .map(host => vdoBuildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
   },
@@ -71,12 +93,27 @@ export const spec = {
    */
   onBidWon: (vdobid) => {
     const cpm = vdobid.pbMg;
-    if (vdobid.nurl !== '') {
+    if (vdobid.nurl && vdobid.nurl !== '') {
       vdobid.nurl = vdobid.nurl.replace(
         /\$\{AUCTION_PRICE\}/,
         cpm
       );
       ajax(vdobid.nurl, null);
+    }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder is billable
+   * @param {Bid} vdobid The bid that is billable
+   */
+  onBidBillable: (vdobid) => {
+    const cpm = vdobid.pbMg;
+    if (vdobid.burl && vdobid.burl !== '') {
+      vdobid.burl = vdobid.burl.replace(
+        /\$\{AUCTION_PRICE\}/,
+        cpm
+      );
+      ajax(vdobid.burl, null);
     }
   },
 
@@ -104,16 +141,16 @@ export const spec = {
     const allImageSyncs = [];
     for (let i = 0; i < vdoServerResponses.length; i++) {
       const serverResponseHeaders = vdoServerResponses[i].headers;
-      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
-      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      const vdoImgSync = (serverResponseHeaders != null && userSyncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null;
+      const vdoIframeSync = (serverResponseHeaders != null && userSyncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null;
       if (vdoIframeSync != null) {
-        allIframeSyncs.push(vdoIframeSync)
+        allIframeSyncs.push(vdoIframeSync);
       } else if (vdoImgSync != null) {
-        allImageSyncs.push(vdoImgSync)
+        allImageSyncs.push(vdoImgSync);
       }
     }
-    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
-      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
+    return [allIframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it }; }),
+      allImageSyncs.filter(uniques).map(it => { return { type: 'image', url: it }; })].reduce(flatten, []).filter(uniques);
   }
 };
 
@@ -133,9 +170,13 @@ function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
       sua: bidderRequest?.ortb2?.device?.sua,
       page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
-  }
+  };
 }
 
+/**
+ * @param {VdoaiBidRequest} vdoBidRequest The bid request to convert into placement data.
+ * @return {object} The placement data.
+ */
 function vdoBuildPlacement(vdoBidRequest) {
   let sizes;
   if (vdoBidRequest.mediaTypes) {
@@ -147,13 +188,15 @@ function vdoBuildPlacement(vdoBidRequest) {
         break;
       case VIDEO:
         if (vdoBidRequest.mediaTypes.video && vdoBidRequest.mediaTypes.video.playerSize) {
-          sizes = [vdoBidRequest.mediaTypes.video.playerSize];
+          sizes = vdoBidRequest.mediaTypes.video.playerSize;
         }
         break;
     }
   }
-  sizes = (sizes || []).concat(vdoBidRequest.sizes || []);
-  return {
+  sizes = sizesToSizeTuples(sizes).concat(sizesToSizeTuples(vdoBidRequest.sizes));
+  sizes = sizes.filter(uniques);
+  const bidfloor = getBidFloor(vdoBidRequest);
+  const placement = {
     host: vdoBidRequest.params.host,
     adUnit: {
       id: vdoBidRequest.params.adUnitId,
@@ -163,7 +206,7 @@ function vdoBuildPlacement(vdoBidRequest) {
         return {
           width: size[0],
           height: size[1]
-        }
+        };
       }),
       type: vdoBidRequest.params.adUnitType.toUpperCase(),
       ortb2Imp: vdoBidRequest.ortb2Imp,
@@ -176,5 +219,9 @@ function vdoBuildPlacement(vdoBidRequest) {
       custom4: vdoBidRequest.params.custom4,
       custom5: vdoBidRequest.params.custom5
     }
+  };
+  if (bidfloor) {
+    placement.adUnit.bidfloor = bidfloor;
   }
+  return placement;
 }

@@ -1,6 +1,6 @@
 import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
-import {mnetGlobals} from './constants.js';
-import {getViewportSize} from '../viewport/viewport.js';
+import { mnetGlobals } from './constants.js';
+import { getViewportSize } from '../viewport/viewport.js';
 
 export function findBidObj(list = [], key, value) {
   return list.find((bid) => {
@@ -20,7 +20,7 @@ export function flattenObj(obj, parent, res = {}) {
       continue;
     }
     const propName = parent ? parent + '.' + key : key;
-    if (typeof obj[key] == 'object') {
+    if (typeof obj[key] === 'object') {
       flattenObj(obj[key], propName, res);
     } else {
       res[propName] = String(obj[key]);

@@ -1,7 +1,7 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {spec as baseAdapter} from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { spec as baseAdapter } from './appnexusBidAdapter.js'; // eslint-disable-line prebid/validate-imports
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ export const spec = {
   version: '1.5.1',
   code: BIDDER_CODE,
   gvlid: baseAdapter.GVLID, // use base adapter gvlid
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -87,8 +87,8 @@ export const spec = {
       // This is a workaround needed for the rendering step (so that the adserver iframe does not get resized to 1800x1000
       // when there is skin demand
       if (format === 'skin') {
-        bid.width = 1
-        bid.height = 1
+        bid.width = 1;
+        bid.height = 1;
       }
 
       const encoded = window.btoa(JSON.stringify(renderParams));
@@ -120,6 +120,6 @@ export const spec = {
     if (!baseAdapter.onBidWon) { return; }
     baseAdapter.onBidWon(bid);
   }
-}
+};
 
 registerBidder(spec);

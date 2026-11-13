@@ -7,19 +7,23 @@ const bidder = 'loopme';
 
 const mTypes = [
   { [BANNER]: { sizes: [[300, 250]] } },
-  { [VIDEO]: {
-    api: [3, 5],
-    h: 480,
-    w: 640,
-    mimes: ['video/mp4'],
-    plcmt: 4,
-    protocols: [1, 2, 3, 4, 5, 6, 7, 8]
-  } },
-  { [NATIVE]: {
-    adTemplate: `##hb_native_asset_id_1## ##hb_native_asset_id_2## ##hb_native_asset_id_3##`,
-    image: { required: true, sendId: true },
-    title: { required: true },
-    body: { required: true } }
+  {
+    [VIDEO]: {
+      api: [3, 5],
+      h: 480,
+      w: 640,
+      mimes: ['video/mp4'],
+      plcmt: 4,
+      protocols: [1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  },
+  {
+    [NATIVE]: {
+      adTemplate: `##hb_native_asset_id_1## ##hb_native_asset_id_2## ##hb_native_asset_id_3##`,
+      image: { required: true, sendId: true },
+      title: { required: true },
+      body: { required: true }
+    }
   }
 ];
 
@@ -45,22 +49,24 @@ describe('LoopMeBidAdapter', function () {
 
     describe('valid bid requests', function () {
       const validBids = [
-        { bundleId: 'bundleId', publisherId: 'publisherId', placementId: 'placementId' },
-        { bundleId: 'bundleId', publisherId: 'publisherId' },
-      ].flatMap(params => mTypes.map(mediaTypes => ({ bidder, bidId, mediaTypes, params})));
+        { publisherId: 'publisherId', bundleId: 'bundleId', placementId: 'placementId' },
+        { publisherId: 'publisherId', bundleId: 'bundleId' },
+        { publisherId: 'publisherId', placementId: 'placementId' },
+        { publisherId: 'publisherId' }
+      ].flatMap(params => mTypes.map(mediaTypes => ({ bidder, bidId, mediaTypes, params })));
 
       validBids.forEach(function (bid) {
         it('Should return true if bid request valid', function () {
           expect(spec.isBidRequestValid(bid)).eq(true, `Bid: ${JSON.stringify(bid)}`);
-        })
+        });
       });
     });
 
     describe('invalid bid requests', function () {
       [
-        { publisherId: 'publisherId', placementId: 'placementId' },
         { bundleId: 'bundleId', placementId: 'placementId' },
         { placementId: 'placementId' },
+        { bundleId: 'bundleId' },
         { },
       ]
         .flatMap(params => mTypes.map(mediaTypes => ({ bidder, bidId, mediaTypes, params })))
@@ -79,7 +85,7 @@ describe('LoopMeBidAdapter', function () {
         [{ body: {} }],
         [{ body: { ext: {} } }],
         [{ body: { ext: { usersyncs: [] } } }]
-      ].forEach((response) => expect(spec.getUserSyncs({}, response)).to.be.an('array').that.is.empty)
+      ].forEach((response) => expect(spec.getUserSyncs({}, response)).to.be.an('array').that.is.empty);
     });
 
     it('Should return an array of user syncs objects', function () {
@@ -128,9 +134,7 @@ describe('LoopMeBidAdapter', function () {
         at: 1,
         'imp[0].ext.bidder': { bundleId: 'bundleId', placementId: 'placementId', publisherId: 'publisherId' },
         site: {
-          domain: 'bundleId',
-          page: 'https://loopme.com',
-          publisher: { domain: 'bundleId', id: 'publisherId' }
+          page: 'https://loopme.com'
         }
       });
       if (FEATURES.VIDEO) {

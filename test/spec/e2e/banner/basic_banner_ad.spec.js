@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const {setupTest, testPageURL} = require('../../../helpers/testing-utils.js');
+const { setupTest, testPageURL } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('banner.html?pbjs_debug=true');
 const SYNC_PAGE_URL = testPageURL('banner_sync.html?pbjs_debug=true');
@@ -9,10 +9,10 @@ const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="' + CREATIVE_IFRAME_ID + '"]';
 const EXPECTED_TARGETING_KEYS = {
   'hb_format': 'banner',
   'hb_pb': '0.50',
-  'hb_bidder': 'appnexus',
-  'hb_format_appnexus': 'banner',
-  'hb_pb_appnexus': '0.50',
-  'hb_bidder_appnexus': 'appnexus'
+  'hb_bidder': 'msft',
+  'hb_format_msft': 'banner',
+  'hb_pb_msft': '0.50',
+  'hb_bidder_msft': 'msft'
 };
 
 Object.entries({
@@ -32,7 +32,7 @@ Object.entries({
 
       expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
       expect(targetingKeys.hb_adid).to.be.a('string');
-      expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+      expect(targetingKeys.hb_adid_msft).to.be.a('string');
       expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
     });
   });

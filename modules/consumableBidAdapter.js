@@ -1,5 +1,4 @@
-import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import {config} from '../src/config.js';
+import { logWarn, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -87,11 +86,11 @@ export const spec = {
       data.schain = schain;
     }
 
-    if (config.getConfig('coppa')) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       data.coppa = true;
     }
 
-    validBidRequests.map(bid => {
+    validBidRequests.forEach(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
@@ -300,7 +299,7 @@ function retrieveAd(decision, unitId, unitName) {
 }
 
 function handleEids(data, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  let bidUserIdAsEids = validBidRequests?.[0]?.userIdAsEids;
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);

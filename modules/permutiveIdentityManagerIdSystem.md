@@ -56,3 +56,9 @@ identities from the SDK directly if/when this happens.
 
 This value should be set to a value smaller than the `auctionDelay` set on the `userSync` configuration object, since
 there is no point waiting longer than this as the auction will already have been triggered.
+
+### enforceVendorConsent
+
+Publishers that require a vendor-based TCF check can set `enforceVendorConsent: true` in the module params. When enabled,
+the module will only run when TCF vendor consent for Permutive (vendor 361) and purpose 1 is available. If the flag is
+omitted or set to `false`, the module relies on the publisher-level purpose consent instead.

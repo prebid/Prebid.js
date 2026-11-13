@@ -1,10 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/gammaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('gammaBidAdapter', function() {
-  const adapter = newBidder(spec);
-
   const bid = {
     'bidder': 'gamma',
     'params': {
@@ -76,7 +73,7 @@ describe('gammaBidAdapter', function() {
           }]
         }
       };
-    })
+    });
 
     it('should get the correct bid response', () => {
       const expectedResponse = [{
@@ -90,7 +87,7 @@ describe('gammaBidAdapter', function() {
         'netRevenue': true,
         'ttl': 300,
         'ad': '<!-- adtag -->',
-        'meta': {'advertiserDomains': ['testdomain.com']}
+        'meta': { 'advertiserDomains': ['testdomain.com'] }
       }];
       const result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));

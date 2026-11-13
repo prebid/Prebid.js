@@ -1,6 +1,6 @@
-import {isArray, setOnAny} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { isArray, setOnAny } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -16,7 +16,7 @@ const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
   aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -39,11 +39,11 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.page;
     const domain = bidderRequest.refererInfo.domain;
-    const ua = navigator.userAgent;
-    const devicetype = getDeviceType()
+    const ua = bidderRequest.ortb2?.device?.ua;
+    const devicetype = getDeviceType(ua);
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const cur = CURRENCY;
-    const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid'
+    const endpointUrl = 'https://ai-p-codefuel-ds-rtb-us-east-1-k8s.seccint.com/prebid';
     const timeout = bidderRequest.timeout;
 
     validBidRequests.forEach(bid => {
@@ -53,16 +53,16 @@ export const spec = {
     const imps = validBidRequests.map((bid, idx) => {
       const imp = {
         id: idx + 1 + ''
-      }
+      };
 
       if (bid.params.tagid) {
-        imp.tagid = bid.params.tagid
+        imp.tagid = bid.params.tagid;
       }
 
       if (bid.sizes) {
         imp.banner = {
           format: transformSizes(bid.sizes)
-        }
+        };
       }
 
       return imp;
@@ -98,7 +98,8 @@ export const spec = {
     if (!serverResponse.body) {
       return [];
     }
-    const { seatbid, cur } = serverResponse.body;
+    // a no-bid response may have no seatbid
+    const { seatbid = [], cur } = serverResponse.body;
 
     const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
       result[bid.impid - 1] = bid;
@@ -119,10 +120,11 @@ export const spec = {
           ad: bidResponse.adm,
           width: bidResponse.w,
           height: bidResponse.h,
-          meta: { advertiserDomains: bid.adomain ? bid.adomain : [] }
+          meta: { advertiserDomains: bidResponse.adomain ? bidResponse.adomain : [] }
         };
         return bidObject;
       }
+      return undefined;
     }).filter(Boolean);
   },
 
@@ -137,14 +139,15 @@ export const spec = {
     return [];
   }
 
-}
+};
 registerBidder(spec);
 
-function getDeviceType() {
-  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
+function getDeviceType(ua) {
+  const uaLower = (ua || '').toLowerCase();
+  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(uaLower))) {
     return 5; // 'tablet'
   }
-  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
+  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(uaLower))) {
     return 4; // 'mobile'
   }
   return 2; // 'desktop'

@@ -1,6 +1,5 @@
-import {transformBidderParamKeywords} from '../../libraries/appnexusUtils/anKeywords.js';
-import {expect} from 'chai/index.js';
-import * as utils from '../../src/utils.js';
+import { transformBidderParamKeywords } from '../../libraries/appnexusUtils/anKeywords.js';
+import { expect } from 'chai/index.js';
 
 describe('transformBidderParamKeywords', function () {
   it('returns an array of objects when keyvalue is an array', function () {

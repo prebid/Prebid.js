@@ -2,11 +2,11 @@
  * This module validates the configuration and filters data accordingly
  * @module modules/dataController
  */
-import {config} from '../../src/config.js';
-import {getHook, module} from '../../src/hook.js';
-import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
-import {startAuction} from '../../src/prebid.js';
-import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import { config } from '../../src/config.js';
+import { getHook, module } from '../../src/hook.js';
+import { deepAccess, deepSetValue, prefixLog } from '../../src/utils.js';
+import { startAuction } from '../../src/prebid.js';
+import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
@@ -36,36 +36,23 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
     return true;
   }
   const bidderEIDs = eidSourcesMap.get(bidderCode);
-  if (bidderEIDs == undefined) {
+  if (bidderEIDs === undefined) {
     return false;
   }
-  let containsEIDs = false;
-  _dataControllerConfig.filterSDAwhenEID.some(source => {
-    if (bidderEIDs.has(source)) {
-      containsEIDs = true;
-    }
-  });
-  return containsEIDs;
+  return _dataControllerConfig.filterSDAwhenEID.some((source) => bidderEIDs.has(source));
 }
 
-function containsConfiguredSDA(segementMap, bidderCode) {
+function containsConfiguredSDA(segmentMap, bidderCode) {
   if (_dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
     return true;
   }
-  return hasValue(segementMap.get(bidderCode)) || hasValue(segementMap.get(GLOBAL))
+  return hasValue(segmentMap.get(bidderCode)) || hasValue(segmentMap.get(GLOBAL));
 }
 
-function hasValue(bidderSegement) {
-  let containsSDA = false;
-  if (bidderSegement == undefined) {
-    return false;
-  }
-  _dataControllerConfig.filterEIDwhenSDA.some(segment => {
-    if (bidderSegement.has(segment)) {
-      containsSDA = true;
-    }
-  });
-  return containsSDA;
+function hasValue(bidderSegment) {
+  return bidderSegment === undefined
+    ? false
+    : _dataControllerConfig.filterEIDwhenSDA.some((segment) => bidderSegment.has(segment));
 }
 
 function getSegmentConfig(ortb2Fragments) {
@@ -140,7 +127,7 @@ function filterSDA(adUnits, ortb2Fragments) {
     }
   }
   if (resetGlobal) {
-    deepSetValue(ortb2Fragments, 'global.user.data', [])
+    deepSetValue(ortb2Fragments, 'global.user.data', []);
   }
 }
 
@@ -158,7 +145,7 @@ function filterEIDs(adUnits, ortb2Fragments) {
           const bidderFragment = ortb2Fragments.bidder[bid.bidder];
           const userExt = deepAccess(bidderFragment, 'user.ext.eids') || [];
           if (userExt) {
-            deepSetValue(bidderFragment, 'user.ext.eids', [])
+            deepSetValue(bidderFragment, 'user.ext.eids', []);
           }
         }
       }
@@ -166,7 +153,7 @@ function filterEIDs(adUnits, ortb2Fragments) {
   });
 
   if (globalEidUpdate) {
-    deepSetValue(ortb2Fragments, 'global.user.ext.eids', [])
+    deepSetValue(ortb2Fragments, 'global.user.ext.eids', []);
   }
   return adUnits;
 }
@@ -176,13 +163,13 @@ export function init() {
     const dataController = dataControllerConfig && dataControllerConfig.dataController;
     if (!dataController) {
       _logger.logInfo(`Data Controller is not configured`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
       return;
     }
 
     if (dataController.filterEIDwhenSDA && dataController.filterSDAwhenEID) {
       _logger.logInfo(`Data Controller can be configured with either filterEIDwhenSDA or filterSDAwhenEID`);
-      startAuction.getHooks({hook: filterBidData}).remove();
+      startAuction.getHooks({ hook: filterBidData }).remove();
       return;
     }
     confListener(); // unsubscribe config listener

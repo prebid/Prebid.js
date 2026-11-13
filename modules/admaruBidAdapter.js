@@ -1,11 +1,11 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ADMARU_ENDPOINT = 'https://p1.admaru.net/AdCall';
 const BIDDER_CODE = 'admaru';
 
 const DEFAULT_BID_TTL = 360;
-const SYNC_URL = 'https://p2.admaru.net/UserSync/sync'
+const SYNC_URL = 'https://p2.admaru.net/UserSync/sync';
 
 function parseBid(rawBid, currency) {
   const bid = {};
@@ -47,13 +47,13 @@ export const spec = {
         method: 'GET',
         url: ADMARU_ENDPOINT,
         data: payload,
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    let bid = null;
+    let bid;
 
     if (!serverResponse.hasOwnProperty('body') || !serverResponse.body.hasOwnProperty('seatbid')) {
       return bidResponses;
@@ -94,6 +94,6 @@ export const spec = {
 
     return [];
   },
-}
+};
 
 registerBidder(spec);

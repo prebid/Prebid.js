@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   _each,
-  deepAccess,
   formatQS,
   getUniqueIdentifierStr,
   isArray,
@@ -16,6 +15,9 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+
+import { getGlobalVarName } from '../src/buildOptions.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -42,8 +44,8 @@ function getTimeoutSize(timeoutData) {
 
 const largestSize = (sizes, mediaTypes) => {
   const allSizes = sizes
-    .concat(deepAccess(mediaTypes, `${BANNER}.sizes`, []) || [])
-    .concat(deepAccess(mediaTypes, `${VIDEO}.sizes`, []) || []);
+    .concat(mediaTypes?.[BANNER]?.sizes || [])
+    .concat(mediaTypes?.[VIDEO]?.sizes || []);
 
   return allSizes.sort((a, b) => b[0] * b[1] - a[0] * a[1])[0];
 };
@@ -133,7 +135,7 @@ function ensureFloor(floorValue) {
 
 function getFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
+    return bid?.params?.floor ?? DEFAULT_MIN_FLOOR;
   }
 
   try {
@@ -151,14 +153,15 @@ function getFloor(bid) {
 }
 
 function refInfo(bidderRequest, subKey, defaultValue) {
-  return deepAccess(bidderRequest, 'refererInfo.' + subKey, defaultValue);
+  const value = bidderRequest?.refererInfo?.[subKey];
+  return value === undefined ? defaultValue : value;
 }
 
 function convertRequest(bid) {
   const size = largestSize(bid.sizes, bid.mediaTypes) || [0, 0];
   const isVideoBid = bid.mediaType === VIDEO || VIDEO in bid.mediaTypes;
   const av = isVideoBid || size[1] > 100;
-  const tid = deepAccess(bid, 'params.tagId');
+  const tid = bid?.params?.tagId;
 
   const au =
     bid.params != null &&
@@ -169,11 +172,11 @@ function convertRequest(bid) {
 
   const multiSizes = [
     bid.sizes,
-    deepAccess(bid, `mediaTypes.${BANNER}.sizes`, []) || [],
-    deepAccess(bid, `mediaTypes.${VIDEO}.sizes`, []) || [],
+    bid?.mediaTypes?.[BANNER]?.sizes || [],
+    bid?.mediaTypes?.[VIDEO]?.sizes || [],
   ];
 
-  const videoData = deepAccess(bid, `mediaTypes.${VIDEO}`, {}) || {};
+  const videoData = bid?.mediaTypes?.[VIDEO] || {};
 
   const params = {
     au,
@@ -249,7 +252,7 @@ function getSyncSettings() {
   const all = isSyncEnabled(syncConfig.filterSettings, 'all');
 
   if (all) {
-    settings.t = SYNC_IMAGE & SYNC_IFRAME;
+    settings.t = SYNC_IMAGE | SYNC_IFRAME;
     return settings;
   }
 
@@ -317,22 +320,23 @@ export const spec = {
 
   isBidRequestValid(bid) {
     return (
-      nullOrType(deepAccess(bid, 'params.endpoint', null), 'string') &&
-      nullOrType(deepAccess(bid, 'params.tagId', null), 'string')
+      nullOrType(bid?.params?.endpoint ?? null, 'string') &&
+      nullOrType(bid?.params?.tagId ?? null, 'string')
     );
   },
 
   buildRequests(bidRequests, bidderRequest) {
     const loc = getLocation(bidderRequest);
-    const tagId = deepAccess(bidRequests[0], 'params.tagId', null);
-    const testMode = deepAccess(bidRequests[0], 'params.testMode', 0);
+    const tagId = bidRequests[0]?.params?.tagId ?? null;
+    const testMode = bidRequests[0]?.params?.testMode ?? 0;
     const fbid =
       bidRequests[0] != null
         ? bidRequests[0]
         : {
             bidderRequestsCount: 0,
             bidderWinsCount: 0,
-            bidRequestsCount: 0 };
+            bidRequestsCount: 0
+          };
 
     const payload = {
       a: generateUUID(),
@@ -343,7 +347,7 @@ export const spec = {
       trc: fbid.bidRequestsCount || 0,
       tm: isTrue(testMode),
       V: '$prebid.version$',
-      vg: '$$PREBID_GLOBAL$$',
+      vg: getGlobalVarName(),
       i: testMode && tagId != null ? tagId : getID(loc),
       l: {},
       f: 0.01,
@@ -351,8 +355,8 @@ export const spec = {
       st: 'prebid',
       h: screen.height,
       w: screen.width,
-      gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
-      gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+      gs: bidderRequest?.gdprConsent?.gdprApplies ?? '',
+      gc: bidderRequest?.gdprConsent?.consentString ?? '',
       gpp: getGpp(bidderRequest),
       u: refInfo(bidderRequest, 'page', loc.href),
       do: refInfo(bidderRequest, 'site', loc.hostname),
@@ -362,7 +366,7 @@ export const spec = {
       smt: 1,
       d: '',
       m: createBidMap(bidRequests),
-      cpp: config.getConfig('coppa') ? 1 : 0,
+      cpp: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       fpd2: bidderRequest.ortb2,
       tmax: bidderRequest.timeout,
       amp: refInfo(bidderRequest, 'isAmp', null),
@@ -390,7 +394,7 @@ export const spec = {
       data: payload,
       method: 'POST',
       browsingTopics: true,
-      url: deepAccess(bidRequests[0], 'params.endpoint', DEFAULT_ENDPOINT),
+      url: bidRequests[0]?.params?.endpoint ?? DEFAULT_ENDPOINT,
       withCredentials: true,
     };
   },
@@ -551,14 +555,14 @@ export const spec = {
           U: getUIDSafe(),
           re: ref,
           V: '$prebid.version$',
-          vg: '$$PREBID_GLOBAL$$',
+          vg: getGlobalVarName(),
         };
       }
 
       return {
         A: timeout.bidder,
         mid: params.tagId,
-        a: params.adunitId || timeout.adUnitCode,
+        a: params.adUnitId || timeout.adUnitCode,
         bid: timeout.bidId,
         n: 'g_pbto',
         aud: timeout.transactionId,

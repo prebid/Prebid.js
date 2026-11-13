@@ -1,4 +1,4 @@
-import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils.js'
+import { scrubIPv4, scrubIPv6 } from '../../../../src/utils/ipUtils.js';
 
 describe('ipUtils', () => {
   describe('ipv4', () => {
@@ -55,4 +55,4 @@ describe('ipUtils', () => {
       expect(output).to.deep.equal(null);
     });
   });
-})
+});

@@ -1,21 +1,21 @@
 import {
+  apiSuccessProcess,
+  callImuidApi,
+  cookieKey,
+  getApiCallback,
+  getApiUrl,
+  getLocalData,
   imuIdSubmodule,
   storage,
-  getApiUrl,
-  apiSuccessProcess,
-  getLocalData,
-  callImuidApi,
-  getApiCallback,
   storageKey,
-  storagePpKey,
-  cookieKey,
-  apiUrl
+  storagePpKey
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
-import {attachIdSystem} from '../../../modules/userId/index.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
-import {expect} from 'chai/index.mjs';
+import { getRefererInfo } from 'src/refererDetection.js';
+import { attachIdSystem } from '../../../modules/userId/index.js';
+import { createEidsArray } from '../../../modules/userId/eids.js';
+import { expect } from 'chai/index.mjs';
 
 describe('imuId module', function () {
   // let setLocalStorageStub;
@@ -41,23 +41,25 @@ describe('imuId module', function () {
     undefined,
     null,
     ''
-  ]
+  ];
 
   const configParamTestCase = {
     params: {
       cid: 5126
     }
-  }
+  };
 
   describe('getId()', function () {
     it('should return the uid when it exists in local storages', function () {
       getLocalStorageStub.withArgs(storageKey).returns('testUid');
       getLocalStorageStub.withArgs(storagePpKey).returns('testPpid');
       const id = imuIdSubmodule.getId(configParamTestCase);
-      expect(id).to.be.deep.equal({id: {
-        imuid: 'testUid',
-        imppid: 'testPpid'
-      }});
+      expect(id).to.be.deep.equal({
+        id: {
+          imuid: 'testUid',
+          imppid: 'testPpid'
+        }
+      });
     });
 
     storageTestCasesForEmpty.forEach(testCase => it('should return the callback when it not exists in local storages', function () {
@@ -80,14 +82,19 @@ describe('imuId module', function () {
   });
 
   describe('getApiUrl()', function () {
+    // the page's referrer: empty where the tests usually run, but not on every browser (a BrowserStack device)
+    const ref = () => '&ref=' + encodeURIComponent(getRefererInfo().ref || '');
+
     it('should return default url when cid only', function () {
       const url = getApiUrl(5126);
-      expect(url).to.be.match(/^https:\/\/sync6.im-apps.net\/5126\/pid\?page=.+&ref=$/);
+      expect(url).to.be.match(/^https:\/\/ups.im-apps.net\/5126\/pid\?page=.+&ref=/);
+      expect(url.endsWith(ref())).to.equal(true);
     });
 
     it('should return param url when set url', function () {
       const url = getApiUrl(5126, 'testurl');
-      expect(url).to.be.match(/^testurl\?cid=5126&page=.+&ref=$/);
+      expect(url).to.be.match(/^testurl\?cid=5126&page=.+&ref=/);
+      expect(url.endsWith(ref())).to.equal(true);
     });
   });
 
@@ -161,7 +168,7 @@ describe('imuId module', function () {
 
   describe('callImuidApi()', function () {
     it('should return function when set url', function () {
-      const res = callImuidApi(`${apiUrl}?cid=5126`);
+      const res = callImuidApi(getApiUrl(5126));
       expect(res).to.exist.and.to.be.a('function');
     });
   });
@@ -174,13 +181,13 @@ describe('imuId module', function () {
     });
 
     it('should return "undefined" success', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function(uid) { return uid; });
       expect(res.success('{"uid": "testid"}')).to.equal(undefined);
       expect(res.error()).to.equal(undefined);
     });
 
     it('should return "undefined" catch error response', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function(uid) { return uid; });
       expect(res.success('error response')).to.equal(undefined);
     });
   });
@@ -217,5 +224,5 @@ describe('imuId module', function () {
         }]
       });
     });
-  })
+  });
 });

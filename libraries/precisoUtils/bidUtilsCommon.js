@@ -38,7 +38,7 @@ export function getBidFloor(bid) {
     });
     return bidFloor?.floor;
   } catch (_) {
-    return 0
+    return 0;
   }
 }
 
@@ -89,7 +89,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     url: adurl,
     data: request
   };
-}
+};
 
 export function interpretResponse(serverResponse) {
   const response = [];
@@ -111,7 +111,7 @@ export function consentCheck(bidderRequest, req) {
       req.ccpa = bidderRequest.uspConsent;
     }
     if (bidderRequest.gdprConsent) {
-      req.gdpr = bidderRequest.gdprConsent
+      req.gdpr = bidderRequest.gdprConsent;
     }
     if (bidderRequest.gppConsent) {
       req.gpp = bidderRequest.gppConsent;
@@ -137,7 +137,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
 
   if (isCk2trk) {
     syncUrl += uspConsent ? `&us_privacy=${uspConsent}` : `&us_privacy=`;
-    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`
+    syncUrl += (syncOptions.iframeEnabled) ? `&t=4` : `&t=2`;
   } else {
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
@@ -150,7 +150,7 @@ export const buildUserSyncs = (syncOptions, serverResponses, gdprConsent, uspCon
     type: syncType,
     url: syncUrl
   }];
-}
+};
 
 export function bidWinReport (bid) {
   const cpm = bid?.adserverTargeting?.hb_pb || '';

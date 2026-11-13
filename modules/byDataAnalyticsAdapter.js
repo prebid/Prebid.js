@@ -1,39 +1,38 @@
 import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
-import Base64 from 'crypto-js/enc-base64';
-import hmacSHA512 from 'crypto-js/hmac-sha512';
-import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
 import { getOsBrowserInfo } from '../libraries/userAgentUtils/detailed.js';
+import { getTimeZone } from '../libraries/timezone/timezone.js';
 
-const versionCode = '4.4.1'
-const secretKey = 'bydata@123456'
-const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS
-const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
-const analyticsType = 'endpoint'
-const isBydata = isKeyInUrl('bydata_debug')
-const adunitsMap = {}
+const versionCode = '4.4.1';
+const secretKey = 'bydata@123456';
+const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS;
+const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid';
+const analyticsType = 'endpoint';
+const isBydata = isKeyInUrl('bydata_debug');
+const adunitsMap = {};
 const MODULE_CODE = 'bydata';
-const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE });
 
-let initOptions = {}
-var payload = {}
-var winPayload = {}
-var isDataSend = window.asc_data || false
-var bdNbTo = { 'to': [], 'nb': [] }
+let initOptions = {};
+let visitorDataPromise;
+var payload = {};
+var winPayload = {};
+var isDataSend = window.asc_data || false;
+var bdNbTo = { 'to': [], 'nb': [] };
 
 /* method used for testing parameters */
 function isKeyInUrl(name) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const param = urlParams.get(name)
-  return param
+  const param = urlParams.get(name);
+  return param;
 }
 
 /* return ad unit full path wrt custom ad unit code */
@@ -49,31 +48,31 @@ function getAdunitName(code) {
 function onAuctionStart(t) {
   /* map of ad unit code - ad unit full path */
   t.adUnits && t.adUnits.length && t.adUnits.forEach((adu) => {
-    const { code, adunit } = adu
-    adunitsMap[code] = adunit
+    const { code, adunit } = adu;
+    adunitsMap[code] = adunit;
   });
 }
 
 /* EVENT: bid timeout */
 function onBidTimeout(t) {
-  if (payload['visitor_data'] && t && t.length > 0) {
-    bdNbTo['to'] = t
+  if (t && t.length > 0) {
+    bdNbTo['to'] = t;
   }
 }
 
 /* EVENT: no bid */
 function onNoBidData(t) {
-  if (payload['visitor_data'] && t) {
-    bdNbTo['nb'].push(t)
+  if (t) {
+    bdNbTo['nb'].push(t);
   }
 }
 
 /* EVENT: bid won */
 function onBidWon(t) {
-  const { isCorrectOption } = initOptions
+  const { isCorrectOption } = initOptions;
   if (isCorrectOption && (isDataSend || isBydata)) {
-    ascAdapter.getBidWonData(t)
-    ascAdapter.sendPayload(winPayload)
+    ascAdapter.getBidWonData(t);
+    ascAdapter.sendPayload(winPayload);
   }
 }
 
@@ -117,7 +116,8 @@ ascAdapter.originEnableAnalytics = ascAdapter.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 ascAdapter.enableAnalytics = function (config) {
   if (this.initConfig(config)) {
-    initOptions.isCorrectOption && ascAdapter.getVisitorData();
+    // Register listeners immediately, while native Web Crypto signs the visitor token.
+    ascAdapter.getVisitorData().catch(error => _logError('Failed to sign visitor data: ' + error));
     ascAdapter.originEnableAnalytics(config);
   }
 };
@@ -140,31 +140,31 @@ ascAdapter.initConfig = function (config) {
 };
 
 ascAdapter.getBidWonData = function(t) {
-  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t
-  const aun = getAdunitName(adUnitCode)
-  winPayload['aid'] = auctionId
+  const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t;
+  const aun = getAdunitName(adUnitCode);
+  winPayload['aid'] = auctionId;
   winPayload['as'] = '';
   winPayload['auctionData'] = [];
-  var data = {}
-  data['au'] = aun
-  data['auc'] = adUnitCode
-  data['aus'] = size
-  data['bid'] = requestId
-  data['bidadv'] = bidder
-  data['br_pb_mg'] = cpm
-  data['br_tr'] = timeToRespond
-  data['bradv'] = bidder
-  data['brid'] = requestId
-  data['brs'] = size
-  data['cur'] = currency
-  data['inb'] = 0
-  data['ito'] = 0
-  data['ipwb'] = 1
-  data['iwb'] = 1
-  data['mt'] = mediaType
-  winPayload['auctionData'].push(data)
-  return winPayload
-}
+  var data = {};
+  data['au'] = aun;
+  data['auc'] = adUnitCode;
+  data['aus'] = size;
+  data['bid'] = requestId;
+  data['bidadv'] = bidder;
+  data['br_pb_mg'] = cpm;
+  data['br_tr'] = timeToRespond;
+  data['bradv'] = bidder;
+  data['brid'] = requestId;
+  data['brs'] = size;
+  data['cur'] = currency;
+  data['inb'] = 0;
+  data['ito'] = 0;
+  data['ipwb'] = 1;
+  data['iwb'] = 1;
+  data['mt'] = mediaType;
+  winPayload['auctionData'].push(data);
+  return winPayload;
+};
 
 ascAdapter.getVisitorData = function (data = {}) {
   var ua = data.uid ? data : {};
@@ -184,30 +184,31 @@ ascAdapter.getVisitorData = function (data = {}) {
       return '';
     }
   }
-  function base64url(source) {
-    var encodedSource = Base64.stringify(source);
-    encodedSource = encodedSource.replace(/=+$/, '');
-    encodedSource = encodedSource.replace(/\+/g, '-');
-    encodedSource = encodedSource.replace(/\//g, '_');
-    return encodedSource;
+  function base64url(bytes) {
+    let binary = '';
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
   }
-  function getJWToken(data) {
-    var header = {
-      'alg': 'HS256',
-      'typ': 'JWT'
-    };
-    var stringifiedHeader = enc.parse(JSON.stringify(header));
-    var encodedHeader = base64url(stringifiedHeader);
-    var stringifiedData = enc.parse(JSON.stringify(data));
-    var encodedData = base64url(stringifiedData);
-    var token = encodedHeader + '.' + encodedData;
-    var signature = hmacSHA512(token, secretKey);
-    signature = base64url(signature);
-    var signedToken = token + '.' + signature;
-    return signedToken;
+  async function getJWToken(data) {
+    const subtle = getSubtle();
+    if (!subtle) {
+      throw new Error('ByData requires Web Crypto in a secure context');
+    }
+    const encoder = new TextEncoder();
+    // Keep the existing HS256 header despite the SHA-512 signature for wire compatibility.
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const token = base64url(encoder.encode(JSON.stringify(header))) + '.' +
+      base64url(encoder.encode(JSON.stringify(data)));
+    const key = await subtle.importKey(
+      'raw', encoder.encode(secretKey), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']
+    );
+    const signature = await subtle.sign('HMAC', key, encoder.encode(token));
+    return token + '.' + base64url(new Uint8Array(signature));
   }
   function detectWidth() {
-    const {width: viewportWidth} = getViewportSize();
+    const { width: viewportWidth } = getViewportSize();
     const windowDimensions = getWinDimensions();
     return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
@@ -234,12 +235,21 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua["brv"] = info.browser.version;
     ua['ss'] = screenSize;
     ua['de'] = deviceType;
-    ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
+    ua['tz'] = getTimeZone();
   }
-  var signedToken = getJWToken(ua);
-  payload['visitor_data'] = signedToken;
-  winPayload['visitor_data'] = signedToken;
-  return signedToken;
+  const signing = getJWToken(ua).catch(error => {
+    // retry on the next send, unless Web Crypto is missing - that is permanent
+    if (visitorDataPromise === signing && getSubtle()) {
+      visitorDataPromise = null;
+    }
+    throw error;
+  });
+  visitorDataPromise = signing;
+  return signing;
+};
+
+function getSubtle() {
+  return window.crypto && window.crypto.subtle;
 }
 
 ascAdapter.dataProcess = function (t) {
@@ -261,7 +271,7 @@ ascAdapter.dataProcess = function (t) {
       var mt = bid.mediaTypes.banner ? 'display' : 'video';
       data['mediaTypes'].push(mt);
       pObj['bids'].push(data);
-    })
+    });
     bidderRequestsData.push(pObj);
   });
   t.bidsReceived && t.bidsReceived.forEach(bid => {
@@ -273,7 +283,7 @@ ascAdapter.dataProcess = function (t) {
     bdsArray.forEach(bid => {
       const { adUnitCode, sizes, bidder, bidId, mediaTypes } = bid;
       sizes.forEach(size => {
-        var sstr = size[0] + 'x' + size[1]
+        var sstr = size[0] + 'x' + size[1];
         payload['auctionData'].push({ au: getAdunitName(adUnitCode), auc: adUnitCode, aus: sstr, mt: mediaTypes[0], bidadv: bidder, bid: bidId, inb: 0, ito: 0, ipwb: 0, iwb: 0 });
       });
     });
@@ -296,7 +306,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['ipwb'] = 1;
       }
     });
-  })
+  });
 
   var winningBids = auctionManager.getAllWinningBids();
   winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
@@ -305,7 +315,7 @@ ascAdapter.dataProcess = function (t) {
         rwData['iwb'] = 1;
       }
     });
-  })
+  });
 
   payload['auctionData'] && payload['auctionData'].length > 0 && payload['auctionData'].forEach(u => {
     bdNbTo['to'].forEach(i => {
@@ -313,16 +323,21 @@ ascAdapter.dataProcess = function (t) {
     });
     bdNbTo['nb'].forEach(i => {
       if (u.bidadv === i.bidder && u.bid === i.bidId) { u.inb = 1; }
-    })
+    });
   });
   return payload;
-}
+};
 
 ascAdapter.sendPayload = function (data) {
-  var obj = { 'records': [{ 'value': data }] };
-  const strJSON = JSON.stringify(obj);
-  sendDataOnKf(strJSON);
-}
+  // Snapshot auction data now; other events can update the shared payload while
+  // the visitor signature is pending.
+  const snapshot = deepClone(data);
+  const signing = visitorDataPromise || ascAdapter.getVisitorData();
+  return signing.then(signedToken => {
+    snapshot['visitor_data'] = signedToken;
+    sendDataOnKf(JSON.stringify({ records: [{ value: snapshot }] }));
+  }).catch(error => _logError('Failed to send signed visitor data: ' + error));
+};
 
 function sendDataOnKf(dataObj) {
   ajax(DEFAULT_EVENT_URL, {

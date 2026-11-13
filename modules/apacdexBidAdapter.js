@@ -1,14 +1,15 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
+import { isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { parseDomain } from '../src/refererDetection.js';
+import { getDNT } from '../libraries/dnt/index.js';
 const BIDDER_CODE = 'apacdex';
-const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
-const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
+const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs';
+const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs';
 
 var bySlotTargetKey = {};
-var bySlotSizesCount = {}
+var bySlotSizesCount = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,16 +22,16 @@ export const spec = {
     if (!bid.params.siteId && !bid.params.placementId) {
       return false;
     }
-    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
+    if (!bid?.mediaTypes?.banner && !bid?.mediaTypes?.video) {
       return false;
     }
-    if (deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
-      if (!deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    if (bid?.mediaTypes?.banner) { // Not support multi type bids, favor banner over video
+      if (!bid?.mediaTypes?.banner?.sizes) {
         // sizes at the banner is required.
         return false;
       }
-    } else if (deepAccess(bid, 'mediaTypes.video')) {
-      if (!deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    } else if (bid?.mediaTypes?.video) {
+      if (!bid?.mediaTypes?.video?.playerSize) {
         // playerSize is required for instream adUnits.
         return false;
       }
@@ -50,11 +51,11 @@ export const spec = {
     validBidRequests.forEach(bidReq => {
       const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
       if (bidSchain) {
-        schain = schain || bidSchain
+        schain = schain || bidSchain;
       }
 
       if (bidReq.userIdAsEids) {
-        eids = eids || bidReq.userIdAsEids
+        eids = eids || bidReq.userIdAsEids;
       }
 
       if (bidReq.params && bidReq.params.geo) {
@@ -64,17 +65,17 @@ export const spec = {
       }
 
       var targetKey = 0;
-      if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
+      if (bySlotTargetKey[bidReq.adUnitCode] !== undefined && bySlotTargetKey[bidReq.adUnitCode] !== null) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
-          if (bySlotSizesCount[biggestSize] != undefined) {
-            bySlotSizesCount[biggestSize]++
+          if (bySlotSizesCount[biggestSize] !== undefined && bySlotSizesCount[biggestSize] !== null) {
+            bySlotSizesCount[biggestSize]++;
             targetKey = bySlotSizesCount[biggestSize];
           } else {
             bySlotSizesCount[biggestSize] = 0;
-            targetKey = 0
+            targetKey = 0;
           }
         }
       }
@@ -96,11 +97,11 @@ export const spec = {
     }
 
     payload.device = {};
-    payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.height;
-    payload.device.width = window.screen.width;
-    payload.device.dnt = _getDoNotTrack();
-    payload.device.language = navigator.language;
+    payload.device.ua = bidderRequest?.ortb2?.device?.ua;
+    payload.device.height = bidderRequest?.ortb2?.device?.h;
+    payload.device.width = bidderRequest?.ortb2?.device?.w;
+    payload.device.dnt = getDNT() ? 1 : 0;
+    payload.device.language = bidderRequest?.ortb2?.device?.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
@@ -147,7 +148,7 @@ export const spec = {
         bidId: bid.bidId,
         adUnitCode: bid.adUnitCode,
         bidFloor: bid.bidFloor
-      }
+      };
     });
 
     return {
@@ -245,7 +246,7 @@ export const spec = {
 };
 
 function _getBiggestSize(sizes) {
-  if (sizes.length <= 0) return false
+  if (sizes.length <= 0) return false;
   var acreage = 0;
   var index = 0;
   for (var i = 0; i < sizes.length; i++) {
@@ -256,28 +257,6 @@ function _getBiggestSize(sizes) {
     }
   }
   return sizes[index][0] + 'x' + sizes[index][1];
-}
-
-function _getDoNotTrack() {
-  try {
-    if (window.top.doNotTrack && window.top.doNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.doNotTrack && (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1')) {
-      return 1;
-    }
-  } catch (e) { }
-
-  try {
-    if (navigator.msDoNotTrack && navigator.msDoNotTrack == '1') {
-      return 1;
-    }
-  } catch (e) { }
-
-  return 0
 }
 
 /**

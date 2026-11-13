@@ -52,3 +52,7 @@ export function normalizeBannerSizes(bidSizes) {
   }
   return sizes;
 }
+
+export function getMinSize(sizes) {
+  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
+}

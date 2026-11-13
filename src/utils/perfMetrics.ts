@@ -1,8 +1,8 @@
-import {config} from '../config.js';
-import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import {type BeforeHook, type BeforeHookParams, type HookType, Next} from "../hook.ts";
-import type {addBidResponse} from "../auction.ts";
-import type {PrivRequestBidsOptions, StartAuctionOptions} from "../prebid.ts";
+import { config } from '../config.js';
+import type { AnyFunction, Wraps } from "../types/functions.d.ts";
+import { type BeforeHook, type BeforeHookParams, type HookType, Next } from "../hook.ts";
+import type { addBidResponse } from "../auction.ts";
+import type { PrivRequestBidsOptions, StartAuctionOptions } from "../prebid.ts";
 
 export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
@@ -31,7 +31,7 @@ export type InstrumentedNext<F extends AnyFunction> = Next<F> & {
    */
   untimed: Next<F>;
   stopTiming: MetricsTimer;
-}
+};
 
 function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () => void): Wraps<F> {
   return function (...args) {
@@ -44,9 +44,9 @@ function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () =>
   };
 }
 
-export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES} = {}) {
+export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES } = {}) {
   return function newMetrics() {
-    function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
+    function makeMetrics(self, rename = (n) => ({ forEach(fn) { fn(n); } })) {
       rename = mkRenamer(rename);
 
       function accessor(slot) {
@@ -74,7 +74,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
         const names = rename(name);
         self.dfWalk({
           follow(inEdge, outEdge) {
-            return outEdge.propagate && (!inEdge || !inEdge.stopPropagation)
+            return outEdge.propagate && (!inEdge || !inEdge.stopPropagation);
           },
           visit(edge, node) {
             names.forEach(name => {
@@ -86,7 +86,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
                 }
                 node.groups[name].push(value);
               }
-            })
+            });
           }
         });
       }
@@ -141,7 +141,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param name metric name
        */
       function startTiming(name: string): MetricsTimer {
-        return mkTimer(now, (val) => setMetric(name, val))
+        return mkTimer(now, (val) => setMetric(name, val));
       }
 
       /**
@@ -179,10 +179,18 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * Get all registered metrics.
        */
       function getMetrics(): { [name: string]: unknown } {
-        let result = {}
+        const result = {};
         self.dfWalk({
           visit(edge, node) {
-            result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
+            const addMetric = (name, value) => {
+              if (!Object.prototype.hasOwnProperty.call(result, name)) {
+                result[name] = value;
+              }
+            };
+            Object.entries(node.metrics).forEach(([name, value]) => addMetric(name, value));
+            if (!edge || edge.includeGroups) {
+              Object.entries(node.groups).forEach(([name, value]) => addMetric(name, value));
+            }
           }
         });
         return result;
@@ -248,18 +256,18 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
              * }
              * ```
              */
-            function fork({propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): Metrics {
-              return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);
+            function fork({ propagate = true, stopPropagation = false, includeGroups = false }: PropagationOptions = {}): Metrics {
+              return makeMetrics(mkNode([[self, { propagate, stopPropagation, includeGroups }]]), rename);
             }
 
             /**
              * Join `otherMetrics` with these; all metrics from `otherMetrics` will (by default) be propagated here,
              * and all metrics from here will be included in `otherMetrics`.
              */
-            function join(otherMetrics: Metrics, {propagate = true, stopPropagation = false, includeGroups = false}: PropagationOptions = {}): void {
+            function join(otherMetrics: Metrics, { propagate = true, stopPropagation = false, includeGroups = false }: PropagationOptions = {}): void {
               const other = nodes.get(otherMetrics);
               if (other != null) {
-                other.addParent(self, {propagate, stopPropagation, includeGroups});
+                other.addParent(self, { propagate, stopPropagation, includeGroups });
               }
             }
 
@@ -301,7 +309,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
     }
 
     return makeMetrics(mkNode([]));
-  }
+  };
 }
 
 function makeTimer(now: () => number, cb: (elapsed: number) => void): MetricsTimer {
@@ -329,7 +337,7 @@ function makeNode(parents) {
     newSibling() {
       return makeNode(parents.slice());
     },
-    dfWalk({visit, follow = () => true, visited = new Set(), inEdge} = {} as any) {
+    dfWalk({ visit, follow = () => true, visited = new Set(), inEdge } = {} as any) {
       let res;
       if (!visited.has(this)) {
         visited.add(this);
@@ -337,7 +345,7 @@ function makeNode(parents) {
         if (res != null) return res;
         for (const [parent, outEdge] of parents) {
           if (follow(inEdge, outEdge)) {
-            res = parent.dfWalk({visit, follow, visited, inEdge: outEdge});
+            res = parent.dfWalk({ visit, follow, visited, inEdge: outEdge });
             if (res != null) return res;
           }
         }
@@ -349,24 +357,24 @@ function makeNode(parents) {
 const nullMetrics: Metrics = (() => {
   const nop = function () {};
   const empty = () => ({});
-  const none = {forEach: nop};
+  const none = { forEach: nop };
   const nullTimer = () => null;
   nullTimer.stopBefore = (fn) => fn;
   nullTimer.stopAfter = (fn) => fn;
   const nullNode = Object.defineProperties(
-    {dfWalk: nop, newSibling: () => nullNode, addParent: nop},
-    Object.fromEntries(['metrics', 'timestamps', 'groups'].map(prop => [prop, {get: empty}])));
+    { dfWalk: nop, newSibling: () => nullNode, addParent: nop },
+    Object.fromEntries(['metrics', 'timestamps', 'groups'].map(prop => [prop, { get: empty }])));
   return metricsFactory({
     now: () => 0,
     mkNode: () => nullNode as any,
     mkRenamer: () => () => none,
     mkTimer: () => nullTimer,
-    nodes: {get: nop, set: nop} as unknown as Map<any, any>
+    nodes: { get: nop, set: nop } as unknown as Map<any, any>
   })();
 })();
 
 let enabled = true;
-config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE] });
+config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE]; });
 
 /**
  * convenience fallback function for metrics that may be undefined, especially during tests.
@@ -379,7 +387,7 @@ export const newMetrics = (() => {
   const makeMetrics = metricsFactory();
   return function (): Metrics {
     return enabled ? makeMetrics() : nullMetrics;
-  }
+  };
 })();
 
 export function hookTimer<TYP extends HookType, F extends AnyFunction>(prefix: string, getMetrics: (...args: Parameters<F>) => Metrics) {
@@ -388,9 +396,9 @@ export function hookTimer<TYP extends HookType, F extends AnyFunction>(prefix: s
       return useMetrics(getMetrics.apply(this, args)).measureHookTime(prefix + name, next, (next) => {
         return hookFn.call(this, next, ...args);
       });
-    }
-  }
+    };
+  };
 }
 
 export const timedAuctionHook = hookTimer<'async', (options: PrivRequestBidsOptions | StartAuctionOptions) => void>('requestBids.', (req) => req.metrics);
-export const timedBidResponseHook = hookTimer<'async', typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics)
+export const timedBidResponseHook = hookTimer<'async', typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics);

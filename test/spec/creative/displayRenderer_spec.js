@@ -1,10 +1,10 @@
-import {render} from 'creative/renderers/display/renderer.js';
-import {ERROR_NO_AD} from '../../../creative/renderers/display/constants.js';
+import { render } from 'creative/renderers/display/renderer.js';
+import { ERROR_NO_AD } from '../../../creative/renderers/display/constants.js';
 
 describe('Creative renderer - display', () => {
   let doc, mkFrame, sendMessage, win;
   beforeEach(() => {
-    mkFrame = sinon.stub().callsFake((doc, attrs) => Object.assign({doc}, attrs));
+    mkFrame = sinon.stub().callsFake((doc, attrs) => Object.assign({ doc }, attrs));
     sendMessage = sinon.stub();
     doc = {
       body: {
@@ -13,23 +13,23 @@ describe('Creative renderer - display', () => {
     };
     win = {
       document: doc
-    }
+    };
   });
 
   function runRenderer(data) {
-    return render(data, {sendMessage, mkFrame}, win);
+    return render(data, { sendMessage, mkFrame }, win);
   }
 
   it('throws when both ad and adUrl are missing', () => {
     expect(() => {
       try {
-        runRenderer({})
+        runRenderer({});
       } catch (e) {
         expect(e.reason).to.eql(ERROR_NO_AD);
         throw e;
       }
     }).to.throw();
-  })
+  });
 
   Object.entries({
     ad: 'srcdoc',
@@ -42,8 +42,8 @@ describe('Creative renderer - display', () => {
           [adProp]: 'ad',
           width: 123,
           height: 321
-        }
-      })
+        };
+      });
       it(`drops iframe with ${frameProp} = ${adProp}`, () => {
         runRenderer(data);
         sinon.assert.calledWith(doc.body.appendChild, {
@@ -51,18 +51,50 @@ describe('Creative renderer - display', () => {
           [frameProp]: 'ad',
           width: data.width,
           height: data.height
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+  });
+
+  it('captures trusted clicks on links when opted in', () => {
+    const listeners = {};
+    const contentDocument = {
+      addEventListener: sinon.spy((type, fn) => { listeners[type] = fn; })
+    };
+    const frame = { contentDocument, addEventListener: sinon.spy((type, fn) => { listeners.load = fn; }) };
+    mkFrame.returns(frame);
+    runRenderer({ ad: '<a href="https://example.com">Go</a>', trackClicks: true });
+    listeners.load();
+    const link = { closest: () => ({ href: 'https://example.com' }) };
+    listeners.click({ isTrusted: true, target: link });
+    sinon.assert.calledWith(sendMessage, 'Prebid Event', { event: 'bidClick', method: 'creativeClick' });
+    sendMessage.resetHistory();
+    listeners.click({ isTrusted: false, target: link });
+    listeners.click({ isTrusted: true, target: { closest: () => null } });
+    sinon.assert.notCalled(sendMessage);
+  });
+
+  it('does not observe adUrl frames even when enabled', () => {
+    const frame = { addEventListener: sinon.spy() };
+    mkFrame.returns(frame);
+    runRenderer({ adUrl: 'https://example.com/ad', trackClicks: true });
+    sinon.assert.notCalled(frame.addEventListener);
+  });
+
+  it('does not observe inline frames unless enabled', () => {
+    const frame = { addEventListener: sinon.spy() };
+    mkFrame.returns(frame);
+    runRenderer({ ad: '<a>ad</a>' });
+    sinon.assert.notCalled(frame.addEventListener);
+  });
 
   it('defaults width and height to 100%', () => {
-    runRenderer({ad: 'mock'});
+    runRenderer({ ad: 'mock' });
     sinon.assert.calledWith(doc.body.appendChild, sinon.match({
       doc,
       width: '100%',
       height: '100%'
-    }))
+    }));
   });
 
   it('sets html and body style height: 100% if no height is provided', () => {
@@ -71,14 +103,14 @@ describe('Creative renderer - display', () => {
       parentElement: {
         style: {}
       }
-    })
-    runRenderer({ad: 'mock'});
+    });
+    runRenderer({ ad: 'mock' });
     expect(doc.body.style.height).to.eql('100%');
     expect(doc.body.parentElement.style.height).to.eql('100%');
   });
 
   it('sizes frame element if instl = true', () => {
-    win.frameElement = { style: {}};
+    win.frameElement = { style: {} };
     runRenderer({
       ad: 'mock',
       width: 123,
@@ -88,7 +120,69 @@ describe('Creative renderer - display', () => {
     expect(win.frameElement.style).to.eql({
       width: '123px',
       height: '321px'
-    })
+    });
+  });
+
+  describe('GAME_MANUAL_INTERSTITIAL position fix', () => {
+    let mockBox, mockContainer;
+    beforeEach(() => {
+      mockBox = {
+        style: {},
+        computedStyle: {
+          alignItems: 'flex-start'
+        }
+      };
+      mockContainer = {
+        parentElement: mockBox,
+        style: {},
+        computedStyle: {
+          marginTop: '123px'
+        }
+      };
+      Object.assign(win, {
+        frameElement: {
+          parentElement: mockContainer,
+          style: {}
+        },
+        parent: {
+          document: {
+            querySelector(selector) {
+              if (selector === 'div#creative') {
+                return mockContainer;
+              }
+              if (selector === 'div#ad_position_box') {
+                return mockBox;
+              }
+            }
+          },
+          getComputedStyle(el) {
+            return el.computedStyle;
+          }
+        }
+      });
+    });
+
+    it('changes styles for positioning if the container looks like a GPT and uses margins for positioning', () => {
+      runRenderer({
+        ad: 'mock',
+        width: 123,
+        height: 321,
+        instl: true
+      });
+      expect(win.frameElement.parentElement.parentElement.style.alignItems).to.eql('center');
+      expect(win.frameElement.parentElement.style.marginTop).to.eql('0px');
+    });
+    it('does not choke if GPT containers cannot be found', () => {
+      win.parent.document.querySelector = () => null;
+      runRenderer({
+        ad: 'mock',
+        width: 123,
+        height: 321,
+        instl: true
+      });
+      expect(mockBox.style).to.eql({});
+      expect(mockContainer.style).to.eql({});
+    });
   });
 
   it('does not choke if no frame element can be found', () => {
@@ -98,5 +192,5 @@ describe('Creative renderer - display', () => {
       height: 321,
       instl: true
     });
-  })
-})
+  });
+});

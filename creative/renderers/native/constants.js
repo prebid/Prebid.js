@@ -11,4 +11,4 @@ export const ORTB_ASSETS = {
   data: 'value',
   img: 'url',
   video: 'vasttag'
-}
+};

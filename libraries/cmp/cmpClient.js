@@ -1,4 +1,4 @@
-import {PbPromise} from '../../src/utils/promise.js';
+import { PbPromise } from '../../src/utils/promise.js';
 
 /**
  * @typedef {function} CMPClient
@@ -13,6 +13,33 @@ import {PbPromise} from '../../src/utils/promise.js';
 export const MODE_MIXED = 0;
 export const MODE_RETURN = 1;
 export const MODE_CALLBACK = 2;
+export const CMP_POLL_INTERVAL = 100;
+
+/**
+ * Pass the CMP client returned by `findCmp` to `onFound`; if there is none, call `onMissing`, or with `wait`, keep looking
+ * every CMP_POLL_INTERVAL ms.
+ *
+ * @param {() => CMPClient | undefined} findCmp
+ * @param {object} options
+ * @param {(cmp: CMPClient) => void} options.onFound
+ * @param {() => void} [options.onMissing]
+ * @param {boolean} [options.wait]
+ * @returns {() => void} a function that stops looking.
+ */
+export function pollForCmp(findCmp, { onFound, onMissing, wait = false }) {
+  let handle;
+  (function check() {
+    const cmp = findCmp();
+    if (cmp) {
+      onFound(cmp);
+    } else if (wait) {
+      handle = setTimeout(check, CMP_POLL_INTERVAL);
+    } else {
+      onMissing();
+    }
+  })();
+  return () => clearTimeout(handle);
+}
 
 /**
  * Returns a client function that can interface with a CMP regardless of where it's located.
@@ -59,7 +86,15 @@ export function cmpClient(
   const cmpDataPkgName = `${apiName}Return`;
 
   function handleMessage(event) {
-    const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+    let json = event.data;
+    if (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) {
+      try {
+        json = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+    }
+
     if (json?.[cmpDataPkgName]?.callId) {
       const payload = json[cmpDataPkgName];
 
@@ -109,8 +144,8 @@ export function cmpClient(
   }
 
   function resolveParams(params) {
-    params = Object.assign({version: apiVersion}, params);
-    return apiArgs.map(arg => [arg, params[arg]])
+    params = Object.assign({ version: apiVersion }, params);
+    return apiArgs.map(arg => [arg, params[arg]]);
   }
 
   function wrapCallback(callback, resolve, reject, preamble) {
@@ -123,7 +158,7 @@ export function cmpClient(
         resolver(haveCb ? undefined : result);
       }
       haveCb && callback.apply(this, arguments);
-    }
+    };
   }
 
   let client;
@@ -154,7 +189,7 @@ export function cmpClient(
           }
         };
 
-        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId] }));
+        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId]; }));
         cmpFrame.postMessage(msg, '*');
         if (mode === MODE_RETURN) resolve();
       });
@@ -165,5 +200,5 @@ export function cmpClient(
     close() {
       !isDirect && win.removeEventListener('message', handleMessage);
     }
-  })
+  });
 }

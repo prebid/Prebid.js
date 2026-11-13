@@ -5,17 +5,19 @@
  * @requires module:modules/userId
  */
 
-import {isStr, isNumber, logError, logInfo, isEmpty, timestamp} from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { isStr, isNumber, logError, logInfo, isEmpty, timestamp } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('./teadsIdSystem.d.ts').TeadsIdSystemModuleName} TeadsIdSystemModuleName
  */
 
 const MODULE_NAME = 'teadsId';
@@ -35,9 +37,9 @@ export const gdprReason = {
   GDPR_APPLIES_PUBLISHER_CLASSIC: 120,
 };
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<TeadsIdSystemModuleName>} */
 export const teadsIdSubmodule = {
   /**
    * used to link submodule with config
@@ -56,7 +58,7 @@ export const teadsIdSubmodule = {
    * @returns {{teadsId:string}}
    */
   decode(value) {
-    return {teadsId: value}
+    return { teadsId: value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -92,9 +94,9 @@ export const teadsIdSubmodule = {
         }
       };
 
-      ajax(url, callbacks, undefined, {method: 'GET'});
+      ajax(url, callbacks, undefined, { method: 'GET' });
     };
-    return {callback: resp};
+    return { callback: resp };
   },
   eids: {
     teadsId: {
@@ -221,7 +223,7 @@ export function getCcpaConsentString(ccpaConsentString) {
  * @returns {string}
  */
 export function getCookieExpirationDate(maxAge) {
-  return new Date(timestamp() + maxAge).toUTCString()
+  return new Date(timestamp() + maxAge).toUTCString();
 }
 
 /**
@@ -229,9 +231,9 @@ export function getCookieExpirationDate(maxAge) {
  * @returns {string}
  */
 function getTeadsViewerId() {
-  const teadsViewerId = readCookie()
+  const teadsViewerId = readCookie();
   if (isStr(teadsViewerId)) {
-    return teadsViewerId
+    return teadsViewerId;
   } else {
     return '';
   }

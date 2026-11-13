@@ -1,8 +1,8 @@
-import {spec, converter} from 'modules/rumbleBidAdapter.js';
+import { spec } from 'modules/rumbleBidAdapter.js';
 import { config } from '../../../src/config.js';
-import {BANNER} from "../../../src/mediaTypes.js";
-import {deepClone, getUniqueIdentifierStr} from "../../../src/utils.js";
-import {expect} from "chai";
+import { BANNER } from "../../../src/mediaTypes.js";
+import { deepClone, getUniqueIdentifierStr } from "../../../src/utils.js";
+import { expect } from "chai";
 
 const bidder = 'rumble';
 
@@ -25,7 +25,7 @@ describe('RumbleBidAdapter', function() {
             sizes: [[300, 250]]
           }
         },
-      }
+      };
     }
 
     it('should return true when all required parameters exist', function() {
@@ -46,7 +46,7 @@ describe('RumbleBidAdapter', function() {
 
     it('should return false if mediaTypes.banner or video is not present', function () {
       let bid = newBid();
-      delete bid.mediaTypes
+      delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 

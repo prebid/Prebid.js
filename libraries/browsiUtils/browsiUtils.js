@@ -1,5 +1,6 @@
 import { isGptPubadsDefined, logError } from '../../src/utils.js';
 import { setKeyValue as setGptKeyValue } from '../../libraries/gptUtils/gptUtils.js';
+import { getSlotTargeting } from '../../src/utils/gptTargeting.js';
 
 /** @type {string} */
 const VIEWABILITY_KEYNAME = 'browsiViewability';
@@ -57,7 +58,7 @@ export function getTargetingKeys(viewabilityKeyName) {
     viewabilityKey: (viewabilityKeyName || VIEWABILITY_KEYNAME).toString(),
     scrollKey: SCROLL_KEYNAME,
     revenueKey: REVENUE_KEYNAME,
-  }
+  };
 }
 
 export function getTargetingValues(v) {
@@ -65,7 +66,7 @@ export function getTargetingValues(v) {
     viewabilityValue: getTargetingValue(v['viewability']),
     scrollValue: getTargetingValue(v['scrollDepth']),
     revenueValue: getRevenueTargetingValue(v['revenue'])
-  }
+  };
 }
 
 export const setKeyValue = (key, random) => setGptKeyValue(key, random.toString());
@@ -128,7 +129,7 @@ export function getHbm(bus, timestamp) {
       rahb: rahb?.avg && Number(rahb.avg?.toFixed(3)),
       lahb: lahb?.avg && Number(lahb.avg?.toFixed(3)),
       lbsa: lahb?.age && Number(lahb?.age?.toFixed(3))
-    }
+    };
   } catch (e) {
     return undefined;
   }
@@ -142,7 +143,7 @@ export function getLahb(lahb, timestamp) {
     return {
       avg: lahb.avg,
       age: getDaysDifference(timestamp, lahb.time)
-    }
+    };
   } catch (e) {
     return undefined;
   }
@@ -163,7 +164,7 @@ export function getRahb(rahb, timestamp) {
 
     return {
       avg: rs.sum / rs.smp
-    }
+    };
   } catch (e) {
     return undefined;
   }
@@ -172,7 +173,7 @@ export function getRahb(rahb, timestamp) {
 export function getRahbByTs(rahb, timestamp) {
   try {
     if (!isObjectDefined(rahb)) {
-      return undefined
+      return undefined;
     };
     const weekAgoTimestamp = timestamp - (7 * 24 * 60 * 60 * 1000);
     Object.keys(rahb).forEach((ts) => {
@@ -234,7 +235,7 @@ export function getMacroId(macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
-        return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
+        return (p1 && getSlotTargeting(slot, p1).join('_')) || 'NA';
       });
       return macroResult;
     } catch (e) {

@@ -1,11 +1,11 @@
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   buildRequests,
   getUserSyncs,
   interpretResponse,
 } from '../libraries/xeUtils/bidderUtils.js';
-import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js';
+import { getBidIdParameter, isArray, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'anyclip';
 const ENDPOINT = 'https://prebid.anyclip.com';
@@ -21,7 +21,7 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if (deepAccess(bid, 'mediaTypes.video') && !isArray(deepAccess(bid, 'mediaTypes.video.playerSize'))) {
+  if (bid?.mediaTypes?.video && !isArray(bid?.mediaTypes?.video?.playerSize)) {
     logError('mediaTypes.video.playerSize is required for video');
     return false;
   }
@@ -35,8 +35,8 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => {
-    const builtRequests = buildRequests(validBidRequests, bidderRequest, ENDPOINT)
-    const requests = JSON.parse(builtRequests.data)
+    const builtRequests = buildRequests(validBidRequests, bidderRequest, ENDPOINT);
+    const requests = JSON.parse(builtRequests.data);
     const updatedRequests = requests.map(req => ({
       ...req,
       env: {
@@ -44,11 +44,11 @@ export const spec = {
         supplyTagId: validBidRequests[0].params.supplyTagId,
         floor: req.floor
       },
-    }))
-    return {...builtRequests, data: JSON.stringify(updatedRequests)}
+    }));
+    return { ...builtRequests, data: JSON.stringify(updatedRequests) };
   },
   interpretResponse,
   getUserSyncs
-}
+};
 
 registerBidder(spec);

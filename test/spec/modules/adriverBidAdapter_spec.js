@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adriverBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 
 const ENDPOINT = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
@@ -295,12 +294,12 @@ describe('adriverAdapter', function () {
     const cookieValues = [
       { adrcid: 'adrcidValue' },
       { adrcid: undefined }
-    ]
+    ];
     cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
       const expectedValues = [
         'buyerid',
         'ext'
-      ]
+      ];
 
       it('check adrcid if it exists', function () {
         bidRequests[0].userId.adrcid = cookieValue.adrcid;
@@ -377,7 +376,7 @@ describe('adriverAdapter', function () {
           adUnitCode: 'code'
         }]
       };
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
@@ -393,7 +392,7 @@ describe('adriverAdapter', function () {
       };
       let bidderRequest;
 
-      const result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, { bidderRequest });
       expect(result.length).to.equal(0);
     });
   });
@@ -517,14 +516,14 @@ describe('adriverAdapter', function () {
 
     const bitRequestGetFloorBySized = JSON.parse(JSON.stringify(bidRequests));
 
-    bitRequestGetFloorBySized[0].getFloor = (requestParams = {currency: 'USD', mediaType: '*', size: '*'}) => {
+    bitRequestGetFloorBySized[0].getFloor = (requestParams = { currency: 'USD', mediaType: '*', size: '*' }) => {
       if (requestParams.size.length === 2 && requestParams.size[0] === 300 && requestParams.size[1] === 250) {
         return {
           'currency': 'RUB',
           'floor': 3.33
-        }
+        };
       } else {
-        return {}
+        return {};
       }
     };
 

@@ -31,3 +31,24 @@ Module that connects to MediaEyes Bidder System
         },
     ];
 ```
+
+```
+    var adUnits = [
+        {
+            code: "video-zone",
+            mediaTypes: {
+                video: {
+                    context: "instream",
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: "mediaeyes",
+                params: {
+                    itemId: "4d27f3cc8bbd5bd153045e",
+                    bidFloor: 0.01
+                }
+            }]
+        }
+    ];
+```

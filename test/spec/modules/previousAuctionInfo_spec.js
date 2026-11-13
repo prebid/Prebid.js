@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
-import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo/index.js';
+import { CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook } from '../../../modules/previousAuctionInfo/index.js';
 import { REJECTION_REASON } from '../../../src/constants.js';
 
 describe('previous auction info', () => {
@@ -48,7 +48,7 @@ describe('previous auction info', () => {
 
   before(() => {
     config.resetConfig();
-  })
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -177,50 +177,50 @@ describe('previous auction info', () => {
       next = sinon.spy();
     });
     function runHook() {
-      startAuctionHook(next, {ortb2Fragments: {global, bidder}});
+      startAuctionHook(next, { ortb2Fragments: { global, bidder } });
     }
     it('should not add info when none is available', () => {
       runHook();
       expect(global).to.eql({});
       expect(bidder).to.eql({});
-    })
+    });
     it('should call next', () => {
       runHook();
       sinon.assert.called(next);
-    })
+    });
     describe('when info is available', () => {
       beforeEach(() => {
         Object.assign(previousAuctionInfo.auctionState, {
-          bidder1: [{transactionId: 'tid1', auction: '1'}],
-          bidder2: [{transactionId: 'tid2', auction: '2'}]
-        })
-      })
+          bidder1: [{ transactionId: 'tid1', auction: '1' }],
+          bidder2: [{ transactionId: 'tid2', auction: '2' }]
+        });
+      });
 
       function extractInfo() {
         return Object.fromEntries(
           Object.entries(bidder)
             .map(([bidder, ortb2]) => [bidder, ortb2.ext?.prebid?.previousauctioninfo])
-        )
+        );
       }
 
       it('should set info for enabled bidders, when only some are enabled', () => {
-        config.setConfig({[CONFIG_NS]: {enabled: true, bidders: ['bidder1']}});
+        config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['bidder1'] } });
         runHook();
         expect(extractInfo()).to.eql({
-          bidder1: [{auction: '1'}]
-        })
+          bidder1: [{ auction: '1' }]
+        });
       });
 
       it('should set info for all bidders, when none is specified', () => {
-        config.setConfig({[CONFIG_NS]: {enabled: true}});
+        config.setConfig({ [CONFIG_NS]: { enabled: true } });
         runHook();
         expect(extractInfo()).to.eql({
-          bidder1: [{auction: '1'}],
-          bidder2: [{auction: '2'}]
-        })
-      })
-    })
-  })
+          bidder1: [{ auction: '1' }],
+          bidder2: [{ auction: '2' }]
+        });
+      });
+    });
+  });
 
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {

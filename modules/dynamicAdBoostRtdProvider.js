@@ -4,7 +4,7 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
@@ -78,15 +78,15 @@ function getBidRequestData(reqBidsConfigObj, callback) {
 const markViewed = (entry, observer) => {
   return () => {
     observer.unobserve(entry.target);
-  }
-}
+  };
+};
 
 // Callback function when an observed element becomes visible
 function dabHandleIntersection(entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
       dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;
-      markViewed(entry, observer)
+      markViewed(entry, observer);
     }
   });
 }

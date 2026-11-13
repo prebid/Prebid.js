@@ -1,9 +1,9 @@
 import { generateUUID, _each, deepAccess } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,8 +18,8 @@ const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
-}
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+};
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,7 +34,7 @@ export const spec = {
     const isVideoMediaType = (bid.mediaTypes && bid.mediaTypes.video != null);
     const videoContext = (bid.mediaTypes && bid.mediaTypes.video != null) ? bid.mediaTypes.video.videoContext : '';
 
-    if (typeof bid.params !== 'object' || typeof bid.params.adid != 'string') {
+    if (typeof bid.params !== 'object' || typeof bid.params.adid !== 'string') {
       return false;
     }
 
@@ -60,7 +60,7 @@ export const spec = {
         url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
-      }
+      };
     });
   },
 
@@ -162,24 +162,24 @@ registerBidder(spec);
 
 function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
   let param = '?';
-  if (gdprApplies == '1') {
+  if (gdprApplies === '1') {
     param = param + 'gdpr=1&';
   }
-  if (apiVersion == 1) {
+  if (apiVersion === 1) {
     param = param + 'euconsent=' + consentString + '&';
-  } else if (apiVersion == 2) {
+  } else if (apiVersion === 2) {
     param = param + 'euconsent-v2=' + consentString + '&';
   }
   if (uspConsent) {
     param = param + 'usprivacy=' + uspConsent;
   }
-  return (param == '?') ? '' : param;
+  return (param === '?') ? '' : param;
 }
 
 function parseSizes(bid) {
   const params = bid.params;
   if (bid.mediaType === VIDEO) {
-    let size = [];
+    let size;
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
@@ -219,7 +219,7 @@ function getMediaType(mediaTypes) {
   } else if (mediaTypes != null && mediaTypes.video) {
     return 'video';
   } else if (mediaTypes != null && mediaTypes.native) {
-    return 'native'
+    return 'native';
   }
   return 'banner';
 }
@@ -232,7 +232,7 @@ function getFloor(bid, size, mediaTypes) {
     var bidFloor = bid.getFloor({
       currency: CURRENCY,
       mediaType: getMediaType(mediaTypes),
-      size: (size) ? [ size[0], size[1] ] : '*',
+      size: (size) ? [size[0], size[1]] : '*',
     });
     if (bidFloor?.currency === CURRENCY) {
       return bidFloor.floor;
@@ -248,7 +248,7 @@ function addBidData(bidData, key, value) {
 }
 
 function getFormat(size) {
-  const formatList = []
+  const formatList = [];
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }
@@ -258,7 +258,7 @@ function getFormat(size) {
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
-  const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
+  const dnt = getDNT() ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const schain = bid?.ortb2?.source?.ext?.schain;
   const supplyChain = getSupplyChain(schain);
@@ -288,8 +288,8 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (storage.cookiesAreEnabled()) {
-    let ucfUid = '';
-    if (storage.getCookie(COOKIE_NAME) != undefined) {
+    let ucfUid;
+    if (storage.getCookie(COOKIE_NAME) !== null) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
     } else {
@@ -299,7 +299,7 @@ function getRequestData(bid, bidderRequest) {
     }
   }
 
-  if (size != undefined && size.length > 0 && size[0].length == 2) {
+  if (size?.length && size[0].length === 2) {
     bidData.w = size[0][0];
     bidData.h = size[0][1];
   }
@@ -330,7 +330,7 @@ function getRequestData(bid, bidderRequest) {
     });
   }
 
-  if (config.getConfig('coppa')) {
+  if (bidderRequest?.ortb2?.regs?.coppa) {
     bidData.coppa = true;
   }
 

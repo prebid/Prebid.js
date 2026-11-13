@@ -91,7 +91,7 @@ exports.createBidSlots = function(numSlot, numSize) {
     });
   }
   return bids;
-}
+};
 
 exports.parseIndexRequest = function(url) {
   if (typeof url === 'undefined') return {};
@@ -108,7 +108,7 @@ exports.parseIndexRequest = function(url) {
     }
   }
   return requestJSON;
-}
+};
 
 exports.getExpectedIndexSlots = function(bids) {
   var size = 0;
@@ -116,7 +116,7 @@ exports.getExpectedIndexSlots = function(bids) {
     size += bids[i].sizes.length;
   }
   return size;
-}
+};
 
 function clone(x) {
   return deepClone(x);
@@ -170,7 +170,7 @@ exports.expandSizes = function(bid) {
   }
 
   return result;
-}
+};
 
 exports.matchOnPlacementCode = function(expected, prebid) {
   var compared = compareOnKeys(expected, prebid);
@@ -179,9 +179,6 @@ exports.matchOnPlacementCode = function(expected, prebid) {
 };
 
 exports.matchBidsOnSID = function(lhs, rhs) {
-  var lonly = [];
-  var ronly = [];
-
   var configured = [];
   for (var i = 0; i < lhs.length; i++) {
     var group = lhs[i];
@@ -202,15 +199,12 @@ exports.matchBidsOnSID = function(lhs, rhs) {
   var rstore = createObjectFromArray(rhs.map(bid => [bid.ext.sid, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.matchBidsOnSize = function(lhs, rhs) {
-  var lonly = [];
-  var ronly = [];
-
   var configured = [];
   for (var i = 0; i < lhs.length; i++) {
     var group = lhs[i];
@@ -221,13 +215,13 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   }
 
   var lstore = createObjectFromArray(configured);
-  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid ]));
+  var rstore = createObjectFromArray(rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name }; });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
-}
+};
 
 exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
   if (typeof configuredBids === 'undefined' || typeof urlJSON === 'undefined') return {};
@@ -248,12 +242,11 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
     bidObj.bid = [];
 
     var sizes = configuredBids[i].sizes;
-    var impressionID = 1;
     for (var j = 0; j < sizes.length; j++) {
       if (typeof optionalPassOnBid[i] !== 'undefined' && typeof optionalPassOnBid[i][j] !== 'undefined' && optionalPassOnBid[i][j]) continue;
 
       var bid = {};
-      bid.adomain = [ (DefaultAdDoman + adCount).toString() ];
+      bid.adomain = [(DefaultAdDoman + adCount).toString()];
       bid.adid = (DefaultCreativeID + adCount).toString();
       bid.impid = adCount.toString();
       bid.id = adCount.toString();
@@ -285,7 +278,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
     response.seatbid.push(bidObj);
   }
   return response;
-}
+};
 
 exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
   var asAllBids = asResponse.seatbid;
@@ -314,7 +307,7 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
         }
 
         if (typeof expectedResponse[placementCode] === 'undefined') {
-          expectedResponse[placementCode] = [ result ];
+          expectedResponse[placementCode] = [result];
         } else {
           expectedResponse[placementCode].push(result);
         }
@@ -322,4 +315,4 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
     }
   }
   return expectedResponse;
-}
+};

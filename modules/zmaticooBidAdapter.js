@@ -1,6 +1,6 @@
-import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -36,7 +36,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -131,28 +131,28 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
+      bcat: bidderRequest?.ortb2Imp?.bcat || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
-    payload.regs.ext = {}
-    payload.user.ext = {}
-    payload.device.ua = navigator.userAgent;
+    payload.regs.ext = {};
+    payload.user.ext = {};
+    payload.device.ua = bidderRequest.ortb2?.device?.ua;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
     payload.site.domain = _getDomainFromURL(payload.site.page);
-    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(payload.device.ua) ? 1 : 0;
     if (params.test) {
       payload.test = params.test;
     }
     if (bidderRequest.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
+      payload.regs.ext = Object.assign(payload.regs.ext, { gdpr: Number(bidderRequest.gdprConsent.gdprApplies) === 1 ? 1 : 0 });
     }
     if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});
+      payload.user.ext = Object.assign(payload.user.ext, { consent: bidderRequest.gdprConsent.consentString });
     }
     const postUrl = ENDPOINT_URL;
     return {
@@ -192,22 +192,22 @@ export const spec = {
             bid.vastXml = zmBid.ext.vast_url;
           }
           if (zmBid.ext && zmBid.ext.prebid) {
-            bid.mediaType = zmBid.ext.prebid.type
+            bid.mediaType = zmBid.ext.prebid.type;
           } else {
-            bid.mediaType = BANNER
+            bid.mediaType = BANNER;
           }
           bidResponses.push(bid);
-        })
-      })
+        });
+      });
     }
     return bidResponses;
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) {
-      return false
+      return false;
     }
-    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
-    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm;
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency;
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       winCpm
@@ -223,11 +223,11 @@ export const spec = {
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId
-    )
+    );
     triggerPixel(winUrl);
-    return true
+    return true;
   }
-}
+};
 
 function buildBanner(request) {
   let sizes = request.sizes;
@@ -241,7 +241,7 @@ function buildBanner(request) {
 
 function buildVideo(request) {
   const video = {};
-  const videoParams = deepAccess(request, 'mediaTypes.video', {});
+  const videoParams = request?.mediaTypes?.video || {};
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
       video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -283,14 +283,14 @@ export function checkParamDataType(key, value, datatype) {
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!bidRequest?.mediaTypes?.banner;
 }
 
 /**
  * @param {BidRequest} bidRequest bid request
  */
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video');
+  return !!bidRequest?.mediaTypes?.video;
 }
 
 export function _getDomainFromURL(url) {

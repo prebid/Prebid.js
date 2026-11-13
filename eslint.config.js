@@ -3,18 +3,21 @@ const lintImports = require('eslint-plugin-import')
 const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
+const chaiFriendly = require('eslint-plugin-chai-friendly');
+const mochaPlugin = require('eslint-plugin-mocha').default;
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
 const tseslint = require('typescript-eslint');
-const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
+const {getSourceFolders} = require('./gulpHelpers.js');
+const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = require('./plugins/eslint/approvedLoadExternalScriptPaths.js');
 
 function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
 }
 
 function tsPattern(name) {
-  return [`${name}/**/*.ts`]
+  return [`${name}/**/*.ts`, `${name}/**/*.mts`]
 }
 
 function sourcePattern(name) {
@@ -32,7 +35,18 @@ const allowedImports = {
     'dlv',
     'dset'
   ],
-  libraries: [],
+  // [false] means disallow ANY import outside of modules/debugging
+  // this is because debugging also gets built as a standalone module,
+  // and importing global state does not work as expected.
+  // in theory imports that do not involve global state are fine, but
+  // even innocuous imports can become problematic if the source changes,
+  // and it's too easy to forget this is a problem for debugging-standalone.
+  'modules/debugging': [false],
+  libraries: [
+    // ponyfill for the fetch family, injected by plugins/polyfillFetch.js and only
+    // for build targets that lack AbortController - see libraries/fetchPonyfill
+    'whatwg-fetch'
+  ],
   creative: [],
 }
 
@@ -55,13 +69,20 @@ module.exports = [
   includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
   {
     ignores: [
-      ...getIgnoreSources(),
       'integrationExamples/**/*',
+      // do not lint worktrees created by claude/gemini
+      '.claude/**',
+      '.gemini/**',
       // do not lint build-related stuff
       '*.js',
+      '*.mjs',
       'metadata/**/*',
+      'customize/**/*',
+      // inputs for tests that run linter rules themselves, and not all of them are meant to pass
+      'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
+      'web-bundler',
     ],
   },
   jsdoc.configs['flat/recommended'],
@@ -83,6 +104,14 @@ module.exports = [
         tagNamePreference: {
           return: 'return'
         }
+      },
+      'import/resolver': {
+        [path.resolve('./plugins/eslint/resolver')]: true,
+        node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {
@@ -97,21 +126,50 @@ module.exports = [
     },
     rules: {
       'comma-dangle': 'off',
-      semi: 'off',
+      '@stylistic/comma-dangle': 'off',
+      '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
-      'no-console': 'error',      
+      'no-constant-binary-expression': 'error',
+      'no-useless-assignment': 'error',
+      'prebid/no-redundant-validated-condition': 'error',
+      'no-console': 'error',
+      'prebid/no-extra-function-args': 'error',
+      'prebid/no-deep-access-import': 'warn',
       'space-before-function-paren': 'off',
-      'import/extensions': ['error', 'ignorePackages'],
+      '@stylistic/space-before-function-paren': 'off',
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'warn',
+      'import/no-extraneous-dependencies': ['error', {
+        // flag imports that are not runtime or peer dependencies;
+        // except for tests, which are allowed devDependencies
+        devDependencies: sourcePattern('test'),
+        peerDependencies: true,
+        optionalDependencies: false,
+        includeTypes: true,
+      }],
+      'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
         {
           selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
         {
           selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+          message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
         },
+      ],
+      'no-restricted-imports': [
+        'error', {
+          patterns: [
+            '**/src/adloader.js'
+          ]
+        }
       ],
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
@@ -119,9 +177,11 @@ module.exports = [
       //
       // See Issue #1111.
       // also see: reality. These are here to stay.
+      // we're working on them though :)
 
-      eqeqeq: 'off',
-      'no-useless-escape': 'off',
+      // @augmentationOptional is read by prebid/augmentation-reachable, and by the same check
+      // after declaration emit
+      'jsdoc/check-tag-names': ['warn', {definedTags: ['augmentationOptional']}],
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -143,26 +203,38 @@ module.exports = [
       'jsdoc/tag-lines': 'off',
       'no-var': 'off',
       'no-void': 'off',
-      'array-callback-return': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',
       'prefer-regex-literals': 'off',
       'no-case-declarations': 'off',
-      'no-useless-catch': 'off',
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
-      '@stylistic/array-bracket-spacing': 'off',
-      '@stylistic/object-curly-spacing': 'off',
-      '@stylistic/semi': 'off',
-      '@stylistic/space-before-function-paren': 'off',
       '@stylistic/multiline-ternary': 'off',
-      '@stylistic/computed-property-spacing': 'off',
-      '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/comma-dangle': 'off',
-      '@stylistic/object-curly-newline': 'off',
-      '@stylistic/object-property-newline': 'off',
-
+    }
+  },
+  {
+    files: getSourceFolders().map(dir => `${dir}/**/*.d.ts`),
+    ignores: [
+      'src/types/**/*'
+    ],
+    rules: {
+      'prebid/declaration-filename': 'error'
+    }
+  },
+  {
+    files: getSourceFolders().flatMap(tsPattern),
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/augmentation-reachable': ['error', {
+        // core's entry point as it is before precompilation, when this runs
+        coreEntry: 'src/prebid.public.ts',
+        // an augmentation in test code reaches no consumer either way
+        ignore: ['test'],
+        project: 'tsconfig.json'
+      }]
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
@@ -195,6 +267,21 @@ module.exports = [
             object: 'navigator',
             message: 'use ajax.js instead'
           },
+          {
+            property: 'doNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'msDoNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'window',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
           ...['outerText', 'innerText'].map(property => ({
             property,
             message: 'use .textContent instead'
@@ -213,7 +300,13 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
@@ -226,7 +319,28 @@ module.exports = [
     }
   },
   {
+    files: [
+      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
+      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
+      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/adagioRtdProvider.js',
+      'modules/contxtfulRtdProvider.js'
+    ],
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/no-synchronous-layout-read': 'error',
+    }
+  },
+  {
     files: sourcePattern('test'),
+    plugins: {
+      'chai-friendly': chaiFriendly,
+      'mocha': mochaPlugin
+    },
     languageOptions: {
       globals: {
         ...globals.mocha,
@@ -235,11 +349,16 @@ module.exports = [
       }
     },
     rules: {
-      // tests were not subject to many rules and they are now a nightmare
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
+      'chai-friendly/no-unused-expressions': 'error',
+      // Mocha silently ignores it()/describe()/hooks called while a test or hook is running: their
+      // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
+      // (e.g. after()) registered inside a test; see AGENTS.md.
+      'mocha/no-nested-tests': 'error',
+      // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
-      'no-unused-vars': 'off',
+      'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'
     }
@@ -262,4 +381,24 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off'
     }
   },
-]
+  // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
+  {
+    files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
+      // If path doesn't end with .js/.ts/.mjs/.mts, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs|mts)$/)) {
+        return `${p}/**/*.{js,ts,mjs,mts}`;
+      }
+      return p;
+    }),
+      rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
+          patterns: []
+        }
+      ],
+      }
+  },
+  ]

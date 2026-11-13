@@ -1,9 +1,9 @@
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { ajax } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 import { mergeDeep } from '../src/utils.js';
 /**
@@ -20,6 +20,7 @@ const FRAUD_FIELD_NAME = 'fr';
 const SLOTS_OBJECT_FIELD_NAME = 'slots';
 const CUSTOM_FIELD_NAME = 'custom';
 const IAS_KW = 'ias-kw';
+const IAS_QC = 'ias-qc';
 const IAS_KEY_MAPPINGS = {
   adt: 'adt',
   alc: 'alc',
@@ -29,6 +30,7 @@ const IAS_KEY_MAPPINGS = {
   vio: 'vio',
   drg: 'drg',
   'ias-kw': 'ias-kw',
+  'ias-qc': 'ias-qc',
   fr: 'fr',
   vw: 'vw',
   grm: 'grm',
@@ -59,7 +61,7 @@ export function init(config, userConsent) {
     const keyMappings = params.keyMappings;
     for (const prop in keyMappings) {
       if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
-        IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
+        IAS_KEY_MAPPINGS[prop] = keyMappings[prop];
       }
     }
   }
@@ -134,6 +136,9 @@ function formatTargetingData(adUnit) {
   }
   if (iasTargeting[CUSTOM_FIELD_NAME] && IAS_KW in iasTargeting[CUSTOM_FIELD_NAME]) {
     result[IAS_KW] = iasTargeting[CUSTOM_FIELD_NAME][IAS_KW];
+  }
+  if (iasTargeting[CUSTOM_FIELD_NAME] && IAS_QC in iasTargeting[CUSTOM_FIELD_NAME]) {
+    result[IAS_QC] = iasTargeting[CUSTOM_FIELD_NAME][IAS_QC];
   }
   if (iasTargeting[SLOTS_OBJECT_FIELD_NAME] && adUnit in iasTargeting[SLOTS_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[SLOTS_OBJECT_FIELD_NAME][adUnit]);

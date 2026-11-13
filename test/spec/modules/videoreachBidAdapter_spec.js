@@ -1,6 +1,5 @@
-import {expect} from 'chai';
-import {spec} from 'modules/videoreachBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/videoreachBidAdapter.js';
 
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
@@ -139,7 +138,7 @@ describe('videoreachBidAdapter', function () {
           type: 'image',
           url: 'https://SYNC_URL'
         });
-      })
+      });
     });
   });
 });

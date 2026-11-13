@@ -1,10 +1,22 @@
-import {callPrebidCache} from '../../src/auction.js';
-import {VIDEO} from '../../src/mediaTypes.js';
-import {logError} from '../../src/utils.js';
-import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_REPORT_ANALYTICS} from '../../src/activities/activities.js';
-import {activityParams} from '../../src/activities/activityParams.js';
-import {auctionManager} from '../../src/auctionManager.js';
+import { updateVast } from '../../src/videoCache.js';
+import { VIDEO } from '../../src/mediaTypes.js';
+import { mergeVastTrackers } from '../../src/utils/vast.js';
+import { isActivityAllowed } from '../../src/activities/rules.js';
+import { ACTIVITY_REPORT_ANALYTICS } from '../../src/activities/activities.js';
+import { activityParams } from '../../src/activities/activityParams.js';
+import { auctionManager } from '../../src/auctionManager.js';
+
+/**
+ * VAST Trackers Structure:
+ * {
+ *   impression: string[],           // Array of impression pixel URLs
+ *   error: string[],                // Array of error pixel URLs
+ *   trackingEvents: Array<{         // Array of video playback tracking events
+ *     event: string,                // Event name (e.g., 'start', 'firstQuartile', 'midpoint', 'thirdQuartile', 'complete')
+ *     url: string                   // Tracking pixel URL
+ *   }>
+ * }
+ */
 
 const vastTrackers = [];
 let enabled = false;
@@ -15,108 +27,52 @@ export function reset() {
 
 export function enable() {
   if (!enabled) {
-    callPrebidCache.before(addTrackersToResponse);
+    updateVast.before(addTrackersToResponse);
     enabled = true;
   }
 }
 
 export function disable() {
   if (enabled) {
-    callPrebidCache.getHooks({hook: addTrackersToResponse}).remove();
+    updateVast.getHooks({ hook: addTrackersToResponse }).remove();
     enabled = false;
   }
 }
 
-export function cacheVideoBidHook({index = auctionManager.index} = {}) {
-  return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+export function updateVastHook({ index = auctionManager.index } = {}) {
+  return function addTrackersToResponse(next, bidResponse) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
-      const vastTrackers = getVastTrackers(bidResponse, {index});
+      const vastTrackers = getVastTrackers(bidResponse, { index });
       if (vastTrackers) {
-        bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml);
-        const impTrackers = vastTrackers.get('impressions');
-        if (impTrackers) {
-          bidResponse.vastImpUrl = [].concat([...impTrackers]).concat(bidResponse.vastImpUrl).filter(t => t);
-        }
+        bidResponse.vastTrackers = vastTrackers;
       }
     }
-    next(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-  }
+    next(bidResponse);
+  };
 }
 
-const addTrackersToResponse = cacheVideoBidHook();
+const addTrackersToResponse = updateVastHook();
 enable();
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
-    vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
+    vastTrackers.push({ 'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn });
   }
 }
 
-export function insertVastTrackers(trackers, vastXml) {
-  const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
-  const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
-  try {
-    if (wrappers.length) {
-      wrappers.forEach(wrapper => {
-        if (trackers.get('impressions')) {
-          trackers.get('impressions').forEach(trackingUrl => {
-            const impression = doc.createElement('Impression');
-            impression.appendChild(doc.createCDATASection(trackingUrl));
-            wrapper.appendChild(impression);
-          });
-        }
-      });
-      vastXml = new XMLSerializer().serializeToString(doc);
-    }
-  } catch (error) {
-    logError('an error happened trying to insert trackers in vastXml');
-  }
-  return vastXml;
-}
-
-export function getVastTrackers(bid, {index = auctionManager.index}) {
-  const trackers = [];
-  vastTrackers.filter(
-    ({
-      moduleType,
-      moduleName,
-      trackerFn
-    }) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
-  ).forEach(({trackerFn}) => {
+/**
+ * Merges the trackers registered by modules with the bid's own `vastTrackers`.
+ * Core inserts the result into the bid's VAST.
+ */
+export function getVastTrackers(bid, { index = auctionManager.index }) {
+  const moduleTrackers = vastTrackers.filter(
+    ({ moduleType, moduleName }) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
+  ).map(({ trackerFn }) => {
     const auction = index.getAuction(bid).getProperties();
     const bidRequest = index.getBidRequest(bid);
-    const trackersToAdd = trackerFn(bid, {auction, bidRequest});
-    trackersToAdd.forEach(trackerToAdd => {
-      if (isValidVastTracker(trackers, trackerToAdd)) {
-        trackers.push(trackerToAdd);
-      }
-    });
+    return trackerFn(bid, { auction, bidRequest });
   });
-  const trackersMap = trackersToMap(trackers);
-  return (trackersMap.size ? trackersMap : null);
-};
-
-function isValidVastTracker(trackers, trackerToAdd) {
-  return trackerToAdd.hasOwnProperty('event') && trackerToAdd.hasOwnProperty('url');
-}
-
-function trackersToMap(trackers) {
-  return trackers.reduce((map, {url, event}) => {
-    !map.has(event) && map.set(event, new Set());
-    map.get(event).add(url);
-    return map;
-  }, new Map());
-}
-
-export function addImpUrlToTrackers(bid, trackersMap) {
-  if (bid.vastImpUrl) {
-    if (!trackersMap) {
-      trackersMap = new Map();
-    }
-    if (!trackersMap.get('impressions')) {
-      trackersMap.set('impressions', new Set());
-    }
-    trackersMap.get('impressions').add(bid.vastImpUrl);
-  }
-  return trackersMap;
+  const merged = mergeVastTrackers(...moduleTrackers, bid.vastTrackers);
+  const hasTrackers = merged.impression.length || merged.error.length || merged.trackingEvents.length;
+  return hasTrackers ? merged : null;
 }

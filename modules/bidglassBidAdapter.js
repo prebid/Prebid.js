@@ -1,5 +1,5 @@
-import {_each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -140,7 +140,7 @@ export const spec = {
         contentType: 'text/plain',
         withCredentials: false
       }
-    }
+    };
   },
 
   /**
@@ -196,6 +196,6 @@ export const spec = {
     return bidResponses;
   }
 
-}
+};
 
 registerBidder(spec);

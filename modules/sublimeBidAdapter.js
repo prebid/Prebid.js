@@ -211,7 +211,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         contentType: 'text/plain',
         withCredentials: false
       },
-    }
+    };
   });
 }
 

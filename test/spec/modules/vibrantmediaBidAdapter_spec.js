@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {spec} from 'modules/vibrantmediaBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from 'src/video.js';
+import { expect } from 'chai';
+import { spec } from 'modules/vibrantmediaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { getWinDimensions } from '../../../src/utils.js';
 
 const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';
@@ -52,7 +52,7 @@ const getValidBidderRequest = (bidRequests) => {
 describe('VibrantMediaBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('constants', function () {
+  it('exposes the expected code and supported media types', function () {
     expect(spec.code).to.equal('vibrantmedia');
     expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE, VIDEO]);
   });
@@ -132,7 +132,7 @@ describe('VibrantMediaBidAdapter', function () {
         delete bidRequest.mediaTypes.banner;
         bidRequest.mediaTypes.unsupported = {
           sizes: DEFAULT_BID_SIZES,
-        }
+        };
         expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
       });
 

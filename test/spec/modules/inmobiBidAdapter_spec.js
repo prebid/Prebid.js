@@ -4,7 +4,7 @@ import {
 } from 'modules/inmobiBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
@@ -15,13 +15,13 @@ import 'modules/priceFloors.js';
 import sinon from 'sinon';
 
 // constants
-const GVLID = 333;
+
 export const ADAPTER_VERSION = 1.0;
-const BIDDER_CODE = 'inmobi';
+
 export const EVENT_ENDPOINT = 'https://sync.inmobi.com';
 
 describe('The inmobi bidding adapter', function () {
-  let utilsMock, sandbox, ajaxStub, fetchStub; ;
+  let utilsMock, sandbox, ajaxStub, fetchStub;
 
   beforeEach(function () {
     // mock objects
@@ -118,11 +118,7 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onBidWon(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onBidWon`;
-      const expectedPayload = JSON.stringify({
-        domain: location.hostname,
-        eventPayload: bid.meta
-      });
+
       // assert statements
       expect(fetchStub.callCount).to.be.equal(0);
     });
@@ -266,11 +262,7 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onAdRenderSucceeded(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onAdRenderSucceeded`;
-      const expectedPayload = JSON.stringify({
-        domain: location.hostname,
-        eventPayload: bid.meta
-      });
+
       // assert statements
       expect(fetchStub.callCount).to.be.equal(0);
     });
@@ -415,11 +407,7 @@ describe('The inmobi bidding adapter', function () {
       };
       spec.onSetTargeting(bid);
       // expected url and payload
-      const expectedUrl = `${EVENT_ENDPOINT}/report/onSetTargeting`;
-      const expectedPayload = JSON.stringify({
-        domain: location.hostname,
-        eventPayload: bid.meta
-      });
+
       // assert statements
       expect(fetchStub.callCount).to.be.equal(0);
     });
@@ -456,7 +444,7 @@ describe('The inmobi bidding adapter', function () {
   describe('buildRequests', function () {
     before(() => {
       hook.ready();
-    })
+    });
     afterEach(function () {
       config.resetConfig();
     });
@@ -502,7 +490,7 @@ describe('The inmobi bidding adapter', function () {
     it('request should build with correct imp', async function () {
       const expectedMetric = {
         url: 'https://inmobi.com'
-      }
+      };
       const bidRequests = [{
         bidId: 'bidId',
         bidder: 'inmobi',
@@ -571,7 +559,7 @@ describe('The inmobi bidding adapter', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.site.domain).to.equal('raapchikgames.com');
       expect(ortbRequest.site.publisher.domain).to.equal('inmobi');
       expect(ortbRequest.site.page).to.equal('https://raapchikgames.com');
@@ -582,7 +570,7 @@ describe('The inmobi bidding adapter', function () {
       expect(ortbRequest.site.sectioncat).to.deep.equal(['IAB4']);
       expect(ortbRequest.site.ref).to.equal('inmobi.com');
       expect(ortbRequest.site.privacypolicy).to.equal(1);
-      expect(ortbRequest.site.content.url).to.equal('https://raapchikgames.com/games1')
+      expect(ortbRequest.site.content.url).to.equal('https://raapchikgames.com/games1');
     });
 
     it('request should build with proper device data', async function () {
@@ -620,7 +608,7 @@ describe('The inmobi bidding adapter', function () {
           }
         }
       };
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.device.dnt).to.equal(0);
       expect(ortbRequest.device.lmt).to.equal(1);
       expect(ortbRequest.device.js).to.equal(1);
@@ -638,7 +626,7 @@ describe('The inmobi bidding adapter', function () {
     });
 
     it('should properly build a request with source object', async function () {
-      const expectedSchain = {id: 'prebid'};
+      const expectedSchain = { id: 'prebid' };
       const ortb2 = {
         source: {
           pchain: 'inmobi',
@@ -660,7 +648,7 @@ describe('The inmobi bidding adapter', function () {
           },
         },
       ];
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.source.ext.schain).to.deep.equal(expectedSchain);
       expect(ortbRequest.source.pchain).to.equal('inmobi');
     });
@@ -705,7 +693,7 @@ describe('The inmobi bidding adapter', function () {
             }
           }
         }
-      }
+      };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
       const ortbRequest = request.data;
       expect(ortbRequest.user.yob).to.deep.equal(2002);
@@ -749,7 +737,7 @@ describe('The inmobi bidding adapter', function () {
         }
       };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
+      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({ ...bidderRequest, ortb2 })).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
       expect(ortbRequest.regs.ext.gpp).to.equal('gpp_consent_string');
       expect(ortbRequest.regs.ext.gpp_sid).to.deep.equal([0, 1, 2]);
@@ -965,8 +953,6 @@ describe('The inmobi bidding adapter', function () {
                 delivery: [1, 2, 3],
                 pos: 1,
                 playbackend: 1,
-                adPodDurationSec: 30,
-                durationRangeSec: [1, 30],
                 skip: 1,
                 minduration: 5,
                 startdelay: 5,
@@ -1031,8 +1017,6 @@ describe('The inmobi bidding adapter', function () {
                 delivery: [1, 2, 3],
                 pos: 1,
                 playbackend: 1,
-                adPodDurationSec: 30,
-                durationRangeSec: [1, 30],
                 skip: 1,
                 minduration: 5,
                 startdelay: 5,
@@ -1079,8 +1063,6 @@ describe('The inmobi bidding adapter', function () {
                 delivery: [1, 2, 3],
                 pos: 1,
                 playbackend: 1,
-                adPodDurationSec: 30,
-                durationRangeSec: [1, 30],
                 skip: 0,
                 minduration: 5,
                 startdelay: 5,
@@ -1167,7 +1149,7 @@ describe('The inmobi bidding adapter', function () {
     it('should properly build a request when coppa flag is true', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
@@ -1175,7 +1157,7 @@ describe('The inmobi bidding adapter', function () {
     it('should properly build a request when coppa flag is false', async function () {
       const bidRequests = [];
       const bidderRequest = {};
-      config.setConfig({coppa: false});
+      config.setConfig({ coppa: false });
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.regs.coppa).to.equal(0);
     });
@@ -1223,7 +1205,7 @@ describe('The inmobi bidding adapter', function () {
             plc: '123a'
           },
           getFloor: inputParams => {
-            return {currency: 'USD', floor: 1.23, size: '*', mediaType: '*'};
+            return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
           }
         }
       ];
@@ -1271,7 +1253,7 @@ describe('The inmobi bidding adapter', function () {
               plc: '123a'
             },
             getFloor: inputParams => {
-              return {currency: 'USD', floor: 1.23, size: '*', mediaType: '*'};
+              return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
             }
           }
         ];
@@ -1326,7 +1308,7 @@ describe('The inmobi bidding adapter', function () {
               plc: '12456'
             },
             getFloor: inputParams => {
-              return {currency: 'USD', floor: 1.23, size: '*', mediaType: '*'};
+              return { currency: 'USD', floor: 1.23, size: '*', mediaType: '*' };
             }
           },
         ];
@@ -1364,8 +1346,6 @@ describe('The inmobi bidding adapter', function () {
               delivery: [1, 2, 3],
               pos: 1,
               playbackend: 1,
-              adPodDurationSec: 30,
-              durationRangeSec: [1, 30],
               skip: 1,
               minduration: 5,
               startdelay: 5,
@@ -1424,8 +1404,6 @@ describe('The inmobi bidding adapter', function () {
               delivery: [1, 2, 3],
               pos: 1,
               playbackend: 1,
-              adPodDurationSec: 30,
-              durationRangeSec: [1, 30],
               skip: 1,
               minduration: 5,
               startdelay: 5,
@@ -1508,7 +1486,7 @@ describe('The inmobi bidding adapter', function () {
       expect(res).to.deep.equal([
         { type: 'image', url: 'https://sync.inmobi.com/prebidjs' },
         { type: 'image', url: 'https://eus.rubiconproject.com/usync.html?p=test' }
-      ])
+      ]);
     });
 
     it('should return urls from response when iframe enabled is false and pixel enabled and empty responses', function () {
@@ -1516,7 +1494,7 @@ describe('The inmobi bidding adapter', function () {
       const res = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responses);
       expect(res).to.deep.equal([
         { type: 'image', url: `${syncEndPoint}` }
-      ])
+      ]);
     });
 
     it('should return urls from response when iframe enabled is false and pixel enabled and no response', function () {
@@ -1524,7 +1502,7 @@ describe('The inmobi bidding adapter', function () {
       const res = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responses);
       expect(res).to.deep.equal([
         { type: 'image', url: `${syncEndPoint}` }
-      ])
+      ]);
     });
 
     it('should return urls from response when iframe enabled is false and all consent parameters present', function () {
@@ -1532,7 +1510,7 @@ describe('The inmobi bidding adapter', function () {
       expect(res).to.deep.equal([
         { type: 'image', url: 'https://sync.inmobi.com/prebidjs?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=32%2C51' },
         { type: 'image', url: 'https://eus.rubiconproject.com/usync.html?p=test&gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=32%2C51' }
-      ])
+      ]);
     });
   });
 
@@ -1652,9 +1630,9 @@ describe('The inmobi bidding adapter', function () {
 
     it('should return an empty array when there is no bid response', async function () {
       const bidRequests = [];
-      const response = {seatbid: []};
+      const response = { seatbid: [] };
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids).to.have.lengthOf(0);
     });
 
@@ -1673,7 +1651,7 @@ describe('The inmobi bidding adapter', function () {
       }];
       const response = mockResponse('bidId', 1);
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids).to.have.length(1);
       expect(bids[0].currency).to.deep.equal('USD');
       expect(bids[0].mediaType).to.deep.equal('banner');
@@ -1719,7 +1697,7 @@ describe('The inmobi bidding adapter', function () {
       }];
       const response = mockResponse('bidId2', 1);
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-      const bids = spec.interpretResponse({body: response}, request);
+      const bids = spec.interpretResponse({ body: response }, request);
       expect(bids[0].currency).to.deep.equal('USD');
       expect(bids[0].mediaType).to.deep.equal('banner');
       expect(bids[0].requestId).to.deep.equal('bidId2');
@@ -1754,7 +1732,7 @@ describe('The inmobi bidding adapter', function () {
         }];
         const response = mockResponse('bidId', 2);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].currency).to.deep.equal('USD');
@@ -1793,7 +1771,7 @@ describe('The inmobi bidding adapter', function () {
         }];
         const response = mockResponse('bidId', 2);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].currency).to.deep.equal('USD');
@@ -1843,7 +1821,7 @@ describe('The inmobi bidding adapter', function () {
         }];
         const response = mockResponse('bidId', 2);
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(VIDEO);
         expect(bids[0].currency).to.deep.equal('USD');
@@ -1884,13 +1862,13 @@ describe('The inmobi bidding adapter', function () {
         const response = mockResponseNative('bidId', 4);
         const expectedAdmNativeOrtb = JSON.parse(response.seatbid[0].bid[0].adm).native;
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
 
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         // testing
         expect(bids[0].requestId).to.deep.equal('bidId');
-        expect(bids[0].seatBidId).to.deep.equal('20dd72ed-930f-1000-e56f-07c37a793f30')
+        expect(bids[0].seatBidId).to.deep.equal('20dd72ed-930f-1000-e56f-07c37a793f30');
         expect(bids[0].cpm).to.deep.equal(1.1645);
         expect(bids[0].currency).to.deep.equal('USD');
         expect(bids[0].width).to.deep.equal(320);
@@ -1939,12 +1917,12 @@ describe('The inmobi bidding adapter', function () {
         const response = mockResponseNative('bidId', 4);
         const expectedAdmNativeOrtb = JSON.parse(response.seatbid[0].bid[0].adm).native;
         const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse({body: response}, request);
+        const bids = spec.interpretResponse({ body: response }, request);
         expect(bids).to.have.lengthOf(1);
         expect(bids[0].mediaType).to.equal(NATIVE);
         // testing
         expect(bids[0].requestId).to.deep.equal('bidId');
-        expect(bids[0].seatBidId).to.deep.equal('20dd72ed-930f-1000-e56f-07c37a793f30')
+        expect(bids[0].seatBidId).to.deep.equal('20dd72ed-930f-1000-e56f-07c37a793f30');
         expect(bids[0].cpm).to.deep.equal(1.1645);
         expect(bids[0].currency).to.deep.equal('USD');
         expect(bids[0].width).to.deep.equal(320);

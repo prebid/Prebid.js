@@ -8,20 +8,25 @@ import {
   logInfo,
   safeJSONEncode,
   deepClone,
-  deepSetValue, getWindowTop
+  deepSetValue,
+  getWindowTop,
+  getWinDimensions
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {getViewportCoordinates} from '../libraries/viewport/viewport.js';
-import {filterBidsListByFilters, getTopWindowReferrer} from '../libraries/medianetUtils/utils.js';
-import {errorLogger} from '../libraries/medianetUtils/logger.js';
-import {GLOBAL_VENDOR_ID, MEDIANET} from '../libraries/medianetUtils/constants.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
+import { filterBidsListByFilters, getTopWindowReferrer } from '../libraries/medianetUtils/utils.js';
+import { errorLogger } from '../libraries/medianetUtils/logger.js';
+import { GLOBAL_VENDOR_ID, MEDIANET } from '../libraries/medianetUtils/constants.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -115,28 +120,28 @@ function transformSizes(sizes) {
     return [getSize(sizes)];
   }
 
-  return sizes.map(size => getSize(size))
+  return sizes.map(size => getSize(size));
 }
 
 function getSize(size) {
   return {
     w: parseInt(size[0], 10),
     h: parseInt(size[1], 10)
-  }
+  };
 }
 
 function getWindowSize() {
   return {
     w: window.screen.width || -1,
     h: window.screen.height || -1
-  }
+  };
 }
 
-function getCoordinates(adUnitCode) {
-  let element = document.getElementById(adUnitCode);
-  if (!element && adUnitCode.indexOf('/') !== -1) {
+function getCoordinates(bidRequest) {
+  let element = getAdUnitElement(bidRequest);
+  if (!element && bidRequest.adUnitCode.indexOf('/') !== -1) {
     // now it means that adUnitCode is GAM AdUnitPath
-    const {divId} = getGptSlotInfoForAdUnitCode(adUnitCode);
+    const { divId } = getGptSlotInfoForAdUnitCode(bidRequest.adUnitCode);
     if (isStr(divId)) {
       element = document.getElementById(divId);
     }
@@ -152,7 +157,7 @@ function getCoordinates(adUnitCode) {
       y: rect.bottom,
       x: rect.right
     };
-    return coordinates
+    return coordinates;
   }
   return null;
 }
@@ -166,8 +171,8 @@ function extParams(bidRequest, bidderRequests) {
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);
-  const coppaApplies = !!(config.getConfig('coppa'));
-  const {top = -1, right = -1, bottom = -1, left = -1} = getViewportCoordinates();
+  const coppaApplies = bidderRequests?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa();
+  const { top = -1, right = -1, bottom = -1, left = -1 } = getViewportCoordinates();
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: 'v' + '$prebid.version$' },
@@ -175,11 +180,11 @@ function extParams(bidRequest, bidderRequests) {
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
     uspApplies && { usp_consent_string: uspConsent || '' },
-    {coppa_applies: coppaApplies},
+    { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
-    !isEmpty(sChain) && {schain: sChain},
+    !isEmpty(sChain) && { schain: sChain },
     {
       vcoords: {
         top_left: { x: left, y: top },
@@ -238,7 +243,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }
-  const coordinates = getCoordinates(bidRequest.adUnitCode);
+  const coordinates = getCoordinates(bidRequest);
   if (coordinates && params.banner && params.banner.length !== 0) {
     const normCoordinates = normalizeCoordinates(coordinates);
     params.ext.coordinates = normCoordinates;
@@ -255,9 +260,6 @@ function slotParams(bidRequest, bidderRequests) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-  if (bidderRequests.paapi?.enabled) {
-    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
-  }
   return params;
 }
 
@@ -269,11 +271,11 @@ function getBidFloorByType(bidRequest) {
         if (mediaType === BANNER) {
           bidRequest.mediaTypes.banner.sizes.forEach(
             size => {
-              setFloorInfo(bidRequest, mediaType, size, floorInfo)
+              setFloorInfo(bidRequest, mediaType, size, floorInfo);
             }
-          )
+          );
         } else {
-          setFloorInfo(bidRequest, mediaType, '*', floorInfo)
+          setFloorInfo(bidRequest, mediaType, '*', floorInfo);
         }
       }
     });
@@ -281,13 +283,10 @@ function getBidFloorByType(bidRequest) {
   return floorInfo;
 }
 function setFloorInfo(bidRequest, mediaType, size, floorInfo) {
-  const floor = bidRequest.getFloor({currency: 'USD', mediaType: mediaType, size: size}) || {};
+  const floor = bidRequest.getFloor({ currency: 'USD', mediaType: mediaType, size: size }) || {};
   if (size.length > 1) floor.size = size;
   floor.mediaType = mediaType;
   floorInfo.push(floor);
-}
-function getMinSize(sizes) {
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
 function getSlotVisibility(topLeft, size) {
@@ -301,7 +300,7 @@ function getSlotVisibility(topLeft, size) {
     return 0;
   }
 
-  return getOverlapArea(topLeft, bottomRight, {x: 0, y: 0}, {x: windowSize.w, y: windowSize.h}) / maxArea;
+  return getOverlapArea(topLeft, bottomRight, { x: 0, y: 0 }, { x: windowSize.w, y: windowSize.h }) / maxArea;
 }
 
 // find the overlapping area between two rectangles
@@ -315,7 +314,7 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
-  const {scrollX, scrollY} = window;
+  const { scrollX, scrollY } = getWinDimensions(window);
   return {
     top_left: {
       x: coordinates.top_left.x + scrollX,
@@ -325,7 +324,7 @@ function normalizeCoordinates(coordinates) {
       x: coordinates.bottom_right.x + scrollX,
       y: coordinates.bottom_right.y + scrollY,
     }
-  }
+  };
 }
 
 function getBidderURL(bidderCode, cid) {
@@ -337,7 +336,7 @@ function ortb2Data(ortb2, bidRequests) {
   const ortb2Object = deepClone(ortb2);
   const eids = deepAccess(bidRequests, '0.userIdAsEids');
   if (eids) {
-    deepSetValue(ortb2Object, 'user.ext.eids', eids)
+    deepSetValue(ortb2Object, 'user.ext.eids', eids);
   }
   return ortb2Object;
 }
@@ -351,7 +350,7 @@ function generatePayload(bidRequests, bidderRequests) {
     imp: bidRequests.map(request => slotParams(request, bidderRequests)),
     ortb2: ortb2Data(bidderRequests.ortb2, bidRequests),
     tmax: bidderRequests.timeout
-  }
+  };
 }
 
 function isValidBid(bid) {
@@ -431,7 +430,7 @@ function newVideoRenderer(bid) {
         autoPlay: bid.ap,
         preload: bid.pl,
         mute: bid.mt
-      }
+      };
       const adUnitCode = bid.dfp_id;
       const divId = getGptSlotInfoForAdUnitCode(adUnitCode).divId || adUnitCode;
       window.mnet.mediaNetoutstreamPlayer(bid, divId, obj);
@@ -489,7 +488,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
+   * @returns {*[]} An array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
@@ -504,28 +503,17 @@ export const spec = {
       validBids = bids.filter(bid => isValidBid(bid));
       validBids.forEach(addRenderer);
     }
-    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
-    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
-    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
-      return validBids;
-    }
-    if (ortbAuctionConfigs.length > 0) {
-      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({igs}) => igs || []).flat());
-    }
-    return {
-      bids: validBids,
-      paapi: fledgeAuctionConfigs,
-    }
+    return validBids;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const cookieSyncUrls = fetchCookieSyncUrls(serverResponses);
 
     if (syncOptions.iframeEnabled) {
-      return filterBidsListByFilters(cookieSyncUrls, {type: 'iframe'});
+      return filterBidsListByFilters(cookieSyncUrls, { type: 'iframe' });
     }
 
     if (syncOptions.pixelEnabled) {
-      return filterBidsListByFilters(cookieSyncUrls, {type: 'image'});
+      return filterBidsListByFilters(cookieSyncUrls, { type: 'image' });
     }
   },
 
@@ -569,7 +557,7 @@ export const spec = {
     } catch (e) {}
   },
 
-  onBidderError: ({error, bidderRequest}) => {
+  onBidderError: ({ error, bidderRequest }) => {
     try {
       const eventData = {
         name: EVENTS.BIDDER_ERROR,

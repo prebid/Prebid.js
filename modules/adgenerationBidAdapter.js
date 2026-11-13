@@ -16,7 +16,8 @@ const adgLogger = prefixLog('Adgeneration: ');
  */
 
 const ADG_BIDDER_CODE = 'adgeneration';
-const ADGENE_PREBID_VERSION = '1.6.4';
+const ACP_ID = 2567; // Google Additional Consent provider ID
+const ADGENE_PREBID_VERSION = '1.7.0';
 const DEBUG_URL = 'https://api-test.scaleout.jp/adgen/prebid';
 const URL = 'https://d.socdm.com/adgen/prebid';
 
@@ -30,7 +31,6 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
     deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes);
-    deepSetValue(imp, 'ext.novatiqSyncResponse', bidRequest?.userId?.novatiq?.snowflake?.syncResponse);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -38,13 +38,14 @@ const converter = ortbConverter({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    return buildBidResponse(bid, context)
+    return buildBidResponse(bid, context);
   }
 });
 
 export const spec = {
   code: ADG_BIDDER_CODE,
-  aliases: ['adg'], // short code
+  acpId: ACP_ID,
+  aliases: [{ code: 'adg', acpId: ACP_ID }], // short code
   supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
@@ -62,20 +63,13 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ortbObj = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    const ortbObj = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     adgLogger.logInfo('ortbObj', ortbObj);
-    const {imp, ...rest} = ortbObj
+    const { imp, ...rest } = ortbObj;
     const requests = imp.map((impObj) => {
       const customParams = impObj?.ext?.params;
       const id = getBidIdParameter('id', customParams);
       const additionalParams = JSON.parse(JSON.stringify(rest));
-
-      // hyperIDが有効ではない場合、パラメータから削除する
-      if (!impObj?.ext?.novatiqSyncResponse || impObj?.ext?.novatiqSyncResponse !== 1) {
-        if (additionalParams?.user?.ext?.eids && Array.isArray(additionalParams?.user?.ext?.eids)) {
-          additionalParams.user.ext.eids = additionalParams?.user?.ext?.eids.filter((eid) => eid?.source !== 'novatiq.com');
-        }
-      }
 
       let urlParams = ``;
       urlParams = tryAppendQueryString(urlParams, 'id', id);
@@ -87,7 +81,7 @@ export const spec = {
         urlParams = urlParams.substring(0, urlParams.length - 1);
       }
 
-      const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL
+      const urlBase = customParams.debug ? (customParams.debug_url ? customParams.debug_url : DEBUG_URL) : URL;
       const url = `${urlBase}?${urlParams}`;
 
       const data = {
@@ -99,7 +93,7 @@ export const spec = {
           imp: [impObj],
           ...additionalParams
         }
-      }
+      };
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!impObj?.ext?.mediaTypes || !impObj?.ext?.mediaTypes.native) {
@@ -114,8 +108,8 @@ export const spec = {
           withCredentials: true,
           crossOrigin: true
         },
-      }
-    })
+      };
+    });
     return requests;
   },
   /**
@@ -147,14 +141,14 @@ export const spec = {
       height: adResult.h ? adResult.h : 1,
       creativeId: adResult.creativeid || '',
       dealId: adResult.dealid || '',
-      currency: getCurrencyType(bidRequests.bidderRequest),
+      currency: bidRequests?.data?.currency || 'JPY',
       netRevenue: true,
       ttl: adResult.ttl || 10,
     };
     if (adResult.adomain && Array.isArray(adResult.adomain) && adResult.adomain.length) {
       bidResponse.meta = {
         advertiserDomains: adResult.adomain
-      }
+      };
     }
     if (isNative(adResult)) {
       bidResponse.native = createNativeAd(adResult.native, adResult.beaconurl);
@@ -162,6 +156,7 @@ export const spec = {
     } else {
       // banner
       bidResponse.ad = createAd(adResult, body?.location_params, targetImp.ext.params, requestId);
+      bidResponse.mediaType = BANNER;
     }
     return [bidResponse];
   },
@@ -240,14 +235,14 @@ function createNativeAd(nativeAd, beaconUrl) {
           native.cta = assets[i].data.value;
           break;
         case 502:
-          native.privacyLink = encodeURIComponent(assets[i].data.value);
+          native.privacyLink = assets[i].data.value;
           break;
       }
     }
     native.clickUrl = nativeAd.link.url;
     native.clickTrackers = nativeAd.link.clicktrackers || [];
     native.impressionTrackers = nativeAd.imptrackers || [];
-    if (beaconUrl && beaconUrl != '') {
+    if (beaconUrl) {
       native.impressionTrackers.push(beaconUrl);
     }
   }
@@ -264,7 +259,7 @@ function appendChildToBody(ad, data) {
  */
 function createAPVTag() {
   const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js';
-  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`
+  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`;
 }
 
 /**
@@ -286,7 +281,7 @@ function insertVASTMethodForAPV(targetId, vastXml) {
   const apvVideoAdParam = {
     s: targetId
   };
-  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`
+  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`;
 }
 
 /**
@@ -296,7 +291,7 @@ function insertVASTMethodForAPV(targetId, vastXml) {
  * @return {string}
  */
 function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
-  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`
+  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`;
 }
 
 /**
@@ -314,8 +309,8 @@ function removeWrapper(ad) {
  * @return {?string} USD or JPY
  */
 function getCurrencyType(bidderRequest) {
-  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || ''
-  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY'
+  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || '';
+  return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY';
 }
 
 registerBidder(spec);

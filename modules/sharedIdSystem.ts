@@ -5,22 +5,24 @@
  * @requires module:modules/userId
  */
 
-import {parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID} from '../src/utils.js';
-import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {VENDORLESS_GVLID} from '../src/consentHandler.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { VENDORLESS_GVLID } from '../src/consentHandler.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
-import type {IdProviderSpec} from "./userId/spec.ts";
+import type { IdProviderSpec } from "./userId/spec.ts";
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
 const PUB_COMMON_ID = 'PublisherCommonId';
 
-type SharedIdParams = {
+export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId';
+
+export type SharedIdParams = {
   /**
    * If true, then an id is created automatically if it’s missing.
    * Default is true. If your server has a component that generates the id instead, then this should be set to false
@@ -39,7 +41,7 @@ type SharedIdParams = {
    * The value to use for `inserter` in EIDs.
    */
   inserter?: string;
-}
+};
 
 declare module './userId/spec' {
   interface UserId {
@@ -72,7 +74,7 @@ function readValue(name, type) {
       if (!expValue) {
         return storage.getDataFromLocalStorage(name);
       } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
-        return storage.getDataFromLocalStorage(name)
+        return storage.getDataFromLocalStorage(name);
       }
     }
   }
@@ -82,12 +84,20 @@ function getIdCallback(pubcid, pixelUrl) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
-        callback(getStoredId() || pubcid);
+        // By now the User ID module has stored `pubcid` (getId's `id`, when there is one), and the pixel
+        // endpoint has had the chance to set the cookie from the server. If storage holds that same id,
+        // complete without one: passing it would have the User ID module write it again from script, turning
+        // the server-set cookie back into a script-set one. If storage holds a different id, the server
+        // generated or restored it (for example with `create: false`, where getId returned no id), so adopt
+        // it. If storage is empty, the endpoint removed the cookie (for example for Global Privacy Control or
+        // denied consent): complete without an id, so script doesn't write back what the server deleted.
+        const storedId = getStoredId();
+        callback(storedId && storedId !== pubcid ? storedId : undefined);
       })();
     } else {
       callback(pubcid);
     }
-  }
+  };
 }
 
 function queuePixelCallback(pixelUrl, id = '', callback?) {
@@ -129,7 +139,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       return undefined;
     }
     logInfo(' Decoded value PubCommonId ' + value);
-    const idObj = {'pubcid': value as string};
+    const idObj = { 'pubcid': value as string };
     return idObj;
   },
   getId: function (config = {} as any, consentData, storedId) {
@@ -141,7 +151,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const {params: {create = true, pixelUrl} = {}} = config;
+    const { params: { create = true, pixelUrl } = {} } = config;
     let newId = storedId;
     if (!newId) {
       try {
@@ -155,7 +165,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return {id: newId, callback: getIdCallback(newId, pixelUrl)};
+    return { id: newId, callback: getIdCallback(newId, pixelUrl) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -173,20 +183,24 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   extendId: function(config = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
-      return {id: undefined};
+      return { id: undefined };
     }
     if (consentData?.coppa) {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const {params: {extend = false, pixelUrl} = {}} = config;
+    const { params: { extend = false, pixelUrl } = {} } = config;
 
     if (extend) {
       if (pixelUrl) {
-        const callback = queuePixelCallback(pixelUrl, storedId as string);
-        return {callback: callback};
+        // Complete the callback once the pixel settles so the User ID module's batch (and
+        // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
+        // would have the User ID module re-store it, overwriting the server-set cookie from script.
+        return {
+          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined))()
+        };
       } else {
-        return {id: storedId};
+        return { id: storedId };
       }
     }
   },
@@ -195,8 +209,8 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     'pubcid'(values, config) {
       const eid: any = {
         source: 'pubcid.org',
-        uids: values.map(id => ({id, atype: 1}))
-      }
+        uids: values.map(id => ({ id, atype: 1 }))
+      };
       if (config?.params?.inserter != null) {
         eid.inserter = config.params.inserter;
       }

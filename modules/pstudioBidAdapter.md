@@ -148,3 +148,14 @@ pbjs.setConfig({
 
 Please provide Prebid Cache of your choice. This example uses AppNexus cache, but if you use other cache, change it according to your needs.
 
+# Bidder Settings
+
+The PStudio bid adapter uses local storage to store a user ID for more accurate user profiling with PStudio's partner user identity provider. For this to work, you must enable storage access in your Prebid.js configuration:
+
+```js
+pbjs.bidderSettings = {
+  pstudio: {
+    storageAllowed: true
+  }
+};
+```

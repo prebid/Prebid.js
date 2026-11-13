@@ -67,7 +67,7 @@ export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, a
     }
     win.top = sameOriginAsTop ? topWindow : inaccessibles[0];
 
-    const inWin = {parent: inaccessibles[inaccessibles.length - 1], top: inaccessibles[0]};
+    const inWin = { parent: inaccessibles[inaccessibles.length - 1], top: inaccessibles[0] };
     if (index === 0) {
       inWin.top = inWin;
     }

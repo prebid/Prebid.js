@@ -2,17 +2,21 @@
  * @module modules/luceadBidAdapter
  */
 
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getUniqueIdentifierStr, deepSetValue, logInfo} from '../src/utils.js';
-import {fetch} from '../src/ajax.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getUniqueIdentifierStr, deepSetValue, logInfo } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
+
+export const dep = {
+  fetch
+};
 
 const bidderCode = 'lucead';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
 const aliases = ['adliveplus'];
 const defaultRegion = 'eu';
-const domain = 'lucead.com'
+const domain = 'lucead.com';
 let baseUrl = `https://${domain}`;
 let staticUrl = `https://s.${domain}`;
 let endpointUrl = baseUrl;
@@ -105,40 +109,13 @@ function interpretResponse(serverResponse, bidRequest) {
     },
   }));
 
-  logInfo('interpretResponse', {serverResponse, bidRequest, bidRequestData, bids});
-
-  if (response?.enable_pa === false) { return bids; }
-
-  const fledgeAuctionConfigs = (response.bids || []).map(bid => ({
-    bidId: bid?.bid_id,
-    config: {
-      seller: baseUrl,
-      decisionLogicUrl: `${baseUrl}/js/ssp.js`,
-      interestGroupBuyers: [baseUrl],
-      requestedSize: bid?.size,
-      auctionSignals: {
-        size: bid?.size,
-      },
-      perBuyerSignals: {
-        [baseUrl]: {
-          prebid_paapi: true,
-          prebid_bid_id: bid?.bid_id,
-          prebid_request_id: bidRequestData.request_id,
-          placement_id: bid.placement_id,
-          // floor,
-          is_sra: true,
-          endpoint_url: endpointUrl,
-        },
-      }
-    }
-  }));
-
-  return {bids, paapi: fledgeAuctionConfigs};
+  logInfo('interpretResponse', { serverResponse, bidRequest, bidRequestData, bids });
+  return { bids };
 }
 
 function report(type, data) {
   // noinspection JSCheckFunctionSignatures
-  return fetch(`${endpointUrl}/go/report/${type}`, {
+  return dep.fetch(`${endpointUrl}/go/report/${type}`, {
     body: JSON.stringify({
       ...data,
       domain: location.hostname,
@@ -164,8 +141,8 @@ function onBidWon(bid) {
     if (parts[0] === 'ssp') {
       data.ssp = parts[1];
     } else {
-      data.ad_id = parts[0]
-      data.ig_id = parts[1]
+      data.ad_id = parts[0];
+      data.ig_id = parts[1];
     }
   }
 

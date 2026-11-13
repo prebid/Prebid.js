@@ -1,6 +1,15 @@
-import {ERROR_NO_AD} from './constants.js';
+import { registerReportingObserver } from '../../reporting.js';
+import { BROWSER_INTERVENTION, MESSAGE_EVENT } from '../../constants.js';
+import { ERROR_NO_AD } from './constants.js';
 
-export function render({ad, adUrl, width, height, instl}, {mkFrame}, win) {
+export function render({ ad, adUrl, width, height, instl, trackClicks }, { mkFrame, sendMessage }, win) {
+  registerReportingObserver((report) => {
+    sendMessage(MESSAGE_EVENT, {
+      event: BROWSER_INTERVENTION,
+      intervention: report
+    });
+  }, ['intervention']);
+
   if (!ad && !adUrl) {
     const err = new Error('Missing ad markup or URL');
     err.reason = ERROR_NO_AD;
@@ -15,18 +24,53 @@ export function render({ad, adUrl, width, height, instl}, {mkFrame}, win) {
         });
     }
     const doc = win.document;
-    const attrs = {width: width ?? '100%', height: height ?? '100%'};
+    const attrs = { width: width ?? '100%', height: height ?? '100%' };
     if (adUrl && !ad) {
       attrs.src = adUrl;
     } else {
       attrs.srcdoc = ad;
     }
-    doc.body.appendChild(mkFrame(doc, attrs));
+    const frame = mkFrame(doc, attrs);
+    // This observes trusted link clicks only when the inline creative
+    // document is accessible. It cannot see clicks inside nested cross-origin
+    // ad iframes, adUrl creatives, or JavaScript-driven clickthroughs. The
+    // separate opt-in desktop focus heuristic covers some of those gaps.
+    // Do not interfere with navigation or inspect cross-origin ad URLs.
+    if (ad && trackClicks && frame.addEventListener) {
+      frame.addEventListener('load', () => {
+        try {
+          frame.contentDocument?.addEventListener('click', (event) => {
+            const link = event.target?.closest?.('a[href],area[href]');
+            if (event.isTrusted && link) {
+              sendMessage(MESSAGE_EVENT, { event: 'bidClick', method: 'creativeClick' });
+            }
+          }, true);
+        } catch (e) {
+          // Sandboxed or cross-origin creative.
+        }
+      });
+    }
+    doc.body.appendChild(frame);
     if (instl && win.frameElement) {
       // interstitials are rendered in a nested iframe that needs to be sized
       const style = win.frameElement.style;
       style.width = width ? `${width}px` : '100vw';
       style.height = height ? `${height}px` : '100vh';
+
+      const container = win.parent?.document?.querySelector('div#creative');
+      const box = win.parent?.document?.querySelector('div#ad_position_box');
+      const containerStyle = container && win.parent?.getComputedStyle?.(container);
+      const boxStyle = box && win.parent?.getComputedStyle?.(box);
+      if (
+        container?.parentElement === box &&
+        containerStyle?.marginTop && containerStyle?.marginTop !== '0px' &&
+        boxStyle && boxStyle?.alignItems === 'flex-start'
+      ) {
+        // GAME_MANUAL_INTERSTITIAL uses different styling on mobile, which doesn't work with our resizing;
+        // this resets it to the same style used on desktop
+        container.style.marginTop = '0px';
+        box.style.alignItems = 'center';
+      }
     }
   }
 }

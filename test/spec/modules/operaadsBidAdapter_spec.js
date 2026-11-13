@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/operaadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/operaadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -217,7 +217,7 @@ describe('Opera Ads Bid Adapter', function () {
         const bidRequest = bidRequests[i];
 
         expect(req.method).to.equal('POST');
-        expect(req.url).to.equal('https://s.adx.opera.com/ortb/v2/' +
+        expect(req.url).to.equal('https://s.oa.opera.com/ortb/v2/' +
           bidRequest.params.publisherId + '?ep=' + bidRequest.params.endpointId);
 
         expect(req.options).to.be.an('object');
@@ -274,14 +274,14 @@ describe('Opera Ads Bid Adapter', function () {
         bidder: 'operaads',
         bidderRequestId: '15246a574e859f',
         mediaTypes: {
-          banner: {sizes: [[300, 250]]}
+          banner: { sizes: [[300, 250]] }
         },
         params: {
           placementId: 's12345678',
           publisherId: 'pub12345678',
           endpointId: 'ep12345678'
         }
-      }
+      };
 
       const getRequest = function () {
         let reqs;
@@ -289,7 +289,7 @@ describe('Opera Ads Bid Adapter', function () {
           reqs = spec.buildRequests([bidRequest], bidderRequest);
         }).to.not.throw();
         return JSON.parse(reqs[0].data);
-      }
+      };
 
       it('test default case', function () {
         const requestData = getRequest();
@@ -308,7 +308,7 @@ describe('Opera Ads Bid Adapter', function () {
             name: 'test-site-1',
             domain: 'www.test.com'
           }
-        }
+        };
         const requestData = getRequest();
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
@@ -325,7 +325,7 @@ describe('Opera Ads Bid Adapter', function () {
           app: {
             name: 'test-app-1'
           }
-        }
+        };
         const requestData = getRequest();
         expect(requestData.app).to.be.an('object');
         expect(requestData.app.id).to.equal(bidRequest.params.publisherId);
@@ -345,7 +345,7 @@ describe('Opera Ads Bid Adapter', function () {
           app: {
             name: 'test-app-1'
           }
-        }
+        };
         const requestData = getRequest();
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
@@ -371,7 +371,7 @@ describe('Opera Ads Bid Adapter', function () {
             return {
               currency: 'USD',
               floor: 0.1
-            }
+            };
           }
         }
       ];
@@ -523,7 +523,7 @@ describe('Opera Ads Bid Adapter', function () {
       }).to.not.throw();
 
       expect(requestData.user.buyeruid).to.not.be.empty;
-    })
+    });
   });
 
   describe('Test adapter request', function () {
@@ -546,8 +546,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '<img src="https://res.adx.opera.com/xxx.jpeg" width="300" height="250" />',
                   'adomain': [
                     'opera.com',
@@ -598,7 +598,7 @@ describe('Opera Ads Bid Adapter', function () {
 
       expect(bidResponse.mediaType).to.equal(BANNER);
       expect(bidResponse.requestId).to.equal(bid.impid);
-      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2))
+      expect(bidResponse.cpm).to.equal(parseFloat(bid.price).toFixed(2));
       expect(bidResponse.currency).to.equal(serverResponse.body.cur);
       expect(bidResponse.creativeId).to.equal(bid.crid || bid.id);
       expect(bidResponse.netRevenue).to.be.true;
@@ -628,8 +628,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '<VAST version="2.0"><Ad id="static"><InLine><AdSystem>Static VAST Template</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression>http://example.com/pixel.gif?asi=[ADSERVINGID]</Impression><Creatives><Creative><Linear><Duration>00:00:08</Duration><TrackingEvents><Tracking event="start">http://example.com/pixel.gif</Tracking><Tracking event="firstQuartile">http://example.com/pixel.gif</Tracking><Tracking event="midpoint">http://example.com/pixel.gif</Tracking><Tracking event="thirdQuartile">http://example.com/pixel.gif</Tracking><Tracking event="complete">http://example.com/pixel.gif</Tracking><Tracking event="pause">http://example.com/pixel.gif</Tracking><Tracking event="mute">http://example.com/pixel.gif</Tracking><Tracking event="fullscreen">http://example.com/pixel.gif</Tracking></TrackingEvents><VideoClicks><ClickThrough>http://www.jwplayer.com/</ClickThrough><ClickTracking>http://example.com/pixel.gif?r=[REGULATIONS]&gdpr=[GDPRCONSENT]&pu=[PAGEURL]&da=[DEVICEUA]</ClickTracking></VideoClicks><MediaFiles><MediaFile type="video/mp4" bitrate="300" width="480" height="270"> http://example.com/uploads/myPrerollVideo.mp4</MediaFile></MediaFiles><Icons><Icon program="AdChoices" height="16" width="16" xPosition="right" yPosition="top"><StaticResource creativeType="image/png"> https://example.com/adchoices-sm.png</StaticResource><Iconclicks><IconClickThrough>https://sample-url.com</IconClickThrough></IconClicks></Icon></Icons></Linear></Creative></Creatives></InLine></Ad></VAST>',
                   'adomain': [
                     'opera.com',
@@ -698,8 +698,8 @@ describe('Opera Ads Bid Adapter', function () {
                   'id': '003004d9c05c6bc7fec0',
                   'impid': '22c4871113f461',
                   'price': 1.04,
-                  'nurl': 'https://s.adx.opera.com/win',
-                  'lurl': 'https://s.adx.opera.com/loss',
+                  'nurl': 'https://s.oa.opera.com/win',
+                  'lurl': 'https://s.oa.opera.com/loss',
                   'adm': '{"native":{"ver":"1.1","assets":[{"id":1,"required":1,"title":{"text":"The first personal browser"}},{"id":2,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":720,"h":1280}},{"id":3,"required":1,"img":{"url":"https://res.adx.opera.com/xxx.png","w":60,"h":60}},{"id":4,"required":1,"data":{"value":"Download Opera","len":14}},{"id":5,"required":1,"data":{"value":"Opera","len":5}},{"id":6,"required":1,"data":{"value":"Download","len":8}}],"link":{"url":"https://www.opera.com/mobile/opera","clicktrackers":["https://thirdpart-click.tracker.com","https://t-odx.op-mobile.opera.com/click"]},"imptrackers":["https://thirdpart-imp.tracker.com","https://t-odx.op-mobile.opera.com/impr"],"jstracker":"<script src=\\"https://t-odx.op-mobile.opera.com/jstracker\\"></script>"}}',
                   'adomain': [
                     'opera.com',
@@ -747,7 +747,7 @@ describe('Opera Ads Bid Adapter', function () {
 
       const bidResponse = bidResponses[0];
 
-      expect(bidResponse.mediaType).to.equal(NATIVE)
+      expect(bidResponse.mediaType).to.equal(NATIVE);
       expect(bidResponse.native).to.be.an('object');
       expect(bidResponse.native.clickUrl).is.not.empty;
       expect(bidResponse.native.clickTrackers).to.have.lengthOf(2);
@@ -779,10 +779,10 @@ describe('Opera Ads Bid Adapter', function () {
     it('getUserSyncs should return array', function () {
       const syncOptions = {
         iframeEnabled: true
-      }
-      const userSyncPixels = spec.getUserSyncs(syncOptions)
+      };
+      const userSyncPixels = spec.getUserSyncs(syncOptions);
       expect(userSyncPixels).to.have.lengthOf(1);
-      expect(userSyncPixels[0].url).to.equal('https://s.adx.opera.com/usersync/page')
+      expect(userSyncPixels[0].url).to.equal('https://s.oa.opera.com/usersync/page');
     });
   });
 
@@ -798,11 +798,11 @@ describe('Opera Ads Bid Adapter', function () {
       };
       const syncOptions = {
         pixelEnabled: true
-      }
-      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse])
+      };
+      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse]);
       expect(userSyncPixels).to.have.lengthOf(2);
-      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync')
-      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync')
+      expect(userSyncPixels[0].url).to.equal('https://b1.com/usersync');
+      expect(userSyncPixels[1].url).to.equal('https://b2.com/usersync');
     });
   });
 
@@ -814,7 +814,7 @@ describe('Opera Ads Bid Adapter', function () {
 
   describe('Test onBidWon', function () {
     it('onBidWon should not throw', function () {
-      expect(spec.onBidWon({nurl: '#', originalCpm: '1.04', currency: 'USD'})).to.not.throw;
+      expect(spec.onBidWon({ nurl: '#', originalCpm: '1.04', currency: 'USD' })).to.not.throw;
     });
   });
 

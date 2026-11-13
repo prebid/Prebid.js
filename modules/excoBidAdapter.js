@@ -10,7 +10,6 @@ import {
   deepSetValue,
   logInfo,
   logWarn,
-  insertUserSyncIframe,
   logError,
   isStr,
   generateUUID,
@@ -24,10 +23,6 @@ export const BIDDER_CODE = 'exco';
 const VERSION = '0.0.3';
 const CURRENCY = 'USD';
 
-const SYNC = {
-  done: false,
-};
-
 const EVENTS = {
   TYPE: 'exco-adapter',
   PING: 'exco-adapter-ping',
@@ -36,16 +31,10 @@ const EVENTS = {
 };
 
 export class AdapterHelpers {
-  doSync(gdprConsent = { consentString: '', gdprApplies: false }, accountId) {
-    insertUserSyncIframe(
-      this.createSyncUrl(gdprConsent, accountId)
-    );
-  }
-
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
       const url = new URL(SYNC_URL);
-      const networks = [ '368531133' ];
+      const networks = ['368531133'];
 
       if (network) {
         networks.push(network);
@@ -86,7 +75,7 @@ export class AdapterHelpers {
       aid: bidRequests[0]?.auctionId || bidderRequest.bidderRequestId,
       rc: bidRequests[0]?.bidRequestsCount,
       brc: bidRequests[0]?.bidderRequestsCount,
-    }
+    };
   }
 
   createRequest(converter, bidRequests, bidderRequest, mediaType) {
@@ -161,7 +150,7 @@ export class AdapterHelpers {
     for (let i = 0; i < window.parent.frames.length; i++) {
       window.parent.frames[i].postMessage(message, '*');
     }
-  }
+  };
 
   sendMessage(eventName, data = {}) {
     this.postToAllParentFrames({
@@ -295,7 +284,7 @@ export const converter = ortbConverter({
     imp.secure = window.location.protocol === 'http:' ? 0 : 1;
 
     if (imp.video) {
-      helpers.adoptVideoImp(imp, bidRequest)
+      helpers.adoptVideoImp(imp, bidRequest);
     }
 
     if (imp.banner) {
@@ -392,7 +381,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response?.body?.Result || response?.body || {};
-    const converted = converter.fromORTB({response: body, request: request?.data});
+    const converted = converter.fromORTB({ response: body, request: request?.data });
     const bids = converted.bids || [];
 
     if (bids.length && !EVENTS.subscribed) {
@@ -418,6 +407,13 @@ export const spec = {
   ) {
     const result = [];
 
+    if (syncOptions.iframeEnabled) {
+      const url = helpers.createSyncUrl(gdprConsent || {});
+      if (url) {
+        result.push({ type: 'iframe', url });
+      }
+    }
+
     const collectSyncs = (syncs) => {
       if (syncs) {
         syncs.forEach(sync => {
@@ -428,7 +424,7 @@ export const spec = {
           }
         });
       }
-    }
+    };
 
     serverResponses.forEach(response => {
       const { body = {} } = response;
@@ -444,11 +440,6 @@ export const spec = {
         });
       }
     });
-
-    if (syncOptions.iframeEnabled && !SYNC.done) {
-      helpers.doSync(gdprConsent);
-      SYNC.done = true;
-    }
 
     return result;
   },

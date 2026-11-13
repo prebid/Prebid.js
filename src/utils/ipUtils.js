@@ -5,9 +5,9 @@ export function scrubIPv4(ip) {
 
   const ones = 24;
 
-  const ipParts = ip.split('.').map(Number)
+  const ipParts = ip.split('.').map(Number);
 
-  if (ipParts.length != 4) {
+  if (ipParts.length !== 4) {
     return null;
   }
 
@@ -36,7 +36,7 @@ export function scrubIPv6(ip) {
     ipParts.push(0);
   }
 
-  if (ipParts.length != 8) {
+  if (ipParts.length !== 8) {
     return null;
   }
 

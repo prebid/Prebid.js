@@ -1,8 +1,9 @@
 'use strict';
 
-import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepAccess, parseSizesInput, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
@@ -32,7 +33,7 @@ function RhythmOneBidAdapter() {
       // clever trick to get the protocol
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
-      isSecure = (el.protocol == 'https:') ? 1 : 0;
+      isSecure = (el.protocol === 'https:') ? 1 : 0;
     }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
@@ -64,7 +65,7 @@ function RhythmOneBidAdapter() {
       domain: bidderRequest?.refererInfo?.domain || '',
       page: bidderRequest?.refererInfo?.page || '',
       ref: bidderRequest?.refererInfo?.ref || ''
-    }
+    };
   }
 
   function frameDevice() {
@@ -72,14 +73,13 @@ function RhythmOneBidAdapter() {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: getDNT() ? 1 : 0,
-    }
+    };
   }
 
   function getValidSizeSet(dimensionList) {
     const w = parseInt(dimensionList[0]);
     const h = parseInt(dimensionList[1]);
-    // clever check for NaN
-    if (! (w !== w || h !== h)) {  // eslint-disable-line
+    if (!Number.isNaN(w) && !Number.isNaN(h)) {
       return [w, h];
     }
     return false;
@@ -120,7 +120,7 @@ function RhythmOneBidAdapter() {
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
-      var validSize = getValidSizeSet(dimensionSet)
+      var validSize = getValidSizeSet(dimensionSet);
       if (validSize) {
         size = validSize;
       }
@@ -135,7 +135,7 @@ function RhythmOneBidAdapter() {
       playbackmethod: deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
       delivery: deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
       api: deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
-    }
+    };
   }
 
   function frameExt(bid) {
@@ -145,7 +145,7 @@ function RhythmOneBidAdapter() {
         zone: (bid.params && bid.params['zone']) ? bid.params['zone'] : '1r',
         path: (bid.params && bid.params['path']) ? bid.params['path'] : 'mvo'
       }
-    }
+    };
   }
 
   function frameBid(BRs, bidderRequest) {
@@ -173,7 +173,7 @@ function RhythmOneBidAdapter() {
         'ext': {
           'schain': schain
         }
-      }
+      };
     }
     return bid;
   }
@@ -219,11 +219,10 @@ function RhythmOneBidAdapter() {
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
     const bids = [];
-    let i = 0;
 
     if (responses.seatbid) {
       const temp = [];
-      for (i = 0; i < responses.seatbid.length; i++) {
+      for (let i = 0; i < responses.seatbid.length; i++) {
         for (let j = 0; j < responses.seatbid[i].bid.length; j++) {
           temp.push(responses.seatbid[i].bid[j]);
         }
@@ -231,7 +230,7 @@ function RhythmOneBidAdapter() {
       responses = temp;
     }
 
-    for (i = 0; i < responses.length; i++) {
+    for (let i = 0; i < responses.length; i++) {
       const bid = responses[i];
       const bidRequest = slotsToBids[bid.impid];
       const bidResponse = {

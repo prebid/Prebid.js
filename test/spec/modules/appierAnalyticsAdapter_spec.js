@@ -2,7 +2,7 @@ import {
   appierAnalyticsAdapter, getCpmInUsd, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/appierAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
 const events = require('src/events');
 const constants = require('src/constants.js');
 
@@ -52,7 +52,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
             originalCurrency: 'USD',
             ad: '<html>fake ad1</html>'
           },
-        ]
+        ];
         const result = getCpmInUsd(receivedBids[0]);
         expect(result).to.equal(0.1);
       });
@@ -122,7 +122,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     describe('#getCachedAuction()', function() {
-      const existing = {timeoutBids: [{}]};
+      const existing = { timeoutBids: [{}] };
       appierAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
       it('should get the existing cached object if it exists', function() {
@@ -527,7 +527,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
               originalCurrency: 'USD',
               ad: '<html>fake ad1</html>'
             },
-          ]
+          ];
 
           appierAnalyticsAdapter.handleBidWon(receivedBids[0]);
           sinon.assert.callCount(appierAnalyticsAdapter.createImpressionMessage, 1);

@@ -1,18 +1,18 @@
 const expect = require('chai').expect;
-const {testPageURL, setupTest} = require('../../../helpers/testing-utils.js');
+const { testPageURL, setupTest } = require('../../../helpers/testing-utils.js');
 
 const TEST_PAGE_URL = testPageURL('bidderSettings.html?pbjs_debug=true');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  hb_pb_appnexus: '10.00',
+  hb_pb_msft: '10.00',
   hb_format: 'native',
   hb_size: '0x0',
-  hb_bidder_appnexus: 'appnexus',
+  hb_bidder_msft: 'msft',
   hb_pb: '10.00',
-  hb_bidder: 'appnexus',
-  hb_format_appnexus: 'native',
-  hb_size_appnexus: '0x0',
+  hb_bidder: 'msft',
+  hb_format_msft: 'native',
+  hb_size_msft: '0x0',
 };
 
 setupTest({
@@ -28,8 +28,8 @@ setupTest({
     const targetingKeys = result['/19968336/prebid_native_example_2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     // check that custom (bidderSettings) keys are present
-    expect(targetingKeys.apn_adId).to.be.a('string');
-    expect(targetingKeys.apn_adId).to.equal(targetingKeys.hb_adid);
-    expect(targetingKeys.apn_pbMg).to.equal('10.00');
+    expect(targetingKeys.msft_adId).to.be.a('string');
+    expect(targetingKeys.msft_adId).to.equal(targetingKeys.hb_adid);
+    expect(targetingKeys.msft_pbMg).to.equal('10.00');
   });
 });

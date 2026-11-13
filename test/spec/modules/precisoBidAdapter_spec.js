@@ -5,10 +5,10 @@ import { OPENRTB } from '../../../libraries/precisoUtils/bidNativeUtils.js';
 
 // simport { config } from '../../../src/config.js';
 
-const DEFAULT_PRICE = 1
-const DEFAULT_CURRENCY = 'USD'
-const DEFAULT_BANNER_WIDTH = 300
-const DEFAULT_BANNER_HEIGHT = 250
+const DEFAULT_PRICE = 1;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_BANNER_WIDTH = 300;
+const DEFAULT_BANNER_HEIGHT = 250;
 const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
@@ -56,8 +56,7 @@ describe('PrecisoAdapter', function () {
 
   };
 
-  const nativeBid = {
-
+  let nativeBid = {
     precisoBid: true,
     bidId: '23fhj33i987f',
     bidder: 'precisonat',
@@ -171,7 +170,8 @@ describe('PrecisoAdapter', function () {
       expect(data.device).to.be.undefined;
     });
 
-    const ServeNativeRequest = spec.buildRequests([nativeBid]);
+    let ServeNativeRequest = spec.buildRequests([nativeBid]);
+
     it('Creates a valid nativeServerRequest object ', function () {
       expect(ServeNativeRequest).to.exist;
       expect(ServeNativeRequest.method).to.exist;
@@ -182,8 +182,8 @@ describe('PrecisoAdapter', function () {
     });
 
     it('should extract the native params', function () {
-      const nativeData = ServeNativeRequest.data;
-      const asset = JSON.parse(nativeData.imp[0].native.request).assets[0]
+      let nativeData = ServeNativeRequest.data;
+      const asset = JSON.parse(nativeData.imp[0].native.request).assets[0];
       expect(asset).to.deep.equal({
         id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
         required: 1,
@@ -193,7 +193,7 @@ describe('PrecisoAdapter', function () {
           type: OPENRTB.NATIVE.IMAGE_TYPE.MAIN,
         }
       }
-      )
+      );
     });
   });
 
@@ -221,7 +221,7 @@ describe('PrecisoAdapter', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
+      };
 
       const expectedResponse = [
         {
@@ -236,11 +236,11 @@ describe('PrecisoAdapter', function () {
           ttl: 300,
           meta: { advertiserDomains: [] },
         }
-      ]
-      const result = spec.interpretResponse({ body: response })
+      ];
+      const result = spec.interpretResponse({ body: response });
 
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
-    })
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
 
     it('should get correct native bid response', function () {
       const adm = {
@@ -268,8 +268,8 @@ describe('PrecisoAdapter', function () {
             }
           }],
         }
-      }
-      const nativeResponse = {
+      };
+      let nativeResponse = {
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
         seatbid: [
           {
@@ -289,9 +289,9 @@ describe('PrecisoAdapter', function () {
             seat: BIDDER_CODE
           }
         ],
-      }
+      };
 
-      const expectedNativeResponse = [
+      let expectedNativeResponse = [
         {
           requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
           mediaType: NATIVE,
@@ -316,11 +316,12 @@ describe('PrecisoAdapter', function () {
             },
           }
         }
-      ]
-      const result = spec.interpretResponse({ body: nativeResponse });
+      ];
+
+      let result = spec.interpretResponse({ body: nativeResponse });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedNativeResponse[0]));
-    })
-  })
+    });
+  });
 
   describe('getUserSyncs', function () {
     const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';

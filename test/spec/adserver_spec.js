@@ -19,7 +19,7 @@ describe('adserver', function() {
     try {
       expect(getPPID()).to.equal('hooked');
     } finally {
-      getPPID.getHooks({hook: hookFn}).remove();
+      getPPID.getHooks({ hook: hookFn }).remove();
     }
   });
 });

@@ -1,4 +1,4 @@
-import { spec, safeStringify } from 'modules/contxtfulBidAdapter.js';
+import { spec, safeStringify, dep } from 'modules/contxtfulBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as ajax from 'src/ajax.js';
@@ -357,9 +357,6 @@ describe('contxtful bid adapter', function () {
         testObj.textNode = document.createTextNode('test'); // Text -> Node
       }
 
-      // Add objects that should be caught by duck typing (constructor name patterns)
-      const mockObjects = [];
-
       // Mock HTMLCanvasElement (constructor name contains 'HTML' and 'Canvas')
       function HTMLCanvasElement() {}
       const mockCanvas = Object.create(HTMLCanvasElement.prototype);
@@ -686,7 +683,7 @@ describe('contxtful bid adapter', function () {
         contxtful: { customer: CUSTOMER, version: VERSION }
       });
       const bidRequest = spec.buildRequests(bidRequests);
-      expect(bidRequest.url).to.eq('https://' + BIDDER_ENDPOINT + `/${VERSION}/prebid/${CUSTOMER}/bid`)
+      expect(bidRequest.url).to.eq('https://' + BIDDER_ENDPOINT + `/${VERSION}/prebid/${CUSTOMER}/bid`);
     });
 
     it('will take specific ortb2 configuration parameters and returns it in ortb2 object', () => {
@@ -713,7 +710,7 @@ describe('contxtful bid adapter', function () {
     });
 
     it('will take custom parameters in the bid request and within the bidRequests array', () => {
-      expect(bidRequest.data.bidRequests[0].custom_param_1).to.equal('value_1')
+      expect(bidRequest.data.bidRequests[0].custom_param_1).to.equal('value_1');
     });
 
     it('will return any supply chain parameters within the bidRequests array', () => {
@@ -737,8 +734,8 @@ describe('contxtful bid adapter', function () {
     it('will contains the registration on ortb2.regs object', () => {
       expect(bidRequest.data.ortb2.regs).not.to.be.undefined;
       expect(bidRequest.data.ortb2.regs.coppa).to.equal(1);
-      expect(bidRequest.data.ortb2.regs.ext.us_privacy).to.equal('12345')
-    })
+      expect(bidRequest.data.ortb2.regs.ext.us_privacy).to.equal('12345');
+    });
 
     it('will contains the eids modules within the ortb2.user.ext.eids', () => {
       expect(bidRequest.data.ortb2.user.ext.eids).not.to.be.undefined;
@@ -748,7 +745,7 @@ describe('contxtful bid adapter', function () {
 
     it('will contains the receptivity value within the ortb2.user.data with contxtful name', () => {
       const obtained_receptivity_data = bidRequest.data.ortb2.user.data.filter(function (userData) {
-        return userData.name == 'contxtful';
+        return userData.name === 'contxtful';
       });
       expect(obtained_receptivity_data.length).to.equal(1);
       expect(obtained_receptivity_data[0].ext).to.deep.equal(expectedReceptivityData);
@@ -849,7 +846,7 @@ describe('contxtful bid adapter', function () {
     it('will return empty response if bid response is empty', () => {
       const bids = spec.interpretResponse({ body: [] }, bidRequest);
       expect(bids).to.have.lengthOf(0);
-    })
+    });
 
     it('will trigger user sync if enable pixel mode', () => {
       const syncOptions = {
@@ -860,6 +857,20 @@ describe('contxtful bid adapter', function () {
       expect(userSyncs).to.deep.equal([
         {
           'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
+          'type': 'image'
+        }
+      ]);
+    });
+
+    it('will preserve COPPA in wrapped user sync urls', () => {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, [{ body: bidResponse }], undefined, undefined, undefined, true);
+      expect(userSyncs).to.deep.equal([
+        {
+          'url': 'mysyncurl.com/image?pbjs=1&coppa=1&qparam1=qparamv1&qparam2=qparamv2',
           'type': 'image'
         }
       ]);
@@ -884,8 +895,7 @@ describe('contxtful bid adapter', function () {
         const userSyncs = spec.getUserSyncs({}, [{ body: bidResponse }]);
         expect(userSyncs).to.deep.equal([
           {
-            'url': 'mysyncurl.com/image?pbjs=1&coppa=0&qparam1=qparamv1&qparam2=qparamv2',
-            'type': 'image'
+            'url': 'mysyncurl.com?qparam1=qparamv1&qparam2=qparamv2'
           }
         ]);
       });
@@ -915,7 +925,7 @@ describe('contxtful bid adapter', function () {
         });
 
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(true);
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         expect(spec.onTimeout({ 'customData': 'customvalue' })).to.not.throw;
         expect(beaconStub.called).to.be.true;
         expect(ajaxStub.called).to.be.false;
@@ -926,7 +936,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         expect(spec.onTimeout({ 'customData': 'customvalue' })).to.not.throw;
         expect(beaconStub.called).to.be.true;
@@ -941,7 +951,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidderError({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -955,7 +965,7 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidWon({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -967,16 +977,16 @@ describe('contxtful bid adapter', function () {
           contxtful: { customer: CUSTOMER, version: VERSION },
         });
 
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         const payload = {
           adata: "hello"
         };
-        payload.ref = payload
+        payload.ref = payload;
         spec.onBidWon(payload);
         expect(ajaxStub.calledOnce).to.be.true;
         expect(beaconStub.returned(false)).to.be.true;
-      })
+      });
     });
 
     describe('on onBidBillable callback', () => {
@@ -984,7 +994,7 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: { customer: CUSTOMER, version: VERSION, sampling: { onBidBillable: 1.0 } },
         });
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onBidBillable({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;
@@ -997,7 +1007,7 @@ describe('contxtful bid adapter', function () {
         config.setConfig({
           contxtful: { customer: CUSTOMER, version: VERSION, sampling: { onAdRenderSucceeded: 1.0 } },
         });
-        const ajaxStub = sandbox.stub(ajax, 'ajax');
+        const ajaxStub = sandbox.stub(dep, 'ajax');
         const beaconStub = sandbox.stub(ajax, 'sendBeacon').returns(false);
         spec.onAdRenderSucceeded({ 'customData': 'customvalue' });
         expect(ajaxStub.calledOnce).to.be.true;

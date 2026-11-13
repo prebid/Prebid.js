@@ -1,0 +1,801 @@
+import { fetch as prebidFetch } from "../src/ajax.ts";
+import { AllConsentData } from "../src/consentHandler.ts";
+import { submodule } from "../src/hook.js";
+import { StartAuctionOptions } from "../src/prebid.ts";
+import {
+  getStorageManager,
+  discloseStorageUse,
+} from "../src/storageManager.js";
+import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
+import {
+  logInfo,
+  logError,
+  logWarn,
+  deepAccess,
+  isStr,
+  isArray,
+  isNumber,
+  isPlainObject,
+  cyrb53Hash,
+} from "../src/utils.js";
+import { getRefererInfo } from "../src/refererDetection.js";
+import type { RTDProviderConfig, RtdProviderSpec } from "./rtdModule/spec.ts";
+
+// TCF purposes required by stackupRtd:
+//   1 = Store and/or access information on a device
+//   4 = Select personalised content
+const REQUIRED_PURPOSES = [1, 4];
+
+const MODULE_NAME = "stackupRtd";
+const MODULE_TYPE = "realTimeData";
+const DEFAULT_TIMEOUT = 300;
+const DEFAULT_API_URL = "https://api.stackup-ai.com/v1/enrich-ortb-rtd";
+const CACHE_KEY_PREFIX = "stackup:enrich:v1:";
+const CACHE_SCHEMA_VERSION = 2;
+const CONTENT_SEGTAXES = new Set([6, 9, 502, 600]);
+const USER_SEGTAXES = new Set([4, 501]);
+// Site category arrays governed by a single `site.cattax`.
+const SITE_CATEGORY_FIELDS = ["cat", "sectioncat", "pagecat"];
+// Maximum number of auction snapshots to keep in memory at once.
+// On long-lived SPA sessions many auctions can fire; without a cap the map
+// grows without bound. FIFO eviction keeps the last N entries — enough for
+// any analytics adapter to read a snapshot before it is evicted.
+const MAX_SNAPSHOTS = 10;
+
+export const storage = getStorageManager({
+  moduleType: MODULE_TYPE_RTD,
+  moduleName: MODULE_NAME,
+});
+
+type RtdState =
+  | "idle"
+  | "initializing"
+  | "fetching"
+  | "ready"
+  | "timedOut"
+  | "error";
+
+interface RtdInternalState {
+  state: RtdState;
+  articleId: string | null;
+  enrichment: EnrichmentSnapshot | null;
+  fetchPromise: Promise<EnrichmentSnapshot> | null;
+  fetchAbortController: AbortController | null;
+  pendingCallbacks: Array<() => void>;
+  snapshotsByAuctionId: Map<string, EnrichmentSnapshot>;
+  config: RTDProviderConfig<"stackupRtd">;
+}
+
+const state: RtdInternalState = {
+  state: "idle",
+  articleId: null,
+  enrichment: null,
+  fetchPromise: null,
+  fetchAbortController: null,
+  pendingCallbacks: [],
+  snapshotsByAuctionId: new Map(),
+  config: null as any,
+};
+
+export interface StackupRtdParams {
+  apiUrl?: string; // default: "https://api.stackup-ai.com/v1/enrich-ortb-rtd"
+  pubId: string; // Publisher ID issued by Stackup
+  timeout?: number; // default: 300 ms
+  articleId?: string;
+  articleIdMode?: "explicit" | "path";
+  cache?: {
+    enabled?: boolean;
+    ttlSeconds?: number;
+    storage?: "session" | "memory";
+  };
+  debug?: boolean;
+  debugDomain?: string; // overrides the domain sent to the API when debug: true
+}
+
+declare module "./rtdModule/spec.ts" {
+  interface ProviderConfig {
+    stackupRtd: {
+      params?: StackupRtdParams;
+    };
+  }
+}
+
+type BrandSafetyBlock = unknown; // TODO: define properly when we have real data
+type EmotionBlock = unknown; // TODO: define properly when we have real data
+
+interface Ortb2Segment {
+  id: string;
+  name?: string;
+  value?: string;
+  ext?: { confidence?: number };
+}
+
+interface Ortb2DataBlock<TSegtax extends number> {
+  id?: string;
+  name: string;
+  ext?: {
+    segtax?: TSegtax;
+    [key: string]: unknown;
+  };
+  segment: Ortb2Segment[];
+}
+
+// types/stackup.ts — shared between RTD and analytics modules
+
+export interface EnrichmentSnapshot {
+  articleId: string;
+  fetchedAt: number; // unix ms when enrichment landed
+  source: "api" | "cache";
+  site: {
+    cattax?: number;
+    pagecat?: string[];
+    content: {
+      id?: string;
+      title?: string;
+      data: Ortb2ContentSegment[];
+      ext?: Record<string, unknown> & {
+        brand_safety?: BrandSafetyBlock;
+        emotion?: EmotionBlock;
+      };
+    };
+  };
+  user: {
+    data: Ortb2UserSegment[];
+  };
+}
+
+export type Ortb2ContentSegment = Ortb2DataBlock<6 | 9 | 502 | 600>;
+
+export type Ortb2UserSegment = Ortb2DataBlock<4 | 501>;
+
+// Raw JSON shape returned by the Stackup enrichment API.
+// Mirrors EnrichmentSnapshot.site/user but without the client-added fields
+// (articleId, fetchedAt, source) that are stamped on after a successful fetch.
+interface RawEnrichmentResponse {
+  site: {
+    cattax?: number;
+    pagecat?: string[];
+    content: {
+      id?: string;
+      title?: string;
+      data: Ortb2ContentSegment[];
+      ext?: Record<string, unknown> & {
+        brand_safety?: BrandSafetyBlock;
+        emotion?: EmotionBlock;
+      };
+    };
+  };
+  user?: {
+    data?: Ortb2UserSegment[];
+  };
+}
+
+type CacheStorageMode = "session" | "memory";
+
+const inMemoryEnrichmentCache = new Map<
+  string,
+  { v: number; t: number; d: EnrichmentSnapshot }
+>();
+
+function getCacheConfig(): {
+  enabled: boolean;
+  ttlSeconds: number;
+  storage: CacheStorageMode;
+} {
+  const c = state.config?.params?.cache;
+  return {
+    enabled: c?.enabled ?? true,
+    ttlSeconds: c?.ttlSeconds ?? 3600,
+    storage: c?.storage ?? "session",
+  };
+}
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
+export const subModuleObj: RtdProviderSpec<"stackupRtd"> = {
+  name: MODULE_NAME as "stackupRtd",
+  disclosureURL: "local://modules/stackupRtdProvider.json",
+  init,
+  getBidRequestData,
+};
+
+function init(
+  config: RTDProviderConfig<"stackupRtd">,
+  userConsent: AllConsentData
+): boolean {
+  // Disclose the sessionStorage key pattern to storageControl on first init.
+  // Must be called after hook.ready() — init() is only invoked post-auction setup,
+  // so this is always safe. discloseStorageUse is a sync hook that throws if called
+  // before hook.ready() (fun-hooks queuing only applies to async hooks).
+  discloseStorageUse(MODULE_NAME, {
+    type: "web",
+    identifier: CACHE_KEY_PREFIX + "*",
+    purposes: REQUIRED_PURPOSES,
+  });
+
+  // Guard against being called with no config (defensive — framework shouldn't do this)
+  if (!config) {
+    logWarn("[stackupRtd] init called without config, module inert");
+    state.state = "error";
+    return false;
+  }
+  state.config = config;
+  state.state = "initializing";
+
+  // params and pubId are required — fail fast if missing
+  const params = config.params;
+  if (!params || !params.pubId) {
+    logWarn("[stackupRtd] missing required params.pubId, module inert");
+    state.state = "error";
+    return false;
+  }
+
+  // Respect consent — no enrichment if user has not granted relevant purposes
+  if (!hasRequiredConsent(userConsent)) {
+    logInfo("[stackupRtd] consent not granted, module inert");
+    state.state = "error";
+    return false;
+  }
+
+  try {
+    const { id } = resolveArticleId(params);
+    state.articleId = id;
+  } catch (e) {
+    logError("[stackupRtd] article id resolution failed", e);
+    state.state = "error";
+    return false;
+  }
+
+  // Kick off background fetch — do not await
+  if (!state.articleId) {
+    logWarn("[stackupRtd] no article ID resolved, module inert");
+    state.state = "error";
+    return false;
+  }
+  state.fetchPromise = fetchEnrichment(state.articleId, params);
+  state.state = "fetching";
+
+  state.fetchPromise
+    .then((data) => {
+      state.enrichment = data;
+      state.state = "ready";
+      drainPendingCallbacks();
+    })
+    .catch((err) => {
+      logError("[stackupRtd] fetch failed", err);
+      state.state = "error";
+      drainPendingCallbacks();
+    });
+
+  return true;
+}
+
+// Builds the enrichment API request URL from the resolved articleId and publisher params.
+// TODO: link to Stackup API documentation once published.
+function buildEnrichmentUrl(
+  articleId: string,
+  params: StackupRtdParams
+): string {
+  const base = params.apiUrl ?? DEFAULT_API_URL;
+  // Use Prebid's referer detection so domain is correct inside iframes.
+  const domain = getRefererInfo().domain;
+
+  if (params.debug) {
+    const debugDomain = params.debugDomain ?? domain;
+    return `${base}?pubId=${encodeURIComponent(
+      params.pubId
+    )}&articleId=${encodeURIComponent(articleId)}&domain=${encodeURIComponent(
+      debugDomain
+    )}`;
+  }
+
+  return `${base}?pubId=${encodeURIComponent(
+    params.pubId
+  )}&articleId=${encodeURIComponent(articleId)}&domain=${encodeURIComponent(
+    domain
+  )}`;
+}
+
+// Flushes all getBidRequestData callbacks queued while the enrichment fetch was in flight.
+// Called once the fetch settles (success or error) to unblock any waiting auctions.
+function drainPendingCallbacks(): void {
+  const callbacks = state.pendingCallbacks.splice(0);
+  for (const cb of callbacks) {
+    try {
+      cb();
+    } catch (e) {
+      logError("[stackupRtd] pending callback threw", e);
+    }
+  }
+}
+
+function fetchEnrichment(
+  articleId: string,
+  params: StackupRtdParams
+): Promise<EnrichmentSnapshot> {
+  // Check cache first
+  const cached = getCachedEnrichment(articleId);
+  if (cached) {
+    return Promise.resolve({ ...cached, source: "cache" });
+  }
+
+  // AbortController lets getBidRequestData abort this fetch from its safety net
+  // when the auction-delay budget is exceeded, stopping the wasted network round-trip.
+  // The safety net in getBidRequestData fires at params.timeout and is the single
+  // source of truth for abort timing — do not add a second independent timer here.
+  const ctl = new AbortController();
+  state.fetchAbortController = ctl;
+
+  const url = buildEnrichmentUrl(articleId, params);
+  return prebidFetch(url, { signal: ctl.signal })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.text();
+    })
+    .then((responseText) => {
+      const data = JSON.parse(responseText);
+      if (!isValidEnrichment(data)) {
+        throw new Error("schema validation failed");
+      }
+      const snapshot: EnrichmentSnapshot = {
+        articleId,
+        fetchedAt: Date.now(),
+        source: "api",
+        site: {
+          ...(data.site.cattax !== undefined
+            ? { cattax: data.site.cattax }
+            : {}),
+          ...(data.site.pagecat !== undefined
+            ? { pagecat: data.site.pagecat }
+            : {}),
+          content: { ...data.site.content },
+        },
+        user: { data: data.user?.data ?? [] },
+      };
+      setCachedEnrichment(articleId, snapshot);
+      return snapshot;
+    });
+}
+
+function isValidEnrichment(data: any): data is RawEnrichmentResponse {
+  if (!isPlainObject(data)) return false;
+  if (!isPlainObject(data.site) || !isPlainObject(data.site.content)) {
+    return false;
+  }
+  if (!isArray(data.site.content.data)) return false;
+  if (data.site.cattax !== undefined && !isNumber(data.site.cattax)) {
+    return false;
+  }
+  if (
+    data.site.pagecat !== undefined &&
+    (!isArray(data.site.pagecat) || !data.site.pagecat.every(isStr))
+  ) {
+    return false;
+  }
+
+  for (const block of data.site.content.data) {
+    if (!isValidDataBlock(block, CONTENT_SEGTAXES)) return false;
+  }
+
+  // user.data is optional — some articles have site-level enrichment only
+  if (data.user !== undefined && !isPlainObject(data.user)) return false;
+  if (data.user?.data !== undefined && !isArray(data.user.data)) return false;
+  for (const block of data.user?.data ?? []) {
+    if (!isValidDataBlock(block, USER_SEGTAXES)) return false;
+  }
+
+  return true;
+}
+
+function isValidDataBlock(block: any, allowedSegtaxes: Set<number>): boolean {
+  if (!isPlainObject(block) || !isStr(block.name)) return false;
+  if (block.ext !== undefined && !isPlainObject(block.ext)) return false;
+  const segtax = block.ext?.segtax;
+  if (
+    segtax !== undefined &&
+    (!isNumber(segtax) || !allowedSegtaxes.has(segtax))
+  ) {
+    return false;
+  }
+  if (!isArray(block.segment)) return false;
+  for (const segment of block.segment) {
+    if (!isPlainObject(segment) || !isStr(segment.id)) return false;
+    if (segment.name !== undefined && !isStr(segment.name)) return false;
+    if (segment.value !== undefined && !isStr(segment.value)) return false;
+    if (segment.ext !== undefined && !isPlainObject(segment.ext)) return false;
+    if (segment.ext?.confidence !== undefined) {
+      if (!isNumber(segment.ext.confidence)) return false;
+      if (segment.ext.confidence < 0 || segment.ext.confidence > 1) return false;
+    }
+  }
+  return true;
+}
+
+function cacheKey(articleId: string, params?: StackupRtdParams): string {
+  const p = params ?? state.config?.params;
+  const domain = (p?.debug ? p?.debugDomain : getRefererInfo().domain) ?? "";
+  const base = p?.apiUrl ?? DEFAULT_API_URL;
+  const keyInput = `${articleId}|pub:${
+    p?.pubId ?? ""
+  }|domain:${domain}|api:${base}`;
+  return CACHE_KEY_PREFIX + "path_" + cyrb53Hash(keyInput);
+}
+
+function getCachedEnrichment(articleId: string): EnrichmentSnapshot | null {
+  const cache = getCacheConfig();
+  if (!cache.enabled) return null;
+  try {
+    const key = cacheKey(articleId);
+    const parsed =
+      cache.storage === "memory"
+        ? inMemoryEnrichmentCache.get(key)
+        : (() => {
+            const raw = storage.getDataFromSessionStorage(key);
+            return raw ? JSON.parse(raw) : null;
+          })();
+    if (!parsed) return null;
+    if (parsed.v !== CACHE_SCHEMA_VERSION) return null;
+    const ttlMs = cache.ttlSeconds * 1000;
+    if (Date.now() - parsed.t > ttlMs) return null;
+    return parsed.d;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedEnrichment(
+  articleId: string,
+  data: EnrichmentSnapshot
+): void {
+  const cache = getCacheConfig();
+  if (!cache.enabled) return;
+  try {
+    const key = cacheKey(articleId);
+    const payload = { v: CACHE_SCHEMA_VERSION, t: Date.now(), d: data };
+    if (cache.storage === "memory") {
+      inMemoryEnrichmentCache.set(key, payload);
+      return;
+    }
+    storage.setDataInSessionStorage(key, JSON.stringify(payload));
+  } catch {
+    // quota exceeded — silently ignore
+  }
+}
+
+function hasRequiredConsent(userConsent: AllConsentData): boolean {
+  // COPPA: block all processing in child-directed contexts.
+  if (userConsent.coppa === true) return false;
+
+  // GDPR: require per-purpose consent when GDPR applies.
+  // No USP/CCPA or GPP checks — this module sends only a URL path and domain
+  // to the enrichment API; no user identifiers are transmitted or stored,
+  // so US sale-of-data opt-outs have no legal basis here.
+  const gdprApplies = deepAccess(userConsent, "gdpr.gdprApplies");
+  if (!gdprApplies) return true;
+
+  const purposeConsents =
+    deepAccess(userConsent, "gdpr.vendorData.purpose.consents") || {};
+  const purposeLegitimateInterests =
+    deepAccess(userConsent, "gdpr.vendorData.purpose.legitimateInterests") ||
+    {};
+
+  return REQUIRED_PURPOSES.every(
+    (id) =>
+      purposeConsents[id] === true || purposeLegitimateInterests[id] === true
+  );
+}
+
+function resolveArticleId(params: StackupRtdParams): {
+  id: string | null;
+  source: "explicit" | "path" | null;
+} {
+  const mode = params.articleIdMode ?? "path";
+
+  if (mode === "explicit") {
+    if (isStr(params.articleId)) {
+      const id = params.articleId.trim();
+      if (id.length > 0 && id.length <= 512) {
+        return { id, source: "explicit" };
+      }
+    }
+    return { id: null, source: null };
+  }
+
+  // mode === "path" (default)
+  const id = resolveFromPath();
+  return id ? { id, source: "path" } : { id: null, source: null };
+}
+
+function resolveFromPath(): string | null {
+  try {
+    // Use Prebid's referer detection — works across iframes and AMP frames
+    // where window.location may not reflect the actual publisher page.
+    const ri = getRefererInfo();
+    const pageUrl = ri.page;
+    if (!pageUrl) return null;
+
+    let path = new URL(pageUrl).pathname;
+
+    // Normalize: lowercase, collapse double slashes
+    path = path.toLowerCase().replace(/\/{2,}/g, "/");
+
+    // Strip trailing slash — but keep bare "/" (homepage) intact
+    if (path.length > 1) {
+      path = path.replace(/\/$/, "");
+    }
+
+    // Strip AMP path variants — must mirror the server-side pipeline in normalize.ts
+    // so the client cache key (derived from articleId) is consistent across AMP and
+    // canonical URLs for the same article.
+    path = path.replace(/^\/amp\//, "/"); // AMP-first prefix: /amp/news/… → /news/…
+    path = path.replace(/\/_amp\//g, "/"); // Google AMP cache segment: /news/_amp/… → /news/…
+    path = path.replace(/\/amp\/?$/, ""); // AMP suffix: /news/article/amp → /news/article
+
+    // Final collapse and trailing-slash cleanup after substitutions
+    path = path.replace(/\/{2,}/g, "/");
+    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+    path = path || "/";
+
+    // Return the raw path — the API matches it against article_analysis.normalized_path.
+    // The sessionStorage cache key is derived by hashing this value via cacheKey();
+    // same page URL → same normalized path → same hash → cache hit on revisit.
+    return path;
+  } catch {
+    return null;
+  }
+}
+
+function getBidRequestData(
+  reqBidsConfigObj: StartAuctionOptions,
+  callback: () => void,
+  config: RTDProviderConfig<"stackupRtd">,
+  _userConsent: AllConsentData,
+  timeout?: number
+): void {
+  const requestedTimeout = config.params?.timeout;
+  const ownTimeout =
+    isNumber(requestedTimeout) &&
+    isFinite(requestedTimeout) &&
+    requestedTimeout > 0
+      ? requestedTimeout
+      : DEFAULT_TIMEOUT;
+  // Honor the auction-delay budget passed by core as the 5th argument.
+  // Core computes it as `shouldDelayAuction ? auctionDelay : 0`, so it is 0
+  // when the publisher runs us non-blocking or omits auctionDelay entirely.
+  // A naive Math.min would zero-out our own budget in that case, so treat
+  // 0/falsy as "no external cap" and fall back to our own timeout.
+  const budget = isNumber(timeout) && timeout > 0 ? timeout : Infinity;
+  const effectiveTimeout = Math.min(ownTimeout, budget);
+
+  let callbackFired = false;
+  const release = () => {
+    if (callbackFired) return; // CRITICAL — never call back twice
+    callbackFired = true;
+    callback();
+  };
+
+  // Safety net — always release the auction, no matter what
+  const timeoutId = setTimeout(() => {
+    if (state.state === "fetching") {
+      logWarn(
+        "[stackupRtd] enrichment fetch exceeded " +
+          effectiveTimeout +
+          "ms, releasing auction clean"
+      );
+      state.state = "timedOut";
+      // Abort the in-flight AJAX request so the network round-trip stops
+      // immediately rather than running until params.timeout fires.
+      state.fetchAbortController?.abort();
+    }
+    release();
+  }, effectiveTimeout);
+
+  const onReady = () => {
+    clearTimeout(timeoutId);
+    if (state.enrichment) {
+      try {
+        mergeIntoOrtb2(reqBidsConfigObj, state.enrichment);
+        // Stash snapshot keyed by auctionId so analytics adapter can retrieve it
+        if (reqBidsConfigObj.auctionId) {
+          storeSnapshot(reqBidsConfigObj.auctionId, state.enrichment);
+        }
+      } catch (e) {
+        logError("[stackupRtd] merge failed, auction proceeds clean", e);
+      }
+    }
+    release();
+  };
+
+  if (state.state === "ready") {
+    onReady();
+  } else if (state.state === "fetching") {
+    state.pendingCallbacks.push(onReady);
+  } else {
+    // error, timedOut, idle — give up cleanly
+    clearTimeout(timeoutId);
+    release();
+  }
+}
+
+// Inserts a snapshot keyed by auctionId, evicting the oldest entry when the
+// map exceeds MAX_SNAPSHOTS. Map insertion order is guaranteed by the spec so
+// `.keys().next().value` always returns the oldest key.
+function storeSnapshot(auctionId: string, snapshot: EnrichmentSnapshot): void {
+  state.snapshotsByAuctionId.set(auctionId, snapshot);
+  if (state.snapshotsByAuctionId.size > MAX_SNAPSHOTS) {
+    const oldest = state.snapshotsByAuctionId.keys().next().value;
+    state.snapshotsByAuctionId.delete(oldest);
+  }
+}
+
+function mergeIntoOrtb2(
+  reqBidsConfigObj: StartAuctionOptions,
+  enrichment: EnrichmentSnapshot
+): void {
+  const global = reqBidsConfigObj.ortb2Fragments?.global ?? {};
+  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments ?? {};
+  reqBidsConfigObj.ortb2Fragments.global = global;
+
+  mergeSiteContent(global, enrichment.site);
+  mergeUserData(global, enrichment.user.data);
+}
+
+function mergeSiteContent(global: any, ours: EnrichmentSnapshot["site"]): void {
+  global.site = global.site ?? {};
+  mergeSiteCategories(global.site, ours);
+  global.site.content = global.site.content ?? { data: [] };
+  const target = global.site.content;
+  const ourContent = ours.content;
+
+  if (target.id === undefined && ourContent.id !== undefined) {
+    target.id = ourContent.id;
+  }
+  if (target.title === undefined && ourContent.title !== undefined) {
+    target.title = ourContent.title;
+  }
+
+  target.data = isArray(target.data) ? target.data : [];
+  mergeDataBlocks(target.data, ourContent.data);
+
+  if (ourContent.ext !== undefined) {
+    target.ext = mergeContentExtPublisherFirst(target.ext, ourContent.ext);
+  }
+}
+
+// `site.cattax` declares the taxonomy of `cat[]`, `sectioncat[]` and
+// `pagecat[]` at once, and is read as 1 (IAB Content Category Taxonomy 1.0)
+// when omitted. The pair is therefore only safe to adopt when both of these
+// hold:
+//   - the response carries both halves — a lone `pagecat` would be read under
+//     the default taxonomy rather than StackUp's, and a lone `cattax` would
+//     relabel categories we did not supply;
+//   - the publisher declared no site categories at all — writing our `cattax`
+//     alongside a publisher `cat`/`sectioncat`/`pagecat` would silently
+//     reinterpret their ids, even though those arrays are left untouched.
+function mergeSiteCategories(
+  site: any,
+  ours: EnrichmentSnapshot["site"]
+): void {
+  if (ours.cattax === undefined || ours.pagecat === undefined) return;
+  if (site.cattax !== undefined) return;
+  const publisherHasCategories = SITE_CATEGORY_FIELDS.some(
+    (field) => isArray(site[field]) && site[field].length
+  );
+  if (publisherHasCategories) return;
+
+  site.cattax = ours.cattax;
+  site.pagecat = ours.pagecat;
+}
+
+function mergeUserData(global: any, ours: any[]): void {
+  global.user = global.user ?? {};
+  global.user.data = isArray(global.user.data) ? global.user.data : [];
+
+  mergeDataBlocks(global.user.data, ours);
+}
+
+function mergeDataBlocks(target: any[], ours: any[]): void {
+  for (const ourBlock of ours) {
+    const dedupedOurs = dedupeSegments(ourBlock);
+    const key = dataBlockKey(dedupedOurs);
+    const existingIdx = target.findIndex(
+      (block: any) => dataBlockKey(block) === key
+    );
+    if (existingIdx >= 0) {
+      target[existingIdx] = mergeDataBlock(target[existingIdx], dedupedOurs);
+    } else {
+      target.push(dedupedOurs);
+    }
+  }
+}
+
+function dataBlockKey(block: any): string {
+  const name = isStr(block?.name) ? block.name : "";
+  const segtax = isNumber(block?.ext?.segtax) ? block.ext.segtax : "";
+  const dimension = isStr(block?.ext?.stackup?.dimension)
+    ? block.ext.stackup.dimension
+    : "";
+  return `${name}\u0000${segtax}\u0000${dimension}`;
+}
+
+function mergeDataBlock(publisherBlock: any, stackupBlock: any): any {
+  const publisher = dedupeSegments(publisherBlock);
+  const stackup = dedupeSegments(stackupBlock);
+  const segments = [...publisher.segment];
+  const publisherIds = new Set(segments.map((segment: any) => segment.id));
+  for (const segment of stackup.segment) {
+    if (!publisherIds.has(segment.id)) {
+      publisherIds.add(segment.id);
+      segments.push(segment);
+    }
+  }
+  return {
+    ...stackup,
+    ...publisher,
+    ext: mergeDataBlockExtPublisherFirst(publisher.ext, stackup.ext),
+    segment: segments,
+  };
+}
+
+function mergeDataBlockExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
+}
+
+function dedupeSegments(block: any): any {
+  const byId = new Map<string, any>();
+  for (const seg of isArray(block?.segment) ? block.segment : []) {
+    const existing = byId.get(seg.id);
+    if (!existing) {
+      byId.set(seg.id, seg);
+      continue;
+    }
+    const ourConf = seg.ext?.confidence ?? 0;
+    const theirConf = existing.ext?.confidence ?? 0;
+    if (ourConf > theirConf) byId.set(seg.id, seg);
+  }
+  return { ...block, segment: Array.from(byId.values()) };
+}
+
+function mergeContentExtPublisherFirst(publisher: any, stackup: any): any {
+  if (!isPlainObject(stackup)) return publisher;
+  if (!isPlainObject(publisher)) return stackup;
+
+  const merged = { ...stackup, ...publisher };
+  if (isPlainObject(stackup.stackup) && isPlainObject(publisher.stackup)) {
+    merged.stackup = { ...stackup.stackup, ...publisher.stackup };
+  }
+  return merged;
+}
+
+function registerSubmodule() {
+  submodule(MODULE_TYPE, subModuleObj as unknown as RtdProviderSpec<string>);
+}
+
+registerSubmodule();
+
+// Exported only for unit tests — returns the current size of the snapshot map.
+export function _snapshotMapSizeForTesting(): number {
+  return state.snapshotsByAuctionId.size;
+}
+
+// Exported only for unit tests — resets the module-level singleton between test cases.
+export function _resetStateForTesting(): void {
+  state.state = "idle";
+  state.articleId = null;
+  state.enrichment = null;
+  state.fetchPromise = null;
+  state.fetchAbortController = null;
+  state.pendingCallbacks.length = 0;
+  state.snapshotsByAuctionId.clear();
+  inMemoryEnrichmentCache.clear();
+  state.config = null as any;
+}

@@ -1,4 +1,4 @@
-import {tryAppendQueryString} from '../../../libraries/urlUtils/urlUtils.js';
+import { tryAppendQueryString } from '../../../libraries/urlUtils/urlUtils.js';
 import assert from 'assert';
 
 describe('tryAppendQueryString', function () {

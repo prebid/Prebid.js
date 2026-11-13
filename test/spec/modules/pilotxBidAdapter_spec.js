@@ -19,18 +19,18 @@ describe('pilotxAdapter', function () {
     });
 
     it('should return false if sizes is empty', function () {
-      banner.sizes = []
+      banner.sizes = [];
       expect(spec.isBidRequestValid(banner)).to.equal(false);
     });
     it('should return true if all is valid/ is not empty', function () {
       expect(spec.isBidRequestValid(banner)).to.equal(true);
     });
     it('should return false if there is no placement id found', function () {
-      banner.params = {}
+      banner.params = {};
       expect(spec.isBidRequestValid(banner)).to.equal(false);
     });
     it('should return false if sizes is empty', function () {
-      banner.sizes = []
+      banner.sizes = [];
       expect(spec.isBidRequestValid(banner)).to.equal(false);
     });
     it('should return false for no size and empty params', function () {
@@ -45,7 +45,7 @@ describe('pilotxAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
-    })
+    });
     it('should return true for no size and valid size params', function () {
       const emptySizes = {
         bidder: 'pilotx',
@@ -58,7 +58,7 @@ describe('pilotxAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(true);
-    })
+    });
     it('should return false for no size items', function () {
       const emptySizes = {
         bidder: 'pilotx',
@@ -70,7 +70,7 @@ describe('pilotxAdapter', function () {
         }
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
-    })
+    });
   });
 
   describe('buildRequests', function () {
@@ -82,7 +82,18 @@ describe('pilotxAdapter', function () {
         gdprApplies: true
       }
 
-    }
+    };
+    const mockRequestgGPP = {
+      refererInfo: {},
+      gppConsent: {
+        gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [7]
+      }
+    };
+    const mockRequestgUSP = {
+      refererInfo: {},
+      uspConsent: "1YNN"
+    };
     const mockVideo1 = [{
       adUnitCode: 'video1',
       auctionId: '01618029-7ae9-4e98-a73a-1ed0c817f414',
@@ -148,28 +159,41 @@ describe('pilotxAdapter', function () {
       transactionId: 'fec9f2ff-da13-4921-8437-8d679c2be7fe',
     }];
     it('should return correct response', function () {
-      const builtRequest = spec.buildRequests(mockVideo1, mockRequest)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
-      expect(data['379'].bidId).to.equal(mockVideo1[0].bidId)
+      const builtRequest = spec.buildRequests(mockVideo1, mockRequest);
+      const builtRequestData = builtRequest.data;
+      const data = JSON.parse(builtRequestData);
+      expect(data['379'].bidId).to.equal(mockVideo1[0].bidId);
     });
     it('should return correct response for only array of size', function () {
-      const builtRequest = spec.buildRequests(mockVideo2, mockRequest)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
-      expect(data['379'].sizes[0][0]).to.equal(mockVideo2[0].sizes[0])
-      expect(data['379'].sizes[0][1]).to.equal(mockVideo2[0].sizes[1])
+      const builtRequest = spec.buildRequests(mockVideo2, mockRequest);
+      const builtRequestData = builtRequest.data;
+      const data = JSON.parse(builtRequestData);
+      expect(data['379'].sizes[0][0]).to.equal(mockVideo2[0].sizes[0]);
+      expect(data['379'].sizes[0][1]).to.equal(mockVideo2[0].sizes[1]);
     });
     it('should be valid and pass gdpr items correctly', function () {
-      const builtRequest = spec.buildRequests(mockVideo2, mockRequestGDPR)
-      const builtRequestData = builtRequest.data
-      const data = JSON.parse(builtRequestData)
-      expect(data['379'].gdprConsentString).to.equal(mockRequestGDPR.gdprConsent.consentString)
-      expect(data['379'].gdprConsentRequired).to.equal(mockRequestGDPR.gdprConsent.gdprApplies)
+      const builtRequest = spec.buildRequests(mockVideo2, mockRequestGDPR);
+      const builtRequestData = builtRequest.data;
+      const data = JSON.parse(builtRequestData);
+      expect(data['379'].gdprConsentString).to.equal(mockRequestGDPR.gdprConsent.consentString);
+      expect(data['379'].gdprConsentRequired).to.equal(mockRequestGDPR.gdprConsent.gdprApplies);
+    });
+    it('should be valid and pass gpp items correctly', function () {
+      const builtRequest = spec.buildRequests(mockVideo2, mockRequestgGPP);
+      const builtRequestData = builtRequest.data;
+      const data = JSON.parse(builtRequestData);
+      expect(data['379'].gppString).to.equal(mockRequestgGPP.gppConsent.gppString);
+      expect(data['379'].gppApplicableSections).to.deep.equal(mockRequestgGPP.gppConsent.applicableSections);
+    });
+    it('should be valid and pass usp correctly', function () {
+      const builtRequest = spec.buildRequests(mockVideo2, mockRequestgUSP);
+      const builtRequestData = builtRequest.data;
+      const data = JSON.parse(builtRequestData);
+      expect(data['379'].uspConsent).to.equal(mockRequestgUSP.uspConsent);
     });
   });
   describe('interpretResponse', function () {
-    const bidRequest = {}
+    const bidRequest = {};
     const serverResponse = {
       cpm: 2.5,
       creativeId: 'V9060',
@@ -182,10 +206,10 @@ describe('pilotxAdapter', function () {
       vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
       width: 640,
       advertiserDomains: ["test.com"]
-    }
+    };
     const serverResponseVideo = {
       body: serverResponse
-    }
+    };
     const serverResponse2 = {
       cpm: 2.5,
       creativeId: 'V9060',
@@ -198,10 +222,10 @@ describe('pilotxAdapter', function () {
       ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
       width: 640,
       advertiserDomains: ["test.com"]
-    }
+    };
     const serverResponseBanner = {
       body: serverResponse2
-    }
+    };
     const serverResponse3 = {
       bids: [
         {
@@ -231,10 +255,10 @@ describe('pilotxAdapter', function () {
           advertiserDomains: ["testaddomainvideo"]
         }
       ]
-    }
+    };
     const serverResponseVideoAndBanner = {
       body: serverResponse3
-    }
+    };
     const serverResponse4 = {
       bids: [
         {
@@ -264,106 +288,106 @@ describe('pilotxAdapter', function () {
           advertiserDomains: ["testaddomainbanner"]
         }
       ]
-    }
+    };
     const serverResponseVideoAndBannerReversed = {
       body: serverResponse4
-    }
+    };
     it('should be valid from bidRequest for video', function () {
-      const bidResponses = spec.interpretResponse(serverResponseVideo, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse.requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse.cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse.width)
-      expect(bidResponses[0].height).to.equal(serverResponse.height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse.creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse.currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse.netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse.ttl)
-      expect(bidResponses[0].vastUrl).to.equal(serverResponse.vastUrl)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse.mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse.mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse.advertiserDomains)
+      const bidResponses = spec.interpretResponse(serverResponseVideo, bidRequest);
+      expect(bidResponses[0].requestId).to.equal(serverResponse.requestId);
+      expect(bidResponses[0].cpm).to.equal(serverResponse.cpm);
+      expect(bidResponses[0].width).to.equal(serverResponse.width);
+      expect(bidResponses[0].height).to.equal(serverResponse.height);
+      expect(bidResponses[0].creativeId).to.equal(serverResponse.creativeId);
+      expect(bidResponses[0].currency).to.equal(serverResponse.currency);
+      expect(bidResponses[0].netRevenue).to.equal(serverResponse.netRevenue);
+      expect(bidResponses[0].ttl).to.equal(serverResponse.ttl);
+      expect(bidResponses[0].vastUrl).to.equal(serverResponse.vastUrl);
+      expect(bidResponses[0].mediaType).to.equal(serverResponse.mediaType);
+      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse.mediaType);
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse.advertiserDomains);
     });
     it('should be valid from bidRequest for banner', function () {
-      const bidResponses = spec.interpretResponse(serverResponseBanner, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse2.requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse2.cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse2.width)
-      expect(bidResponses[0].height).to.equal(serverResponse2.height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse2.creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse2.currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse2.netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse2.ttl)
-      expect(bidResponses[0].ad).to.equal(serverResponse2.ad)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse2.mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse2.mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse2.advertiserDomains)
+      const bidResponses = spec.interpretResponse(serverResponseBanner, bidRequest);
+      expect(bidResponses[0].requestId).to.equal(serverResponse2.requestId);
+      expect(bidResponses[0].cpm).to.equal(serverResponse2.cpm);
+      expect(bidResponses[0].width).to.equal(serverResponse2.width);
+      expect(bidResponses[0].height).to.equal(serverResponse2.height);
+      expect(bidResponses[0].creativeId).to.equal(serverResponse2.creativeId);
+      expect(bidResponses[0].currency).to.equal(serverResponse2.currency);
+      expect(bidResponses[0].netRevenue).to.equal(serverResponse2.netRevenue);
+      expect(bidResponses[0].ttl).to.equal(serverResponse2.ttl);
+      expect(bidResponses[0].ad).to.equal(serverResponse2.ad);
+      expect(bidResponses[0].mediaType).to.equal(serverResponse2.mediaType);
+      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse2.mediaType);
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse2.advertiserDomains);
     });
     it('should be valid from bidRequest for banner and video', function () {
-      const bidResponses = spec.interpretResponse(serverResponseVideoAndBanner, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse3.bids[0].requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse3.bids[0].cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse3.bids[0].width)
-      expect(bidResponses[0].height).to.equal(serverResponse3.bids[0].height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse3.bids[0].creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse3.bids[0].currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse3.bids[0].netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse3.bids[0].ttl)
-      expect(bidResponses[0].ad).to.equal(serverResponse3.bids[0].ad)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse3.bids[0].mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse3.bids[0].mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse3.bids[0].advertiserDomains)
+      const bidResponses = spec.interpretResponse(serverResponseVideoAndBanner, bidRequest);
+      expect(bidResponses[0].requestId).to.equal(serverResponse3.bids[0].requestId);
+      expect(bidResponses[0].cpm).to.equal(serverResponse3.bids[0].cpm);
+      expect(bidResponses[0].width).to.equal(serverResponse3.bids[0].width);
+      expect(bidResponses[0].height).to.equal(serverResponse3.bids[0].height);
+      expect(bidResponses[0].creativeId).to.equal(serverResponse3.bids[0].creativeId);
+      expect(bidResponses[0].currency).to.equal(serverResponse3.bids[0].currency);
+      expect(bidResponses[0].netRevenue).to.equal(serverResponse3.bids[0].netRevenue);
+      expect(bidResponses[0].ttl).to.equal(serverResponse3.bids[0].ttl);
+      expect(bidResponses[0].ad).to.equal(serverResponse3.bids[0].ad);
+      expect(bidResponses[0].mediaType).to.equal(serverResponse3.bids[0].mediaType);
+      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse3.bids[0].mediaType);
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse3.bids[0].advertiserDomains);
 
-      expect(bidResponses[1].requestId).to.equal(serverResponse3.bids[1].requestId)
-      expect(bidResponses[1].cpm).to.equal(serverResponse3.bids[1].cpm)
-      expect(bidResponses[1].width).to.equal(serverResponse3.bids[1].width)
-      expect(bidResponses[1].height).to.equal(serverResponse3.bids[1].height)
-      expect(bidResponses[1].creativeId).to.equal(serverResponse3.bids[1].creativeId)
-      expect(bidResponses[1].currency).to.equal(serverResponse3.bids[1].currency)
-      expect(bidResponses[1].netRevenue).to.equal(serverResponse3.bids[1].netRevenue)
-      expect(bidResponses[1].ttl).to.equal(serverResponse3.bids[1].ttl)
-      expect(bidResponses[1].vastUrl).to.equal(serverResponse3.bids[1].vastUrl)
-      expect(bidResponses[1].mediaType).to.equal(serverResponse3.bids[1].mediaType)
-      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse3.bids[1].mediaType)
-      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse3.bids[1].advertiserDomains)
-    })
+      expect(bidResponses[1].requestId).to.equal(serverResponse3.bids[1].requestId);
+      expect(bidResponses[1].cpm).to.equal(serverResponse3.bids[1].cpm);
+      expect(bidResponses[1].width).to.equal(serverResponse3.bids[1].width);
+      expect(bidResponses[1].height).to.equal(serverResponse3.bids[1].height);
+      expect(bidResponses[1].creativeId).to.equal(serverResponse3.bids[1].creativeId);
+      expect(bidResponses[1].currency).to.equal(serverResponse3.bids[1].currency);
+      expect(bidResponses[1].netRevenue).to.equal(serverResponse3.bids[1].netRevenue);
+      expect(bidResponses[1].ttl).to.equal(serverResponse3.bids[1].ttl);
+      expect(bidResponses[1].vastUrl).to.equal(serverResponse3.bids[1].vastUrl);
+      expect(bidResponses[1].mediaType).to.equal(serverResponse3.bids[1].mediaType);
+      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse3.bids[1].mediaType);
+      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse3.bids[1].advertiserDomains);
+    });
     it('should correctly handle response with video first and banner second', function () {
-      const bidResponses = spec.interpretResponse(serverResponseVideoAndBannerReversed, bidRequest)
-      expect(bidResponses[0].requestId).to.equal(serverResponse4.bids[0].requestId)
-      expect(bidResponses[0].cpm).to.equal(serverResponse4.bids[0].cpm)
-      expect(bidResponses[0].width).to.equal(serverResponse4.bids[0].width)
-      expect(bidResponses[0].height).to.equal(serverResponse4.bids[0].height)
-      expect(bidResponses[0].creativeId).to.equal(serverResponse4.bids[0].creativeId)
-      expect(bidResponses[0].currency).to.equal(serverResponse4.bids[0].currency)
-      expect(bidResponses[0].netRevenue).to.equal(serverResponse4.bids[0].netRevenue)
-      expect(bidResponses[0].ttl).to.equal(serverResponse4.bids[0].ttl)
-      expect(bidResponses[0].vastUrl).to.equal(serverResponse4.bids[0].vastUrl)
-      expect(bidResponses[0].mediaType).to.equal(serverResponse4.bids[0].mediaType)
-      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse4.bids[0].mediaType)
-      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse4.bids[0].advertiserDomains)
+      const bidResponses = spec.interpretResponse(serverResponseVideoAndBannerReversed, bidRequest);
+      expect(bidResponses[0].requestId).to.equal(serverResponse4.bids[0].requestId);
+      expect(bidResponses[0].cpm).to.equal(serverResponse4.bids[0].cpm);
+      expect(bidResponses[0].width).to.equal(serverResponse4.bids[0].width);
+      expect(bidResponses[0].height).to.equal(serverResponse4.bids[0].height);
+      expect(bidResponses[0].creativeId).to.equal(serverResponse4.bids[0].creativeId);
+      expect(bidResponses[0].currency).to.equal(serverResponse4.bids[0].currency);
+      expect(bidResponses[0].netRevenue).to.equal(serverResponse4.bids[0].netRevenue);
+      expect(bidResponses[0].ttl).to.equal(serverResponse4.bids[0].ttl);
+      expect(bidResponses[0].vastUrl).to.equal(serverResponse4.bids[0].vastUrl);
+      expect(bidResponses[0].mediaType).to.equal(serverResponse4.bids[0].mediaType);
+      expect(bidResponses[0].meta.mediaType).to.equal(serverResponse4.bids[0].mediaType);
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse4.bids[0].advertiserDomains);
 
-      expect(bidResponses[1].requestId).to.equal(serverResponse4.bids[1].requestId)
-      expect(bidResponses[1].cpm).to.equal(serverResponse4.bids[1].cpm)
-      expect(bidResponses[1].width).to.equal(serverResponse4.bids[1].width)
-      expect(bidResponses[1].height).to.equal(serverResponse4.bids[1].height)
-      expect(bidResponses[1].creativeId).to.equal(serverResponse4.bids[1].creativeId)
-      expect(bidResponses[1].currency).to.equal(serverResponse4.bids[1].currency)
-      expect(bidResponses[1].netRevenue).to.equal(serverResponse4.bids[1].netRevenue)
-      expect(bidResponses[1].ttl).to.equal(serverResponse4.bids[1].ttl)
-      expect(bidResponses[1].ad).to.equal(serverResponse4.bids[1].ad)
-      expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType)
-      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType)
-      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains)
+      expect(bidResponses[1].requestId).to.equal(serverResponse4.bids[1].requestId);
+      expect(bidResponses[1].cpm).to.equal(serverResponse4.bids[1].cpm);
+      expect(bidResponses[1].width).to.equal(serverResponse4.bids[1].width);
+      expect(bidResponses[1].height).to.equal(serverResponse4.bids[1].height);
+      expect(bidResponses[1].creativeId).to.equal(serverResponse4.bids[1].creativeId);
+      expect(bidResponses[1].currency).to.equal(serverResponse4.bids[1].currency);
+      expect(bidResponses[1].netRevenue).to.equal(serverResponse4.bids[1].netRevenue);
+      expect(bidResponses[1].ttl).to.equal(serverResponse4.bids[1].ttl);
+      expect(bidResponses[1].ad).to.equal(serverResponse4.bids[1].ad);
+      expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType);
+      expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType);
+      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains);
     });
   });
   describe('setPlacementID', function () {
-    const multiplePlacementIds = ['380', '381']
+    const multiplePlacementIds = ['380', '381'];
     it('should be valid with an array of placement ids passed', function () {
-      const placementID = spec.setPlacementID(multiplePlacementIds)
-      expect(placementID).to.equal('380#381')
+      const placementID = spec.setPlacementID(multiplePlacementIds);
+      expect(placementID).to.equal('380#381');
     });
     it('should be valid with single placement ID passed', function () {
-      const placementID = spec.setPlacementID('381')
-      expect(placementID).to.equal('381')
+      const placementID = spec.setPlacementID('381');
+      expect(placementID).to.equal('381');
     });
   });
   // Add other `describe` or `it` blocks as necessary

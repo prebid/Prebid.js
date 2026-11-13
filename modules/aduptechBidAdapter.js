@@ -1,8 +1,8 @@
-import {deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -193,7 +193,7 @@ export const internal = {
   buildEndpointUrl: (publisher) => {
     return ENDPOINT_URL.replace(ENDPOINT_URL_PUBLISHER_PLACEHOLDER, encodeURIComponent(publisher));
   },
-}
+};
 
 /**
  * The bid adapter definition
@@ -341,7 +341,7 @@ export const spec = {
         meta: {
           advertiserDomains: bid.creative.advertiserDomains
         }
-      }
+      };
 
       if (bid.creative.html) {
         bidResponse.mediaType = BANNER;

@@ -200,7 +200,7 @@ describe('AdButler adapter', function () {
             ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
             tracking_pixels: [],
           },
-        }
+        };
       });
 
       describe('with a minimum CPM', function () {
@@ -237,7 +237,7 @@ describe('AdButler adapter', function () {
             ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
             tracking_pixels: [],
           },
-        }
+        };
       });
 
       describe('with a maximum CPM', function () {

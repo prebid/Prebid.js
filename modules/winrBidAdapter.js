@@ -2,20 +2,24 @@ import {
   deepAccess,
   getBidRequest,
   getParameterByName,
-  isArray,
-  isNumber,
-  isPlainObject,
   logError
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gdpr.js';
-import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import {
+  convertUserParams,
+  getAppDeviceObj,
+  getAppIdObj,
+  getRtbBid,
+  hasMemberId,
+  isErrorResponse
+} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
-import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
+import { addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -31,14 +35,14 @@ const SOURCE = 'pbjs';
 const DEFAULT_CURRENCY = 'USD';
 const GATE_COOKIE_NAME = 'wnr_gate';
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 function buildBid(bidData) {
   const bid = bidData;
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
     child: bid.meta.child ? bid.meta.child : 4
-  }
+  };
   bid.ad = wrapAd(bid, position);
   return bid;
 }
@@ -146,52 +150,18 @@ export const spec = {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       userObj = { 'coppa': true };
     }
 
     if (userObjBid) {
-      Object.keys(userObjBid.params.user)
-        .filter((param) => USER_PARAMS.includes(param))
-        .forEach((param) => {
-          const uparam = convertCamelToUnderscore(param);
-          if (
-            param === 'segments' &&
-            isArray(userObjBid.params.user[param])
-          ) {
-            const segs = [];
-            userObjBid.params.user[param].forEach((val) => {
-              if (isNumber(val)) {
-                segs.push({ id: val });
-              } else if (isPlainObject(val)) {
-                segs.push(val);
-              }
-            });
-            userObj[uparam] = segs;
-          } else if (param !== 'segments') {
-            userObj[uparam] = userObjBid.params.user[param];
-          }
-        });
+      Object.assign(userObj, convertUserParams(userObjBid.params.user, USER_PARAMS));
     }
 
     const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
-    let appDeviceObj;
-    if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
-      appDeviceObj = {};
-      Object.keys(appDeviceObjBid.params.app)
-        .filter(param => APP_DEVICE_PARAMS.includes(param))
-        .forEach(param => {
-          appDeviceObj[param] = appDeviceObjBid.params.app[param];
-        });
-    }
-
+    const appDeviceObj = getAppDeviceObj(appDeviceObjBid, APP_DEVICE_PARAMS);
     const appIdObjBid = ((bidRequests) || []).find(hasAppId);
-    let appIdObj;
-    if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
-      appIdObj = {
-        appid: appIdObjBid.params.app.id
-      };
-    }
+    const appIdObj = getAppIdObj(appIdObjBid, appDeviceObjBid);
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
@@ -274,12 +244,7 @@ export const spec = {
   interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
-    if (!serverResponse || serverResponse.error) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) {
-        errorMessage += `: ${serverResponse.error}`;
-      }
-      logError(errorMessage);
+    if (isErrorResponse(serverResponse, bidderRequest)) {
       return bids;
     }
 
@@ -315,7 +280,6 @@ export const spec = {
 };
 
 function formatRequest(payload, bidderRequest) {
-  let request = [];
   const options = {
     withCredentials: true
   };
@@ -336,15 +300,13 @@ function formatRequest(payload, bidderRequest) {
   }
 
   const payloadString = JSON.stringify(payload);
-  request = {
+  return {
     method: 'POST',
     url: endpointUrl,
     data: payloadString,
     bidderRequest,
     options,
   };
-
-  return request;
 }
 
 /**
@@ -455,7 +417,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
@@ -471,20 +433,12 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
-}
-
 function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType !== BANNER) {
     return false;
   }
   return BANNER;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
 }
 
 registerBidder(spec);

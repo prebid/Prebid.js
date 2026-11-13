@@ -5,8 +5,13 @@ on:
     branches:
       - master
       - '*-legacy'
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
 
 concurrency:
   group: test-${{ github.head_ref || github.ref }}
@@ -25,135 +30,277 @@ jobs:
       base-branch: ${{ steps.info.outputs.base-branch }}
       base-commit: ${{ steps.info.outputs.base-commit }}
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Checkout code (PR)
         id: checkout-pr
-        if: ${{ github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v7
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/head
 
       - name: Checkout code (push)
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
 
       - name: Commit info
         id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+            BASE_COMMIT="$(gh api "repos/${{ github.repository }}/compare/$BASE_BRANCH...${{ steps.checkout-pr.outputs.commit }}" --jq .merge_base_commit.sha)"
+          else
+            BASE_BRANCH="${{ github.ref }}"
+            BASE_COMMIT="${{ github.event.before }}"
+          fi
           echo ref="${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}" >> $GITHUB_OUTPUT
           echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
           echo branch="${{ github.head_ref || github.ref }}" >> $GITHUB_OUTPUT
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
-          echo base-branch="${{ github.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
-          echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
-
+          echo base-branch="$BASE_BRANCH" >> $GITHUB_OUTPUT
+          echo base-commit="$BASE_COMMIT" >> $GITHUB_OUTPUT
+      - name: Save PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo ${{ github.event.pull_request.number }} > ${{ runner.temp }}/prNo
+      - name: Upload PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: prNo
+          path: ${{ runner.temp }}/prNo
       - name: Install dependencies
-        run: npm ci
-
-      - name: Cache source
-        uses: actions/cache/save@v4
+        uses: ./.github/actions/npm-ci
+      - name: 'Save working directory'
+        uses: ./.github/actions/save
         with:
-          path: .
-          key: source-${{ github.run_id }}
-
-      - name: Verify cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: source-${{ github.run_id }}
-          lookup-only: true
-          fail-on-cache-miss: true
+          name: source
 
   lint:
     name: "Run linter"
     needs: checkout
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Checkout
+        uses: actions/checkout@v7
       - name: Restore source
-        uses: actions/cache/restore@v4
+        uses: ./.github/actions/load
         with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
+          name: source
       - name: lint
         run: |
           npx eslint
-      
-  test-no-features:
-    name: "Unit tests (all features disabled)"
-    needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
-    with:
-      build-cmd: npx gulp precompile-all-features-disabled
-      test-cmd: npx gulp test-all-features-disabled-nobuild
-      serialize: false
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-  test:
-    name: "Unit tests (all features enabled + coverage)"
-    needs: checkout
-    uses: ./.github/workflows/run-unit-tests.yml
-    with:
-      build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack
-      serialize: true
-    secrets:
-      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-  test-e2e:
-    name: "End-to-end tests"
-    needs: checkout
-    runs-on: ubuntu-latest
-    concurrency:
-      # see test-chunk.yml for notes on concurrency groups
-      group: browserstack-${{ github.run_id }}
-      cancel-in-progress: false
-    env:
-      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-    steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Restore source
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: source-${{ github.run_id }}
-          fail-on-cache-miss: true
-      - name: Run tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          command: npx gulp e2e-test
 
-  coveralls:
-    name: Update coveralls
-    needs: [checkout, test]
+  # The unit test gate (Vitest): every browser, both feature variants, and coverage.
+  # It tests the PR's head commit.
+  # Chromium first; the other browsers and base branch coverage start only if it passes.
+  vitest:
+    name: "Unit tests (Chromium)"
+    needs: checkout
+    uses: ./.github/workflows/vitest-chromium.yml
+    with:
+      ref: ${{ needs.checkout.outputs.commit }}
+
+  vitest-browsers:
+    name: "Unit tests (browsers)"
+    needs: [checkout, vitest]
+    uses: ./.github/workflows/vitest-browsers.yml
+    with:
+      ref: ${{ needs.checkout.outputs.commit }}
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  # build logic, the packed package's types and e2e tests
+  test:
+    name: "Browser tests"
+    needs: checkout
+    uses: ./.github/workflows/browser-tests.yml
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  # Exercise the --ES5 bundle end-to-end on the oldest browser it claims to
+  # support. Unit tests are deliberately not used here: they run the precompiled
+  # sources under Vite, which `--ES5` doesn't reach, so the code under test would
+  # not actually be ES5.
+  setup-es5:
+    name: "Define ES5 testing strategy"
+    needs: [checkout]
+    runs-on: ubuntu-latest
+    outputs:
+      sessions: ${{ fromJSON(steps.define.outputs.result).sessions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: "Define ES5 testing strategy"
+        uses: actions/github-script@v9
+        id: define
+        env:
+          browserstack: ${{ secrets.BROWSERSTACK_USER_NAME }}
+        with:
+          script: |
+            const browsers = require('./browsers-es5.json');
+            return {
+              sessions: process.env.browserstack ? Object.keys(browsers).length : 0,
+            }
+
+  build-es5:
+    name: "Build (ES5)"
+    needs: [setup-es5]
+    if: ${{ fromJSON(needs.setup-es5.outputs.sessions) > 0 }}
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp build --ES5
+
+  test-es5:
+    name: "ES5 E2E tests"
+    needs: [setup-es5, build-es5]
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build-es5.outputs.linux }}
+      test-cmd: npx gulp e2e-test-nobuild --ES5
+      chunks: 1
+      browserstack: true
+      browsers-json: 'browsers-es5.json'
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  base-coverage-check:
+    name: Check for base branch coverage
+    needs: [checkout]
+    outputs:
+      # whether there is base coverage to compare with: cached, or computable on the base commit
+      available: ${{ steps.restore.outputs.cache-hit == 'true' || steps.base.outputs.vitest == 'true' }}
+      needs-base-coverage: ${{ steps.restore.outputs.cache-hit != 'true' && steps.base.outputs.vitest == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Restore working directory
-        uses: actions/cache/restore@v4
+      # A base commit from before Vitest (as for the PR that brings it to master) has nothing to compute base
+      # coverage with: don't start jobs that can only fail, and skip the comparison.
+      - name: Check that the base commit runs Vitest
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ needs.checkout.outputs.base-commit }}
+        run: |
+          if gh api "repos/${{ github.repository }}/contents/test/vitest/vitest.config.mjs?ref=$BASE" --silent 2>/dev/null; then
+            echo vitest=true >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::The base commit $BASE has no Vitest setup, so there is no base coverage to compare with"
+            echo vitest=false >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore from cache
+        id: restore
+        uses: actions/cache/restore@v6
         with:
-          path: .
-          key: ${{ needs.test.outputs.wdir }}
-          fail-on-cache-miss: true
-      - name: Coveralls
-        uses: coverallsapp/github-action@v2
+          path: ${{ runner.temp }}/coverage.info
+          # "vitest" in the key: older coverage-<commit> entries were produced by the previous (Karma)
+          # runner and must not be compared with this coverage
+          key: coverage-vitest-${{ needs.checkout.outputs.base-commit }}
+      - name: Rename restored file
+        if: ${{ steps.restore.outputs.cache-hit == 'true' }}
+        run: |
+          mv "${{ runner.temp }}/coverage.info" "base-coverage.info"
+      - name: Save as artifact
+        if: ${{ steps.restore.outputs.cache-hit == 'true' }}
+        uses: actions/upload-artifact@v7
         with:
-          git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
-          git-commit: ${{ needs.checkout.outputs.commit }}
-          compare-ref: ${{ needs.checkout.outputs.base-branch }}
-          compare-sha: ${{ needs.checkout.outputs.base-commit }}
+          name: base-coverage.info
+          path: base-coverage.info
+  base-coverage-compute:
+    name: Compute base branch coverage
+    # after the PR's own Chromium stage has passed: it would otherwise take 8 runners from that stage, and
+    # a PR that fails it gets no coverage report anyway
+    needs: [checkout, base-coverage-check, vitest]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' }}
+    uses: ./.github/workflows/vitest-chromium.yml
+    with:
+      ref: ${{ needs.checkout.outputs.base-commit }}
+      coverage-only: true
+  base-coverage-combine:
+    name: Save base branch coverage
+    needs: [checkout, base-coverage-check, base-coverage-compute]
+    if: ${{ needs.base-coverage-check.outputs.needs-base-coverage == 'true' && needs.base-coverage-compute.outputs.coverage }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.base-coverage-compute.outputs.coverage }}
+          path: ${{ runner.temp }}
+      # Cached from the same path base-coverage-check restores it to: the cache version includes the path,
+      # so an entry saved from anywhere else would never be found.
+      - uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/coverage.info
+          key: coverage-vitest-${{ needs.checkout.outputs.base-commit }}
+      - name: Rename file
+        run: cp "${{ runner.temp }}/coverage.info" base-coverage.info
+      - uses: actions/upload-artifact@v7
+        with:
+          name: base-coverage.info
+          path: base-coverage.info
+  coverage:
+    name: Coverage
+    needs: [checkout, vitest, base-coverage-check, base-coverage-combine]
+    # Gate on the coverage artifact rather than on the result of the whole Vitest call, which also covers
+    # the browsers that run without instrumentation. The output is only set once every chunk's coverage was
+    # combined, so a non-empty value is exactly the condition under which there is something to report.
+    if: always() && needs.vitest.outputs.coverage
+    runs-on: ubuntu-latest
+    steps:
+      # the PR head: diffing the default merge ref against the base would include the base branch's later changes
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.checkout.outputs.commit }}
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - name: Fetch coverage results
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.vitest.outputs.coverage }}
+          path: ${{ runner.temp }}
+      # base coverage for later PRs on this commit, from the path base-coverage-check restores it to
+      - name: Save to cache
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/coverage.info
+          key: coverage-vitest-${{ needs.checkout.outputs.commit }}
+      - name: Copy coverage results
+        run: cp "${{ runner.temp }}/coverage.info" coverage.info
+      - name: Fetch base branch coverage
+        # base coverage comes from the cache or from base-coverage-combine; without either there is nothing to compare
+        if: ${{ needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false') }}
+        uses: actions/download-artifact@v8
+        with:
+          path: "."
+          name: "base-coverage.info"
+      - name: Generate coverage annotations
+        if: ${{ needs.base-coverage-check.outputs.available == 'true' && (needs.base-coverage-combine.result == 'success' || needs.base-coverage-check.outputs.needs-base-coverage == 'false') }}
+        uses: barecheck/code-coverage-action@v1
+        with:
+          github-token: ${{ github.token }}
+          lcov-file: "coverage.info"
+          base-lcov-file: "base-coverage.info"
+          # Barecheck rounds each total to two decimals before subtracting them, so a reported diff of
+          # -0.01 can come entirely from the two totals falling on opposite sides of a rounding
+          # boundary. That artifact is bounded at one step, so tolerating -0.01 absorbs it while
+          # anything at -0.02 or beyond still implies a real drop. Note a negative value here would
+          # disable the check altogether rather than widen the tolerance.
+          minimum-ratio: 0.01
+          send-summary-comment: false
+          show-annotations: "warning"
+      - name: Check coverage of changed source files
+        if: ${{ !cancelled() }}
+        run: node --disable-warning=ExperimentalWarning .github/scripts/check-changed-coverage.mjs coverage.info "${{ needs.checkout.outputs.base-commit }}"
+

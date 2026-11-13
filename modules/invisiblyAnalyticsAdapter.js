@@ -27,7 +27,6 @@ const {
   BIDDER_DONE,
   SET_TARGETING,
   REQUEST_BIDS,
-  ADD_AD_UNITS,
   AD_RENDER_FAILED,
 } = EVENTS;
 
@@ -130,9 +129,9 @@ function flush() {
 
 function handleEvent(eventType, eventArgs) {
   if (eventArgs) {
-    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs);
   } else {
-    eventArgs = {}
+    eventArgs = {};
   }
 
   let invisiblyEvent = {};
@@ -184,10 +183,6 @@ function handleEvent(eventType, eventArgs) {
       break;
     }
     case REQUEST_BIDS: {
-      invisiblyEvent = eventArgs;
-      break;
-    }
-    case ADD_AD_UNITS: {
       invisiblyEvent = eventArgs;
       break;
     }

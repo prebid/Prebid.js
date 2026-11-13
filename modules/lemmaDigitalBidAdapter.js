@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getDNT } from '../libraries/dnt/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -76,7 +77,7 @@ export var spec = {
     }
     var conf = spec._setRefURL(refererInfo);
     const request = spec._createoRTBRequest(validBidRequests, conf);
-    if (request && request.imp.length == 0) {
+    if (request && request.imp.length === 0) {
       return;
     }
     spec._setOtherParams(bidderRequest, request);
@@ -167,7 +168,7 @@ export var spec = {
    * create IAB standard OpenRTB bid request
    */
   _createoRTBRequest: (bidRequests, conf) => {
-    var oRTBObject = {};
+    var oRTBObject;
     try {
       oRTBObject = {
         id: spec._createUUID(),
@@ -230,14 +231,13 @@ export var spec = {
    * create impression (single) object
    */
   _getImpressionObject: (bid) => {
-    var impression = {};
     var bObj;
     var vObj;
     var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
     var mediaTypes = '';
     var format = [];
     var params = bid && bid.params ? bid.params : null;
-    impression = {
+    const impression = {
       id: bid.bidId,
       tagid: params.adunitId ? params.adunitId.toString() : undefined,
       secure: DEFAULT_SECURE,
@@ -298,7 +298,7 @@ export var spec = {
           const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
           if (utils.isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             const mediaTypeFloor = parseFloat(floorInfo.floor);
-            bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
+            bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
           }
         }
       });
@@ -448,7 +448,7 @@ export var spec = {
     var params = request && request.params ? request.params : null;
     if (params) {
       return {
-        dnt: utils.getDNT() ? 1 : 0,
+        dnt: getDNT() ? 1 : 0,
         ua: navigator.userAgent,
         language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
         w: (utils.getWinDimensions().screen.width || utils.getWinDimensions().innerWidth),
@@ -510,7 +510,7 @@ export var spec = {
       var params = bid ? bid.params : null;
       var bannerData = params && params.banner;
       var sizes = spec._getSizes(bid) || [];
-      if (sizes && sizes.length == 0) {
+      if (sizes && sizes.length === 0) {
         sizes = bid.mediaTypes.banner.sizes[0];
       }
       if (sizes && sizes.length > 0) {
@@ -548,7 +548,7 @@ export var spec = {
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
       var params = bid ? bid.params : null;
       var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
-      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
+      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : [];
       if (sizes && sizes.length > 0) {
         vObj = {};
         if (videoData) {

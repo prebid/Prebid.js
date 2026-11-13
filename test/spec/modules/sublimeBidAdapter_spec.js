@@ -159,6 +159,11 @@ const USER_AGENT = {
 };
 
 describe('Sublime Adapter', function () {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.sublime;
+  });
+
   describe('detectDevice', function () {
     it('should correctly detect device', function () {
       const uaStub = sinon.stub(window.navigator, 'userAgent');
@@ -170,7 +175,7 @@ describe('Sublime Adapter', function () {
       });
 
       uaStub.restore();
-    })
+    });
   });
 
   describe('sendEvent', function () {
@@ -204,7 +209,7 @@ describe('Sublime Adapter', function () {
     afterEach(function () {
       sandbox.restore();
     });
-  })
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -223,11 +228,11 @@ describe('Sublime Adapter', function () {
           endpoint: '',
         },
       };
-    })
+    });
 
     afterEach(function () {
       delete window.sublime;
-    })
+    });
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -541,9 +546,8 @@ describe('Sublime Adapter', function () {
 
       expect(result).to.deep.equal(expectedResponse);
 
-      describe('On bid Time out', function () {
-        spec.onTimeout(result);
-      });
+      // on bid timeout
+      spec.onTimeout(result);
     });
 
     it('should add advertiserDomains', function () {
@@ -610,5 +614,5 @@ describe('Sublime Adapter', function () {
     afterEach(function () {
       sandbox.restore();
     });
-  })
+  });
 });

@@ -1,5 +1,5 @@
 import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
@@ -17,11 +17,11 @@ const countryMap = {
   10: 'co',
   11: 'de',
   255: 'en'
-}
+};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);
   },
@@ -76,10 +76,10 @@ export const spec = {
       var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
       try {
         for (var k in hmetas) {
-          if (typeof hmetas[k] == 'object') {
+          if (typeof hmetas[k] === 'object') {
             var mname = hmetas[k].name || hmetas[k].getAttribute('property');
             var mcont = hmetas[k].content;
-            if (!!mname && mname != 'null' && !!mcont) {
+            if (!!mname && mname !== 'null' && !!mcont) {
               if (wnames.indexOf(mname) >= 0) {
                 if (!mts[mname]) {
                   mts[mname] = [];
@@ -119,7 +119,7 @@ export const spec = {
     var bidRespones = [];
     var bids = bidRequest.bids;
     var responses = serverResponse.body;
-    var data = [];
+    var data;
     for (var i = 0; i < responses.length; i++) {
       data = responses[i];
       type = data.response === 'banner' ? BANNER : VIDEO;
@@ -155,8 +155,8 @@ export const spec = {
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width == validSizes[j][0] &&
-            adItem.height == validSizes[j][1]) {
+        if (Number(adItem.width) === Number(validSizes[j][0]) &&
+            Number(adItem.height) === Number(validSizes[j][1])) {
           return true;
         }
       }

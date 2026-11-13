@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { ajax } from '../../../src/ajax.js';
+import { noCredsAjax as ajax } from '../../../src/ajax.js';
 
 /**
  * example2.js - analytics adapter for Example2 Analytics Endpoint example

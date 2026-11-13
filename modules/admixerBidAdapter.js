@@ -1,24 +1,26 @@
-import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { isStr, logError, isFn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
 const GVLID = 511;
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ALIASES = [
-  {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
+  { code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx' },
   'adblender',
-  {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
-  {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
-  {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
+  { code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx' },
+  { code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx' },
+  { code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx' },
   'rtbstack',
   'theads',
+  'aditgen',
 ];
 const RTB_RELATED_ALIASES = [
   'rtbstack',
   'theads',
+  'aditgen',
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -53,7 +55,8 @@ export const spec = {
     const payload = {
       imps: [],
       ortb2: bidderRequest.ortb2,
-      docReferrer: docRef};
+      docReferrer: docRef
+    };
     let endpointUrl;
     if (bidderRequest) {
       // checks if there is specified any endpointUrl in bidder config
@@ -90,7 +93,7 @@ export const spec = {
       payload.imps.push(imp);
     });
 
-    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
+    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode);
     return {
       method: 'POST',
       url: urlForRequest,
@@ -103,7 +106,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     try {
-      const {body: {ads = []} = {}} = serverResponse;
+      const { body: { ads = [] } = {} } = serverResponse;
       ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
       logError(e);
@@ -112,13 +115,13 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const pixels = [];
-    serverResponses.forEach(({body: {cm = {}} = {}}) => {
-      const {pixels: img = [], iframes: frm = []} = cm;
+    serverResponses.forEach(({ body: { cm = {} } = {} }) => {
+      const { pixels: img = [], iframes: frm = [] } = cm;
       if (syncOptions.pixelEnabled) {
-        img.forEach((url) => pixels.push({type: 'image', url}));
+        img.forEach((url) => pixels.push({ type: 'image', url }));
       }
       if (syncOptions.iframeEnabled) {
-        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+        frm.forEach((url) => pixels.push({ type: 'iframe', url }));
       }
     });
     return pixels;
@@ -131,7 +134,7 @@ function getEndpointUrl(code) {
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
+    return bid?.params?.bidFloor ?? 0;
   }
 
   try {

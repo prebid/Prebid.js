@@ -18,19 +18,19 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').lockrAIMId} lockrAIMId
  */
 
-const MODULE_NAME = 'lockrAIMId'
+const MODULE_NAME = 'lockrAIMId';
 const LOG_PRE_FIX = 'lockr-AIM: ';
 
 const AIM_PROD_URL = 'https://identity.loc.kr';
 
 export const lockrAIMCodeVersion = '1.0';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function createLogger(logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
-  }
+  };
 }
 
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
@@ -81,7 +81,7 @@ export const lockrAIMSubmodule = {
     _logInfo('lockr AIM results generated');
     return result;
   }
-}
+};
 
 class LockrAIMApiClient {
   static expiryDateKeys = [];
@@ -95,7 +95,7 @@ class LockrAIMApiClient {
     this._logWarn = logWarn;
     this._gppString = gppString;
     this.prebidStorageManager = prebidStorageManager;
-    LockrAIMApiClient.expiryDateKeys = this.prebidStorageManager.getDataFromLocalStorage('lockr_expiry_keys') ? JSON.parse(this.prebidStorageManager.getDataFromLocalStorage('lockr_expiry_keys')) : []
+    LockrAIMApiClient.expiryDateKeys = this.prebidStorageManager.getDataFromLocalStorage('lockr_expiry_keys') ? JSON.parse(this.prebidStorageManager.getDataFromLocalStorage('lockr_expiry_keys')) : [];
     this.initializeRefresher();
   }
 
@@ -112,8 +112,8 @@ class LockrAIMApiClient {
         value: value ?? this._email,
         gppString: this._gppString,
       }
-    }
-    this._logInfo('Sending the token generation request')
+    };
+    this._logInfo('Sending the token generation request');
     ajax(url, {
       success: (responseText) => {
         try {
@@ -154,7 +154,7 @@ class LockrAIMApiClient {
         if (currentMillis > dateMillis && dateMillis !== null && this.prebidStorageManager.getDataFromLocalStorage('ilui') && LockrAIMApiClient.canRefreshToken) {
           this.generateToken('refresh', this.prebidStorageManager.getDataFromLocalStorage('ilui'));
         }
-      })
+      });
     }, 1000);
   }
 }

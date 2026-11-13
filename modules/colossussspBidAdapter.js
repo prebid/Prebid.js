@@ -13,6 +13,7 @@ import {
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./colossussspBidAdapter.d.ts').ColossussspBidParams} ColossussspBidParams
  */
 
 const BIDDER_CODE = 'colossusssp';
@@ -27,7 +28,7 @@ function getUserId(eids, id, source, uidExt) {
     }
     eids.push({
       source,
-      uids: [ uid ]
+      uids: [uid]
     });
   }
 }
@@ -71,6 +72,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   delete placement.bidfloor;
+  delete placement.floors;
   delete placement.plcmt;
   delete placement.ext;
 };

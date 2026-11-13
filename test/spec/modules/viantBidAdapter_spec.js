@@ -1,15 +1,15 @@
-import {spec, converter} from 'modules/viantBidAdapter.js';
-import {assert, expect} from 'chai';
-import {deepClone} from '../../../src/utils.js';
-import {buildWindowTree} from '../../helpers/refererDetectionHelper.js';
-import {detectReferer} from '../../../src/refererDetection.js';
+import { spec } from 'modules/viantBidAdapter.js';
+import { assert, expect } from 'chai';
+import { deepClone } from '../../../src/utils.js';
+import { buildWindowTree } from '../../helpers/refererDetectionHelper.js';
+import { detectReferer } from '../../../src/refererDetection.js';
 
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
     const clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
     const requests = spec.buildRequests(bidRequests, clonedBidderRequest);
-    return requests
+    return requests;
   }
 
   describe('isBidRequestValid', function () {
@@ -48,13 +48,13 @@ describe('viantOrtbBidAdapter', function () {
       it('should return true if placementId is not passed ', function () {
         const bid = makeBid();
         delete bid.params.placementId;
-        bid.ortb2Imp = {}
+        bid.ortb2Imp = {};
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return false if mediaTypes.banner is Not passed', function () {
         const bid = makeBid();
-        delete bid.mediaTypes
+        delete bid.mediaTypes;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
     });
@@ -96,7 +96,7 @@ describe('viantOrtbBidAdapter', function () {
             'bidderRequestId': '22edbae2733bf6',
             'auctionId': '1d1a030790a475',
             'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-          }
+          };
         }
 
         it('should return true when required params found', function () {
@@ -140,7 +140,7 @@ describe('viantOrtbBidAdapter', function () {
             'bidderRequestId': '22edbae2733bf6',
             'auctionId': '1d1a030790a475',
             'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-          }
+          };
         }
 
         it('should return true when required params found', function () {
@@ -349,16 +349,16 @@ describe('viantOrtbBidAdapter', function () {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        }
+        };
       }
 
       it('assert video and its fields is present in imp ', function () {
-        const requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
-        const clonedRequests = deepClone(requests)
-        assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
-        assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
-        assert.equal(clonedRequests[0].data.imp[0].video.placement, 1)
-        assert.equal(clonedRequests[0].method, 'POST')
+        const requests = spec.buildRequests([makeBid()], { referrerInfo: {} });
+        const clonedRequests = deepClone(requests);
+        assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4');
+        assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31);
+        assert.equal(clonedRequests[0].data.imp[0].video.placement, 1);
+        assert.equal(clonedRequests[0].method, 'POST');
       });
     });
   }
@@ -400,8 +400,8 @@ describe('viantOrtbBidAdapter', function () {
 
     it('empty bid response test', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0];
-      const bidResponse = {nbr: 0}; // Unknown error
-      const bids = spec.interpretResponse({body: bidResponse}, request);
+      const bidResponse = { nbr: 0 }; // Unknown error
+      const bids = spec.interpretResponse({ body: bidResponse }, request);
       expect(bids.length).to.equal(0);
     });
 
@@ -421,47 +421,20 @@ describe('viantOrtbBidAdapter', function () {
         }],
         cur: 'USD'
       };
-      const bids = spec.interpretResponse({body: bidResponse}, request);
+      const bids = spec.interpretResponse({ body: bidResponse }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
-      it('should return the proper mediaType', function () {
-        it('should return a creativeId', function () {
-          expect(bid.mediaType).to.equal('banner');
-        });
-      });
-      it('should return a price', function () {
-        expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price);
-      });
-
-      it('should return a request id', function () {
-        expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid);
-      });
-
-      it('should return width and height for the creative', function () {
-        expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w);
-        expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h);
-      });
-      it('should return a creativeId', function () {
-        expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid);
-      });
-      it('should return an ad', function () {
-        expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm);
-      });
-
-      it('should return a deal id if it exists', function () {
-        expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid);
-      });
-
-      it('should have a time-to-live of 5 minutes', function () {
-        expect(bid.ttl).to.equal(300);
-      });
-
-      it('should always return net revenue', function () {
-        expect(bid.netRevenue).to.equal(true);
-      });
-      it('should return a currency', function () {
-        expect(bid.currency).to.equal(bidResponse.cur);
-      });
+      expect(bid.mediaType).to.equal('banner');
+      expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price);
+      expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid);
+      expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w);
+      expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h);
+      expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid);
+      expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm);
+      expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid);
+      expect(bid.ttl).to.equal(300);
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.currency).to.equal(bidResponse.cur);
     });
   });
   describe('interpretResponse-Video', function () {
@@ -537,21 +510,16 @@ describe('viantOrtbBidAdapter', function () {
         ],
         'cur': 'USD'
       };
-      const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
+      const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
-      it('should return the proper mediaType', function () {
-        expect(bid.mediaType).to.equal('video');
-      });
-      it('should return correct Ad Markup', function () {
+      expect(bid.mediaType).to.equal('video');
+      if (FEATURES.VIDEO) {
+        // filled in by the ORTB converter's video response processor, which isn't built without VIDEO
         expect(bid.vastXml).to.equal('<VAST version="4.2"></VAST>');
-      });
-      it('should return correct Notification', function () {
         expect(bid.vastUrl).to.equal('http://0.0.0.0:8181/nurl');
-      });
-      it('should return correct Cpm', function () {
-        expect(bid.cpm).to.equal(1.09);
-      });
+      }
+      expect(bid.cpm).to.equal(1.09);
     });
   });
 });

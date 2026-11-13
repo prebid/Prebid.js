@@ -1,0 +1,22 @@
+{
+  "disclosures": [
+    {
+      "identifier": "utiqPass",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    },
+    {
+      "identifier": "netid_utiq_adtechpass",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Utiq looks for utiqPass in localStorage which is where ID values would be set if available."
+    }
+  ]
+}

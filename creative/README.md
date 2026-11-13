@@ -5,8 +5,8 @@ into creative frames:
 
 - `crossDomain.js` (compiled into `build/creative/creative.js`, also exposed in `integrationExamples/gpt/x-domain/creative.html`)
    is the logic that should be statically set up in the creative. 
-- At build time, each folder under 'renderers' is compiled into a source string made available from a corresponding
-`creative-renderer-*` library. These libraries are committed in source so that they are available to NPM consumers. 
+- During precompilation, each folder under 'renderers' is compiled into a source string made available from a corresponding module in 
+`creative-renderers`. 
 - At render time, Prebid passes the appropriate renderer's source string to the remote creative, which then runs it.
 
 The goal is to have a creative script that is as simple, lightweight, and unchanging as possible, but still allow the possibility
@@ -36,9 +36,3 @@ where:
  
 The function may return a promise; if it does and the promise rejects, or if the function throws, an AD_RENDER_FAILED event is emitted in Prebid. Otherwise an AD_RENDER_SUCCEEDED is fired 
 when the promise resolves (or when `render` returns anything other than a promise).
-
-### Renderer development
-
-Since renderers are compiled into source, they use production settings even during development builds. You can toggle this with 
-the `--creative-dev` CLI option (e.g., `gulp serve-fast --creative-dev`), which disables the minifier and generates source maps; if you do, take care 
-to not commit the resulting `creative-renderer-*` libraries (or run a normal build before you do).

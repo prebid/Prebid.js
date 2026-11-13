@@ -83,9 +83,10 @@
 
 <script>
 googletag.cmd.push(function() {
-    var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+    googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
-    if (pbjs.libLoaded) { // Check if Prebid.js is loaded
+    // Check if Prebid.js is loaded
+    if (pbjs.libLoaded) {
         pbjs.que.push(function() {
             pbjs.setTargetingForGPTAsync();
             googletag.pubads().refresh();

@@ -4,8 +4,21 @@ import {
 import {
   spec
 } from 'modules/smartxBidAdapter.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('The smartx adapter', function () {
+  before(function () {
+    // Seed pbjs.adUnits so the Prebid.js core Renderer.prototype.render
+    // path can call pbjs.adUnits.find() without crashing. Adapter unit
+    // tests import the module directly without running a full pbjs init,
+    // so pbjs.adUnits is undefined by default and the lookup inside
+    // isRendererPreferredFromAdUnit (src/Renderer.js) throws as soon as
+    // bid.renderer.render() runs in the oustreamRender describe block.
+    // Matches the same workaround already in use in
+    // test/spec/modules/showheroes-bsBidAdapter_spec.js.
+    getGlobal().adUnits = [];
+  });
+
   function getValidBidObject() {
     return {
       bidId: 123,
@@ -263,7 +276,7 @@ describe('The smartx adapter', function () {
       bidRequestObj.gdprConsent = {
         gdprApplies: true,
         consentString: 'foo'
-      }
+      };
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -284,7 +297,7 @@ describe('The smartx adapter', function () {
             value: 'foo'
           }]
         }]
-      }
+      };
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -315,7 +328,7 @@ describe('The smartx adapter', function () {
     it('should pass linearity params', function () {
       var request;
 
-      bid.params.linearity = 3
+      bid.params.linearity = 3;
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -325,8 +338,8 @@ describe('The smartx adapter', function () {
     it('should pass min and max duration params', function () {
       var request;
 
-      bid.params.minduration = 3
-      bid.params.maxduration = 15
+      bid.params.minduration = 3;
+      bid.params.maxduration = 15;
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -352,7 +365,7 @@ describe('The smartx adapter', function () {
             }
           }
         }
-      }
+      };
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -369,13 +382,13 @@ describe('The smartx adapter', function () {
             ]
           }
         }
-      })
+      });
     });
 
     it('should pass sitekey param', function () {
       var request;
 
-      bid.params.sitekey = 'foo'
+      bid.params.sitekey = 'foo';
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
@@ -543,11 +556,8 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script without outstream config options set', function () {
-      var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-          scriptTag = script
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -559,11 +569,8 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script with outstream config options set', function () {
-      var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-          scriptTag = script
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -587,11 +594,8 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script without defined slot', function () {
-      var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function (script) {
-          scriptTag = script
-        })
+        appendChild: sinon.stub()
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -651,7 +655,7 @@ describe('The smartx adapter', function () {
           floor: 1.23
         };
       };
-      bid.params.bidfloorcur = 'USD'
+      bid.params.bidfloorcur = 'USD';
 
       const payload = spec.buildRequests([bid], bidRequestObj)[0];
       expect(payload.data.imp[0]).to.have.property('bidfloorcur', 'USD');
@@ -701,4 +705,4 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
     });
   });
-})
+});

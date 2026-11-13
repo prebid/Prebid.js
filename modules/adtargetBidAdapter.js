@@ -1,8 +1,8 @@
-import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {chunk} from '../libraries/chunk/chunk.js';
+import { _map, flatten, isArray, logError, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { chunk } from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
   isBidRequestValid,
@@ -20,12 +20,12 @@ export const spec = {
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache);
   },
 
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
+    const chunkSize = adapterSettings?.chunkSize ?? 10;
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
     return _map(bidChunks, (bids) => {
@@ -35,7 +35,7 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT
       };
-    })
+    });
   },
   interpretResponse: function (serverResponse, { adapterRequest }) {
     serverResponse = serverResponse.body;
@@ -95,8 +95,8 @@ function bidToTag(bidRequests, adapterRequest) {
 }
 
 function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const mediaType = bidReq?.mediaTypes?.video ? VIDEO : DISPLAY;
+  const sizes = mediaType === VIDEO ? bidReq?.mediaTypes?.video?.playerSize : bidReq?.mediaTypes?.banner?.sizes;
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
@@ -107,11 +107,11 @@ function prepareBidRequests(bidReq) {
 }
 
 function getMediaType(bidderRequest) {
-  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return bidderRequest?.mediaTypes?.video ? VIDEO : BANNER;
 }
 
 function createBid(bidResponse, bidRequest) {
-  const mediaType = getMediaType(bidRequest)
+  const mediaType = getMediaType(bidRequest);
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,

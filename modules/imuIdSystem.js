@@ -6,7 +6,7 @@
  */
 
 import { timestamp, logError } from '../src/utils.js';
-import { ajax } from '../src/ajax.js'
+import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
@@ -19,14 +19,14 @@ import { getRefererInfo } from '../src/refererDetection.js';
 
 const MODULE_NAME = 'imuid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 export const storageKey = '__im_uid';
 export const storagePpKey = '__im_ppid';
 export const cookieKey = '_im_vid';
-export const apiDomain = 'sync6.im-apps.net';
+export const apiDomain = 'ups.im-apps.net';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
-const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
+const cookiesMaxAge = 34560000000; // 400 days (400 * 24 * 60 * 60 * 1000)
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -112,7 +112,7 @@ export function getApiCallback(callback) {
 
 export function callImuidApi(apiUrl) {
   return function (callback) {
-    ajax(apiUrl, getApiCallback(callback), undefined, {method: 'GET', withCredentials: true});
+    ajax(apiUrl, getApiCallback(callback), undefined, { method: 'GET', withCredentials: true });
   };
 }
 
@@ -156,7 +156,7 @@ export const imuIdSubmodule = {
     }
 
     if (!localData.id) {
-      return {callback: callImuidApi(apiUrl)};
+      return { callback: callImuidApi(apiUrl) };
     }
     if (localData.expired) {
       callImuidApi(apiUrl)();

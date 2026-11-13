@@ -1,21 +1,17 @@
 import {
   deepAccess,
-  generateUUID,
-  getWindowSelf,
   isArray,
   isStr,
   parseQueryStringParameters,
   replaceAuctionPrice,
   triggerPixel
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {getRefererInfo} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const additionalData = new WeakMap();
-
-export const pageViewId = generateUUID();
 
 export function setAdditionalData(obj, key, value) {
   const prevValue = additionalData.get(obj) || {};
@@ -28,6 +24,7 @@ export function getAdditionalData(obj, key) {
 }
 
 const BIDDER_CODE = 'kobler';
+const ACP_ID = 2575; // Google Additional Consent provider ID
 const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
 const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
@@ -58,7 +55,7 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
 
 export const interpretResponse = function (serverResponse, request) {
   const res = serverResponse.body;
-  const bids = []
+  const bids = [];
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
@@ -78,10 +75,10 @@ export const interpretResponse = function (serverResponse, request) {
           meta: {
             advertiserDomains: b.adomain
           }
-        }
+        };
         setAdditionalData(bid, 'adServerCurrency', getCurrencyFromBidderRequest(request.bidderRequest));
         bids.push(bid);
-      })
+      });
     });
   }
 
@@ -134,10 +131,23 @@ function getPageUrlFromRefererInfo() {
     : window.location.href;
 }
 
+function getPurposeStatus(purposeData, purposeField, purposeNumber) {
+  if (!purposeData) {
+    return false;
+  }
+
+  if (!purposeData[purposeField]) {
+    return false;
+  }
+
+  return purposeData[purposeField][purposeNumber] === true;
+}
+
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest);
+  const ua = validBidRequests[0]?.ortb2?.device?.ua;
   // Kobler, a contextual advertising provider, does not process any personal data itself, so it is not part of TCF/GVL.
   // However, it supports using select third-party creatives in its platform, some of which require certain permissions
   // in order to be shown. Kobler's bidder checks if necessary permissions are present to avoid bidding
@@ -145,17 +155,14 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   let purpose2Given;
   let purpose3Given;
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
-    const vendorData = bidderRequest.gdprConsent.vendorData
+    const vendorData = bidderRequest.gdprConsent.vendorData;
     const purposeData = vendorData.purpose;
     const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
     const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
-    purpose2Given = restrictionForPurpose2 === 1 ? (
-      purposeData && purposeData.consents && purposeData.consents[2]
-    ) : (
-      restrictionForPurpose2 === 0
-        ? false : (purposeData && purposeData.legitimateInterests && purposeData.legitimateInterests[2])
+    purpose2Given = restrictionForPurpose2 === 1 ? getPurposeStatus(purposeData, 'consents', 2) : (
+      restrictionForPurpose2 === 0 ? false : getPurposeStatus(purposeData, 'legitimateInterests', 2)
     );
-    purpose3Given = purposeData && purposeData.consents && purposeData.consents[3];
+    purpose3Given = getPurposeStatus(purposeData, 'consents', 3);
   }
   const request = {
     id: bidderRequest.bidderRequestId,
@@ -164,8 +171,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     cur: [SUPPORTED_CURRENCY],
     imp: imps,
     device: {
-      devicetype: getDevice(),
-      ua: navigator.userAgent,
+      devicetype: getDevice(ua),
+      ua,
       sua: validBidRequests[0]?.ortb2?.device?.sua
     },
     site: {
@@ -176,7 +183,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       kobler: {
         tcf_purpose_2_given: purpose2Given,
         tcf_purpose_3_given: purpose3Given,
-        page_view_id: pageViewId
+        page_view_id: bidderRequest.pageViewId
       }
     }
   };
@@ -198,14 +205,17 @@ function buildOpenRtbImpObject(validBidRequest) {
     },
     bidfloor: floorInfo.floor,
     bidfloorcur: floorInfo.currency,
-    pmp: buildPmpObject(validBidRequest)
+    pmp: buildPmpObject(validBidRequest),
+    ext: {
+      gpid: validBidRequest.ortb2Imp?.ext?.gpid,
+      prebid: {
+        adunitcode: validBidRequest.adUnitCode
+      }
+    }
   };
 }
 
-function getDevice() {
-  const ws = getWindowSelf();
-  const ua = ws.navigator.userAgent;
-
+function getDevice(ua = '') {
   if (/(tablet|ipad|playbook|silk|android 3.0|xoom|sch-i800|kindle)|(android(?!.*mobi))/i
     .test(ua.toLowerCase())) {
     return 5; // tablet
@@ -278,6 +288,7 @@ function buildPmpObject(validBidRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

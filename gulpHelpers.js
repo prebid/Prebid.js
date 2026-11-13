@@ -1,15 +1,88 @@
-// this will have all of a copy of the normal fs methods as well
-const fs = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
-const argv = require('yargs').argv;
+const {parseArgs} = require('node:util');
 const MANIFEST = 'package.json';
-const through = require('through2');
+const { Transform } = require('node:stream');
 const _ = require('lodash');
 const PluginError = require('plugin-error');
 const execaCmd = require('execa');
 const submodules = require('./modules/.submodules.json').parentModules;
+const {specsMatching} = require('./.github/workflows/scripts/browserMatrices.js');
 
-const PRECOMPILED_PATH = './dist/src'
+const BOOLEAN_OPTIONS = [
+  'nolint',
+  'nolintfix',
+  'lintWarnings',
+  'sourceMaps',
+  'manualEnable',
+  'coverage',
+  'https',
+  'local',
+  'fetch',
+  'watch',
+  'browserstack',
+  'notest',
+  'analytics',
+  'ES5',
+  'analyze',
+  'polyfills',
+];
+
+const {values: argv, tokens} = parseArgs({
+  strict: false,
+  allowPositionals: true,
+  tokens: true,
+  options: {
+    // boolean flags
+    ...Object.fromEntries(BOOLEAN_OPTIONS.map((option) => [option, {type: 'boolean'}])),
+    // string options
+    host: {type: 'string'},
+    file: {type: 'string'},
+    files: {type: 'string'},
+    modules: {type: 'string'},
+    browsers: {type: 'string'},
+    disable: {type: 'string'},
+    enable: {type: 'string'},
+    distUrlBase: {type: 'string'},
+    bundleName: {type: 'string'},
+    tag: {type: 'string'},
+  },
+});
+
+// yargs mapped `--no-foo` to `foo: false` and camelized `--foo-bar` to
+// `fooBar`; parseArgs does neither and keeps the literal keys. Replay the
+// boolean option tokens to restore that: each boolean option is recognized
+// under its declared name and its kebab-case form, negated or not, and the
+// occurrence appearing last on the command line wins. Other flags are left
+// exactly as parseArgs parsed them.
+const booleanSpellings = new Map(BOOLEAN_OPTIONS.flatMap((option) => {
+  const kebab = option.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+  return [...new Set([option, kebab])].flatMap((name) => [
+    [name, {option, negated: false}],
+    [`no-${name}`, {option, negated: true}],
+  ]);
+}));
+tokens.forEach((token) => {
+  if (token.kind !== 'option') {
+    return;
+  }
+  // Newer Node versions may normalize token.name for --no-* flags, so
+  // match their original spelling. Reject malformed extra-dash prefixes.
+  const rawOption = typeof token.rawName === 'string' && /^--[^-]/.test(token.rawName)
+    ? token.rawName.slice(2)
+    : undefined;
+  const match = booleanSpellings.get(rawOption);
+  if (!match || (match.negated && token.value !== undefined)) {
+    return;
+  }
+
+  argv[match.option] = match.negated ? false : (token.value ?? true);
+  if (token.name !== match.option) {
+    delete argv[token.name];
+  }
+});
+
+const PRECOMPILED_PATH = './dist/src';
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
@@ -21,10 +94,7 @@ const SOURCE_FOLDERS = [
   'modules',
   'test',
   'public'
-]
-const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*',
-]
+];
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -37,18 +107,43 @@ function isModuleDirectory(filePath) {
   } catch (error) {}
 }
 
+function getParentModule(module) {
+  return Object.entries(submodules).find(([, children])=> children.includes(module))?.[0];
+};
+
 module.exports = {
   getSourceFolders() {
     return SOURCE_FOLDERS
   },
   getSourcePatterns() {
-    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
-  },
-  getIgnoreSources() {
-    return IGNORE_SOURCES
+    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`, `!./${dir}/**/*.d.ts`])
   },
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
+  },
+
+  /**
+   * The Vitest environment for each browsers.json entry that has `browserstack`, or for the ones named in `keys`, and
+   * the spec files to run for an entry with `vitest.specsMatching`.
+   */
+  browserstackTargets(keys = [], browsers = require('./browsers.json')) {
+    const available = Object.keys(browsers).filter(key => browsers[key].browserstack);
+    const unknown = keys.filter(key => !available.includes(key));
+    if (unknown.length) {
+      throw new Error(`No BrowserStack settings for ${unknown.join(', ')}; browsers.json has them for ${available.join(', ')}`);
+    }
+    return (keys.length ? keys : available).map(key => {
+      const bs = browsers[key].browserstack;
+      return {
+        key,
+        shards: bs.vitest?.shards ?? 1,
+        ...(bs.vitest?.specsMatching ? {files: specsMatching(bs.vitest.specsMatching, __dirname)} : {}),
+        // undefined rather than left out, so that the caller's environment can't mix a device with a desktop OS
+        env: bs.deviceName
+          ? {VITEST_DEVICE: bs.deviceName, VITEST_OS: undefined, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: undefined}
+          : {VITEST_DEVICE: undefined, VITEST_OS: bs.os, VITEST_OS_VERSION: bs.osVersion, VITEST_BROWSER: bs.browserName, VITEST_BROWSER_VERSION: bs.browserVersion},
+      };
+    });
   },
 
   getArgModules() {
@@ -69,17 +164,12 @@ module.exports = {
     }
 
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
-    Object.keys(submodules).forEach(parentModule => {
-      if (
-        !modules.includes(parentModule) &&
-        modules.some(module => submodules[parentModule].includes(module))
-      ) {
-        modules.unshift(parentModule);
-      }
-    });
-
+    new Set(
+      modules.map(getParentModule).filter(module => module != null && !modules.includes(module))
+    ).forEach((module => modules.unshift(module)));
     return modules;
   },
+  getParentModule,
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;
@@ -127,7 +217,7 @@ module.exports = {
     }, internalModules));
   }),
   getMetadataEntry(moduleName) {
-    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
+    if (fs.existsSync(`./metadata/modules/${moduleName}.json`)) {
       return `${moduleName}.metadata`;
     } else {
       return null;
@@ -139,6 +229,14 @@ module.exports = {
 
   getPrecompiledPath(filePath) {
     return path.resolve(filePath ? path.join(PRECOMPILED_PATH, filePath) : PRECOMPILED_PATH)
+  },
+
+  getCreativeRendererPath(renderer) {
+    let path = 'creative-renderers';
+    if (renderer != null) {
+      path = `${path}/${renderer}.js`;
+    }
+    return this.getPrecompiledPath(path);
   },
 
   getBuiltModules: function(dev, externalModules) {
@@ -164,10 +262,13 @@ module.exports = {
 
   nameModules: function(externalModules) {
     var modules = this.getModules(externalModules);
-    return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
-      this.push(file);
-      done();
+    return new Transform({
+      objectMode: true,
+      transform(file, enc, done) {
+        file.named = modules[file.path] ? modules[file.path] : 'prebid';
+        this.push(file);
+        done();
+      }
     })
   },
 
@@ -226,5 +327,7 @@ module.exports = {
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
-  }
+  },
+  argv,
+  BOOLEAN_OPTIONS
 };

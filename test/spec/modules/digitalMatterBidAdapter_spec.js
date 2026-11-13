@@ -1,7 +1,7 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/digitalMatterBidAdapter';
-import {config} from '../../../src/config.js';
-import {deepClone} from '../../../src/utils.js';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/digitalMatterBidAdapter';
+import { config } from '../../../src/config.js';
+import { deepClone } from '../../../src/utils.js';
 
 const bid = {
   'adUnitCode': 'adUnitCode',
@@ -86,7 +86,7 @@ describe('Digital Matter BidAdapter', function () {
 
     it('should send info about device', function () {
       config.setConfig({
-        device: {w: 1920, h: 1080}
+        device: { w: 1920, h: 1080 }
       });
       const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
@@ -108,10 +108,10 @@ describe('Digital Matter BidAdapter', function () {
     });
 
     it('should send currency if defined', function () {
-      config.setConfig({currency: {adServerCurrency: 'EUR'}});
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
       const request = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
 
-      assert.deepEqual(request.cur, [{adServerCurrency: 'EUR'}]);
+      assert.deepEqual(request.cur, [{ adServerCurrency: 'EUR' }]);
     });
 
     it('should pass supply chain object', function () {
@@ -247,7 +247,7 @@ describe('Digital Matter BidAdapter', function () {
       assert.deepEqual(bids[0].width, firstResponse.width);
       assert.deepEqual(bids[0].height, firstResponse.height);
       assert.deepEqual(bids[0].dealId, undefined);
-      assert.deepEqual(bids[0].meta.advertiserDomains, [ 'advertiser.org' ]);
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['advertiser.org']);
 
       assert.deepEqual(bids[1].requestId, secondResponse.bidid);
       assert.deepEqual(bids[1].cpm, secondResponse.cpm);
@@ -258,7 +258,7 @@ describe('Digital Matter BidAdapter', function () {
       assert.deepEqual(bids[1].width, secondResponse.width);
       assert.deepEqual(bids[1].height, secondResponse.height);
       assert.deepEqual(bids[1].dealId, undefined);
-      assert.deepEqual(bids[1].meta.advertiserDomains, [ 'advertiser.org' ]);
+      assert.deepEqual(bids[1].meta.advertiserDomains, ['advertiser.org']);
     });
   });
 

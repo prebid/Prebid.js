@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getBidIdParameter} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getBidIdParameter } from '../src/utils.js';
 
 const BIDDER_CODE = 'orbitsoft';
 const styleParamsMap = {
@@ -98,7 +98,7 @@ export const spec = {
         method: 'POST',
         url: requestUrl,
         data: requestData,
-        options: {withCredentials: false},
+        options: { withCredentials: false },
         bidRequest: bidRequest
       });
     }

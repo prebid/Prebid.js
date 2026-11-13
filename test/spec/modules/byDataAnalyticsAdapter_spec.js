@@ -1,6 +1,7 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
-import {EVENTS} from 'src/constants.js';
+import { EVENTS } from 'src/constants.js';
+import { server } from 'test/mocks/xhr.js';
 
 const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
@@ -36,11 +37,11 @@ const noBidArgs = {
   bidId: '14480e9832f2d2b',
   bidder: 'appnexus',
   bidderRequestId: '13b87b6c20d3636',
-  mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+  mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
   sizes: [[300, 250], [250, 250]],
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
-}
+};
 const bidWonArgs = {
   auctionId,
   adUnitCode: 'div-gpt-ad-mrec1',
@@ -51,15 +52,15 @@ const bidWonArgs = {
   currency: 'USD',
   mediaType: 'display',
   cpm: 0.50
-}
+};
 
 const auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
   adUnits: [{
     code: 'div-gpt-ad-mrec1',
-    mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+    mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
     sizes: [[300, 250], [250, 250]],
-    bids: [{bidder: 'appnexus', params: {placementId: '19305195'}}],
+    bids: [{ bidder: 'appnexus', params: { placementId: '19305195' } }],
     transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
   }],
   auctionEnd: 1627973487504,
@@ -80,18 +81,18 @@ const auctionEndArgs = {
         bidder: 'appnexus',
         bidderRequestId: '13b87b6c20d3636',
         src: 'client',
-        mediaTypes: {banner: {sizes: [[300, 250], [250, 250]]}},
+        mediaTypes: { banner: { sizes: [[300, 250], [250, 250]] } },
         sizes: [[300, 250], [250, 250]],
         transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
       }
     ]
   }]
-}
+};
 const expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
   as: 1627973484504,
-  auctionData: [ {
+  auctionData: [{
     au: 'div-gpt-ad-mrec1',
     auc: 'div-gpt-ad-mrec1',
     aus: '300x250',
@@ -114,7 +115,7 @@ const expectedDataArgs = {
     iwb: 0,
     mt: 'display',
   }]
-}
+};
 const expectedBidWonArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
@@ -137,7 +138,7 @@ const expectedBidWonArgs = {
     iwb: 1,
     mt: 'display',
   }]
-}
+};
 
 describe('byData Analytics Adapter ', () => {
   beforeEach(() => {
@@ -156,7 +157,7 @@ describe('byData Analytics Adapter ', () => {
       ascAdapter.track.restore();
     });
     it('should init with correct options', function () {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
@@ -169,24 +170,89 @@ describe('byData Analytics Adapter ', () => {
 
   describe('track-events', function () {
     before(() => {
-      ascAdapter.enableAnalytics(initOptions)
+      ascAdapter.enableAnalytics(initOptions);
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
         provider: 'bydata',
         options: initOptions
       });
     });
-    it('sends and formatted auction data ', function () {
+    function sentValues() {
+      return server.requests
+        .filter(req => req.url === 'https://pbjs-stream.bydata.com/topics/prebid')
+        .map(req => JSON.parse(req.requestBody).records[0].value);
+    }
+    // crypto.subtle needs a secure context, which BrowserStack's http://bs-local.com page is not
+    const secureIt = window.isSecureContext ? it : () => {};
+
+    secureIt('sends and formatted auction data ', async function () {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
-      events.emit(EVENTS.BID_WON, bidWonArgs)
-      var userToken = ascAdapter.getVisitorData(userData);
+      events.emit(EVENTS.BID_WON, bidWonArgs);
+      var userToken = await ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);
       newAuData['visitor_data'] = userToken;
       newBwData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedDataArgs);
       expect(newBwData).to.deep.equal(expectedBidWonArgs);
+    });
+
+    secureIt('waits for signing and snapshots each outgoing payload', async function () {
+      const tokenPromise = ascAdapter.getVisitorData(userData);
+      const first = { aid: 'first-auction', auctionData: [{ bid: 'first-bid' }] };
+      const firstSend = ascAdapter.sendPayload(first);
+      first.aid = 'second-auction';
+      first.auctionData[0].bid = 'second-bid';
+      const secondSend = ascAdapter.sendPayload(first);
+
+      const sent = () => sentValues().filter(value => ['first-auction', 'second-auction'].includes(value.aid));
+      expect(sent()).to.have.length(0);
+      const token = await tokenPromise;
+      await Promise.all([firstSend, secondSend]);
+
+      expect(token).to.equal(expectedDataArgs.visitor_data);
+      const values = sent();
+      expect(values).to.have.length(2);
+      expect(values[0]).to.deep.equal({
+        aid: 'first-auction', auctionData: [{ bid: 'first-bid' }], visitor_data: token
+      });
+      expect(values[1]).to.deep.equal({
+        aid: 'second-auction', auctionData: [{ bid: 'second-bid' }], visitor_data: token
+      });
+    });
+
+    secureIt('retries signing after a failure', async function () {
+      const sent = () => sentValues().filter(value => value.aid === 'retry-auction');
+      const importKey = sinon.stub(window.crypto.subtle, 'importKey').rejects(new Error('fail'));
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'retry-auction' });
+        expect(sent()).to.have.length(0);
+      } finally {
+        importKey.restore();
+      }
+      await ascAdapter.sendPayload({ aid: 'retry-auction' });
+      expect(sent()).to.have.length(1);
+      expect(sent()[0].visitor_data).to.be.a('string');
+    });
+
+    it('does not retry signing when Web Crypto is unavailable', async function () {
+      const subtle = window.crypto.subtle && sinon.stub(window.crypto, 'subtle').get(() => undefined);
+      const getVisitorData = sinon.spy(ascAdapter, 'getVisitorData');
+      try {
+        await ascAdapter.getVisitorData(userData).catch(() => {});
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        await ascAdapter.sendPayload({ aid: 'no-crypto-auction' });
+        expect(getVisitorData.callCount).to.equal(1);
+        expect(sentValues().filter(value => value.aid === 'no-crypto-auction')).to.have.length(0);
+      } finally {
+        getVisitorData.restore();
+        if (subtle) {
+          subtle.restore();
+          await ascAdapter.getVisitorData(userData);
+        }
+      }
     });
   });
 });

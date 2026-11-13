@@ -9,15 +9,15 @@ import {
   parseUrl,
   safeJSONEncode,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
+import { config } from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {BID_STATUS, EVENTS, REJECTION_REASON, S2S, TARGETING_KEYS} from '../src/constants.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
-import {getPriceByGranularity} from '../src/auction.js';
-import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
-import {registerVastTrackers} from '../libraries/vastTrackers/vastTrackers.js';
+import { BID_STATUS, EVENTS, REJECTION_REASON, S2S, TARGETING_KEYS } from '../src/constants.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { ajax } from '../src/ajax.js';
+import { getPriceByGranularity } from '../src/auction.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import { registerVastTrackers } from '../libraries/vastTrackers/vastTrackers.js';
 import {
   filterBidsListByFilters,
   findBidObj,
@@ -33,7 +33,7 @@ import {
   getLoggingPayload,
   shouldLogAPPR
 } from '../libraries/medianetUtils/logger.js';
-import {KeysMap} from '../libraries/medianetUtils/logKeys.js';
+import { KeysMap } from '../libraries/medianetUtils/logKeys.js';
 import {
   LOGGING_DELAY,
   BID_FLOOR_REJECTED,
@@ -64,7 +64,8 @@ import {
   WINNING_AUCTION_MISSING_ERROR,
   WINNING_BID_ABSENT_ERROR, ERROR_IWB_BID_MISSING, POST_ENDPOINT_RA
 } from '../libraries/medianetUtils/constants.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getSlotTargeting, getSlotTargetingKeys } from '../src/utils/gptTargeting.js';
 
 // General Constants
 const ADAPTER_CODE = 'medianetAnalytics';
@@ -109,7 +110,7 @@ function fetchAnalyticsConfig() {
     return `${CONFIG_URL}?${(formatQS({
       cid: mnetGlobals.configuration.cid,
       dn: mnetGlobals.refererInfo.domain
-    }))}`
+    }))}`;
   }
 
   // Debugging and default settings
@@ -134,6 +135,9 @@ function fetchAnalyticsConfig() {
 }
 
 function initConfiguration(eventType, configuration) {
+  if (mnetGlobals.initialized) {
+    return;
+  }
   mnetGlobals.refererInfo = getRefererInfo();
   // Holds configuration details
   mnetGlobals.configuration = {
@@ -148,6 +152,7 @@ function initConfiguration(eventType, configuration) {
     loggingDelay: LOGGING_DELAY,
     ...configuration.options,
   };
+  mnetGlobals.initialized = true;
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.SETUP_LISTENERS, mnetGlobals.configuration);
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.FETCH_CONFIG, mnetGlobals.configuration);
 }
@@ -178,16 +183,13 @@ function getErrorTracker(bidResponse, error) {
     bidder: bidResponse.bidderCode || bidResponse.adapterCode,
     context: bidResponse.context,
   };
-  return [
-    {
-      event: 'impressions',
-      url: errorLogger('vast_tracker_handler_' + error, stack).getUrl(),
-    },
-  ];
+  return {
+    impression: [errorLogger('vast_tracker_handler_' + error, stack).getUrl()]
+  };
 }
 
 function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
-  if (!config.getConfig('cache')?.url) return [];
+  if (!config.getConfig('cache')?.url) return null;
   try {
     if (auction) {
       mnetGlobals.eventQueue.enqueueEvent(EVENTS.AUCTION_INIT, auction);
@@ -207,20 +209,17 @@ function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
     }
     const context = auctionObject.adSlots[bidRequestObj?.adUnitCode]?.context;
     if (context !== VIDEO_CONTEXT.INSTREAM) {
-      return [];
+      return null;
     }
     bidRequestObj.status = VIDEO_UUID_PENDING;
     const { validBidResponseObj } = processBidResponse(auctionObject, bidRequestObj, bidResponse);
     const queryParams = getQueryString(auctionObject, bidRequestObj.adUnitCode, LOG_RA, validBidResponseObj);
-    return [
-      {
-        event: 'impressions',
-        url: `${GET_ENDPOINT_RA}?${getLoggingPayload(queryParams, LOG_RA)}`,
-      },
-    ];
+    return {
+      impression: [`${GET_ENDPOINT_RA}?${getLoggingPayload(queryParams, LOG_RA)}`]
+    };
   } catch (e) {
     errorLogger('vast_tracker_handler_error', e).send();
-    return [];
+    return null;
   }
 }
 
@@ -284,7 +283,7 @@ function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
 
   auctionObj.bidsRequested
     .forEach((bid) => {
-      if (bid.adUnitCode !== adUnitCode) return
+      if (bid.adUnitCode !== adUnitCode) return;
       const emptySizes = bid.sizes.filter(
         (size) => !deepAccess(receivedResponse, `${bid.bidId}.${size}`)
       );
@@ -365,7 +364,7 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
     if (fromSameAuction && !winningBidObj) {
       errorLogger(ERROR_IWB_BID_MISSING, pick(winner, ['adId', 'auctionId', 'bidder', 'requestId', 'cpm', 'adUnitCode'])).send();
     }
-  }
+  };
 
   Object.keys(auctionObj.adSlots).forEach((adUnitCode) => {
     const winner = getGlobal().getHighestCpmBids(adUnitCode)[0];
@@ -393,10 +392,13 @@ function addS2sInfo(auctionObj, bidderRequests) {
     bidderRequest.bids.forEach((bidRequest) => {
       if (bidRequest.src !== S2S.SRC) return;
 
-      const bidObjs = filterBidsListByFilters(auctionObj.bidsReceived, {bidId: bidRequest.bidId});
+      const bidObjs = filterBidsListByFilters(auctionObj.bidsReceived, { bidId: bidRequest.bidId });
 
       bidObjs.forEach((bidObj) => {
         bidObj.serverLatencyMillis = bidderRequest.serverResponseTimeMs;
+        bidObj.pbsExt = Object.fromEntries(
+          Object.entries(bidderRequest.pbsExt || {}).filter(([key]) => key !== 'debug')
+        );
         const serverError = deepAccess(bidderRequest, `serverErrors.0`);
         if (serverError && bidObj.status !== BID_SUCCESS) {
           bidObj.status = PBS_ERROR_STATUS_START + serverError.code;
@@ -498,8 +500,8 @@ function getDfpCurrencyInfo(bidResponse) {
   // dfpBd
   let dfpbd = deepAccess(adserverTargeting, `${TARGETING_KEYS.PRICE_BUCKET}`);
   if (!dfpbd) {
-    const priceGranularityKey = getPriceByGranularity(bidResponse);
-    dfpbd = bidResponse[priceGranularityKey] || bidResponse.cpm;
+    const priceGetter = getPriceByGranularity();
+    dfpbd = priceGetter(bidResponse) || bidResponse.cpm;
   }
   if (currency !== 'USD' && dfpbd) {
     dfpbd = convertCurrency(dfpbd, currency, 'USD');
@@ -552,10 +554,9 @@ function setupSlotResponseReceivedListener() {
         mnetGlobals.infoByAdIdMap[adId] = mnetGlobals.infoByAdIdMap[adId] || {};
         mnetGlobals.infoByAdIdMap[adId].srrEvt = slotInf;
       };
-
-      slot.getTargetingKeys()
+      getSlotTargetingKeys(slot)
         .filter((key) => key.startsWith(TARGETING_KEYS.AD_ID))
-        .forEach((key) => setSlotResponseInf(slot.getTargeting(key)[0]));
+        .forEach((key) => setSlotResponseInf(getSlotTargeting(slot, key)[0]));
     });
   });
 }
@@ -566,10 +567,10 @@ const eventQueue = () => {
     if (mnetGlobals.configuration.debug) {
       logInfo(eventType, args);
     }
-    processEventQueue(eventType, args);
+    process(eventType, args);
   }
 
-  function processEventQueue(eventType, args) {
+  function process(eventType, args) {
     try {
       const handler = eventListeners[eventType];
       if (!handler) {
@@ -581,9 +582,14 @@ const eventQueue = () => {
     }
   }
 
+  function clear() {
+    mnetGlobals.logsQueue = [];
+    mnetGlobals.errorQueue = [];
+  }
+
   return {
     enqueueEvent,
-    processEventQueue,
+    clear,
   };
 };
 
@@ -619,7 +625,10 @@ function auctionInitHandler(eventType, auction) {
     });
 
   // addUidData
-  const userIds = deepAccess(auction.bidderRequests, '0.bids.0.userId');
+  let userIds;
+  if (typeof getGlobal().getUserIds === 'function') {
+    userIds = getGlobal().getUserIds();
+  }
   if (isPlainObject(userIds)) {
     const enabledUids = mnetGlobals.configuration.enabledUids || [];
     auctionObj.availableUids = Object.keys(userIds).sort();
@@ -779,11 +788,14 @@ function bidderDoneHandler(eventType, args) {
 }
 
 function adRenderFailedHandler(eventType, args) {
-  const {reason, message, bid: {
-    auctionId,
-    adUnitCode,
-    bidder,
-    creativeId}} = args;
+  const {
+    reason, message, bid: {
+      auctionId,
+      adUnitCode,
+      bidder,
+      creativeId
+    }
+  } = args;
   errorLogger(eventType, {
     reason,
     message,
@@ -795,7 +807,7 @@ function adRenderFailedHandler(eventType, args) {
 }
 
 function adRenderSucceededHandler(eventType, args) {
-  const {bid: {auctionId, adUnitCode, bidder, creativeId}} = args;
+  const { bid: { auctionId, adUnitCode, bidder, creativeId } } = args;
   errorLogger(eventType, {
     auctionId,
     adUnitCode,
@@ -850,8 +862,7 @@ const medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), 
   },
 
   clearlogsQueue() {
-    mnetGlobals.logsQueue = [];
-    mnetGlobals.errorQueue = [];
+    eventQueue().clear();
     mnetGlobals.auctions = {};
   },
 
@@ -865,7 +876,15 @@ function setupListeners() {
   registerVastTrackers(MODULE_TYPE_ANALYTICS, ADAPTER_CODE, vastTrackerHandler);
 }
 
-medianetAnalytics.originEnableAnalytics = medianetAnalytics.enableAnalytics;
+medianetAnalytics.originalDisableAnalytics = medianetAnalytics.disableAnalytics;
+medianetAnalytics.disableAnalytics = function () {
+  getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
+  getGlobal().medianetGlobals.analyticsEnabled = false;
+  eventQueue().clear();
+  medianetAnalytics.originalDisableAnalytics();
+};
+
+medianetAnalytics.originalEnableAnalytics = medianetAnalytics.enableAnalytics;
 medianetAnalytics.enableAnalytics = function (configuration) {
   if (!configuration || !configuration.options || !configuration.options.cid) {
     logError('Media.net Analytics adapter: cid is required.');
@@ -877,7 +896,7 @@ medianetAnalytics.enableAnalytics = function (configuration) {
   mnetGlobals.eventQueue = eventQueue();
   mnetGlobals.eventQueue.enqueueEvent(LoggingEvents.CONFIG_INIT, configuration);
   configuration.options.sampling = 1;
-  medianetAnalytics.originEnableAnalytics(configuration);
+  medianetAnalytics.originalEnableAnalytics(configuration);
 };
 
 adapterManager.registerAnalyticsAdapter({

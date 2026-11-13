@@ -29,7 +29,7 @@ export const spec = {
   ),
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const data = converter.toORTB({bidRequests, bidderRequest});
+    const data = converter.toORTB({ bidRequests, bidderRequest });
     return {
       method: 'POST',
       url: 'https://bid.contextweb.com/header/ortb?src=prebid',
@@ -40,7 +40,7 @@ export const spec = {
 
   interpretResponse: (response, request) => {
     if (response.body) {
-      return converter.fromORTB({response: response.body, request: request.data}).bids;
+      return converter.fromORTB({ response: response.body, request: request.data }).bids;
     }
     return [];
   },

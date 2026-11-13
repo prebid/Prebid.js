@@ -4,13 +4,15 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('./resetdigitalBidAdapter.d.ts').ResetdigitalBidParams} ResetdigitalBidParams
+ */
+
 const BIDDER_CODE = 'resetdigital';
-const GVLID = 1162;
 const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
@@ -58,7 +60,8 @@ export const spec = {
       return result;
     }
 
-    const userIds = extractUserIdsFromEids(bidderRequest.userIdAsEids);
+    const userEids = validBidRequests[0]?.userIdAsEids || [];
+    const userIds = extractUserIdsFromEids(userEids);
 
     const payload = {
       start_time: timestamp(),
@@ -74,6 +77,12 @@ export const spec = {
       user_ids: userIds,
       sync_limit: spb,
     };
+
+    if (userEids.length) {
+      payload.user = {
+        eids: deepClone(userEids),
+      };
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {
@@ -132,7 +141,7 @@ export const spec = {
         }
       }
 
-      let paramsKeywords = req.params.keywords;
+      let paramsKeywords;
       if (typeof req.params.keywords === 'string') {
         paramsKeywords = req.params.keywords.split(',');
       } else if (Array.isArray(req.params.keywords)) {
@@ -161,9 +170,13 @@ export const spec = {
         imp_id: req.bidId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: bidderRequest.ortb2?.regs?.coppa === 1 ? 1 : 0,
         media_types: deepAccess(req, 'mediaTypes'),
       });
+    }
+
+    if (bidderRequest?.ortb2?.source?.ext?.schain) {
+      payload.schain = bidderRequest.ortb2.source.ext.schain;
     }
 
     const params = validBidRequests[0].params;
@@ -212,10 +225,9 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    // Sync regardless of the bid response: a no-bid (HTTP 204, empty body) must
+    // still trigger a sync, otherwise users we never bid on never get matched.
     const syncs = [];
-    if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
 
     let gdprParams = '';
     if (gdprConsent) {

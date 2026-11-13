@@ -25,7 +25,7 @@ const converter = ortbConverter({
         sourceId: bidRequest.params.sourceId,
         host: bidRequest.params.host || DEFAULT_HOST,
       }
-    }
+    };
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {

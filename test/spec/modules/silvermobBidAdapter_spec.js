@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {spec} from '../../../modules/silvermobBidAdapter.js';
+import { spec } from '../../../modules/silvermobBidAdapter.js';
 import 'modules/priceFloors.js';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
@@ -41,7 +41,7 @@ const SIMPLE_BID_REQUEST = {
     gdprApplies: true,
     addtlConsent: '1~1.35.41.101',
   },
-}
+};
 
 const BANNER_BID_REQUEST = {
   bidder: 'silvermob',
@@ -64,7 +64,7 @@ const BANNER_BID_REQUEST = {
   transactionId: 'test-transactionId-1',
   code: 'banner_example',
   timeout: 1000,
-}
+};
 
 const VIDEO_BID_REQUEST = {
   placementCode: '/DfpAccount1/slotVideo',
@@ -92,7 +92,7 @@ const VIDEO_BID_REQUEST = {
   auctionId: 'test-auction-1',
   transactionId: 'test-transactionId-1',
   timeout: 1000,
-}
+};
 
 const NATIVE_BID_REQUEST = {
   code: 'native_example',
@@ -151,7 +151,7 @@ const gdprConsent = {
   vendorData: { purpose: { consents: { 1: true } } },
   gdprApplies: true,
   addtlConsent: '1~1.35.41.101',
-}
+};
 
 describe('silvermobAdapter', function () {
   const adapter = newBidder(spec);
@@ -181,7 +181,7 @@ describe('silvermobAdapter', function () {
     });
 
     it('should send the CCPA data in the request', async function () {
-      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({...bidderRequest, ...{uspConsent: '1YYY'}}));
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], await addFPDToBidderRequest({ ...bidderRequest, ...{ uspConsent: '1YYY' } }));
       expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
     });
   });
@@ -239,13 +239,14 @@ describe('silvermobAdapter', function () {
       const request = spec.buildRequests([NATIVE_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
       expect(request.data.imp[0]).to.be.an('object');
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     let bidRequests, bidderRequest;
     beforeEach(function () {
       bidRequests = [{
         'bidId': '28ffdk2B952532',
+        'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
         'bidder': 'silvermob',
         'userId': {
           'freepassId': {
@@ -267,15 +268,16 @@ describe('silvermobAdapter', function () {
       const response = spec.interpretResponse(emptyResponse, BANNER_BID_REQUEST);
 
       expect(response).to.be.an('array').that.is.empty;
-    })
+    });
 
-    it('Should interpret banner response', function () {
+    it('Should interpret banner response', async function () {
       const serverResponse = {
         body: {
           'cur': 'USD',
           'seatbid': [{
             'bid': [{
               'impid': '28ffdk2B952532',
+              'mtype': 1,
               'price': 97,
               'adm': '<iframe src=\'http://127.0.0.1:8081/banner.html?w=300&h=250&cr=0\' width=\'300\' height=\'250\' style=\'border:none;\'></iframe>',
               'w': 300,
@@ -285,19 +287,17 @@ describe('silvermobAdapter', function () {
           }]
         }
       };
-      it('should interpret server response', async function () {
-        const bidRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
-        const bids = spec.interpretResponse(serverResponse, bidRequest);
-        expect(bids).to.be.an('array');
-        const bid = bids[0];
-        expect(bid).to.be.an('object');
-        expect(bid.currency).to.equal('USD');
-        expect(bid.cpm).to.equal(97);
-        expect(bid.ad).to.equal(ad)
-        expect(bid.width).to.equal(300);
-        expect(bid.height).to.equal(250);
-        expect(bid.creativeId).to.equal('creative0');
-      });
-    })
+      const bidRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const bids = spec.interpretResponse(serverResponse, bidRequest);
+      expect(bids).to.be.an('array');
+      const bid = bids[0];
+      expect(bid).to.be.an('object');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.cpm).to.equal(97);
+      expect(bid.ad).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('creative0');
+    });
   });
 });

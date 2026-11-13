@@ -98,7 +98,7 @@ export const spec = {
       var sAd = oResponse.ad || '';
       var sAdomains = oResponse.adomains || [];
 
-      if (request && sRequestID.length == 0) {
+      if (request && sRequestID.length === 0) {
         logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
         sRequestID = request.data.bid_id || '';
       }

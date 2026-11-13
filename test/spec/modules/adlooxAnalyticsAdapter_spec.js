@@ -36,14 +36,10 @@ describe('Adloox Analytics Adapter', function () {
     params: {
       dummy1: '%%client%%',
       dummy2: '%%pbadslot%%',
-      dummy3: function(bid) { throw new Error(esplode) }
+      dummy3: function(bid) { throw new Error(esplode); }
     }
   };
 
-  adapterManager.registerAnalyticsAdapter({
-    code: analyticsAdapterName,
-    adapter: analyticsAdapter
-  });
   describe('enableAnalytics', function () {
     afterEach(function () {
       analyticsAdapter.disableAnalytics();
@@ -112,7 +108,7 @@ describe('Adloox Analytics Adapter', function () {
         done();
       });
 
-      [ 'client', 'clientid', 'platformid', 'tagid' ].forEach(function (o) {
+      ['client', 'clientid', 'platformid', 'tagid'].forEach(function (o) {
         it('should require options.' + o, function (done) {
           const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
           delete analyticsOptionsLocal[o];
@@ -200,7 +196,7 @@ describe('Adloox Analytics Adapter', function () {
 
         events.emit(EVENTS.BID_WON, bid);
 
-        const [urlInserted, _, moduleCode] = loadExternalScriptStub.getCall(0).args;
+        const [urlInserted, , moduleCode] = loadExternalScriptStub.getCall(0).args;
 
         expect(urlInserted.substr(0, url.length)).to.equal(url);
         expect(moduleCode).to.equal(analyticsAdapterName);
@@ -253,7 +249,7 @@ describe('Adloox Analytics Adapter', function () {
         const data = {
           url: 'https://example.com?',
           args: [
-            [ 'client', '%%client%%' ]
+            ['client', '%%client%%']
           ],
           bid: bid,
           ids: true

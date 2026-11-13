@@ -1,11 +1,11 @@
-import {config} from '../src/config.js';
-import {deepClone, logWarn} from '../src/utils.js';
-import {normalizeFPD} from '../src/fpd/normalize.js';
-import type {ORTBRequest} from "../src/types/ortb/request";
+import { config } from '../src/config.js';
+import { deepClone, logWarn } from '../src/utils.js';
+import { normalizeFPD } from '../src/fpd/normalize.js';
+import type { ORTBRequest } from "../src/types/ortb/request";
 
 export type SchainConfig = {
   config: ORTBRequest['source']['schain'];
-}
+};
 
 declare module '../src/config' {
   interface Config {
@@ -32,7 +32,7 @@ export function applySchainConfig(ortb2Fragments) {
     if (!ortb2Fragments?.global?.source?.schain) {
       applySchainToPath(ortb2Fragments, 'global.source', globalSchainConfig.config);
     } else {
-      logWarn('Disregarding global schain config as schain is already provided in FPD')
+      logWarn('Disregarding global schain config as schain is already provided in FPD');
     }
   }
 
@@ -73,4 +73,4 @@ function applySchainToPath(fragments, path, schainConfig) {
 normalizeFPD.before((next, ortb2Fragments) => {
   applySchainConfig(ortb2Fragments);
   next(ortb2Fragments);
-})
+});

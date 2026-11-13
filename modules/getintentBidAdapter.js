@@ -1,4 +1,4 @@
-import {getBidIdParameter, isFn, isInteger, logError} from '../src/utils.js';
+import { getBidIdParameter, isFn, isInteger, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**

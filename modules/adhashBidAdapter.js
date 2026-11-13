@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getWinDimensions } from '../src/utils.js';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -117,7 +118,7 @@ function brandSafety(badWords, maxScore) {
     let score = 0;
     const decodedUrl = decodeURI(window.top.location.href.substring(window.top.location.origin.length));
     const wordsAndNumbersInUrl = decodedUrl
-      .replaceAll(/[-,\._/\?=&#%]/g, ' ')
+      .replaceAll(/[-,._/?=&#%]/g, ' ')
       .replaceAll(/\s\s+/g, ' ')
       .toLowerCase()
       .trim();
@@ -126,7 +127,9 @@ function brandSafety(badWords, maxScore) {
     const regexp = new RegExp('[\\p{L}]+', 'gu');
     const wordsMatched = content.match(regexp);
     const words = wordsMatched.join(`${delimiter}${delimiter}`);
-    const wordsInUrl = wordsAndNumbersInUrl.match(regexp).join(`${delimiter}${delimiter}`);
+    // a URL path with no letters (such as a home page, `/`) has no words to check, rather than skipping the content
+    // checks below
+    const wordsInUrl = (wordsAndNumbersInUrl.match(regexp) || []).join(`${delimiter}${delimiter}`);
 
     for (const [word, rule, points] of badWords) {
       const decodedWord = rot13(word.toLowerCase());
@@ -153,7 +156,7 @@ function brandSafety(badWords, maxScore) {
 
 export const spec = {
   code: ADHASH_BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     try {
@@ -174,15 +177,8 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
-    const body = document.body;
-    const html = document.documentElement;
-    const pageHeight = Math.max(
-      body.scrollHeight,
-      body.offsetHeight,
-      html.clientHeight,
-      html.scrollHeight,
-      html.offsetHeight
-    );
+    const { body, documentElement: html } = getWinDimensions(window).document;
+    const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
     const pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -298,7 +294,7 @@ export const spec = {
         advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
       }
     };
-    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
+    if (typeof request === 'object' && typeof request.bidRequest === 'object' && typeof request.bidRequest.mediaTypes === 'object' && Object.keys(request.bidRequest.mediaTypes).includes(BANNER)) {
       response = Object.assign({
         ad:
         `<div id="${oneTimeId}"></div>

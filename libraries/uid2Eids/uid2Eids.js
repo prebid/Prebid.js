@@ -11,4 +11,4 @@ export const UID2_EIDS = {
       }
     }
   }
-}
+};

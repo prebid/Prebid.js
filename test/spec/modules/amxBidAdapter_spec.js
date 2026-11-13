@@ -7,6 +7,8 @@ import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
+import { getGlobalVarName } from '../../../src/buildOptions.js';
+
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = `<script src='https://assets.a-mo.net/tmode.v1.js'></script>`;
 const sampleDisplayCRID = '78827819';
@@ -119,9 +121,7 @@ const sampleBidRequestVideo = {
   mediaTypes: {
     [VIDEO]: {
       sizes: [[360, 250]],
-      context: 'adpod',
-      adPodDurationSec: 90,
-      contentMode: 'live',
+      context: 'video'
     },
   },
 };
@@ -261,7 +261,7 @@ describe('AmxBidAdapter', () => {
         sampleBidderRequest
       );
       expect(prebidVersion).to.equal('$prebid.version$');
-      expect(prebidGlobal).to.equal('$$PREBID_GLOBAL$$');
+      expect(prebidGlobal).to.equal(getGlobalVarName());
     });
 
     it('reads test mode from the first bid request', () => {
@@ -302,7 +302,7 @@ describe('AmxBidAdapter', () => {
           ref: 'http://search-traffic-source.com',
         },
       });
-      expect(data.do).to.equal('localhost');
+      expect(data.do).to.equal(window.location.hostname);
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
@@ -393,6 +393,23 @@ describe('AmxBidAdapter', () => {
               bidders: ['amx'],
             },
             iframe: {
+              bidders: '*',
+              filter: 'include',
+            },
+          },
+          { ...base, t: 3 },
+        ],
+        [
+          {
+            all: {
+              bidders: ['amx'],
+            },
+          },
+          { ...base, t: 3 },
+        ],
+        [
+          {
+            all: {
               bidders: '*',
               filter: 'include',
             },
@@ -541,9 +558,7 @@ describe('AmxBidAdapter', () => {
         sc: schainConfig,
         vd: {
           sizes: [[360, 250]],
-          context: 'adpod',
-          adPodDurationSec: 90,
-          contentMode: 'live',
+          context: 'video',
         },
         tf: 0,
         f: 0.5,
@@ -803,7 +818,7 @@ describe('AmxBidAdapter', () => {
       const { c: common, e: events } = JSON.parse(request.requestBody);
       expect(common).to.deep.equal({
         V: '$prebid.version$',
-        vg: '$$PREBID_GLOBAL$$',
+        vg: getGlobalVarName(),
         U: null,
         re: 'https://example.com',
       });
@@ -816,6 +831,27 @@ describe('AmxBidAdapter', () => {
       expect(event.cn).to.equal(300);
       expect(event.bid).to.equal('test-bid-id');
       expect(event.a).to.equal('div-gpt-ad');
+    });
+
+    it('will report a timeout under the custom adUnitId, as the bid request does', () => {
+      spec.onTimeout([
+        {
+          bidder: 'example',
+          bidId: 'test-bid-id',
+          adUnitCode: 'div-gpt-ad',
+          params: {
+            tagId: 'tag-id',
+            adUnitId: 'custom-auid',
+          },
+          timeout: 300,
+          auctionId: utils.getUniqueIdentifierStr(),
+        },
+      ]);
+
+      const [request] = server.requests;
+      request.respond(204, { 'Content-Type': 'text/html' }, null);
+      const { e: [event] } = JSON.parse(request.requestBody);
+      expect(event.a).to.equal('custom-auid');
     });
 
     it('will log an event for prebid win', () => {

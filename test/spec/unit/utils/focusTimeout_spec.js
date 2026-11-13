@@ -1,4 +1,4 @@
-import {setFocusTimeout, reset} from '../../../../src/utils/focusTimeout.js';
+import { setFocusTimeout, reset } from '../../../../src/utils/focusTimeout.js';
 
 export const setDocumentHidden = (hidden) => {
   Object.defineProperty(document, 'hidden', {
@@ -12,14 +12,14 @@ describe('focusTimeout', () => {
   let clock, callback;
 
   beforeEach(() => {
-    reset()
+    reset();
     clock = sinon.useFakeTimers();
     callback = sinon.spy();
   });
 
   afterEach(() => {
     clock.restore();
-  })
+  });
 
   it('should invoke callback when page is visible', () => {
     setFocusTimeout(callback, 2000);
@@ -34,7 +34,7 @@ describe('focusTimeout', () => {
     setFocusTimeout(callback, 1000);
     clock.tick(1000);
     sinon.assert.called(callback);
-  })
+  });
 
   it('should not invoke callback if page was hidden', () => {
     setFocusTimeout(callback, 2000);
@@ -72,7 +72,7 @@ describe('focusTimeout', () => {
     sinon.assert.notCalled(callback);
     clock.tick(1000);
     sinon.assert.called(callback);
-  })
+  });
 
   it('should return updated timerId after page was showed again', () => {
     const getCurrentTimerId = setFocusTimeout(callback, 4000);

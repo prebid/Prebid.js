@@ -32,12 +32,12 @@ const bidWonObject = {};
 let initOptions = {};
 
 function postAjax(url, data) {
-  ajax(url, function () {}, data, {contentType: 'application/json', method: 'POST'});
+  ajax(url, function () {}, data, { contentType: 'application/json', method: 'POST' });
 }
 
 function handleInitSizes(adUnits) {
   return adUnits.map(function (adUnit) {
-    return adUnit.sizes.toString() || ''
+    return adUnit.sizes.toString() || '';
   });
 }
 

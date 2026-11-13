@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {idxIdSubmodule, storage} from 'modules/idxIdSystem.js';
+import { expect } from 'chai';
+import { idxIdSubmodule, storage } from 'modules/idxIdSystem.js';
 import 'src/prebid.js';
 
 const IDX_COOKIE_NAME = '_idx';
@@ -42,7 +42,7 @@ describe('IDx ID System', () => {
     it('returns undefined if both cookie and local storage are empty', () => {
       const idx = idxIdSubmodule.getId();
       expect(idx).to.be.undefined;
-    })
+    });
   });
 
   describe('IDx: test "decode" method', () => {

@@ -5,24 +5,26 @@ import {
   insertElement,
   logError,
   logWarn,
+  politeTriggerPixel,
   replaceMacros,
-  triggerPixel
 } from './utils.js';
 import * as events from './events.js';
-import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
-import {config} from './config.js';
-import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {VIDEO} from './mediaTypes.js';
-import {auctionManager} from './auctionManager.js';
-import {getCreativeRenderer} from './creativeRenderers.js';
-import {hook} from './hook.js';
-import {fireNativeTrackers} from './native.js';
-import {PbPromise} from './utils/promise.js';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR } from './constants.js';
+import { config } from './config.js';
+import { executeRenderer, isRendererRequired } from './Renderer.js';
+import { VIDEO } from './mediaTypes.js';
+import { auctionManager } from './auctionManager.js';
+import { getCreativeRenderer } from './creativeRenderers.js';
+import { hook } from './hook.js';
+import { fireNativeTrackers } from './native.js';
 import adapterManager from './adapterManager.js';
-import {useMetrics} from './utils/perfMetrics.js';
-import {filters} from './targeting.js';
-import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
-import type {Bid} from "./bidfactory.ts";
+import { useMetrics } from './utils/perfMetrics.js';
+import { bidFilters } from './targeting/filters.ts';
+import { EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG } from './eventTrackers.js';
+import type { Bid } from "./bidfactory.ts";
+import type { SafeRendererConfig } from "./adUnits.ts";
+import { yieldsIf } from "./utils/yield.ts";
+import { PbPromise } from "./utils/promise.ts";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -50,21 +52,19 @@ declare module './events' {
      * the time it was received.
      */
     [EVENTS.EXPIRED_RENDER]: [Bid];
+
+    [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
+    [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' | 'nativeClick' }];
+    [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
   }
 }
 
-export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
-  return override
-    .then(bid => bid ?? auctionManager.findBidByAdId(adId))
-    .catch(() => {})
-})
-
 export const markWinningBid = hook('sync', function (bid) {
   (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_WIN]?.[TRACKER_METHOD_IMG] || [])
-    .forEach(url => triggerPixel(url));
+    .forEach(url => politeTriggerPixel(url));
   events.emit(BID_WON, bid);
   auctionManager.addWinningBid(bid);
-})
+});
 
 type AdRenderFailedData = {
   /**
@@ -83,7 +83,7 @@ type AdRenderFailedData = {
    * Ad ID of the bid that failed to render.
    */
   adId?: string;
-}
+};
 
 /**
  * Emit the AD_RENDER_FAILED event.
@@ -114,17 +114,35 @@ type AdRenderSucceededData = {
    * Ad ID of the bid that was rendered.
    */
   adId: string;
-}
+};
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
  */
 export function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data: AdRenderSucceededData = { doc, bid, adId: id};
+  const data: AdRenderSucceededData = { doc, bid, adId: id };
 
   adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
   events.emit(AD_RENDER_SUCCEEDED, data);
+}
+
+/**
+ * Data for the BROWSER_INTERVENTION event.
+ */
+type BrowserInterventionData = {
+  bid: Bid;
+  adId: string;
+  intervention: any;
+};
+/**
+ * Emit the BROWSER_INTERVENTION event.
+ * This event is fired when the browser blocks an ad from rendering, typically due to ad blocking software or browser security features.
+ */
+export function emitBrowserIntervention(data: BrowserInterventionData) {
+  const { bid, intervention } = data;
+  adapterManager.callOnInterventionBidder(bid.adapterCode || bid.bidder, bid, intervention);
+  events.emit(EVENTS.BROWSER_INTERVENTION, data);
 }
 
 export function handleCreativeEvent(data, bidResponse) {
@@ -144,24 +162,41 @@ export function handleCreativeEvent(data, bidResponse) {
         id: bidResponse.adId
       });
       break;
+    case EVENTS.BID_CLICK:
+      if (config.getConfig('bidClickTracking')?.enabled === true && bidResponse.mediaType === 'banner' && data.method === 'creativeClick') {
+        reportBidClick(bidResponse, 'creativeClick');
+      }
+      break;
+    case EVENTS.BROWSER_INTERVENTION:
+      emitBrowserIntervention({
+        bid: bidResponse,
+        adId: bidResponse.adId,
+        intervention: data.intervention
+      });
+      break;
     default:
       logError(`Received event request for unsupported event: '${data.event}' (adId: '${bidResponse.adId}')`);
   }
 }
 
-export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
+export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers = fireNativeTrackers }) {
   switch (data.action) {
     case 'resizeNativeHeight':
       resizeFn(data.width, data.height);
       break;
     default:
+      if (data.action === 'click' && bidResponse?.native != null) {
+        // only reports the bidClick event: the bidder's click trackers below fire on every click, as they do
+        // without bidClickTracking, so enabling it never changes what bidders (or the ad server) receive
+        reportBidClick(bidResponse, 'nativeClick', data.assetId);
+      }
       fireTrackers(data, bidResponse);
   }
 }
 
 const HANDLERS: any = {
   [MESSAGES.EVENT]: handleCreativeEvent
-}
+};
 
 if (FEATURES.NATIVE) {
   HANDLERS[MESSAGES.NATIVE] = handleNativeMessage;
@@ -172,31 +207,156 @@ function creativeMessageHandler(deps) {
     if (HANDLERS.hasOwnProperty(type)) {
       HANDLERS[type](data, bidResponse, deps);
     }
+  };
+}
+
+type BidClickData = {
+  bid: Bid;
+  adId: string;
+  adUnitCode: string;
+  bidder: string;
+  method: 'creativeClick' | 'iframeFocus' | 'nativeClick';
+  assetId?: number | string;
+};
+
+const reportedBidClicks = new WeakSet<Bid>();
+
+export const userActivation = {
+  /**
+   * Sticky user activation of the top page (`navigator.userActivation.hasBeenActive`): true once the user has
+   * interacted with the page, including by clicking inside a nested ad frame. Transient activation can't be used,
+   * because a click that opens a new tab consumes it before the creative's message arrives.
+   * `undefined` when the browser doesn't support the API.
+   */
+  hasBeenActive(): boolean | undefined {
+    return (navigator as any).userActivation?.hasBeenActive;
+  }
+};
+
+/** The two detection paths share this one once-per-bid gate. */
+export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId?: number | string): boolean {
+  const settings = config.getConfig('bidClickTracking');
+  if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.native == null)) return false;
+  // Banner click reports come from messages that any frame on the page, including the creative itself, can send
+  // without a user click. Ignore them until the user has interacted with the page at all, so that clicks can't be
+  // forged on impressions nobody touched; this is checked before the once-per-bid gate so a forged report can't
+  // use it up. Browsers without the API still get the event, but not tracker requests (see below).
+  const activation = userActivation.hasBeenActive();
+  if (method !== 'nativeClick' && activation === false) return false;
+  if (reportedBidClicks.has(bid) && !(method === 'nativeClick' && settings.dedupeNativeClicks === false)) return false;
+
+  reportedBidClicks.add(bid);
+  const data = {
+    bid,
+    adId: bid.adId,
+    adUnitCode: bid.adUnitCode,
+    bidder: bid.bidder,
+    method,
+    ...(assetId != null ? { assetId } : {})
+  };
+  if (method === 'creativeClick' || method === 'nativeClick') {
+    events.emit(EVENTS.BID_CLICK, { ...data, method });
+  } else {
+    events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
+  }
+
+  if (method !== 'nativeClick' && bid.mediaType === 'banner' && settings.fireTrackers === true && activation === true &&
+    !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+    // Start the keepalive GET before the click can navigate away.
+    politeTriggerPixel(bid.clickUrl, 'include', true);
+  }
+  return true;
+}
+
+export function hasClickthroughMacro(bid: Bid): boolean {
+  return [bid?.ad, bid?.adUrl].some(value => typeof value === 'string' && /\$\{CLICKTHROUGH\}/.test(value));
+}
+
+export function validClickUrl(url: unknown): url is string {
+  if (typeof url !== 'string' || /%%|\$\{/.test(url)) return false;
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch (e) {
+    return false;
   }
 }
 
 type RenderOptions = {
   clickUrl?: string;
-}
+  viewUrl?: string;
+};
 
 export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
-  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
+  const { ad, adUrl, width, height, instl } = prepareBidForRendering(bidResponse, options);
+  return {
+    ad,
+    adUrl,
+    width,
+    height,
+    instl,
+    trackClicks: bidResponse.mediaType === 'banner' && config.getConfig('bidClickTracking')?.enabled === true,
+  };
+});
+
+function prepareBidForRendering(bidResponse: Bid, options?: RenderOptions): Bid {
+  const { ad, adUrl, cpm, originalCpm, safeRenderer } = bidResponse;
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
-  }
-  return {
-    ad: replaceMacros(ad, repl),
-    adUrl: replaceMacros(adUrl, repl),
-    width,
-    height,
-    instl
   };
-})
 
-export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe()}) {
-  const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
-  if (isMainDocument || videoBid) {
+  const result = {
+    ...bidResponse,
+    ad: replaceMacros(ad, repl),
+    adUrl: replaceMacros(adUrl, repl)
+  };
+
+  if (safeRenderer) {
+    result.safeRenderer = {
+      ...safeRenderer,
+      config: typeof safeRenderer?.getConfig === 'function' ? safeRenderer.getConfig(bidResponse) : safeRenderer?.config,
+    };
+  }
+
+  return result;
+}
+
+function prepareRenderingData(
+  bidResponse: Bid,
+  options: RenderOptions | undefined,
+  safeRenderer: SafeRendererConfig | undefined
+): Record<string, any> {
+  if (safeRenderer) {
+    const {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    } = prepareBidForRendering(bidResponse, options);
+    return {
+      ad,
+      adUrl,
+      width,
+      height,
+      instl,
+      vastXml,
+      vastUrl,
+      mediaType,
+      safeRenderer: preparedSafeRenderer,
+    };
+  }
+  return getRenderingData(bidResponse, options);
+}
+
+export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe() }) {
+  const safeRenderer = getSafeRenderer(bidResponse);
+  const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO);
+  if ((isMainDocument || videoBid) && !safeRenderer?.url) {
     emitAdRenderFail({
       reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
       message: videoBid ? 'Cannot render video ad without a renderer' : `renderAd was prevented from writing to the main document.`,
@@ -205,9 +365,9 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
     });
     return;
   }
-  const data = getRenderingData(bidResponse, options);
-  renderFn(Object.assign({adId: bidResponse.adId}, data));
-  const {width, height} = data;
+  const data = prepareRenderingData(bidResponse, options, safeRenderer);
+  renderFn(Object.assign({ adId: bidResponse.adId }, data));
+  const { width, height } = data;
   if ((width ?? height) != null) {
     resizeFn(width, height);
   }
@@ -215,17 +375,24 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
-  const {bidResponse, doc} = args;
-  if (isRendererRequired(bidResponse.renderer)) {
-    executeRenderer(bidResponse.renderer, bidResponse, doc);
-    emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})
+  const { bidResponse, doc } = args;
+  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
+    executeRenderer(bidResponse.renderer, bidResponse, doc).then(
+      () => emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId }),
+      (e) => emitAdRenderFail({
+        reason: AD_RENDER_FAILED_REASON.EXCEPTION,
+        message: e?.message ?? 'Could not load renderer script',
+        bid: bidResponse,
+        id: bidResponse.adId
+      })
+    );
     next.bail();
   } else {
     next(args);
   }
-}, 100)
+}, 100);
 
-export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
+export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -242,7 +409,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
         return;
       }
     }
-    if (!filters.isBidNotExpired(bidResponse)) {
+    if (!bidFilters.isBidNotExpired(bidResponse)) {
       logWarn(`Ad id ${adId} has been expired`);
       events.emit(EXPIRED_RENDER, bidResponse);
       if (config.getConfig('auctionOptions')?.suppressExpiredRender) {
@@ -250,8 +417,12 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
       }
     }
 
+    // A second render can be rejected by the stale/expired bid guards above.
+    // Keep the click and view URLs tied to the creative that was actually rendered.
+    if (options?.viewUrl != null) bidResponse.viewUrl = options.viewUrl;
+    if (options?.clickUrl != null) bidResponse.clickUrl = options.clickUrl;
     try {
-      doRender({renderFn, resizeFn, bidResponse, options, doc});
+      doRender({ renderFn, resizeFn, bidResponse, options, doc });
     } catch (e) {
       emitAdRenderFail({
         reason: AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -260,7 +431,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
         bid: bidResponse
       });
     }
-  })
+  });
 }
 
 export function markBidAsRendered(bidResponse) {
@@ -304,10 +475,15 @@ export function renderIfDeferred(bidResponse) {
   }
 }
 
-export function renderAdDirect(doc, adId, options) {
+let legacyRender = false;
+config.getConfig('auctionOptions', (opts) => {
+  legacyRender = opts.auctionOptions?.legacyRender ?? false;
+});
+
+export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDirect(doc, adId, options) {
   let bid;
   function fail(reason, message) {
-    emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
+    emitAdRenderFail(Object.assign({ id: adId, bid }, { reason, message }));
   }
   function resizeFn(width, height) {
     const frame = doc.defaultView?.frameElement;
@@ -322,22 +498,41 @@ export function renderAdDirect(doc, adId, options) {
       }
     }
   }
-  const messageHandler = creativeMessageHandler({resizeFn});
+  const messageHandler = creativeMessageHandler({ resizeFn });
+
+  function waitForDocumentReady(doc) {
+    return new PbPromise<void>((resolve) => {
+      if (doc.readyState === 'loading') {
+        doc.addEventListener('DOMContentLoaded', resolve);
+      } else {
+        resolve();
+      }
+    });
+  }
+
   function renderFn(adData) {
-    if (adData.ad) {
+    // This condition was authored by a bot (Claude Code).
+    // `legacyRender` is meant for creatives that break on the extra iframe added in 10.12; a safe
+    // renderer's script is written against the `pbRenderInFrame` contract and expects to run inside
+    // that frame, so it is never one of those. Writing the markup here would also bypass doRender's
+    // PREVENT_WRITING_ON_MAIN_DOCUMENT guard: for a main-document or video bid, `safeRenderer.url`
+    // is the only thing that exempted this bid from it.
+    if (adData.ad && legacyRender && !getSafeRenderer(bid)) {
       doc.write(adData.ad);
       doc.close();
-      emitAdRenderSucceeded({doc, bid, id: bid.adId});
+      emitAdRenderSucceeded({ doc, bid, id: bid.adId });
     } else {
-      getCreativeRenderer(bid)
-        .then(render => render(adData, {
-          sendMessage: (type, data) => messageHandler(type, data, bid),
-          mkFrame: createIframe,
-        }, doc.defaultView))
+      PbPromise.all([
+        getCreativeRenderer(bid),
+        waitForDocumentReady(doc)
+      ]).then(([render]) => render(adData, {
+        sendMessage: (type, data) => messageHandler(type, data, bid),
+        mkFrame: createIframe,
+      }, doc.defaultView))
         .then(
-          () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
+          () => emitAdRenderSucceeded({ doc, bid, id: bid.adId }),
           (e) => {
-            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message);
             e?.stack && logError(e);
           }
         );
@@ -350,15 +545,13 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId).then(bidResponse => {
-        bid = bidResponse;
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
-      });
+      bid = auctionManager.findBidByAdId(adId);
+      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
   }
-}
+});
 
 /**
  * Insert an invisible, named iframe that can be used by creatives to locate the window Prebid is running in
@@ -376,4 +569,8 @@ export function insertLocatorFrame() {
       document.body.appendChild(frame);
     }
   }
+}
+
+export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
+  return bidResponse.safeRenderer;
 }

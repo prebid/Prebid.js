@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubxBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/pubxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
@@ -91,7 +91,7 @@ describe('pubxAdapter', function () {
     });
 
     afterEach(function () {
-      documentStubMeta.restore();
+      sandbox.restore();
     });
 
     let kwString = '';
@@ -122,11 +122,12 @@ describe('pubxAdapter', function () {
 
     it('returns titleEnc when there is titleContent with more than 30 length', function () {
       let titleText = 'title1title2title3title4title5title';
-      const documentStubTitle = sandbox.stub(document, 'title').value(titleText);
 
       if (titleText.length > 30) {
         titleText = titleText.substr(0, 30);
       }
+
+      sandbox.stub(document, 'title').value('title1title2title3title4title5title');
 
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs[0].url).to.include(`pt=${encodeURIComponent(titleText)}`);
@@ -147,7 +148,7 @@ describe('pubxAdapter', function () {
           'test.com'
         ],
       }
-    }
+    };
 
     const bidRequests = [
       {
@@ -187,7 +188,7 @@ describe('pubxAdapter', function () {
           height: 250,
           width: 300,
         }
-      }
+      };
       const result = spec.interpretResponse(serverResponseWithCidEmpty, bidRequests[0]);
       expect(result).to.be.empty;
     });

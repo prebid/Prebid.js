@@ -4,7 +4,7 @@ import {
   ENDPOINT,
   BIDDER_CODE,
 } from '../../../modules/eclickBidAdapter.js';
-import { NATIVE, BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
 import { deepClone } from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 
@@ -76,7 +76,7 @@ describe('eclickBidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('should return true if there is correct required params and mediatype', () => {
-      bidItem.params.mediaTypes == NATIVE;
+      bidItem.params.mediaTypes = NATIVE;
       expect(spec.isBidRequestValid(bidItem)).to.be.true;
     });
     it('should return true if there is no size', () => {

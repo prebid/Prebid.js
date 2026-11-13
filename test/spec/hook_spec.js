@@ -1,4 +1,4 @@
-import {hook as makeHook, ignoreCallbackArg} from '../../src/hook.js';
+import { hook as makeHook, ignoreCallbackArg } from '../../src/hook.js';
 
 describe('hooks', () => {
   describe('ignoreCallbackArg', () => {
@@ -6,10 +6,10 @@ describe('hooks', () => {
       const hk = ignoreCallbackArg(makeHook('async', () => null));
       hk.before((next, arg, fn) => {
         fn(arg);
-      })
+      });
       hk('arg', (arg) => {
         expect(arg).to.eql('arg');
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

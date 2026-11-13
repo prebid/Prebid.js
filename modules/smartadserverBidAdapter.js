@@ -9,7 +9,7 @@ import {
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { getBidFloor } from '../libraries/equativUtils/equativUtils.js'
+import { getBidFloor } from '../libraries/equativUtils/equativUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
@@ -145,9 +145,9 @@ export const spec = {
     if (videoParams?.startDelay) {
       return videoParams.startDelay;
     } else if (videoMediaType?.startdelay) {
-      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay == -1) {
+      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay === -1) {
         return 2;
-      } else if (videoMediaType.startdelay == -2) {
+      } else if (videoMediaType.startdelay === -2) {
         return 3;
       }
     }

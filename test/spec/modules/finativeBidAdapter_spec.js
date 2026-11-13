@@ -1,11 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
-import {assert, expect} from 'chai';
-import {spec} from 'modules/finativeBidAdapter.js';
-import { NATIVE } from 'src/mediaTypes.js';
-import { config } from 'src/config.js';
+import { assert } from 'chai';
+import { spec } from 'modules/finativeBidAdapter.js';
 
 describe('Finative adapter', function () {
-  let serverResponse, bidRequest, bidResponses;
   const bid = {
     'bidder': 'finative',
     'params': {
@@ -109,7 +106,7 @@ describe('Finative adapter', function () {
               adm: {
                 native: {
                   assets: [
-                    {id: 0, title: {text: 'this is a title'}}
+                    { id: 0, title: { text: 'this is a title' } }
                   ],
                   imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
                   link: {
@@ -125,11 +122,13 @@ describe('Finative adapter', function () {
         ]
       }
     };
-    const badResponse = { body: {
-      cur: 'EUR',
-      id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
-      seatbid: []
-    }};
+    const badResponse = {
+      body: {
+        cur: 'EUR',
+        id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
+        seatbid: []
+      }
+    };
 
     const bidRequest = {
       data: {},
@@ -140,10 +139,10 @@ describe('Finative adapter', function () {
       const result = spec.interpretResponse(badResponse, bidRequest);
       assert.equal(result.length, 0);
 
-      delete badResponse.body
+      delete badResponse.body;
 
-      const result1 = spec.interpretResponse(badResponse, bidRequest);
-      assert.equal(result.length, 0);
+      const resultWithoutBody = spec.interpretResponse(badResponse, bidRequest);
+      assert.equal(resultWithoutBody.length, 0);
     });
 
     it('should return the correct params', function () {

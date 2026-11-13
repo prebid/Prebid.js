@@ -1,8 +1,8 @@
-import {deepSetValue, isFn, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import { deepSetValue, isFn, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -198,12 +198,12 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    if (typeof serverResponse?.body == 'undefined') {
+    if (typeof serverResponse?.body === 'undefined') {
       return [];
     }
 
     // reportEventsEnabled is returned from the server default false
-    spec.reportEventsEnabled = serverResponse.headers.get('reportEventsEnabled') > 0
+    spec.reportEventsEnabled = serverResponse.headers.get('reportEventsEnabled') > 0;
 
     const interpretedResponse = CONVERTER.fromORTB({ response: serverResponse.body, request: bidRequest.data });
     return interpretedResponse.bids || [];

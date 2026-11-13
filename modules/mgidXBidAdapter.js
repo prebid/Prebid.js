@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequestsBase, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js';
-import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
+import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;

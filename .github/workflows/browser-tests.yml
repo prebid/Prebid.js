@@ -1,0 +1,79 @@
+name: Build checks and e2e tests on all browsers
+# Unit tests are not run here: see vitest-chromium.yml and vitest-browsers.yml (called from test.yml).
+on:
+  workflow_call:
+    inputs:
+      source-key:
+        type: string
+        default: 'source'
+        required: false
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      build-cmd: npx gulp build
+      source-key: ${{ inputs.source-key }}
+      windows: true
+      macos: true
+
+  setup:
+    needs: build
+    name: "Define testing strategy"
+    runs-on: ubuntu-latest
+    outputs:
+      e2eBrowsers: ${{ toJSON(fromJSON(steps.define.outputs.result).e2eBrowsers) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name:  Restore working directory
+        uses: ./.github/actions/load
+        with:
+          name: ${{ needs.build.outputs.linux }}
+      - name: "Define testing strategy"
+        uses: actions/github-script@v9
+        id: define
+        with:
+          script: |
+            const {e2eBrowsers} = require('./.github/workflows/scripts/browserMatrices.js');
+            return {e2eBrowsers: e2eBrowsers(require('./browsers.json'))};
+
+  test-build-logic:
+    needs: build
+    name: "Test build logic"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.linux }}
+      test-cmd: gulp test-build-logic
+
+  ts-consumer-packed:
+    needs: build
+    name: "Type check the packed NPM package"
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      built-key: ${{ needs.build.outputs.linux }}
+      test-cmd: npx gulp ts-consumer-packed
+
+  e2e-tests:
+    needs: [setup, build]
+    name: "E2E (browser: ${{ matrix.browser.wdioName }} ${{ matrix.browser.version }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(needs.setup.outputs.e2eBrowsers) }}
+    uses:
+      ./.github/workflows/run-tests.yml
+    with:
+      browser: ${{ matrix.browser.wdioName }}
+      built-key: ${{ needs.build.outputs[matrix.browser.os] }}
+      test-cmd: npx gulp e2e-test-nobuild --local
+      chunks: 1
+      runs-on: ${{ matrix.browser.runsOn }}
+      configure-safari: ${{ matrix.browser.os == 'macos' }}
+      browserstack: false

@@ -25,8 +25,13 @@ Below is Mobian's suggested default for configuration:
 ```js
 pbjs.setConfig({
   realTimeData: {
+    // Maximum time (in milliseconds) Prebid waits for RTD providers.
+    // Use this with waitForIt below when current-auction targeting is needed.
+    auctionDelay: 500,
     dataProviders: [{
       name: 'mobianBrandSafety',
+      // Wait for Mobian before starting the auction.
+      waitForIt: true,
       params: {
         // Prefix for the targeting keys (default: 'mobian')
         prefix: 'mobian',
@@ -35,22 +40,41 @@ pbjs.setConfig({
         advertiserTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // advertiserTargeting: ['genres', 'emotions', 'themes'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq', 'vp'
+
+        // Request per-slot viewability targeting from the viewability API
+        includeViewabilityTargeting: true,
+        viewabilityTargetingPlacementSource: 'gam_ad_unit',
 
         // Enable targeting keys for publisher data
         publisherTargeting: true,
         // Or set it as an array to pick specific targeting keys:
         // publisherTargeting: ['tones', 'risk'],
-        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'themes', 'tones'
+        // Available values: 'apValues', 'categories', 'emotions', 'genres', 'risk', 'sentiment', 'tg', 'themes', 'tones', 'tq'
       }
     }]
   }
 });
 ```
 
+- With `advertiserTargeting: true` or `publisherTargeting: true`, add `includeTrafficQuality: true` to the `params` object.
+- With an array, list `tq` in it, e.g. `advertiserTargeting: ['genres', 'tq']`. `includeTrafficQuality` is ignored when the value is an array.
+- With `advertiserTargeting: true`, add `includeViewabilityTargeting: true` and `viewabilityTargetingPlacementSource` to request per-slot viewability targeting. With an array, list `vp` in `advertiserTargeting`; `includeViewabilityTargeting` is ignored.
+
+### Waiting for targeting data
+
+Mobian targeting data is loaded from network requests. To use the configured targeting keys in the current auction, configure both:
+
+- `waitForIt: true` inside the Mobian provider.
+- A positive `realTimeData.auctionDelay`, such as `500` milliseconds.
+
+`auctionDelay` is the maximum time Prebid waits. If a request takes longer or fails, the auction continues without that targeting data. Prebid does not wait forever.
+
+If you leave out either setting, targeting is best effort: a fast request may still finish in time, but the current auction can finish before the data arrives. A later auction may use the cached result.
+
 ## Functionality
 
-At a high level, the Mobian RTD Module is designed to call the Mobian Contextal API on page load, requesting the Mobian classifications and results for the URL. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
+At a high level, the Mobian RTD Module calls Mobian services on page load, requesting the configured classifications and results for the URL. Contextual classifications are requested from the Contextual API assessment endpoint. When `includeTrafficQuality` is set to `true`, a separate request is made to the traffic quality API. Configurations that request both types of data make the two requests independently so either result can still be used if the other request fails. The classifications and results are designed to be picked up by any SSP or DSP in the Prebid.js ecosystem. The module also supports placing the Mobian classifications on each ad slot on the page, thus allowing for targeting within GAM.
 
 ## Available Classifications
 
@@ -62,7 +86,7 @@ Prebid.outcomes.net endpoint key: mobianRisk
 
 Targetable Key: mobian_risk
 
-Possible values: "none", "low", "medium" or "high"
+Possible values: "low", "medium" or "high"
 
 Description: This category assesses whether content contains any potential risks or concerns to advertisers and returns a determination of Low Risk, Medium Risk, or High Risk based on the inclusion of sensitive or high-risk topics. Content that might be categorized as unsafe may include violence, hate speech, misinformation, or sensitive topics that most advertisers would like to avoid. Content that is explicit or overly graphic in nature will be more likely to fall into the High Risk tier compared to content that describes similar subjects in a more informative or educational manner.
 
@@ -74,7 +98,7 @@ Prebid.outcomes.net endpoint key: mobianContentCategories
 
 Targetable Key: mobian_categories
 
-Possible values: "adult_content", "arms", "crime", "death_injury", "debated_issue", "hate_speech", "drugs_alcohol", "obscenity", "piracy", "spam", "terrorism"
+Possible values: "adult", "arms", "crime", "death_injury", "debated_issue", "piracy", "hate_speech", "obscenity", "drugs", "spam", "terrorism" 
 
 Description: Brand Safety Categories contain categorical results for brand safety when relevant (e.g. Low Risk Adult Content). Note there can be Medium and High Risk content that is not associated to a specific brand safety category.
 
@@ -160,16 +184,73 @@ p1 = Advertisers (via Campaign IDs) should target these personas
 
 *AP Values is in the early stages of testing and is subject to change.
 
+------------------
+
+Traffic Quality (`tq`)
+
+quality.outcomes.net endpoint key: mobian_tq
+
+Targetable Key: mobian_tq
+
+Possible values: Integer values defined by the Mobian response
+
+Description: Measure of traffic quality.
+
+------------------
+
+Traffic Group (`tg`)
+
+Prebid.outcomes.net endpoint key: mobian_tg
+
+Targetable Key: mobian_tg
+
+Possible values: Integer values defined by the Mobian response
+
+Description: Traffic Group is returned with the contextual assessment results and remains independent from the request-specific `tq` signal.
+
+------------------
+
+Viewability (`vp`)
+
+Targeting keys: `mobian_vp_likely_viewable`, `mobian_vp_probability`, `mobian_vp_bucket_percent`, and `mobian_vp_confidence`
+
+Description: Viewability results are requested once for each unique page URL, ad unit code, and `viewabilityTargetingPlacementSource` combination. The request includes the page URL, `viewabilityTargetingPlacementSource`, and the ad unit code as `placement_id`. Known results set all four slot-level targeting keys as strings. Unknown or incomplete results set no keys. A failed request is ignored for that slot and may be retried by a later bid request.
+
+------------------
+
+Additional Results Fields (API response)
+
+The fields below are present in the Mobian Contextual API `results` schema and are useful for downstream interpretation of content maturity and taxonomy.
+
+mobianMpaaRating:
+
+Type: integer | null
+
+Description: MPAA-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianEsrbRating:
+
+Type: integer | null
+
+Description: ESRB-style maturity rating score represented as an integer value in the API response.
+
+Behavior when unavailable: omitted when null.
+
+mobianContentTaxonomy:
+
+Type: string[]
+
+Description: IAB content taxonomy categories (broad topic buckets such as "News" or "Health").
+
+Behavior when unavailable: may be returned as an empty array.
+
 ## GAM Targeting:
 
-On each page load, the Mobian RTD module finds each ad slot on the page and performs the following function:
+For viewability, the Mobian RTD module requests and stores the per-ad-unit result during `getBidRequestData`. During `AUCTION_END`, it returns the result through the RTD `getTargetingData` interface as ad-server targeting data. Prebid then applies those values through its normal targeting flow when `pbjs.setTargetingForGPTAsync()` is called. See [Waiting for targeting data](#waiting-for-targeting-data) to make the values available for the current auction.
 
-```js
-window.googletag.cmd.push(() => {
-  window.googletag.pubads().setTargeting(key, value);
-```
-
-"key" and "value" will be replaced with the various classifications as described in the previous section. Notably, this function runs before ad calls are made to GAM, which enables the keys and value to be used for targeting or blocking in GAM.
+"key" and "value" will be replaced with the various classifications as described in the previous section. The publisher should call `pbjs.setTargetingForGPTAsync()` after the relevant GPT slots have been defined and before the ad request is made, which enables the keys and values to be used for targeting or blocking in GAM.
 
 For more details on how to set up key-value pairs in GAM, please see this documentation from Google: https://support.google.com/admanager/answer/9796369
 

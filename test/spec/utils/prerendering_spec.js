@@ -1,4 +1,4 @@
-import {delayIfPrerendering} from '../../../src/utils/prerendering.js';
+import { delayIfPrerendering } from '../../../src/utils/prerendering.js';
 
 describe('delayIfPrerendering', () => {
   let sandbox, enabled, ran;
@@ -10,26 +10,28 @@ describe('delayIfPrerendering', () => {
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   const delay = delayIfPrerendering(() => enabled, () => {
     ran = true;
-  })
+  });
 
   it('should not delay if page is not prerendering', () => {
     delay();
     expect(ran).to.be.true;
-  })
+  });
 
   describe('when page is prerendering', () => {
+    let addedPrerendering = false;
     before(() => {
       if (!('prerendering' in document)) {
         document.prerendering = null;
-        after(() => {
-          delete document.prerendering;
-        })
+        addedPrerendering = true;
       }
-    })
+    });
+    after(() => {
+      if (addedPrerendering) delete document.prerendering;
+    });
     beforeEach(() => {
       sandbox.stub(document, 'prerendering').get(() => true);
     });
@@ -48,6 +50,6 @@ describe('delayIfPrerendering', () => {
       enabled = false;
       delay();
       expect(ran).to.be.true;
-    })
-  })
-})
+    });
+  });
+});

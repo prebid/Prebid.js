@@ -2,11 +2,18 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import { deepAccess, parseUrl, extractDomainFromHost, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./undertoneBidAdapter.d.ts').UndertoneBidderParams} UndertoneBidderParams
+ * @typedef {BidRequest & {params: UndertoneBidderParams}} UndertoneBidRequest
+ */
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -38,10 +45,10 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
-function getBannerCoords(id) {
-  const element = document.getElementById(id);
+function getBannerCoords(bidRequest) {
+  const element = getAdUnitElement(bidRequest);
   if (element) {
-    const {left, top} = getBoundingClientRect(element);
+    const { left, top } = getBoundingClientRect(element);
     const viewport = getViewportCoordinates();
     return [Math.round(left + (viewport.left || 0)), Math.round(top + (viewport.top || 0))];
   }
@@ -52,6 +59,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * @param {UndertoneBidRequest} bid
+   * @return {boolean}
+   */
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
@@ -62,7 +73,7 @@ export const spec = {
     const windowDimensions = getWinDimensions();
     const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
     const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
-    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
       'uids': validBidRequests[0].userId,
@@ -106,14 +117,14 @@ export const spec = {
       reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
     }
 
-    validBidRequests.map(bidReq => {
+    validBidRequests.forEach(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
-        coordinates: getBannerCoords(bidReq.adUnitCode),
+        coordinates: getBannerCoords(bidReq),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
-        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
+        placementId: bidReq.params.placementId ?? null,
         publisherId: bidReq.params.publisherId,
         gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
@@ -166,7 +177,7 @@ export const spec = {
             bid.vastXml = bidRes.ad;
             bid.mediaType = bidRes.mediaType;
           } else {
-            bid.ad = bidRes.ad
+            bid.ad = bidRes.ad;
           }
           bids.push(bid);
         }
@@ -187,10 +198,10 @@ export const spec = {
     }
 
     if (usPrivacy) {
-      if (iframePrivacyParams != '') {
-        iframePrivacyParams += '&'
+      if (iframePrivacyParams !== '') {
+        iframePrivacyParams += '&';
       } else {
-        iframePrivacyParams += '?'
+        iframePrivacyParams += '?';
       }
       iframePrivacyParams += `ccpa=${usPrivacy}`;
       pixelPrivacyParams += `&ccpa=${usPrivacy}`;

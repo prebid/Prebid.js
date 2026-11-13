@@ -1,7 +1,9 @@
-import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
+import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
+import { getAdUnitElement } from '../src/utils/adUnits.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -30,7 +32,7 @@ export const spec = {
         pubsubid = '';
       }
       const pubcontainerid = bidderParams.pubcontainerid;
-      const adUnitElement = document.getElementById(pubcontainerid || bidRequest.adUnitCode);
+      const adUnitElement = pubcontainerid ? document.getElementById(pubcontainerid) : getAdUnitElement(bidRequest);
       const ishidden = !isVisible(adUnitElement);
       const framePos = getFramePos();
       const coords = isiframe ? {
@@ -55,18 +57,10 @@ export const spec = {
         pubcontainerid,
       };
 
-      let windowTop;
-      try {
-        windowTop = window.top;
-      } catch (e) {
-        logMessage(e);
-        windowTop = window;
-      }
-
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: true},
+        options: { withCredentials: true },
         data: {
           gdpr: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
@@ -85,8 +79,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: windowTop.scrollX,
-            scrollbary: windowTop.scrollY,
+            scrollbarx: getWinDimensions().scrollX,
+            scrollbary: getWinDimensions().scrollY,
           },
           bidrequest,
         },
@@ -143,7 +137,7 @@ export const spec = {
         .replace('{gdpr_cs}', gdprConsent.consentString)
         .replace('{usp}', uspApplies)
         .replace('{usp_cs}', uspString);
-    }
+    };
 
     serverResponses.forEach(serverResponse => {
       const userSyncUrls = serverResponse.body.usersync || [];
@@ -160,12 +154,12 @@ export const spec = {
             url: userSyncUrlProcess(sync.url),
           });
         }
-      })
+      });
     });
 
     return syncs;
   },
-}
+};
 
 function getContext(elem) {
   try {
@@ -181,7 +175,7 @@ function isDefined(val) {
 
 function getIsHidden(elem) {
   let lastElem = elem;
-  let elemHidden = false;
+  let elemHidden;
   let m;
   m = 0;
 
@@ -189,8 +183,8 @@ function getIsHidden(elem) {
     m = m + 1;
     try {
       if (
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('display') === 'none' ||
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('visibility') === 'hidden'
+        getElementStyle(lastElem, getContext(elem)).display === 'none' ||
+        getElementStyle(lastElem, getContext(elem)).visibility === 'hidden'
       ) {
         return true;
       } else {
@@ -219,12 +213,12 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const {document: {documentElement, body}} = getWinDimensions();
+    const { document: { documentElement, body } } = getWinDimensions();
     const width = body.clientWidth;
     const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];
   } catch (t) {
-    return [-1, -1]
+    return [-1, -1];
   }
 }
 
@@ -243,13 +237,13 @@ function getFramePos() {
     m = m + 1;
     try {
       if (m > 1) {
-        t = t.parent
+        t = t.parent;
       }
       frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
       frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
-  } while ((m < 100) && (t.parent !== t.self))
+  } while ((m < 100) && (t.parent !== t.self));
 
   return [frmLeft, frmTop];
 }

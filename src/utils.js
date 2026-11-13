@@ -1,91 +1,32 @@
-import {config} from './config.js';
+import { config } from './config.js';
 
-import {EVENTS} from './constants.js';
-import {PbPromise} from './utils/promise.js';
+import { PbPromise } from './utils/promise.js';
 import deepAccess from 'dlv/index.js';
-import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
+import { isArray, isFn, isPlainObject, isStr } from './utils/objects.js';
+import * as logging from './utils/logging.js';
+import * as debug from './utils/debug.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
-export * from './utils/objects.js'
+export * from './utils/objects.js';
+export { getWinDimensions, resetWinDimensions, getScreenOrientation } from './utils/winDimensions.js';
+export { compressDataWithGZip, isGzipCompressionSupported } from './utils/gzip.js';
 
-const consoleExists = Boolean(window.console);
-const consoleLogExists = Boolean(consoleExists && window.console.log);
-const consoleInfoExists = Boolean(consoleExists && window.console.info);
-const consoleWarnExists = Boolean(consoleExists && window.console.warn);
-const consoleErrorExists = Boolean(consoleExists && window.console.error);
-
-let eventEmitter;
-let windowDimensions;
-
-export function _setEventEmitter(emitFn) {
-  // called from events.js - this hoop is to avoid circular imports
-  eventEmitter = emitFn;
-}
-
-function emitEvent(...args) {
-  if (eventEmitter != null) {
-    eventEmitter(...args);
-  }
-}
-
-export const getWinDimensions = (function() {
-  let lastCheckTimestamp;
-  const CHECK_INTERVAL_MS = 20;
-  return () => {
-    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
-      internal.resetWinDimensions();
-      lastCheckTimestamp = Date.now();
-    }
-    return windowDimensions;
-  }
-})();
-
-export function resetWinDimensions() {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-
-  windowDimensions = {
-    screen: {
-      width: top.screen?.width,
-      height: top.screen?.height,
-      availWidth: top.screen?.availWidth,
-      availHeight: top.screen?.availHeight,
-      colorDepth: top.screen?.colorDepth,
-    },
-    innerHeight: top.innerHeight,
-    innerWidth: top.innerWidth,
-    outerWidth: top.outerWidth,
-    outerHeight: top.outerHeight,
-    visualViewport: {
-      height: top.visualViewport?.height,
-      width: top.visualViewport?.width,
-    },
-    document: {
-      documentElement: {
-        clientWidth: top.document?.documentElement?.clientWidth,
-        clientHeight: top.document?.documentElement?.clientHeight,
-        scrollTop: top.document?.documentElement?.scrollTop,
-        scrollLeft: top.document?.documentElement?.scrollLeft,
-      },
-      body: {
-        scrollTop: document.body?.scrollTop,
-        scrollLeft: document.body?.scrollLeft,
-        clientWidth: document.body?.clientWidth,
-        clientHeight: document.body?.clientHeight,
-      },
-    }
-  };
-}
+// many tests stub out these methods, which does not work if we use `export from` - hence the roundabout rebinding
+export const logInfo = logging.logInfo;
+export const logWarn = logging.logWarn;
+export const logError = logging.logError;
+export const logMessage = logging.logMessage;
+export const prefixLog = logging.prefixLog;
+export const debugTurnedOn = debug.debugTurnedOn;
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
   checkCookieSupport,
-  createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
   canAccessWindowTop,
   getWindowLocation,
-  insertUserSyncIframe,
   insertElement,
   isFn,
   triggerPixel,
@@ -96,7 +37,7 @@ export const internal = {
   parseQS,
   formatQS,
   deepEqual,
-  resetWinDimensions
+  runBackgroundTask,
 };
 
 const prebidInternal = {};
@@ -118,7 +59,7 @@ var getIncrementalInteger = (function () {
 
 // generate a random string (to be used as a dynamic JSONP callback)
 export function getUniqueIdentifierStr() {
-  return getIncrementalInteger() + Math.random().toString(16).substr(2);
+  return getIncrementalInteger() + Math.random().toString(16).substring(2);
 }
 
 /**
@@ -139,7 +80,7 @@ export function generateUUID(placeholder) {
  */
 function _getRandomData() {
   if (window && window.crypto && window.crypto.getRandomValues) {
-    return crypto.getRandomValues(new Uint8Array(1))[0] % 16;
+    return window.crypto.getRandomValues(new Uint8Array(1))[0] % 16;
   } else {
     return Math.random() * 16;
   }
@@ -182,10 +123,10 @@ export function sizesToSizeTuples(sizes) {
       .split(/\s*,\s*/)
       .map(sz => sz.match(/^(\d+)x(\d+)$/i))
       .filter(match => match)
-      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)]);
   } else if (Array.isArray(sizes)) {
     if (isValidGPTSingleSize(sizes)) {
-      return [sizes]
+      return [sizes];
     }
     return sizes.filter(isValidGPTSingleSize);
   }
@@ -202,7 +143,7 @@ export function parseSizesInput(sizeObj) {
 }
 
 export function sizeTupleToSizeString(size) {
-  return size[0] + 'x' + size[1]
+  return size[0] + 'x' + size[1];
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
@@ -214,14 +155,14 @@ export function parseGPTSingleSizeArray(singleSize) {
 }
 
 export function sizeTupleToRtbSize(size) {
-  return {w: size[0], h: size[1]};
+  return { w: size[0], h: size[1] };
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return sizeTupleToRtbSize(singleSize)
+    return sizeTupleToRtbSize(singleSize);
   }
 }
 
@@ -257,79 +198,15 @@ export function canAccessWindowTop() {
 }
 
 /**
- * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
+ * Returns the window to use for fingerprinting reads: win if provided, otherwise top or self.
+ * @param {Window} [win]
+ * @returns {Window}
  */
-// eslint-disable-next-line no-restricted-syntax
-export function logMessage() {
-  if (debugTurnedOn() && consoleLogExists) {
-    // eslint-disable-next-line no-console
-    console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
+export function getFallbackWindow(win) {
+  if (win) {
+    return win;
   }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logInfo() {
-  if (debugTurnedOn() && consoleInfoExists) {
-    // eslint-disable-next-line no-console
-    console.info.apply(console, decorateLog(arguments, 'INFO:'));
-  }
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logWarn() {
-  if (debugTurnedOn() && consoleWarnExists) {
-    // eslint-disable-next-line no-console
-    console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
-}
-
-// eslint-disable-next-line no-restricted-syntax
-export function logError() {
-  if (debugTurnedOn() && consoleErrorExists) {
-    // eslint-disable-next-line no-console
-    console.error.apply(console, decorateLog(arguments, 'ERROR:'));
-  }
-  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
-}
-
-export function prefixLog(prefix) {
-  function decorate(fn) {
-    return function (...args) {
-      fn(prefix, ...args);
-    }
-  }
-  return {
-    logError: decorate(logError),
-    logWarn: decorate(logWarn),
-    logMessage: decorate(logMessage),
-    logInfo: decorate(logInfo),
-  }
-}
-
-function decorateLog(args, prefix) {
-  args = [].slice.call(args);
-  const bidder = config.getCurrentBidder();
-
-  prefix && args.unshift(prefix);
-  if (bidder) {
-    args.unshift(label('#aaa'));
-  }
-  args.unshift(label('#3b88c3'));
-  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
-  return args;
-
-  function label(color) {
-    return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
-  }
-}
-
-export function hasConsoleLogger() {
-  return consoleLogExists;
-}
-
-export function debugTurnedOn() {
-  return !!config.getConfig('debug');
+  return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
 }
 
 export const createIframe = (() => {
@@ -342,26 +219,28 @@ export const createIframe = (() => {
     scrolling: 'no',
     frameBorder: '0',
     allowtransparency: 'true'
-  }
+  };
   return (doc, attrs, style = {}) => {
     const f = doc.createElement('iframe');
     Object.assign(f, Object.assign({}, DEFAULTS, attrs));
     Object.assign(f.style, style);
     return f;
-  }
+  };
 })();
 
-export function createInvisibleIframe() {
-  return createIframe(document, {
+export function createInvisibleIframe(doc = document, attrs = {}, style = {}) {
+  return createIframe(doc, {
     id: getUniqueIdentifierStr(),
     width: 0,
     height: 0,
-    src: 'about:blank'
+    src: 'about:blank',
+    ...attrs
   }, {
     display: 'none',
     height: '0px',
     width: '0px',
-    border: '0px'
+    border: '0px',
+    ...style
   });
 }
 
@@ -421,7 +300,7 @@ export function contains(a, obj) {
  */
 export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
-  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object));
 }
 
 /*
@@ -478,17 +357,60 @@ export function waitForElementToLoad(element, timeout) {
 }
 
 /**
- * Inserts an image pixel with the specified `url` for cookie sync
- * @param {string} url URL string of the image pixel to load
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the image to load before calling `done`
+ * Fires a fire-and-forget request for `url` on the background task queue (a keepalive fetch, falling
+ * back to an image pixel) for cookie sync and similar best-effort pixels.
+ * @param {string} url URL string to request
+ * @param {string} [credentials='include'] fetch credentials mode (e.g. `'include'`, `'omit'`); pass
+ *   `'omit'` for a cookieless request — the image fallback (which cannot omit cookies) is then skipped.
  */
+
+export function politeTriggerPixel(url, credentials = 'include', immediate = false) {
+  const triggerSync = () => {
+    if (window.fetch && window.Request) {
+      try {
+        const request = new Request(url, {
+          method: 'GET',
+          mode: 'no-cors',
+          credentials,
+          keepalive: true
+        });
+        window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
+        return;
+      } catch (e) {}
+    }
+    if (credentials !== 'omit') triggerPixel(url);
+  };
+
+  if (immediate) {
+    triggerSync();
+  } else {
+    runBackgroundTask(triggerSync);
+  }
+}
+
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
   if (done && internal.isFn(done)) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
+}
+
+/**
+ * Run a task at low priority when supported by the browser, or immediately as fallback.
+ * @param {function} task
+ */
+export function runBackgroundTask(task) {
+  const scheduler = window.scheduler;
+  if (scheduler?.postTask) {
+    scheduler.postTask(task, { priority: 'background' }).catch(() => task());
+    return;
+  }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => task(), { timeout: 2000 });
+    return;
+  }
+  task();
 }
 
 /**
@@ -511,23 +433,6 @@ export function insertHtmlIntoIframe(htmlCode) {
 }
 
 /**
- * Inserts empty iframe with the specified `url` for cookie sync
- * @param  {string} url URL to be requested
- * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
- * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
- */
-export function insertUserSyncIframe(url, done, timeout) {
-  const iframeHtml = internal.createTrackPixelIframeHtml(url, false, 'allow-scripts allow-same-origin');
-  const div = document.createElement('div');
-  div.innerHTML = iframeHtml;
-  const iframe = div.firstChild;
-  if (done && internal.isFn(done)) {
-    waitForElementToLoad(iframe, timeout).then(done);
-  }
-  internal.insertElement(iframe, document, 'html', true);
-}
-
-/**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
  * @param encode
@@ -544,45 +449,40 @@ export function createTrackPixelHtml(url, encode = encodeURI) {
   return img;
 };
 
+// The encodeMacroURI implementation below was written by a bot (Claude Code).
+
+// A macro name bypasses encodeURI, since its braces are emitted literally, so it is escaped against
+// this set instead. Of these, only the double quote can close the attribute value that
+// createTrackPixelHtml writes; the rest are escaped because an encoded URL is not guaranteed to end
+// up in a double-quoted attribute - in an unquoted one, whitespace and the backtick end the value
+// and `<` and `>` delimit the tag - and because none of them belong in a URI in the first place.
+// The whitespace is spelled out rather than written `\s`, which also matches non-ASCII whitespace:
+// that is left alone, so a macro name is passed through byte-for-byte where escaping is not needed.
+const HTML_UNSAFE_CHARS = /["<>`\t\n\v\f\r ]/g;
+
+// Characters encodeURI and encodeURIComponent encode differently. A macro name containing any of
+// them is not recognised as a macro, so its braces stay percent-encoded like the rest of the URL.
+// Matched with matchAll, which works on a copy; exec would advance lastIndex on this shared object
+// and carry the offset over into the next call.
+const MACRO = /\$\{([^}#$&+,/:;=?@]+)\}/g;
+
 /**
  * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ *
+ * A macro's braces are emitted literally so that downstream substitution can find them. The macro
+ * name is otherwise passed through unchanged, except for the characters in HTML_UNSAFE_CHARS.
  * @param url
  * @return {string}
  */
 export function encodeMacroURI(url) {
-  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
-  return macros.reduce((str, macro) => {
-    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
-  }, encodeURI(url))
-}
-
-/**
- * Creates a snippet of Iframe HTML that retrieves the specified `url`
- * @param  {string} url plain URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
- * @param  {string} sandbox string if provided the sandbox attribute will be included with the given value
- * @return {string}     HTML snippet that contains the iframe src = set to `url`
- */
-export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') {
-  if (!url) {
-    return '';
+  let encoded = '';
+  let from = 0;
+  for (const match of url.matchAll(MACRO)) {
+    encoded += encodeURI(url.slice(from, match.index)) +
+      '${' + match[1].replace(HTML_UNSAFE_CHARS, encodeURIComponent) + '}';
+    from = match.index + match[0].length;
   }
-  if (encodeUri) {
-    url = encodeURI(url);
-  }
-  if (sandbox) {
-    sandbox = `sandbox="${sandbox}"`;
-  }
-
-  return `<iframe ${sandbox} id="${getUniqueIdentifierStr()}"
-      frameborder="0"
-      allowtransparency="true"
-      marginheight="0" marginwidth="0"
-      width="0" hspace="0" vspace="0" height="0"
-      style="height:0px;width:0px;display:none;"
-      scrolling="no"
-      src="${url}">
-    </iframe>`;
+  return encoded + encodeURI(url.slice(from));
 }
 
 export function uniques(value, index, arry) {
@@ -598,7 +498,7 @@ export function getBidRequest(id, bidderRequests) {
     return;
   }
   return bidderRequests.flatMap(br => br.bids)
-    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id))
+    .find(bid => ['bidId', 'adId', 'bid_id'].some(prop => bid[prop] === id));
 }
 
 export function getValue(obj, key) {
@@ -625,7 +525,7 @@ export function isApnGetTagDefined() {
 
 export const sortByHighestCpm = (a, b) => {
   return b.cpm - a.cpm;
-}
+};
 
 /**
  * Fisher–Yates shuffle
@@ -689,7 +589,15 @@ export function getSafeframeGeometry() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+}
+
+export function isFirefoxBrowser() {
+  return /firefox|fxios/i.test(navigator.userAgent);
+}
+
+export function isChromeIOSBrowser() {
+  return /crios|crmo/i.test(navigator.userAgent);
 }
 
 export function replaceMacros(str, subs) {
@@ -700,7 +608,7 @@ export function replaceMacros(str, subs) {
 }
 
 export function replaceAuctionPrice(str, cpm) {
-  return replaceMacros(str, {AUCTION_PRICE: cpm})
+  return replaceMacros(str, { AUCTION_PRICE: cpm });
 }
 
 export function replaceClickThrough(str, clicktag) {
@@ -721,7 +629,7 @@ export function getPerformanceNow() {
 }
 
 /**
- * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * Returns the difference between `timing.domLoading` and `timing.navigationStart`.
  * This function uses the deprecated `Performance.timing` API and should be removed in future.
  * It has not been updated yet because it is still used in some modules.
  * @deprecated
@@ -787,7 +695,7 @@ export function delayExecution(func, numRequiredCalls) {
     if (numCalls === numRequiredCalls) {
       func.apply(this, arguments);
     }
-  }
+  };
 }
 
 /**
@@ -809,8 +717,8 @@ export function groupBy(xs, key) {
  * @return If object is valid
  */
 export function isValidMediaTypes(mediaTypes) {
-  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
+  const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video', 'audio'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
 
   const types = Object.keys(mediaTypes);
 
@@ -840,13 +748,6 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .map((bidderData) => bidderData.params || {});
 }
 
-/**
- * Returns Do Not Track state
- */
-export function getDNT() {
-  return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
-}
-
 export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
@@ -855,7 +756,9 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
  * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
-  return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
+  const customGptSlotMatching = config.getConfig('customGptSlotMatching');
+  const match = isFn(customGptSlotMatching) && customGptSlotMatching(slot);
+  return isFn(match) ? match : (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**
@@ -865,7 +768,7 @@ export function isAdUnitCodeMatchingSlot(slot) {
  * @return {string} warning message to display when condition is met
  */
 export function unsupportedBidderMessage(adUnit, bidder) {
-  const mediaType = Object.keys(adUnit.mediaTypes || {'banner': 'banner'}).join(', ');
+  const mediaType = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' }).join(', ');
 
   return `
     ${adUnit.code} is a ${mediaType} ad unit
@@ -879,7 +782,7 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'));
 }
 
 /**
@@ -1057,7 +960,7 @@ function mergeDeepHelper(target, source) {
     const val = source[key];
 
     if (isPlainObject(val)) {
-      if (!target[key]) {
+      if (!isPlainObject(target[key])) {
         target[key] = {};
       }
       mergeDeepHelper(target[key], val);
@@ -1095,7 +998,7 @@ export function cyrb53Hash(str, seed = 0) {
     } else {
       opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
       // floating points give us 53 bits of precision to work with plus 1 sign bit
-      // automatically handled for our convienence:
+      // automatically handled for our convenience:
       // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
       //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
       var result = (opA & 0x003fffff) * opB;
@@ -1154,8 +1057,11 @@ export function memoize(fn, key = function (arg) { return arg; }) {
       cache.set(cacheKey, fn.apply(this, arguments));
     }
     return cache.get(cacheKey);
-  }
+  };
   memoized.clear = cache.clear.bind(cache);
+  memoized.invalidate = function () {
+    cache.delete(key.apply(this, arguments));
+  };
   return memoized;
 }
 
@@ -1170,8 +1076,10 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
   if (acceptableUnits.indexOf(timeUnit) < 0) {
     return Date.now();
   }
-  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
-  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+  const millisecondsOffset = timeUnit === 'm'
+    ? timeValue * 60 * 1000
+    : timeValue * 24 * 60 * 60 * 1000;
+  return Date.now() + (timeValue && timeValue > 0 ? millisecondsOffset : 0);
 }
 
 /**
@@ -1182,7 +1090,7 @@ export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
  */
 export function convertObjectToArray(obj) {
   return Object.keys(obj).map(key => {
-    return {[key]: obj[key]};
+    return { [key]: obj[key] };
   });
 }
 
@@ -1192,7 +1100,7 @@ export function convertObjectToArray(obj) {
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {
-  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v))
+  Object.entries(attributes).forEach(([k, v]) => script.setAttribute(k, v));
 }
 
 /**
@@ -1244,7 +1152,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
       value instanceof Map ||
       value instanceof Set ||
       value instanceof Date ||
-      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+      (value !== null && type === 'object' && Object.prototype.hasOwnProperty.call(value, 'toJSON'))
     ) {
       return true;
     }
@@ -1303,48 +1211,6 @@ export function triggerNurlWithCpm(bid, cpm) {
       /\${AUCTION_PRICE}/,
       cpm
     );
-    triggerPixel(bid.nurl);
+    politeTriggerPixel(bid.nurl);
   }
-}
-
-// To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
-// This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
-export const isGzipCompressionSupported = (function () {
-  let cachedResult; // Store the result
-
-  return function () {
-    if (cachedResult !== undefined) {
-      return cachedResult; // Return cached result if already computed
-    }
-
-    try {
-      if (typeof window.CompressionStream === 'undefined') {
-        cachedResult = false;
-      } else {
-        (() => new window.CompressionStream('gzip'))();
-        cachedResult = true;
-      }
-    } catch (error) {
-      cachedResult = false;
-    }
-
-    return cachedResult;
-  };
-})();
-
-// Make sure to use isGzipCompressionSupported before calling this function
-export async function compressDataWithGZip(data) {
-  if (typeof data !== 'string') { // TextEncoder (below) expects a string
-    data = JSON.stringify(data);
-  }
-
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(data);
-  const compressedStream = new Blob([encodedData])
-    .stream()
-    .pipeThrough(new window.CompressionStream('gzip'));
-
-  const compressedBlob = await new Response(compressedStream).blob();
-  const compressedArrayBuffer = await compressedBlob.arrayBuffer();
-  return new Uint8Array(compressedArrayBuffer);
 }

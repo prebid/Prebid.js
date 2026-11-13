@@ -1,9 +1,8 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils.js';
+import 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from 'src/config.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -23,7 +22,7 @@ describe('Nobid Adapter', function () {
         'params': {
           'siteId': SITE_ID
         },
-        'getFloor': () => { return { currency: 'USD', floor: 1.00 } },
+        'getFloor': () => { return { currency: 'USD', floor: 1.00 }; },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250]],
         'bidId': '30b31c1838de1e',
@@ -33,14 +32,48 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should FLoor = 1', function () {
       spec.buildRequests(bidRequests, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.a[0].floor).to.equal(1);
+    });
+  });
+
+  describe('buildRequestsWithOrtb2Imp', function () {
+    const bidderRequest = { refererInfo: { page: 'https://www.examplereferer.com' } };
+    const bidRequest = (ortb2Imp) => [{
+      bidder: 'nobid',
+      params: { siteId: 2 },
+      adUnitCode: 'adunit-code',
+      sizes: [[300, 250]],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      ortb2Imp
+    }];
+
+    it('should forward ortb2Imp including gpid', function () {
+      const ortb2Imp = { ext: { gpid: '/1234/home#div-1', data: { pbadslot: '/1234/home' } } };
+      const request = spec.buildRequests(bidRequest(ortb2Imp), bidderRequest);
+      const adunit = JSON.parse(request.data).a[0];
+      expect(adunit.ortb2Imp).to.deep.equal(ortb2Imp);
+      expect(adunit.ortb2Imp.ext.gpid).to.equal('/1234/home#div-1');
+    });
+
+    it('should omit ortb2Imp when absent', function () {
+      const request = spec.buildRequests(bidRequest(undefined), bidderRequest);
+      expect(JSON.parse(request.data).a[0]).to.not.have.property('ortb2Imp');
+    });
+
+    it('should not send raw quote, ampersand or hash in the body', function () {
+      const ortb2Imp = { ext: { gpid: "/1/a#b", data: { kw: "x&y'z" } } };
+      const request = spec.buildRequests(bidRequest(ortb2Imp), bidderRequest);
+      expect(request.data).to.not.match(/['&#]/);
+      expect(JSON.parse(request.data).a[0].ortb2Imp.ext.data.kw).to.equal("x&y'z");
     });
   });
 
@@ -98,8 +131,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
-    }
+      refererInfo: { page: REFERER }, bidderCode: BIDDER_CODE
+    };
 
     const siteName = 'example';
     const siteDomain = 'page.example.com';
@@ -116,16 +149,16 @@ describe('Nobid Adapter', function () {
         site: {
           name: siteName,
           domain: siteDomain,
-          cat: [ siteCat ],
-          sectioncat: [ siteSectionCat ],
-          pagecat: [ sitePageCat ],
+          cat: [siteCat],
+          sectioncat: [siteSectionCat],
+          pagecat: [sitePageCat],
           page: sitePage,
           ref: siteRef,
           keywords: siteKeywords,
           search: siteSearch
         }
       };
-      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
       let payload = JSON.parse(request.data);
       payload = JSON.parse(JSON.stringify(payload));
       expect(payload.sid).to.equal(SITE_ID);
@@ -163,10 +196,10 @@ describe('Nobid Adapter', function () {
     const GPP_SID = [1, 3];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER},
+      refererInfo: { page: REFERER },
       bidderCode: BIDDER_CODE,
-      gppConsent: {gppString: GPP, applicableSections: GPP_SID}
-    }
+      gppConsent: { gppString: GPP, applicableSections: GPP_SID }
+    };
 
     it('gpp should match', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -187,7 +220,7 @@ describe('Nobid Adapter', function () {
 
     it('gpp ortb2 should match', function () {
       delete bidderRequest.gppConsent;
-      bidderRequest.ortb2 = {regs: {gpp: GPP, gpp_sid: GPP_SID}};
+      bidderRequest.ortb2 = { regs: { gpp: GPP, gpp_sid: GPP_SID } };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       let payload = JSON.parse(request.data);
       payload = JSON.parse(JSON.stringify(payload));
@@ -215,8 +248,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
-    }
+      refererInfo: { page: REFERER }, bidderCode: BIDDER_CODE
+    };
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -333,31 +366,6 @@ describe('Nobid Adapter', function () {
   });
 
   describe('isVideoBidRequestValid', function () {
-    const bid = {
-      bidder: 'nobid',
-      params: {
-        siteId: 2,
-        video: {
-          skippable: true,
-          playback_methods: ['auto_play_sound_off'],
-          position: 'atf',
-          mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
-          minduration: 1,
-          maxduration: 30,
-          frameworks: [1, 2, 3, 4, 5, 6]
-        }
-      },
-      adUnitCode: 'adunit-code',
-      sizes: [[640, 480]],
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      mediaTypes: {
-        video: {
-          context: 'instream'
-        }
-      }
-    };
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
     const bidRequests = [
@@ -376,12 +384,12 @@ describe('Nobid Adapter', function () {
           }
         },
         adUnitCode: 'adunit-code',
+        sizes: [[640, 480]],
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
         mediaTypes: {
           video: {
-            playerSize: [640, 480],
             context: 'instream'
           }
         }
@@ -389,8 +397,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -423,31 +431,6 @@ describe('Nobid Adapter', function () {
   });
 
   describe('isVideoBidRequestValid', function () {
-    const bid = {
-      bidder: 'nobid',
-      params: {
-        siteId: 2,
-        video: {
-          skippable: true,
-          playback_methods: ['auto_play_sound_off'],
-          position: 'atf',
-          mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
-          minduration: 1,
-          maxduration: 30,
-          frameworks: [1, 2, 3, 4, 5, 6]
-        }
-      },
-      adUnitCode: 'adunit-code',
-      sizes: [[640, 480]],
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      mediaTypes: {
-        video: {
-          context: 'outstream'
-        }
-      }
-    };
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
     const bidRequests = [
@@ -479,8 +462,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -565,8 +548,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should criteo eid', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -599,8 +582,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -733,8 +716,8 @@ describe('Nobid Adapter', function () {
     ];
 
     const bidderRequest = {
-      refererInfo: {page: REFERER}
-    }
+      refererInfo: { page: REFERER }
+    };
 
     it('should refreshCount = 4', function () {
       nobid.refreshLimit = 2;
@@ -761,12 +744,13 @@ describe('Nobid Adapter', function () {
       device: 'COMPUTER',
       site: 2,
       bids: [
-        {id: 1,
+        {
+          id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -795,8 +779,8 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(expectedResponse.length);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
@@ -809,8 +793,8 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250 + '1'
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(0);
     });
 
@@ -836,8 +820,8 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result.length).to.equal(expectedResponse.length);
       expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
     });
@@ -858,12 +842,13 @@ describe('Nobid Adapter', function () {
       site: 2,
       rlimit: REFRESH_LIMIT,
       bids: [
-        {id: 1,
+        {
+          id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -876,8 +861,10 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      };
+
+      spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
+
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
     });
   });
@@ -896,12 +883,13 @@ describe('Nobid Adapter', function () {
       device: 'COMPUTER',
       site: 2,
       bids: [
-        {id: 1,
+        {
+          id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250,
           meta: {
@@ -917,8 +905,8 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250
         }]
-      }
-      const result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      };
+      const result = spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       expect(result[0].meta.advertiserDomains).to.equal(ADOMAINS);
     });
   });
@@ -962,7 +950,7 @@ describe('Nobid Adapter', function () {
     ];
 
     it('schain exist', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, { bids: bidRequests });
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.exist;
       expect(payload.schain.validation).to.exist.and.to.equal('strict');
@@ -994,12 +982,13 @@ describe('Nobid Adapter', function () {
       site: 2,
       ublock: ULIMIT,
       bids: [
-        {id: 1,
+        {
+          id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
           dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
+          size: { 'w': 300, 'h': 250 },
           adm: ADMARKUP_300x250,
           price: '' + PRICE_300x250
         }
@@ -1012,7 +1001,7 @@ describe('Nobid Adapter', function () {
           bidId: REQUEST_ID,
           adUnitCode: ADUNIT_300x250
         }]
-      }
+      };
       const bidRequests = [
         {
           'bidder': 'nobid',
@@ -1026,7 +1015,7 @@ describe('Nobid Adapter', function () {
           'auctionId': '1d1a030790a475',
         }
       ];
-      spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      spec.interpretResponse({ body: response }, { bidderRequest: bidderRequest });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request).to.equal(undefined);
     });
@@ -1035,52 +1024,233 @@ describe('Nobid Adapter', function () {
   describe('getUserSyncs', function () {
     const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
     it('should get correct user sync when iframeEnabled', function () {
-      const pixel = spec.getUserSyncs({iframeEnabled: true})
+      const pixel = spec.getUserSyncs({ iframeEnabled: true });
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
     });
 
     it('should get correct user sync when iframeEnabled and pixelEnabled', function () {
-      const pixel = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true})
+      const pixel = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
     });
 
     it('should get correct user sync when iframeEnabled', function () {
-      const pixel = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: GDPR_CONSENT_STRING });
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING);
     });
 
+    it('should add gpp and gpp_sid as separate params', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined,
+        { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html' +
+        '?gpp=DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gpp_sid=7%2C8');
+    });
+
+    it('should append gpp after gdpr and usp with &', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {},
+        { gdprApplies: true, consentString: GDPR_CONSENT_STRING }, '1YNN',
+        { gppString: 'GPP', applicableSections: [2] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html' +
+        '?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&usp_consent=1YNN&gpp=GPP&gpp_sid=2');
+    });
+
+    it('should omit gpp when there are no applicable sections', function () {
+      const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined,
+        { gppString: 'GPP', applicableSections: [] });
+      expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html');
+    });
+
     it('should get correct user sync when !iframeEnabled', function () {
-      const pixel = spec.getUserSyncs({iframeEnabled: false})
+      const pixel = spec.getUserSyncs({ iframeEnabled: false });
       expect(pixel.length).to.equal(0);
     });
 
     it('should get correct user sync when !iframeEnabled and pixelEnabled', function () {
-      const pixel = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: {syncs: ['sync_url']}}])
+      const pixel = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [{ body: { syncs: ['sync_url'] } }]);
       expect(pixel.length).to.equal(1);
       expect(pixel[0].type).to.equal('image');
       expect(pixel[0].url).to.equal('sync_url');
     });
 
     it('should get correct user sync when !iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({})
+      let pixel = spec.getUserSyncs({});
       expect(pixel.length).to.equal(0);
     });
   });
 
   describe('onTimeout', function (syncOptions) {
     it('should increment timeoutTotal', function () {
-      const timeoutTotal = spec.onTimeout()
+      const timeoutTotal = spec.onTimeout();
       expect(timeoutTotal).to.equal(1);
     });
   });
 
   describe('onBidWon', function (syncOptions) {
     it('should increment bidWonTotal', function () {
-      const bidWonTotal = spec.onBidWon()
+      const bidWonTotal = spec.onBidWon();
       expect(bidWonTotal).to.equal(1);
     });
+  });
+});
+
+describe('coverage: request building', function () {
+  const bidderRequest = { refererInfo: { page: 'https://www.examplereferer.com' } };
+  const bid = (overrides) => Object.assign({
+    bidder: 'nobid',
+    params: { siteId: 2 },
+    adUnitCode: 'adunit-code',
+    sizes: [[300, 250]],
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475'
+  }, overrides);
+
+  beforeEach(function () {
+    // Earlier tests in this file leave a refresh limit and a _ublock cookie behind,
+    // either of which makes buildRequests return nothing.
+    delete window.nobid.refreshLimit;
+    window.nobid.refreshCount = 0;
+    document.cookie = '_ublock=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  });
+
+  it('should flag COPPA from ortb2.regs.coppa', function () {
+    const request = spec.buildRequests([bid()], Object.assign({ ortb2: { regs: { coppa: 1 } } }, bidderRequest));
+    expect(JSON.parse(request.data).coppa).to.deep.equal({ coppa: true });
+  });
+
+  it('should fall back to the bid-level coppa value', function () {
+    const request = spec.buildRequests([bid({ coppa: { coppa: true } })], bidderRequest);
+    expect(JSON.parse(request.data).coppa).to.deep.equal({ coppa: true });
+  });
+
+  it('should not send coppa when nothing sets it', function () {
+    const request = spec.buildRequests([bid()], bidderRequest);
+    expect(JSON.parse(request.data)).to.not.have.property('coppa');
+  });
+
+  it('should collapse two bids for the same ad unit into one', function () {
+    const request = spec.buildRequests([
+      bid({ bidId: 'a', sizes: [[300, 250]] }),
+      bid({ bidId: 'b', sizes: [[728, 90]] })
+    ], bidderRequest);
+    const adunits = JSON.parse(request.data).a;
+    expect(adunits.length).to.equal(1);
+    expect(adunits[0].z).to.deep.equal([[728, 90]]);
+  });
+
+  it('should not build a request without a siteId', function () {
+    expect(spec.buildRequests([bid({ params: {} })], bidderRequest)).to.equal(undefined);
+  });
+
+  it('should not build a request for an empty bid list', function () {
+    expect(spec.buildRequests([], bidderRequest)).to.equal(undefined);
+  });
+
+  it('should send the placementId', function () {
+    const request = spec.buildRequests([bid({ params: { siteId: 2, placementId: 'p-1' } })], bidderRequest);
+    expect(JSON.parse(request.data).a[0].pid).to.equal('p-1');
+  });
+
+  describe('when the user is blocked', function () {
+    beforeEach(function () {
+      // Prebid only lets a bidder use cookies when the publisher allows it.
+      getGlobal().bidderSettings = { nobid: { storageAllowed: true } };
+      // Block the user the way production does: a server response carrying ublock (hours).
+      spec.interpretResponse({ body: { ublock: 1, bids: [] } }, { bidderRequest: { bids: [] } });
+    });
+    afterEach(function () {
+      document.cookie = '_ublock=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      getGlobal().bidderSettings = {};
+    });
+
+    it('should not build a request', function () {
+      expect(spec.buildRequests([bid()], bidderRequest)).to.equal(undefined);
+    });
+  });
+});
+
+describe('coverage: video bid response', function () {
+  it('should copy vastUrl, vastXml and videoCacheKey onto the bid', function () {
+    const response = {
+      bids: [{
+        id: 2,
+        bdrid: 101,
+        divid: 'video-unit',
+        size: { w: 640, h: 480 },
+        price: '1.5',
+        atype: 'video',
+        vastUrl: 'https://vast.example/v.xml',
+        vastXml: '<VAST version="4.0"></VAST>',
+        videoCacheKey: 'cache-key-1'
+      }]
+    };
+    const bidderRequest = { bids: [{ bidId: 'video-req', adUnitCode: 'video-unit' }] };
+    const result = spec.interpretResponse({ body: response }, { bidderRequest });
+    expect(result.length).to.equal(1);
+    expect(result[0].mediaType).to.equal('video');
+    expect(result[0].vastUrl).to.equal('https://vast.example/v.xml');
+    expect(result[0].vastXml).to.equal('<VAST version="4.0"></VAST>');
+    expect(result[0].videoCacheKey).to.equal('cache-key-1');
+  });
+});
+
+describe('coverage: user sync consent', function () {
+  it('should send gdpr_consent without gdpr when gdprApplies is unknown', function () {
+    const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, { consentString: 'CONSENT' });
+    expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?gdpr_consent=CONSENT');
+  });
+
+  it('should send usp_consent alone with a ?', function () {
+    const pixel = spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1YNN');
+    expect(pixel[0].url).to.equal('https://public.servenobid.com/sync.html?usp_consent=1YNN');
+  });
+});
+
+describe('coverage: tag renderer', function () {
+  const doc = () => {
+    const d = { written: [], closed: 0 };
+    d.write = (m) => d.written.push(m);
+    d.close = () => { d.closed++; };
+    return d;
+  };
+
+  beforeEach(function () {
+    window.nobid.bidResponses['render-1'] = { adm2: '<div>ad</div>' };
+  });
+
+  afterEach(function () {
+    delete window.nobid.bidResponses['render-1'];
+  });
+
+  it('renderTag should write the stored markup', function () {
+    const d = doc();
+    window.nobid.renderTag(d, 'render-1', window);
+    expect(d.written).to.deep.equal(['<div>ad</div>']);
+    expect(d.closed).to.equal(1);
+  });
+
+  it('renderTag should write nothing for an unknown id', function () {
+    const d = doc();
+    window.nobid.renderTag(d, 'missing', window);
+    expect(d.written).to.deep.equal([]);
+  });
+
+  const requestMarkup = (adId) => {
+    const posted = [];
+    const event = new Event('message');
+    event.data = 'nbTagRenderer.requestAdMarkup|' + adId;
+    event.source = { postMessage: (msg) => posted.push(msg) };
+    window.dispatchEvent(event);
+    return posted;
+  };
+
+  it('should post the markup back to a safe frame that asks for it', function () {
+    expect(requestMarkup('render-1')).to.deep.equal(['nbTagRenderer.renderAdInSafeFrame|<div>ad</div>']);
+  });
+
+  it('should post nothing for an unknown ad id', function () {
+    expect(requestMarkup('missing')).to.deep.equal([]);
   });
 });

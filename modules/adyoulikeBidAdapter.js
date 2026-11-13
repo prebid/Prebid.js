@@ -1,7 +1,6 @@
-import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { buildUrl, parseSizesInput } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -190,7 +189,7 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {UserSync[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -204,7 +203,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params += '&coppa=1';
     }
 
@@ -224,7 +223,7 @@ export const spec = {
       url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
     }];
   }
-}
+};
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
@@ -237,13 +236,13 @@ function getHostname(bidderRequest) {
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (bidRequest?.mediaTypes?.banner) {
     return BANNER;
   }
-  if (deepAccess(bidRequest, 'mediaTypes.video')) {
+  if (bidRequest?.mediaTypes?.video) {
     return VIDEO;
   }
-  if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  if (bidRequest?.mediaTypes?.native) {
     return NATIVE;
   }
 }
@@ -253,7 +252,7 @@ function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.width, size.height ]
+    size: [size.width, size.height]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
@@ -328,7 +327,7 @@ function getSizeArray(bid) {
   if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize]
+      inputSize = [inputSize];
     }
   }
 
@@ -401,7 +400,7 @@ function getTrackers(eventsArray, jsTrackers) {
 
   if (!eventsArray) return result;
 
-  eventsArray.map((item, index) => {
+  eventsArray.forEach((item, index) => {
     if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
         (!jsTrackers && item.Kind === 'PIXEL_URL')) {
       result.push(item.Url);
@@ -446,7 +445,7 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function(key, index) {
+  Object.keys(nativeConfig).forEach(function(key, index) {
     switch (key) {
       case 'title':
         native[key] = textsJson.TITLE;
@@ -468,7 +467,7 @@ function getNativeAssets(response, nativeConfig) {
           imgSize[1] = response.Height || 250;
         }
 
-        const url = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
+        const url = getImageUrl(adJson, adJson?.Content?.Preview?.Thumbnail?.Image, imgSize[0], imgSize[1]);
         if (url) {
           native[key] = {
             url,
@@ -486,7 +485,7 @@ function getNativeAssets(response, nativeConfig) {
           iconSize[1] = 50;
         }
 
-        const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
+        const icurl = getImageUrl(adJson, adJson?.Content?.Preview?.Sponsor?.Logo?.Resource, iconSize[0], iconSize[1]);
 
         if (icurl) {
           native[key] = {
@@ -497,10 +496,10 @@ function getNativeAssets(response, nativeConfig) {
         }
         break;
       case 'privacyIcon':
-        native[key] = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
+        native[key] = getImageUrl(adJson, adJson?.Content?.Preview?.Credit?.Logo?.Resource, 25, 25);
         break;
       case 'privacyLink':
-        native[key] = deepAccess(adJson, 'Content.Preview.Credit.Url');
+        native[key] = adJson?.Content?.Preview?.Credit?.Url;
         break;
     }
   });

@@ -1,6 +1,5 @@
-import {expect} from 'chai';
-import {spec, SYNC_URL} from 'modules/dxkultureBidAdapter.js';
-import {BANNER, VIDEO} from 'src/mediaTypes.js';
+import { expect } from 'chai';
+import { spec } from 'modules/dxkultureBidAdapter.js';
 
 const getBannerRequest = () => {
   return {
@@ -20,7 +19,7 @@ const getBannerRequest = () => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 300, 250 ],
+              [300, 250],
             ]
           }
         },
@@ -31,7 +30,7 @@ const getBannerRequest = () => {
     start: 1487883186070,
     auctionStart: 1487883186069,
     timeout: 3000
-  }
+  };
 };
 
 const getVideoRequest = () => {
@@ -190,26 +189,10 @@ const getBidderResponse = () => {
       }
     }
   };
-}
+};
 
 describe('dxkultureBidAdapter', function() {
   let videoBidRequest;
-
-  const VIDEO_REQUEST = {
-    'bidderCode': 'dxkulture',
-    'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
-    'bidderRequestId': '34feaad34lkj2',
-    'bids': videoBidRequest,
-    'auctionStart': 1520001292880,
-    'timeout': 3000,
-    'start': 1520001292884,
-    'doneCbCallCount': 0,
-    'refererInfo': {
-      'numIframes': 1,
-      'reachedTop': true,
-      'referer': 'test.com'
-    }
-  };
 
   beforeEach(function () {
     videoBidRequest = {
@@ -267,7 +250,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('returns false when banner mediaType does not exist', function () {
-      bidderRequest.bids[0].mediaTypes = {}
+      bidderRequest.bids[0].mediaTypes = {};
       expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.false;
     });
   });
@@ -287,12 +270,6 @@ describe('dxkultureBidAdapter', function() {
   });
 
   context('banner validation', function () {
-    let bidderRequest;
-
-    beforeEach(function() {
-      bidderRequest = getBannerRequest();
-    });
-
     it('returns true when banner sizes are defined', function () {
       const bid = {
         bidder: 'dxkulture',
@@ -307,7 +284,7 @@ describe('dxkultureBidAdapter', function() {
         }
       };
 
-      expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.be.true;
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('returns false when banner sizes are invalid', function () {
@@ -390,12 +367,12 @@ describe('dxkultureBidAdapter', function() {
         'test',
         1,
         []
-      ]
+      ];
 
       invalidMimes.forEach((mimes) => {
         this.bid.mediaTypes.video.mimes = mimes;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
 
     it('returns false when video protocols is invalid', function () {
@@ -404,12 +381,12 @@ describe('dxkultureBidAdapter', function() {
         'test',
         1,
         []
-      ]
+      ];
 
       invalidMimes.forEach((protocols) => {
         this.bid.mediaTypes.video.protocols = protocols;
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      })
+      });
     });
   });
 
@@ -421,7 +398,7 @@ describe('dxkultureBidAdapter', function() {
     beforeEach(function() {
       bidderBannerRequest = getBannerRequest();
 
-      mockBidderRequest = {refererInfo: {}};
+      mockBidderRequest = { refererInfo: {} };
 
       bidRequestsWithMediaTypes = [{
         bidder: 'dxkulture',
@@ -465,7 +442,7 @@ describe('dxkultureBidAdapter', function() {
 
     context('when mediaType is banner', function () {
       it('creates request data', function () {
-        const request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest)
+        const request = spec.buildRequests(bidderBannerRequest.bids, bidderBannerRequest);
 
         expect(request).to.exist.and.to.be.a('object');
         const payload = request.data;
@@ -499,7 +476,6 @@ describe('dxkultureBidAdapter', function() {
           const requests = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           const data = requests.data;
           const [width, height] = videoBidRequest.sizes;
-          const VERSION = '1.0.0';
 
           expect(data.imp[1].video.w).to.equal(width);
           expect(data.imp[1].video.h).to.equal(height);
@@ -539,7 +515,7 @@ describe('dxkultureBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
@@ -574,32 +550,36 @@ describe('dxkultureBidAdapter', function() {
       });
 
       it('handles empty response', function () {
-        const EMPTY_RESP = Object.assign({}, bidderResponse, {'body': {}});
+        const EMPTY_RESP = Object.assign({}, bidderResponse, { 'body': {} });
         const bids = spec.interpretResponse(EMPTY_RESP, bidRequest);
 
         expect(bids).to.be.empty;
       });
 
       it('should return no bids if the response "nurl" and "adm" are missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              price: 6.01
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                price: 6.01
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
 
       it('should return no bids if the response "price" is missing', function () {
-        const SERVER_RESP = Object.assign({}, bidderResponse, {'body': {
-          seatbid: [{
-            bid: [{
-              adm: '<VAST></VAST>'
+        const SERVER_RESP = Object.assign({}, bidderResponse, {
+          'body': {
+            seatbid: [{
+              bid: [{
+                adm: '<VAST></VAST>'
+              }]
             }]
-          }]
-        }});
+          }
+        });
         const bids = spec.interpretResponse(SERVER_RESP, bidRequest);
         expect(bids.length).to.equal(0);
       });
@@ -607,10 +587,10 @@ describe('dxkultureBidAdapter', function() {
   });
 
   describe('getUserSyncs', function () {
-    let bidRequest, bidderResponse;
+    let bidderResponse;
     beforeEach(function() {
       const bidderRequest = getVideoRequest();
-      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
       bidderResponse = getBidderResponse();
     });
 
@@ -619,13 +599,13 @@ describe('dxkultureBidAdapter', function() {
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -633,7 +613,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -641,7 +621,7 @@ describe('dxkultureBidAdapter', function() {
     });
 
     it('all sync enabled should prioritize iframe', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [bidderResponse]);
 
       expect(opts.length).to.equal(1);
     });

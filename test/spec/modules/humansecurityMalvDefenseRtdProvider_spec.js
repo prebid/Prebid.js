@@ -1,6 +1,7 @@
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
+import * as adloader from '../../../src/adloader.js';
+import * as hook from '../../../src/hook.js';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
@@ -102,13 +103,13 @@ describe('humansecurityMalvDefense RTD module', function () {
 
   describe('Submodule execution', function() {
     let submoduleStub;
-    let insertElementStub;
+    let preloadStub;
     beforeEach(function () {
       submoduleStub = sinon.stub(hook, 'submodule');
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      preloadStub = sinon.stub(adloader, 'preloadExternalScript').callsFake(() => new Promise(() => {}));
     });
     afterEach(function () {
-      utils.insertElement.restore();
+      preloadStub.restore();
       submoduleStub.restore();
     });
 
@@ -150,41 +151,51 @@ describe('humansecurityMalvDefense RTD module', function () {
     it('should iniitalize in bids (frame) protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
       expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids' } }, {})).to.equal(true);
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
-
+      sinon.assert.called(preloadStub);
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});
       ensureWrapBidResponse(fakeBidResponse, 'https://cadmus.script.ac/abc1234567890/script.js');
     });
 
-    it('should respect preload status in bids-nowait protection mode', function () {
-      const { init, onBidResponseEvent } = getModule();
-      expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids-nowait' } }, {})).to.equal(true);
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
-      const preloadLink = insertElementStub.getCall(0).args[0];
-      expect(preloadLink).to.have.property('onload').which.is.a('function');
-      expect(preloadLink).to.have.property('onerror').which.is.a('function');
-
-      const fakeBidResponse1 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse1, {}, {});
-      ensurePrependToBidResponse(fakeBidResponse1);
-
-      // Simulate successful preloading
-      preloadLink.onload();
-
-      const fakeBidResponse2 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse2, {}, {});
-      ensureWrapBidResponse(fakeBidResponse2, 'https://cadmus.script.ac/abc1234567890/script.js');
-
-      // Simulate error
-      preloadLink.onerror();
-
-      // Now we should fallback to just prepending
-      const fakeBidResponse3 = makeFakeBidResponse();
-      onBidResponseEvent(fakeBidResponse3, {}, {});
-      ensurePrependToBidResponse(fakeBidResponse3);
+    describe('should respect preload status in bids-nowait protection mode', function () {
+      let success, fail, promise, onBidResponseEvent;
+      beforeEach(() => {
+        preloadStub.callsFake(() => {
+          const inner = new Promise((resolve, reject) => {
+            success = resolve;
+            fail = reject;
+          });
+          promise = inner.then(() => Promise.resolve(), () => Promise.resolve());
+          return inner;
+        });
+        const module = getModule();
+        onBidResponseEvent = module.onBidResponseEvent;
+        expect(module.init({
+          params: {
+            cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js',
+            protectionMode: 'bids-nowait'
+          }
+        }, {})).to.equal(true);
+        sinon.assert.calledOnce(preloadStub);
+        const fakeBidResponse1 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse1, {}, {});
+        ensurePrependToBidResponse(fakeBidResponse1);
+      });
+      it('load success', async () => {
+        success();
+        await promise;
+        const fakeBidResponse2 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse2, {}, {});
+        ensureWrapBidResponse(fakeBidResponse2, 'https://cadmus.script.ac/abc1234567890/script.js');
+      });
+      it('load fail', async () => {
+        fail();
+        await promise;
+        // Now we should fallback to just prepending
+        const fakeBidResponse3 = makeFakeBidResponse();
+        onBidResponseEvent(fakeBidResponse3, {}, {});
+        ensurePrependToBidResponse(fakeBidResponse3);
+      });
     });
 
     it('should send billable event per bid won event', function () {
@@ -196,7 +207,7 @@ describe('humansecurityMalvDefense RTD module', function () {
 
       events.on(EVENTS.BILLABLE_EVENT, (evt) => {
         if (evt.vendor === 'humansecurityMalvDefense') {
-          eventCounter.registerHumansecurityMalvDefenseBillingEvent()
+          eventCounter.registerHumansecurityMalvDefenseBillingEvent();
         }
       });
 

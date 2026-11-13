@@ -1,4 +1,4 @@
-import {getBidIdParameter, getValue, parseSizesInput} from '../src/utils.js';
+import { getBidIdParameter, getValue, parseSizesInput } from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -16,7 +16,7 @@ const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [{ code: 'scm'}],
+  aliases: [{ code: 'scm' }],
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -47,8 +47,8 @@ export const spec = {
     };
     const gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
-      const isCmp = (typeof gdpr.gdprApplies === 'boolean')
-      const isConsentString = (typeof gdpr.consentString === 'string')
+      const isCmp = (typeof gdpr.gdprApplies === 'boolean');
+      const isConsentString = (typeof gdpr.consentString === 'string');
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: isCmp ? gdpr.gdprApplies : -1
@@ -104,7 +104,7 @@ export const spec = {
   onBidWon: function(bid) {
     ajax(bid.winUrl + bid.cpm, null);
   }
-}
+};
 function buildRequestObject(bid) {
   const reqObj = {};
   const placementId = getValue(bid.params, 'placementId');

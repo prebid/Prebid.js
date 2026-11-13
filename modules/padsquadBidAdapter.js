@@ -1,6 +1,6 @@
-import {deepAccess, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { deepAccess, logInfo } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.padsquad.com/auction';
 
@@ -57,8 +57,8 @@ export const spec = {
 
     // apply gdpr
     if (bidderRequest.gdprConsent) {
-      openrtbRequest.regs = {ext: {gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0}};
-      openrtbRequest.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
+      openrtbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+      openrtbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
     }
 
     const payloadString = JSON.stringify(openrtbRequest);
@@ -86,8 +86,8 @@ export const spec = {
           meta: { advertiserDomains: bid.adomain },
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-        })
-      })
+        });
+      });
     } else {
       logInfo('padsquad.interpretResponse :: no valid responses to interpret');
     }
@@ -119,10 +119,10 @@ export const spec = {
         });
 
         if (!syncOptions.iframeEnabled) {
-          syncs = syncs.filter(s => s.type !== 'iframe')
+          syncs = syncs.filter(s => s.type !== 'iframe');
         }
         if (!syncOptions.pixelEnabled) {
-          syncs = syncs.filter(s => s.type !== 'image')
+          syncs = syncs.filter(s => s.type !== 'image');
         }
       }
     });

@@ -49,8 +49,8 @@ describe('adnuntiusRtdProvider is a RTD provider that', function () {
       expect(config.name).to.equal('adnuntius');
       expect(config.params.providers).to.not.be.undefined;
       expect(config.params).to.have.property('providers');
-      expect(config.params.providers[0]).to.have.property('siteId')
-      expect(config.params.providers[0]).to.have.property('userId')
+      expect(config.params.providers[0]).to.have.property('siteId');
+      expect(config.params.providers[0]).to.have.property('userId');
     });
 
     it('send correct request', function () {
@@ -73,18 +73,18 @@ describe('adnuntiusRtdProvider is a RTD provider that', function () {
 
     it('sets global config', function () {
       adnuntiusSubmodule.setGlobalConfig(config, concatSegments);
-      const globalConfig = _config.getBidderConfig()
-      expect(globalConfig).to.have.property('adnuntius')
-      expect(globalConfig.adnuntius).to.have.property('ortb2')
-      expect(globalConfig.adnuntius.ortb2).to.have.property('user')
-      expect(globalConfig.adnuntius.ortb2.user).to.have.property('data')
-      expect(globalConfig.adnuntius.ortb2.user.data).to.be.a('array')
-      expect(globalConfig.adnuntius.ortb2.user.data[0]).to.have.property('name')
-      expect(globalConfig.adnuntius.ortb2.user.data[0].name).to.equal('adnuntius')
-      expect(globalConfig.adnuntius.ortb2.user.data[0]).to.have.property('segment')
-      expect(globalConfig.adnuntius.ortb2.user.data[0].segment).to.be.a('array')
-      expect(globalConfig.adnuntius.ortb2.user.data[0].segment[0]).to.have.property('id')
-      expect(globalConfig.adnuntius.ortb2.user.data[0].segment[0].id).to.equal('segment2')
+      const globalConfig = _config.getBidderConfig();
+      expect(globalConfig).to.have.property('adnuntius');
+      expect(globalConfig.adnuntius).to.have.property('ortb2');
+      expect(globalConfig.adnuntius.ortb2).to.have.property('user');
+      expect(globalConfig.adnuntius.ortb2.user).to.have.property('data');
+      expect(globalConfig.adnuntius.ortb2.user.data).to.be.a('array');
+      expect(globalConfig.adnuntius.ortb2.user.data[0]).to.have.property('name');
+      expect(globalConfig.adnuntius.ortb2.user.data[0].name).to.equal('adnuntius');
+      expect(globalConfig.adnuntius.ortb2.user.data[0]).to.have.property('segment');
+      expect(globalConfig.adnuntius.ortb2.user.data[0].segment).to.be.a('array');
+      expect(globalConfig.adnuntius.ortb2.user.data[0].segment[0]).to.have.property('id');
+      expect(globalConfig.adnuntius.ortb2.user.data[0].segment[0].id).to.equal('segment2');
     });
   });
 });
@@ -142,4 +142,4 @@ const data = {
 const concatSegments = [
   { id: 'segment2' },
   { id: 'segment1' },
-]
+];

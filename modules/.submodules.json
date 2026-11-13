@@ -2,22 +2,26 @@
   "parentModules": {
     "userId": [
       "33acrossIdSystem",
+      "abtshieldIdSystem",
+      "acxiomRealIdSystem",
       "admixerIdSystem",
       "adqueryIdSystem",
+      "adplusIdSystem",
       "adriverIdSystem",
       "adtelligentIdSystem",
       "amxIdSystem",
+      "anonymisedIdSystem",
       "ceeIdSystem",
       "connectIdSystem",
       "criteoIdSystem",
       "czechAdIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
-      "dmdIdSystem",
       "euidIdSystem",
       "fabrickIdSystem",
       "freepassIdSystem",
       "ftrackIdSystem",
+      "gemiusIdSystem",
       "gravitoIdSystem",
       "growthCodeIdSystem",
       "hadronIdSystem",
@@ -30,6 +34,7 @@
       "kinessoIdSystem",
       "liveIntentIdSystem",
       "lmpIdSystem",
+      "locIdSystem",
       "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
@@ -47,9 +52,11 @@
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "pubmaticIdSystem",
-      "quantcastIdSystem",
+      "rediadsIdSystem",
       "rewardedInterestIdSystem",
+      "sevioIdSystem",
       "sharedIdSystem",
+      "startioIdSystem",
       "taboolaIdSystem",
       "tapadIdSystem",
       "teadsIdSystem",
@@ -62,10 +69,6 @@
       "yandexIdSystem",
       "zeotapIdPlusIdSystem"
     ],
-    "adpod": [
-      "freeWheelAdserverVideo",
-      "gamAdpod"
-    ],
     "rtdModule": [
       "1plusXRtdProvider",
       "51DegreesRtdProvider",
@@ -75,6 +78,7 @@
       "adlooxRtdProvider",
       "adlaneRtdProvider",
       "adnuntiusRtdProvider",
+      "agenticAudienceRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "anonymisedRtdProvider",
@@ -87,6 +91,7 @@
       "cleanioRtdProvider",
       "confiantRtdProvider",
       "contxtfulRtdProvider",
+      "datamageRtdProvider",
       "dgkeywordRtdProvider",
       "dynamicAdBoostRtdProvider",
       "experianRtdProvider",
@@ -99,21 +104,26 @@
       "hadronRtdProvider",
       "humansecurityRtdProvider",
       "iasRtdProvider",
+      "insuradsRtdProvider",
       "imRtdProvider",
       "intersectionRtdProvider",
       "jwplayerRtdProvider",
       "liveIntentRtdProvider",
+      "mantisRtdProvider",
       "mediafilterRtdProvider",
       "medianetRtdProvider",
       "mgidRtdProvider",
+      "mileRtdProvider",
       "mobianRtdProvider",
       "neuwoRtdProvider",
       "nodalsAiRtdProvider",
+      "oftmediaRtdProvider",
       "oneKeyRtdProvider",
       "optableRtdProvider",
       "optimeraRtdProvider",
       "overtoneRtdProvider",
       "oxxionRtdProvider",
+      "panxoRtdProvider",
       "permutiveRtdProvider",
       "pubmaticRtdProvider",
       "pubxaiRtdProvider",
@@ -122,12 +132,16 @@
       "raynRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
+      "scope3RtdProvider",
       "semantiqRtdProvider",
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
+      "transfonSecurityRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "wurflRtdProvider",
+      "encypherRtdProvider",
+      "stackupRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
@@ -138,9 +152,8 @@
       "videojsVideoProvider",
       "adplayerproVideoProvider"
     ],
-    "paapi": [
-      "paapiForGpt",
-      "topLevelPaapi"
+    "genericAnalyticsAdapter": [
+      "genericAnalyticsSkinnyEvents"
     ]
   }
 }

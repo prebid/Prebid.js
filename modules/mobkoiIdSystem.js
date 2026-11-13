@@ -8,7 +8,7 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { logError, logInfo, deepAccess, insertUserSyncIframe } from '../src/utils.js';
+import { logError, logInfo, deepAccess, createInvisibleIframe, insertElement } from '../src/utils.js';
 
 const GVL_ID = 898;
 const MODULE_NAME = 'mobkoiId';
@@ -30,7 +30,7 @@ const USER_SYNC_PARAMS = {
    * The name of the parameter that the publisher can use to specify the integration endpoint.
    */
   PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
-}
+};
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -115,30 +115,45 @@ export const utils = {
       'pixelUrl=' + encodeURIComponent(equativPixelUrl) +
       '&cookieName=sas_uid';
 
-    /**
-     * Listen for messages from the iframe with automatic cleanup
-     */
-    const messageHandler = function(event) {
-      switch (event.data.type) {
+    const iframe = createInvisibleIframe(document, {
+      src: url,
+      sandbox: 'allow-scripts allow-same-origin',
+    });
+    let completed = false;
+    let messageHandler;
+    const complete = function(sasUid) {
+      if (completed) {
+        return;
+      }
+      completed = true;
+      window.removeEventListener('message', messageHandler);
+      iframe.parentNode?.removeChild(iframe);
+      onCompleteCallback(sasUid);
+    };
+
+    messageHandler = function(event) {
+      if (event.source !== iframe.contentWindow) {
+        return;
+      }
+      switch (event.data?.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
           logInfo('Parent window Sync completed. SAS ID:', sasUid);
-          window.removeEventListener('message', messageHandler);
-          onCompleteCallback(sasUid);
+          complete(sasUid);
           break;
         case 'MOBKOI_PIXEL_SYNC_ERROR':
           logError('Parent window Sync failed:', event.data.error);
-          window.removeEventListener('message', messageHandler);
-          onCompleteCallback(null);
+          complete(null);
           break;
       }
     };
 
     window.addEventListener('message', messageHandler);
-
-    insertUserSyncIframe(url, () => {
-      logInfo('insertUserSyncIframe loaded');
+    iframe.addEventListener('error', () => {
+      logError('Equativ SAS ID iframe failed to load');
+      complete(null);
     });
+    insertElement(iframe, document, 'html', true);
 
     // Return the URL for testing purposes
     return url;

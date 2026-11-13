@@ -31,13 +31,22 @@ describe('truereachBidAdapterTests', function () {
       sizes: [[300, 250]]
     }];
 
-    const request = spec.buildRequests(bidRequestData, {});
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          ua: 'Mozilla/5.0 (test)'
+        }
+      }
+    };
+
+    const request = spec.buildRequests(bidRequestData, bidderRequest);
     const req_data = request.data;
 
     expect(request.method).to.equal('POST');
     expect(req_data.imp[0].id).to.equal('34ce3f3b15190a');
     expect(req_data.imp[0].banner.w).to.equal(300);
     expect(req_data.imp[0].banner.h).to.equal(250);
+    expect(req_data.device.ua).to.equal('Mozilla/5.0 (test)');
   });
 
   it('validate_response_params', function () {
@@ -83,7 +92,7 @@ describe('truereachBidAdapterTests', function () {
     const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp';
     it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
       const syncs = spec.getUserSyncs(
-        {iframeEnabled: true}
+        { iframeEnabled: true }
       );
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(1);
@@ -93,7 +102,7 @@ describe('truereachBidAdapterTests', function () {
 
     it('if_pixelEnabled_is_true', function() {
       const syncs = spec.getUserSyncs(
-        {pixelEnabled: true}
+        { pixelEnabled: true }
       );
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(0);

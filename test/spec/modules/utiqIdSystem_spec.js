@@ -7,13 +7,13 @@ describe('utiqIdSystem', () => {
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
-      idGraph = {id: 501, domain: ''};
+      idGraph = [{ id: 501, domain: '' }];
     }
     return {
       'connectId': {
-        'idGraph': [idGraph],
+        'idGraph': idGraph,
       }
-    }
+    };
   };
 
   it('should have the correct module name declared', () => {
@@ -36,55 +36,60 @@ describe('utiqIdSystem', () => {
     });
 
     it('tests if localstorage & JSON works properly ', () => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'domainValue',
         'atid': 'atidValue',
-      };
+      }];
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       expect(JSON.parse(storage.getDataFromLocalStorage(utiqPassKey))).to.have.property('connectId');
     });
 
     it('returns {id: {utiq: data.utiq}} if we have the right data stored in the localstorage ', () => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'atid': 'atidValue',
-      };
+        'category': 'categoryValue',
+      }];
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiq');
-      expect(response.id.utiq).to.be.equal('atidValue');
+      expect(response.id.utiq.atid).to.be.equal('atidValue');
+      expect(response.id.utiq.category).to.be.equal('categoryValue');
     });
 
     it('returns {utiq: data.utiq} if we have the right data stored in the localstorage right after the callback is called', (done) => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'atid': 'atidValue',
-      };
+        'category': 'categoryValue',
+      }];
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
       if (typeof response.callback === 'function') {
         storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          expect(result.utiq.atid).to.be.equal('atidValue');
+          expect(result.utiq.category).to.be.equal('categoryValue');
+          done();
+        });
       }
     });
 
     it('returns {utiq: data.utiq} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
-      const idGraph = {
+      const idGraph = [{
         'domain': 'test.domain',
         'atid': 'atidValue',
-      };
+        'category': 'categoryValue',
+      }];
 
       const response = utiqIdSubmodule.getId();
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
@@ -93,31 +98,54 @@ describe('utiqIdSystem', () => {
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
-          expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
+          expect(result.utiq.atid).to.be.equal('atidValue');
+          expect(result.utiq.category).to.be.equal('categoryValue');
+          done();
+        });
       }
     });
 
-    it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
-      const idGraph = {
+    it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', () => {
+      const idGraph = [{
         'domain': 'test.domain',
         'atid': 'atidValue',
-      };
+      }];
 
-      const response = utiqIdSubmodule.getId({params: {maxDelayTime: 200}});
+      const response = utiqIdSubmodule.getId({ params: { maxDelayTime: 200 } });
       expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
+      expect(response.callback).to.be.a('function');
 
-      if (typeof response.callback === 'function') {
-        setTimeout(() => {
+      return new Promise((resolve, reject) => {
+        const writeTimer = setTimeout(() => {
           storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
-          expect(result).to.be.null;
-          done()
-        })
-      }
+          // Avoid a late write leaking into the next test once the deadline has passed.
+          clearTimeout(writeTimer);
+          try {
+            expect(result).to.be.null;
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }, () => null); // userId passes getStoredValue as a second argument
+      });
+    });
+
+    it('stops polling and resolves without an ID when userId supplies a second callback argument', () => {
+      const response = utiqIdSubmodule.getId({ params: { maxDelayTime: 100 } });
+      expect(response.callback).to.be.a('function');
+
+      return new Promise((resolve, reject) => {
+        response.callback((id) => {
+          try {
+            expect(id).to.be.null;
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }, () => null);
+      });
     });
   });
 
@@ -139,12 +167,12 @@ describe('utiqIdSystem', () => {
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the utiq for a payload with {utiq: value}', () => {
         expect(utiqIdSubmodule.decode(responseData.payload)).to.deep.equal(
-          {utiq: responseData.expected}
+          { utiq: responseData.expected }
         );
       });
     });
 
-    [{}, '', {foo: 'bar'}].forEach((response) => {
+    [{}, '', { foo: 'bar' }].forEach((response) => {
       it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(utiqIdSubmodule.decode(response)).to.be.null;
       });
@@ -164,10 +192,11 @@ describe('utiqIdSystem', () => {
 
     domains.forEach(domain => {
       it(`correctly sets utiq value for domain name ${domain}`, (done) => {
-        const idGraph = {
+        const idGraph = [{
           'domain': domain,
           'atid': 'atidValue',
-        };
+          'category': 'categoryValue',
+        }];
 
         storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
 
@@ -180,7 +209,8 @@ describe('utiqIdSystem', () => {
         const response = utiqIdSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('utiq');
-        expect(response.id.utiq).to.be.equal('atidValue');
+        expect(response.id.utiq.atid).to.be.equal('atidValue');
+        expect(response.id.utiq.category).to.be.equal('categoryValue');
         done();
       });
     });
@@ -193,33 +223,77 @@ describe('utiqIdSystem', () => {
 
     it(`correctly set utiqPassKey as adtechpass utiq value for ${netIdKey} empty`, (done) => {
       // given
-      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData({
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData([{
         'domain': 'TEST DOMAIN',
         'atid': 'TEST ATID',
-      }))); // setting idGraph
+        'category': 'categoryValue',
+      }]))); // setting idGraph
       storage.setDataInLocalStorage(netIdKey, ''); // setting an empty value
 
       // when
       const response = utiqIdSubmodule.getId();
 
       // then
-      expect(response.id.utiq).to.be.equal('TEST ATID');
+      expect(response.id.utiq.atid).to.be.equal('TEST ATID');
+      expect(response.id.utiq.category).to.be.equal('categoryValue');
       done();
     });
 
-    it(`correctly set netIdAdtechpass as adtechpass utiq value for ${netIdKey} settled`, (done) => {
+    it(`correctly set utiqPassKey as adtechpass utiq value for ${netIdKey} settled on mobile connection`, (done) => {
       // given
-      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData({
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData([{
         'domain': 'TEST DOMAIN',
         'atid': 'TEST ATID',
-      }))); // setting idGraph
+        'category': 'mobile',
+      }]))); // setting idGraph
       storage.setDataInLocalStorage(netIdKey, 'testNetIdValue'); // setting a correct value
 
       // when
       const response = utiqIdSubmodule.getId();
 
       // then
-      expect(response.id.utiq).to.be.equal('testNetIdValue');
+      expect(response.id.utiq.atid).to.be.equal('TEST ATID');
+      expect(response.id.utiq.category).to.be.equal('mobile');
+      done();
+    });
+
+    it(`correctly set utiqPassKey as adtechpass utiq value for ${netIdKey} settled on mobile connection found in the idGraph`, (done) => {
+      // given
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData([{
+        'domain': 'TEST DOMAIN',
+        'atid': 'TEST FIXED ATID',
+        'category': 'fixed',
+      }, {
+        'domain': 'TEST DOMAIN',
+        'atid': 'TEST MOBILE ATID',
+        'category': 'mobile',
+      }]))); // setting idGraph
+      storage.setDataInLocalStorage(netIdKey, 'testNetIdValue'); // setting a correct value
+
+      // when
+      const response = utiqIdSubmodule.getId();
+
+      // then
+      expect(response.id.utiq.atid).to.be.equal('TEST MOBILE ATID');
+      expect(response.id.utiq.category).to.be.equal('mobile');
+      done();
+    });
+
+    it(`correctly set netIdAdtechpass as adtechpass utiq value for ${netIdKey} settled on fixed connection`, (done) => {
+      // given
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData([{
+        'domain': 'TEST DOMAIN',
+        'atid': 'TEST ATID',
+        'category': 'fixed',
+      }]))); // setting idGraph
+      storage.setDataInLocalStorage(netIdKey, 'testNetIdValue'); // setting a correct value
+
+      // when
+      const response = utiqIdSubmodule.getId();
+
+      // then
+      expect(response.id.utiq.atid).to.be.equal('testNetIdValue');
+      expect(response.id.utiq.category).to.be.equal('netid');
       done();
     });
   });

@@ -4,6 +4,9 @@ import * as utils from 'src/utils.js';
 
 const TEST_CHECKSUM = '-1135402174';
 const TEST_URL = 'http://localhost:9876/context.html';
+// The module keys segments by the checksum of the page URL, which is TEST_URL only under Karma (a BrowserStack
+// device loads the page from bs-local.com). Computed here, before generateChecksum is stubbed.
+const PAGE_CHECKSUM = raynRTD.generateChecksum(window.location.href);
 const TEST_SEGMENTS = {
   [TEST_CHECKSUM]: {
     7: {
@@ -169,7 +172,7 @@ describe('rayn RTD Submodule', function () {
 
       TEST_SEGMENTS[TEST_CHECKSUM]['7']['2'].forEach((id) => {
         expect(globalOrtb2.site.content.data[0].segment.find(segment => segment.id === id)).to.exist;
-      })
+      });
     });
 
     it('should set bidder specific ortb2 config', function () {
@@ -185,7 +188,7 @@ describe('rayn RTD Submodule', function () {
         const ortb2 = bidderOrtb2[bidder];
         TEST_SEGMENTS[TEST_CHECKSUM]['7']['2'].forEach((id) => {
           expect(ortb2.site.content.data[0].segment.find(segment => segment.id === id)).to.exist;
-        })
+        });
       });
     });
 
@@ -231,17 +234,18 @@ describe('rayn RTD Submodule', function () {
     it('should update reqBidsConfigObj and execute callback', function () {
       const callbackSpy = sinon.spy();
       const logMessageSpy = sandbox.spy(utils, 'logMessage');
+      const segments = { ...TEST_SEGMENTS, [PAGE_CHECKSUM]: TEST_SEGMENTS[TEST_CHECKSUM] };
 
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
-        .returns(JSON.stringify(TEST_SEGMENTS));
+        .returns(JSON.stringify(segments));
 
       const reqBidsConfigObj = { ortb2Fragments: { bidder: {} } };
 
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`);
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(segments)}`);
     });
 
     it('should update reqBidsConfigObj and execute callback using user segments from localStorage', function () {
@@ -271,7 +275,7 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
     });
 
     it('should update reqBidsConfigObj and execute callback using persona segment from localStorage', function () {
@@ -290,7 +294,7 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`)
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(testSegments)}`);
     });
 
     it('should update reqBidsConfigObj and execute callback using segments from raynJS', function () {
@@ -306,7 +310,7 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expectLog(logMessageSpy, `No segtax data`)
+      expectLog(logMessageSpy, `No segtax data`);
     });
 
     it('should update reqBidsConfigObj and execute callback using audience from localStorage', function (done) {
@@ -334,9 +338,9 @@ describe('rayn RTD Submodule', function () {
 
       setTimeout(() => {
         expect(callbackSpy.calledOnce).to.be.true;
-        expectLog(logMessageSpy, `Segtax data from RaynJS: ${JSON.stringify(testSegments)}`)
+        expectLog(logMessageSpy, `Segtax data from RaynJS: ${JSON.stringify(testSegments)}`);
         done();
-      }, 0)
+      }, 0);
     });
 
     it('should execute callback if log error', function (done) {
@@ -362,7 +366,7 @@ describe('rayn RTD Submodule', function () {
         expect(callbackSpy.calledOnce).to.be.true;
         expectLog(logErrorSpy, rejectError);
         done();
-      }, 0)
+      }, 0);
     });
   });
 });

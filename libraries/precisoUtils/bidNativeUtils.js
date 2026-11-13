@@ -1,6 +1,6 @@
 import { deepAccess, logInfo } from '../../src/utils.js';
 import { NATIVE } from '../../src/mediaTypes.js';
-import { macroReplace } from './bidUtils.js';
+import { macroReplace } from '../../libraries/precisoUtils/bidUtils.js';
 
 const TTL = 55;
 // Codes defined by OpenRTB Native Ads 1.1 specification
@@ -46,7 +46,7 @@ export function interpretNativeBid(serverBid) {
     currency: 'USD',
     // native: interpretNativeAd(serverBid.adm)
     native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price))
-  }
+  };
 }
 
 /**

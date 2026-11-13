@@ -238,7 +238,7 @@ describe('AudienceRun bid adapter tests', function () {
     });
 
     it('should add schain object if available', function() {
-      const bid = Object.assign({}, bidRequest)
+      const bid = Object.assign({}, bidRequest);
       bid.ortb2 = {
         source: {
           ext: {
@@ -274,7 +274,7 @@ describe('AudienceRun bid adapter tests', function () {
           },
         ],
       });
-    })
+    });
   });
 
   describe('interpretResponse', function () {

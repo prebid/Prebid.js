@@ -21,7 +21,7 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: '123'})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: '123' })).to.be.true;
   });
   it('should not fail on error', async () => {
     const callBackSpy = sinon.spy();
@@ -42,15 +42,15 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaruId: undefined})).to.be.true;
+    expect(callBackSpy.calledWith({ mygaruId: undefined })).to.be.true;
   });
 
   it('should not modify while decoding', () => {
     const id = '222';
-    const newId = mygaruIdSubmodule.decode(id)
+    const newId = mygaruIdSubmodule.decode(id);
 
     expect(id).to.eq(newId);
-  })
+  });
   it('should buildUrl with consent data', () => {
     const result = mygaruIdSubmodule.getId({}, {
       gdpr: {
@@ -60,5 +60,5 @@ describe('MygaruID module', function () {
     });
 
     expect(result.url).to.eq('https://ident.mygaru.com/v2/id?gdprApplies=1&gdprConsentString=consentString');
-  })
+  });
 });

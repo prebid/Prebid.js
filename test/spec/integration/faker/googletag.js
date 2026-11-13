@@ -1,4 +1,3 @@
-import faker from 'faker';
 import { randomFive } from './fixtures.js';
 
 var Slot = function Slot({ code, divId }) {
@@ -44,7 +43,7 @@ export function makeSlot() {
 }
 
 export function emitEvent(eventName, params) {
-  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({...params, eventName}));
+  (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({ ...params, eventName }));
 }
 
 export function enable() {

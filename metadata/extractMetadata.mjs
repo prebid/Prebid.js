@@ -1,7 +1,9 @@
 import puppeteer from 'puppeteer'
+import process from 'process';
 
 export default async () => {
   const browser = await puppeteer.launch({
+    executablePath: process.env.CHROME_BIN ?? '/usr/bin/google-chrome',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox'

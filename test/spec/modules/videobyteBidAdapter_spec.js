@@ -18,7 +18,6 @@ describe('VideoByteBidAdapter', function () {
       'referer': 'test.com'
     }
   };
-  let mockConfig;
 
   beforeEach(function () {
     bidRequest = {
@@ -75,7 +74,7 @@ describe('VideoByteBidAdapter', function () {
         context: 'instream',
         playerSize: [[640, 480]],
         mimes: ['video/mp4', 'application/javascript'],
-      }
+      };
       bidRequest.params.video = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
@@ -160,7 +159,7 @@ describe('VideoByteBidAdapter', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(requests[0].data);
       const [width, height] = bidRequest.sizes;
-      const VERSION = '1.0.0';
+
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -263,26 +262,26 @@ describe('VideoByteBidAdapter', function () {
           series: ['Series'],
           season: ['Season'],
           genre: ['Genre'],
-          contentrating: {1: 'C-Rating'},
-          language: {1: 'EN'}
+          contentrating: { 1: 'C-Rating' },
+          language: { 1: 'EN' }
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = JSON.parse(requests[0].data);
         expect(data.site.content).to.be.a('object');
-        expect(data.site.content).to.be.empty
+        expect(data.site.content).to.be.empty;
       });
       it('should not append content Number parameters if value is not Number ', function () {
         bidRequest.params.video.content = {
           episode: '1',
           context: 'context',
-          livestream: {0: 'stream'},
+          livestream: { 0: 'stream' },
           len: [360],
           prodq: [1],
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = JSON.parse(requests[0].data);
         expect(data.site.content).to.be.a('object');
-        expect(data.site.content).to.be.empty
+        expect(data.site.content).to.be.empty;
       });
       it('should not append content Array parameters if value is not Array ', function () {
         bidRequest.params.video.content = {
@@ -291,7 +290,7 @@ describe('VideoByteBidAdapter', function () {
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = JSON.parse(requests[0].data);
         expect(data.site.content).to.be.a('object');
-        expect(data.site.content).to.be.empty
+        expect(data.site.content).to.be.empty;
       });
       it('should not append content ext if value is not Object ', function () {
         bidRequest.params.video.content = {
@@ -300,7 +299,7 @@ describe('VideoByteBidAdapter', function () {
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = JSON.parse(requests[0].data);
         expect(data.site.content).to.be.a('object');
-        expect(data.site.content).to.be.empty
+        expect(data.site.content).to.be.empty;
       });
       it('should append supported parameters if value match validations ', function () {
         bidRequest.params.video.content = {
@@ -334,8 +333,8 @@ describe('VideoByteBidAdapter', function () {
           floor: bidRequest.floors.values[floorObj.mediaType + '|640x480'],
           currency: floorObj.currency,
           mediaType: floorObj.mediaType
-        }
-      }
+        };
+      };
     });
 
     it('should get bidfloor from getFloor method', function () {
@@ -395,8 +394,8 @@ describe('VideoByteBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
       expect(data.imp[0].bidfloor).is.a('number');
       expect(data.imp[0].bidfloor).to.equal(9.99);
-    })
-  })
+    });
+  });
 
   describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', function () {
@@ -483,19 +482,19 @@ describe('VideoByteBidAdapter', function () {
     });
 
     it('should default ttl to 300', function () {
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse[0].ttl).to.equal(300);
     });
     it('should not allow ttl above 3601, default to 300', function () {
       bidRequest.params.video.ttl = 3601;
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse[0].ttl).to.equal(300);
     });
     it('should not allow ttl below 1, default to 300', function () {
       bidRequest.params.video.ttl = 0;
-      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = { seatbid: [{ bid: [{ id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>' }] }], cur: 'USD' };
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse[0].ttl).to.equal(300);
     });
@@ -521,21 +520,6 @@ describe('VideoByteBidAdapter', function () {
           'numIframes': 1,
           'reachedTop': true,
           'referer': 'test.com'
-        }
-      };
-
-      mockConfig = {
-        consentManagement: {
-          gdpr: {
-            cmpApi: 'iab',
-            timeout: 3000,
-            allowAuctionWithoutConsent: 'cancel'
-          },
-          usp: {
-            cmpApi: 'iab',
-            timeout: 1000,
-            allowAuctionWithoutConsent: 'cancel'
-          }
         }
       };
     });
@@ -598,13 +582,13 @@ describe('VideoByteBidAdapter', function () {
       expect(opts).to.be.an('array').that.is.empty;
     });
     it('returns non if sync is not allowed', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false});
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
 
       expect(opts).to.be.an('array').that.is.empty;
     });
 
     it('iframe sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('iframe');
@@ -612,7 +596,7 @@ describe('VideoByteBidAdapter', function () {
     });
 
     it('pixel sync enabled should return results', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
       expect(opts[0].type).to.equal('image');
@@ -620,7 +604,7 @@ describe('VideoByteBidAdapter', function () {
     });
 
     it('all sync enabled should return only iframe result', function () {
-      const opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [ortbResponse]);
+      const opts = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [ortbResponse]);
 
       expect(opts.length).to.equal(1);
     });

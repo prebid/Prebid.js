@@ -127,7 +127,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       battr: adConfig.battr,
       maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
-      playbackmethod: [ utils.getPlaybackMethod(config) ],
+      playbackmethod: [utils.getPlaybackMethod(config)],
       playbackend: 1, // TODO: need to account for floating player - https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player , https://developer.jwplayer.com/jwplayer/docs/jw8-player-configuration-reference#section-float-on-scroll
       // companionad - TODO add in future version
       // companiontype - TODO add in future version
@@ -385,7 +385,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             destination: offset,
             duration: duration
           };
-        }
+        };
         break;
 
       case SEEK_END:
@@ -470,7 +470,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     const jwEventName = utils.getJwEvent(externalEventName);
-    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
+    const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload);
     player.on(jwEventName, eventHandler);
     callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
@@ -568,7 +568,7 @@ const jwplayerSubmoduleFactory = function (config, sharedUtils) {
   const timeState = timeStateFactory();
   const callbackStorage = callbackStorageFactory();
   return JWPlayerProvider(config, window.jwplayer, adState, timeState, callbackStorage, utils, sharedUtils);
-}
+};
 
 jwplayerSubmoduleFactory.vendorCode = JWPLAYER_VENDOR;
 submodule('video', jwplayerSubmoduleFactory);
@@ -701,12 +701,6 @@ export const utils = {
 
       case DESTROYED:
         return 'remove';
-
-      case AD_STARTED:
-        return AD_IMPRESSION;
-
-      case AD_IMPRESSION:
-        return 'adViewableImpression';
 
       case PLAYBACK_REQUEST:
         return 'playAttempt';
@@ -874,7 +868,7 @@ export const utils = {
 
     return contentData;
   }
-}
+};
 
 /**
  * Tracks which functions are attached to events
@@ -918,7 +912,7 @@ export function callbackStorageFactory() {
     storeCallback,
     getCallback,
     clearStorage
-  }
+  };
 }
 
 // STATE
@@ -954,8 +948,6 @@ export function adStateFactory() {
       adPlacementType: convertPlacementToOrtbCode(event.placement),
       waterfallIndex: event.witem,
       waterfallCount: event.wcount,
-      adPodCount: event.podcount,
-      adPodIndex: event.sequence,
       wrapperAdIds: event.wrapperAdIds
     };
 
