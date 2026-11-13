@@ -2490,7 +2490,7 @@
       "componentType": "bidder",
       "componentName": "between",
       "aliasOf": null,
-      "gvlid": 724,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -4390,7 +4390,7 @@
       "componentType": "bidder",
       "componentName": "alkimi",
       "aliasOf": null,
-      "gvlid": 1169,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5069,7 +5069,7 @@
       "componentType": "bidder",
       "componentName": "nextMillennium",
       "aliasOf": null,
-      "gvlid": 1060,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5195,7 +5195,7 @@
       "componentType": "bidder",
       "componentName": "deepintent",
       "aliasOf": null,
-      "gvlid": 541,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5629,7 +5629,7 @@
       "componentType": "bidder",
       "componentName": "resetdigital",
       "aliasOf": null,
-      "gvlid": 1162,
+      "gvlid": null,
       "disclosureURL": null
     },
     {
