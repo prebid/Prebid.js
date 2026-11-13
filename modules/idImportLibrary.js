@@ -20,7 +20,7 @@ const OBSERVER_CONFIG = {
   attributes: true,
   attributeOldValue: false,
   childList: true,
-  attirbuteFilter: ['value'],
+  attributeFilter: ['value'],
   characterData: true,
   characterDataOldValue: false
 };
