@@ -41,6 +41,9 @@ function resolveDeclaredSizes(bidRequest) {
   return { bannerSizes, videoSizes };
 }
 
+// Returns the floor together with the currency it is actually denominated in.
+// When the floors module can't convert to the requested currency it hands back
+// the floor in its original currency, so the two must travel together.
 function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes) {
   const params = bidRequest.params || {};
   const staticFloor = { floor: isNumber(params.bidFloor) ? params.bidFloor : 0, currency: cur };
@@ -65,6 +68,8 @@ function getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSiz
   return staticFloor;
 }
 
+// Copies the OpenRTB fields the publisher declared on a media type, keeping
+// only those that pass the core validator for that field.
 function pickValidOrtbParams(declared, ortbParams) {
   const picked = {};
   ortbParams.forEach((isValid, name) => {
@@ -75,6 +80,9 @@ function pickValidOrtbParams(declared, ortbParams) {
   return picked;
 }
 
+// Forward the banner constraints the publisher declared (pos, btype, battr,
+// mimes, api, topframe, expdir, vcm, ...) so the endpoint can respect them.
+// Dimensions are always rebuilt from the resolved sizes.
 function buildBannerObject(bidRequest, bannerSizes) {
   const banner = pickValidOrtbParams(deepAccess(bidRequest, 'mediaTypes.banner') || {}, ORTB_BANNER_PARAMS);
 
@@ -104,6 +112,9 @@ function buildImpression(bidRequest) {
 
   const { floor, currency } = getBidFloor(bidRequest, cur, hasBanner, hasVideo, bannerSizes, videoSizes);
 
+  // Start from the impression-level first-party data (instl, ext.tid, ext.gpid,
+  // pmp, ...). The media type objects are taken out and rebuilt below from the
+  // ad unit's mediaTypes, so FPD can't add a format the ad unit doesn't declare.
   const { fpdBanner, fpdVideo, fpdImp } = splitImpressionFpd(bidRequest);
 
   const imp = {
@@ -186,6 +197,9 @@ function buildSiteOrApp(bidderRequest) {
   return { site };
 }
 
+// Request-level restrictions a publisher can set in first-party data
+// (blocked categories, advertisers and apps, seat and language allow/block
+// lists). The endpoint can only honor them if they are forwarded.
 const ORTB2_RESTRICTION_FIELDS = ['bcat', 'cattax', 'badv', 'bapp', 'wseat', 'bseat', 'wlang', 'wlangb'];
 
 function buildRestrictions(bidderRequest) {
@@ -199,8 +213,32 @@ function buildRestrictions(bidderRequest) {
   return restrictions;
 }
 
+// The placementId is part of the endpoint URL, so it decides which slot and
+// partner configuration the backend applies to everything in that request.
+// Bids with different placementIds therefore cannot share one request.
+function groupByPlacement(validBidRequests) {
+  const groups = new Map();
+  validBidRequests.forEach((bid) => {
+    const placementId = bid.params.placementId;
+    if (!groups.has(placementId)) {
+      groups.set(placementId, []);
+    }
+    groups.get(placementId).push(bid);
+  });
+  return groups;
+}
+
+// One HTTP request per distinct placementId, in first-seen order. A single
+// request is returned as-is and several as an array; Prebid core accepts both.
 export function buildRequests(validBidRequests, bidderRequest, endpointUrl) {
-  const placementId = validBidRequests[0].params.placementId;
+  const requests = [];
+  groupByPlacement(validBidRequests).forEach((bids, placementId) => {
+    requests.push(buildPlacementRequest(bids, placementId, bidderRequest, endpointUrl));
+  });
+  return requests.length === 1 ? requests[0] : requests;
+}
+
+function buildPlacementRequest(validBidRequests, placementId, bidderRequest, endpointUrl) {
   const imps = validBidRequests.map(buildImpression);
   const schain = resolveSchain(validBidRequests, bidderRequest);
 
