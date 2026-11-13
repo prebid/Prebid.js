@@ -159,7 +159,10 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
       to = dep.timeout(timeout, resource);
       options = Object.assign({ signal: to.signal }, options);
     }
-    let request = dep.makeRequest(resource, {
+    const isKeepaliveRequest = resource instanceof Request && resource.keepalive === true;
+    let request = dep.makeRequest(resource, isKeepaliveRequest ? {
+      ...options
+    } : {
       ...options,
       keepalive: false
     });
