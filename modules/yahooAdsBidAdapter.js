@@ -555,7 +555,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     };
   };
 
-  if (appContentObject && isPlainObject(appContentObject)) {
+  if (appContentObject && isPlainObject(appContentObject) && !outBoundBidRequest.site) {
     if (appContentDataArray && isArray(appContentDataArray)) {
       outBoundBidRequest.app = outBoundBidRequest.app || {};
       outBoundBidRequest.app.content = outBoundBidRequest.app.content || {};
