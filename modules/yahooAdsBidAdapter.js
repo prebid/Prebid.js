@@ -78,29 +78,25 @@ function transformSizes(sizes) {
 
 function extractUserSyncUrls(syncOptions, pixels) {
   const itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  const tagNameRegExp = /\w*(?=\s)/;
-  const srcRegExp = /src=("|')(.*?)\1/;
   const userSyncObjects = [];
 
   if (pixels) {
-    const matchedItems = pixels.match(itemsRegExp);
-    if (matchedItems) {
-      matchedItems.forEach(item => {
-        const tagName = item.match(tagNameRegExp)[0];
-        const url = item.match(srcRegExp)[2];
+    let match;
+    while ((match = itemsRegExp.exec(pixels)) !== null) {
+      const tagName = match[1];
+      const url = match[3];
 
-        if (tagName && url) {
-          const tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
-          if ((!syncOptions.iframeEnabled && tagType === 'iframe') ||
-                (!syncOptions.pixelEnabled && tagType === 'image')) {
-            return;
-          }
-          userSyncObjects.push({
-            type: tagType,
-            url: url
-          });
+      if (tagName && url) {
+        const tagType = tagName.toLowerCase() === 'img' ? 'image' : 'iframe';
+        if ((!syncOptions.iframeEnabled && tagType === 'iframe') ||
+              (!syncOptions.pixelEnabled && tagType === 'image')) {
+          continue;
         }
-      });
+        userSyncObjects.push({
+          type: tagType,
+          url: url
+        });
+      }
     }
   }
 
