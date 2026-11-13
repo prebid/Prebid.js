@@ -345,6 +345,10 @@ describe('ajax', () => {
         body: 'x'.repeat(1024),
         keepalive: true
       },
+      'maximum keepalive payload': {
+        body: 'x'.repeat(65536),
+        keepalive: true
+      },
       'large payload': {
         body: 'x'.repeat(65537),
         keepalive: false
@@ -357,6 +361,9 @@ describe('ajax', () => {
           },
           fetch() {
             fetch(EXAMPLE_URL, { method: 'POST', body, keepalive: true });
+          },
+          'fetch with a keepalive Request'() {
+            fetch(new Request(EXAMPLE_URL, { method: 'POST', body, keepalive: true }));
           }
         }).forEach(([name, fn]) => {
           describe(name, () => {
@@ -376,6 +383,91 @@ describe('ajax', () => {
         });
       });
     });
+    ['Safari', 'Firefox'].forEach(browser => {
+      describe(`with ${browser} Request behavior`, () => {
+        beforeEach(() => {
+          dep.makeRequest.callsFake((resource, options) => {
+            if (browser === 'Safari' && resource instanceof Request && resource.keepalive && options?.keepalive === false) {
+              throw new TypeError('Cannot clear keepalive on a Request');
+            }
+            return new Request(resource, browser === 'Firefox' ? { keepalive: false, ...options } : options);
+          });
+        });
+
+        it('should preserve the body and settings when falling back for an oversized Request', async () => {
+          const body = 'x'.repeat(65537);
+          const controller = new AbortController();
+          const resource = new Request(EXAMPLE_URL, {
+            method: 'POST',
+            body,
+            keepalive: true,
+            headers: { 'x-test': 'value', 'content-type': 'text/plain' },
+            credentials: 'same-origin',
+            mode: 'same-origin',
+            cache: 'no-store',
+            redirect: 'error',
+            referrer: EXAMPLE_URL + '/referrer',
+            referrerPolicy: 'no-referrer',
+            integrity: 'sha256-test',
+            signal: controller.signal
+          });
+          fetcherFactory(null)(resource, { referrerPolicy: resource.referrerPolicy });
+          const sent = await request.promise;
+          expect(sent.keepalive).to.be.false;
+          expect(sent.bodyUsed).to.be.false;
+          expect(sent.credentials).to.equal('same-origin');
+          ['url', 'method', 'mode', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity'].forEach(key => {
+            expect(sent[key], key).to.equal(resource[key]);
+          });
+          expect(Array.from(sent.headers)).to.deep.equal(Array.from(resource.headers));
+          expect(await sent.text()).to.equal(body);
+          controller.abort();
+          expect(sent.signal.aborted).to.be.true;
+        });
+
+        it('should use the overridden body and send synchronously when its size is known', async () => {
+          const body = 'x'.repeat(65537);
+          fetcherFactory(null)(new Request(EXAMPLE_URL, {
+            method: 'POST', body: 'original', keepalive: true
+          }), { body });
+          sinon.assert.calledOnce(dep.fetch);
+          const sent = await request.promise;
+          expect(sent.keepalive).to.be.false;
+          expect(await sent.text()).to.equal(body);
+        });
+
+        [null, 'payload'].forEach(body => {
+          it(`should honor an explicit keepalive false with ${body == null ? 'no body' : 'a body'}`, async () => {
+            fetcherFactory(null)(new Request(EXAMPLE_URL, {
+              method: body == null ? 'GET' : 'POST', body, keepalive: true
+            }), { keepalive: false });
+            const sent = await request.promise;
+            expect(sent.keepalive).to.be.false;
+            expect(await sent.text()).to.equal(body || '');
+          });
+        });
+
+        it('should retain keepalive at the size limit after credentials are removed', async () => {
+          const body = 'x'.repeat(65536);
+          fetcherFactory(null)(new Request(EXAMPLE_URL, {
+            method: 'POST', body, keepalive: true, credentials: 'include'
+          }));
+          const sent = await request.promise;
+          expect(sent.keepalive).to.be.true;
+          expect(sent.credentials).to.equal('same-origin');
+          expect(await sent.text()).to.equal(body);
+        });
+      });
+    });
+
+    it('should let explicit keepalive false override the legacy keepalive marker', async () => {
+      fetcherFactory(null)(toFetchRequest(EXAMPLE_URL, 'payload', { keepalive: true }), { keepalive: false });
+      sinon.assert.calledOnce(dep.fetch);
+      const sent = await request.promise;
+      expect(sent.keepalive).to.be.false;
+      expect(await sent.text()).to.equal('payload');
+    });
+
     describe('when the body size is known', () => {
       Object.entries({
         'ajax POST': () => ajax(EXAMPLE_URL, () => {}, 'x'.repeat(1024), { method: 'POST', keepalive: true }),

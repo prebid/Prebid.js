@@ -149,7 +149,7 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
   }
   let fetcher = (resource, options) => {
     // special treatment for keepalive - because of inconsistent browser behavior,
-    // we must start with keepalive: false and flip it as a last step
+    // start with keepalive: false when possible and flip it as a last step
     // Updating request options with new Request(oldRequest, newOptions):
     //  on Firefox, will default newOptions.keepalive = false
     //  on Safari, will not allow keepalive = true to become = false
@@ -160,11 +160,9 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
       options = Object.assign({ signal: to.signal }, options);
     }
     const isKeepaliveRequest = resource instanceof Request && resource.keepalive === true;
-    let request = dep.makeRequest(resource, isKeepaliveRequest ? {
-      ...options
-    } : {
+    let request = dep.makeRequest(resource, {
       ...options,
-      keepalive: false
+      keepalive: isKeepaliveRequest
     });
 
     if (
@@ -177,11 +175,35 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
         credentials: 'same-origin'
       });
     }
+    const sendWithoutKeepalive = (body = options?.body) => {
+      if (!request.keepalive) return dep.fetch(request);
+      if (body == null && request.body != null) {
+        return request.clone().blob().then(sendWithoutKeepalive);
+      }
+      // Safari cannot clear keepalive by copying a Request. Rebuild from its URL,
+      // using a buffered body so that this also works without streaming uploads.
+      const { url, method, headers, credentials, mode, cache, redirect, referrer, referrerPolicy, integrity, signal } = request;
+      return dep.fetch(dep.makeRequest(url, {
+        method,
+        headers,
+        credentials,
+        mode,
+        cache,
+        redirect,
+        referrer,
+        referrerPolicy,
+        integrity,
+        signal,
+        body,
+        keepalive: false
+      }));
+    };
     let pm;
     if (keepalive) {
-      const send = (size: number) => {
+      const send = (size: number, body = options?.body) => {
         if (size > KEEPALIVE_MAX_BODY_SIZE) {
           logWarn(`Ignoring keepalive: request body exceeds ${KEEPALIVE_MAX_BODY_SIZE} bytes`, request);
+          return sendWithoutKeepalive(body);
         } else {
           request = dep.makeRequest(request, {
             keepalive: true
@@ -196,10 +218,10 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
         pm = new Promise(resolve => resolve(send(size)));
       } else {
         // requests can be "used" only once - and blob() counts as usage, so clone the request
-        pm = request.clone().blob().then(blob => send(blob.size));
+        pm = request.clone().blob().then(blob => send(blob.size, blob));
       }
     } else {
-      pm = dep.fetch(request);
+      pm = sendWithoutKeepalive();
     }
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
