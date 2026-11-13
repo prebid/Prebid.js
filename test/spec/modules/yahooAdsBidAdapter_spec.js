@@ -286,56 +286,62 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         pixelEnabled: true
       };
       describe('when all consent data is set', () => {
-        const pixelObjects = spec.getUserSyncs(
-          syncOptions,
-          SERVER_RESPONSES,
-          bidderRequest.gdprConsent,
-          bidderRequest.uspConsent,
-          bidderRequest.gppConsent
-        );
-        pixelObjects.forEach(pixelObject => {
-          const url = pixelObject.url;
-          const urlParams = new URL(url).searchParams;
-          const expectedParams = {
-            'baz': 'true',
-            'gdpr_consent': bidderRequest.gdprConsent.consentString,
-            'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
-            'us_privacy': bidderRequest.uspConsent,
-            'gpp': bidderRequest.gppConsent.gppString,
-            'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
-          };
-          for (const [key, value] of Object.entries(expectedParams)) {
-            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
-              expect(urlParams.get(key)).to.equal(value);
-            });
-          };
+        it('updates consent params in all user sync URLs', () => {
+          const pixelObjects = spec.getUserSyncs(
+            syncOptions,
+            SERVER_RESPONSES,
+            bidderRequest.gdprConsent,
+            bidderRequest.uspConsent,
+            bidderRequest.gppConsent
+          );
+          expect(pixelObjects.length).to.equal(3);
+
+          pixelObjects.forEach(pixelObject => {
+            const url = pixelObject.url;
+            const urlParams = new URL(url).searchParams;
+            const expectedParams = {
+              'baz': 'true',
+              'gdpr_consent': bidderRequest.gdprConsent.consentString,
+              'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
+              'us_privacy': bidderRequest.uspConsent,
+              'gpp': bidderRequest.gppConsent.gppString,
+              'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+            };
+
+            for (const [key, value] of Object.entries(expectedParams)) {
+              expect(urlParams.get(key), `Updates the ${key} consent param in user sync URL ${url}`).to.equal(value);
+            }
+          });
         });
       });
 
       describe('when no consent data is set', () => {
-        const pixelObjects = spec.getUserSyncs(
-          syncOptions,
-          SERVER_RESPONSES,
-          undefined,
-          undefined,
-          undefined
-        );
-        pixelObjects.forEach(pixelObject => {
-          const url = pixelObject.url;
-          const urlParams = new URL(url).searchParams;
-          const expectedParams = {
-            'baz': 'true',
-            'gdpr_consent': '',
-            'gdpr': '0',
-            'us_privacy': '',
-            'gpp': '',
-            'gpp_sid': ''
-          };
-          for (const [key, value] of Object.entries(expectedParams)) {
-            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
-              expect(urlParams.get(key)).to.equal(value);
-            });
-          };
+        it('updates consent params in all user sync URLs', () => {
+          const pixelObjects = spec.getUserSyncs(
+            syncOptions,
+            SERVER_RESPONSES,
+            undefined,
+            undefined,
+            undefined
+          );
+          expect(pixelObjects.length).to.equal(3);
+
+          pixelObjects.forEach(pixelObject => {
+            const url = pixelObject.url;
+            const urlParams = new URL(url).searchParams;
+            const expectedParams = {
+              'baz': 'true',
+              'gdpr_consent': '',
+              'gdpr': '0',
+              'us_privacy': '',
+              'gpp': '',
+              'gpp_sid': ''
+            };
+
+            for (const [key, value] of Object.entries(expectedParams)) {
+              expect(urlParams.get(key), `Updates the ${key} consent param in user sync URL ${url}`).to.equal(value);
+            }
+          });
         });
       });
     });
