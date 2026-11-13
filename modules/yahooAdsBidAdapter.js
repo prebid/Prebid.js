@@ -338,7 +338,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
 
     if (bidderRequest.ortb2?.regs?.gpp || bidderRequest.ortb2?.regs?.ext?.gpp) {
       outBoundBidRequest.regs.gpp = bidderRequest.ortb2.regs.gpp || bidderRequest.ortb2.regs.ext.gpp;
-      outBoundBidRequest.regs.gpp_sid = bidderRequest.ortb2.regs.gpp_sid || bidderRequest.ortb2.regs.ext.gpp_sid;
+      outBoundBidRequest.regs.gpp_sid = bidderRequest.ortb2.regs.gpp_sid || bidderRequest.ortb2.regs?.ext?.gpp_sid || [];
     };
 
     // Backward compat: allow ortb2.regs.gdpr (2.6) or ortb2.regs.ext.gdpr (2.5) to override
