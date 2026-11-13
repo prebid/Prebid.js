@@ -390,7 +390,12 @@ describe('ajax', () => {
             if (browser === 'Safari' && resource instanceof Request && resource.keepalive && options?.keepalive === false) {
               throw new TypeError('Cannot clear keepalive on a Request');
             }
-            return new Request(resource, browser === 'Firefox' ? { keepalive: false, ...options } : options);
+            const req = new Request(resource, browser === 'Firefox' ? { keepalive: false, ...options } : options);
+            if (browser === 'Firefox') {
+              // Firefox can expose no body stream even though blob() still reads the payload.
+              Object.defineProperty(req, 'body', { value: null });
+            }
+            return req;
           });
         });
 
@@ -436,13 +441,21 @@ describe('ajax', () => {
           expect(await sent.text()).to.equal(body);
         });
 
-        [null, 'payload'].forEach(body => {
-          it(`should honor an explicit keepalive false with ${body == null ? 'no body' : 'a body'}`, async () => {
+        [
+          { method: 'GET', body: null },
+          { method: 'HEAD', body: null },
+          { method: 'POST', body: null },
+          { method: 'POST', body: '' },
+          { method: 'POST', body: 'payload' },
+          { method: 'PUT', body: 'payload' }
+        ].forEach(({ method, body }) => {
+          it(`should honor an explicit keepalive false for ${method} with body ${JSON.stringify(body)}`, async () => {
             fetcherFactory(null)(new Request(EXAMPLE_URL, {
-              method: body == null ? 'GET' : 'POST', body, keepalive: true
+              method, body, keepalive: true
             }), { keepalive: false });
             const sent = await request.promise;
             expect(sent.keepalive).to.be.false;
+            expect(sent.bodyUsed).to.be.false;
             expect(await sent.text()).to.equal(body || '');
           });
         });

@@ -177,7 +177,9 @@ function fetcherFactoryImpl(context, timeout = 3000, { request, done }: any = {}
     }
     const sendWithoutKeepalive = (body = options?.body) => {
       if (!request.keepalive) return dep.fetch(request);
-      if (body == null && request.body != null) {
+      // Firefox may not expose Request.body even when blob() can read a payload.
+      // Only GET and HEAD are guaranteed not to have a body.
+      if (body == null && request.method !== GET && request.method !== 'HEAD') {
         return request.clone().blob().then(sendWithoutKeepalive);
       }
       // Safari cannot clear keepalive by copying a Request. Rebuild from its URL,
