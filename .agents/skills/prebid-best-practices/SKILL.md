@@ -1,6 +1,6 @@
 ---
 name: prebid-best-practices
-description: Audit a live Prebid.js page through Chrome DevTools MCP for GPID on bid requests, relevant consent management modules, and positive bid floors. Use when asked to check Prebid setup, auction best practices, or whether a site sends GPID, handles consent, or sets floors.
+description: Audit a live Prebid.js page through Chrome DevTools MCP for GPID on bid requests, relevant consent management modules, positive bid floors, and GPT request-hook orchestration. Use when asked to check Prebid setup, auction best practices, or whether a site sends GPID, handles consent, sets floors, or coordinates Prebid auctions before GPT ad requests.
 ---
 
 <!-- Authored by an agent. -->
@@ -95,11 +95,61 @@ auction tested, not a compliance certification.
   use a rejected bid alone to conclude that every request carried a floor;
   check `rejectionReason` and the associated `floorData`.
 
+## Check GPT request orchestration
+
+- Evaluate `typeof window.googletag?.pubads === 'function'` in the page. If
+  Google Publisher Tag is not present, report **not applicable**.
+- When GPT is present, the page should coordinate Prebid auctions through
+  `googletag.pubads().registerRequestHook` rather than gating initial loads with
+  `disableInitialLoad` (`Boolean(googletag.getConfig?.('disableInitialLoad'))`
+  should be `false`) and manual `bidsBackHandler` + failsafe `setTimeout`
+  timers:
+  - `googletag.getConfig('requestHookTimeoutMs')` should be set to a positive
+    number slightly above the Prebid auction timeout (for example, `1500` ms for
+    a `1000` ms `PREBID_TIMEOUT`) or `"auto"`, giving bids time to return while
+    bounding worst-case ad-request delay.
+  - The registered request hook (`({ slots }) => ...`) should await Prebid
+    readiness (`pbjs.que`), run `await pbjs.requestBids` scoped to the ad units
+    matching `slots`, and call `pbjs.setTargetingForGPTAsync` for those ad units
+    before resolving.
+- Compare Prebid `events` (`auctionInit`, `auctionEnd`, `setTargeting`) against
+  outbound GPT ad requests (`gampad/ads` in Chrome DevTools network tools and
+  their `prev_scp` / `scp` slot targeting parameters) across initial load and,
+  where present on the page, lazy-loaded slots and refreshes (`refresh()`,
+  infinite scroll, or viewability auto-refresh):
+  - Every `gampad/ads` request for Prebid-configured slots must fire **after** a
+    fresh `auctionInit` -> `auctionEnd` -> `setTargeting` sequence covering
+    those slots (unless that auction exceeded `requestHookTimeoutMs`).
+  - Whenever `bidsReceived` contains eligible bids for a requested slot before
+    `gampad/ads` fires, the request's `prev_scp` / `scp` parameter must include
+    the fresh `hb_*` targeting keys from that auction (matching the latest
+    `hb_adid`, never an `adId` carried over from an earlier auction).
+  - Lazy-loaded and refreshed slots must each trigger a fresh Prebid auction for
+    the slots being requested rather than firing `gampad/ads` with no preceding
+    auction or stale `hb_*` targeting.
+- Report **coordinated (`registerRequestHook`)** when a request hook is
+  registered, `disableInitialLoad` is not used to gate initial load, and every
+  sampled `gampad/ads` request for Prebid-configured slots follows a fresh
+  auction and `setTargeting` with current `hb_*` keys. Report **manual
+  (`disableInitialLoad`) — needs review** when the page instead relies on
+  `disableInitialLoad` + external `requestBids` / `bidsBackHandler` +
+  `refresh()`, because GPT lazy loading and automatic refreshes bypass external
+  `requestBids` wrappers unless re-plumbed manually. Report **racing or stale**
+  when any `gampad/ads` request for a Prebid-configured slot fires before
+  `setTargeting` completes (within the configured timeout), fires on lazy load
+  or refresh without a preceding auction, or sends stale `hb_*` values from a
+  prior auction.
+
 When a check fails, recommend the smallest relevant change: populate
 `ortb2Imp.ext.gpid` directly or configure `gptPreAuction` for missing GPID;
 include and configure the applicable consent module and CMP for a missing
-consent integration; or add a positive floor rule through `priceFloors` or an
-ad unit's floor data. Suggest a follow-up auction to verify the change.
+consent integration; add a positive floor rule through `priceFloors` or an
+ad unit's floor data; or register a `googletag.pubads().registerRequestHook`
+callback (see `integrationExamples/gpt/hello_world_request_hook.html`) with
+`requestHookTimeoutMs` set slightly above the Prebid auction timeout so initial
+`display()`, lazy loading, and refreshes automatically await a fresh Prebid
+auction and `setTargetingForGPTAsync` without `disableInitialLoad` or manual
+failsafe timers. Suggest a follow-up auction to verify the change.
 
 ## Report
 
@@ -110,6 +160,7 @@ Use one row per check (and per affected ad unit or bidder when results differ):
 | GPID | present / missing / unverified / not observed | instance, auction ID, ad unit, request field; outbound field if checked | precise fix or verification |
 | Consent modules | installed / missing / needs review | exact module names, relevant config path, applicable regime | install/configure only what applies |
 | Floor | applied / configured / missing / skipped / not observed | request or bid field, value and currency, skip reason | precise fix or verification |
+| GPT orchestration | coordinated (`registerRequestHook`) / manual — needs review / racing or stale / not applicable | GPT config, Prebid `events` vs. `gampad/ads` timing and `hb_*` targeting across load/refresh | precise fix or verification |
 
 Separate **observed Prebid state** from **outbound network evidence**. Keep
 consent strings, bidder secrets, and complete bid payloads out of the report.
