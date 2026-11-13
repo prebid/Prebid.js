@@ -60,12 +60,13 @@ export const parseConfig = (moduleConfig) => {
 /**
  * Wait for Optable SDK event to fire with targeting data
  * @param {string} eventName Name of the event to listen for
+ * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
  * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
  */
-const waitForOptableEvent = (eventName) => {
+const waitForOptableEvent = (eventName, instance = null) => {
   return new Promise((resolve) => {
     const optableBundle = /** @type {Object} */ (window.optable);
-    const cachedData = optableBundle?.instance?.targetingFromCache();
+    const cachedData = optableBundle?.[instance || 'instance']?.targetingFromCache?.();
 
     if (cachedData && cachedData.ortb2) {
       logMessage('Optable SDK already has cached data');
@@ -88,17 +89,35 @@ const waitForOptableEvent = (eventName) => {
 
 /**
  * Whether the Optable bundle has loaded on the page
+ * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
  * @returns {boolean}
  */
-const isBundleLoaded = () => {
+const isBundleLoaded = (instance = null) => {
   const optableBundle = /** @type {Object} */ (window.optable);
-  return typeof optableBundle?.rtd?.handleRtd === 'function' || !!optableBundle?.instance;
+  return typeof optableBundle?.rtd?.handleRtd === 'function' || !!optableBundle?.[instance || 'instance'];
+};
+
+/**
+ * Move ORTB 2.6 `user.eids` to `user.ext.eids`, where Prebid's userId module
+ * puts EIDs and where `userIdAsEids` reads them. Leaving them in `user.eids`
+ * would also let the ORTB 2.5 translator overwrite `user.ext.eids` with them.
+ * @param {Object} ortb2 ORTB2 object
+ * @returns {Object} ORTB2 object with EIDs under `user.ext.eids`
+ */
+const toExtEids = (ortb2) => {
+  if (!Array.isArray(ortb2?.user?.eids)) {
+    return ortb2;
+  }
+  const { eids, ...user } = ortb2.user;
+  const extEids = (user.ext?.eids ?? []).concat(eids);
+  return { ...ortb2, user: { ...user, ext: { ...user.ext, eids: extEids } } };
 };
 
 /**
  * Read targeting data cached by the Optable bundle on a previous page.
  * Strips cache-only `_ref` metadata (UID2 refresh material written by older
- * bundles) from EIDs so it never reaches bid requests.
+ * bundles) from EIDs so it never reaches bid requests, and returns the EIDs
+ * under `user.ext.eids`.
  * @returns {Object|null} Cached ORTB2 object with at least one EID, or null
  */
 export const readCachedTargeting = () => {
@@ -112,7 +131,7 @@ export const readCachedTargeting = () => {
       delete clean._ref;
       return clean;
     });
-    return { ...ortb2, user: { ...ortb2.user, eids } };
+    return toExtEids({ ...ortb2, user: { ...ortb2.user, eids } });
   } catch (error) {
     logWarn('Could not read cached targeting data', error);
     return null;
@@ -124,7 +143,7 @@ export const readCachedTargeting = () => {
  * handler if it exposes one, otherwise wait for its targeting data
  * @type {OptableHandleRtd}
  */
-const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null) => {
   const bundleHandleRtd = window.optable?.rtd?.handleRtd;
   if (typeof bundleHandleRtd === 'function') {
     logMessage('Using the Optable bundle handleRtd');
@@ -132,7 +151,7 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn) 
   }
 
   // Wait for the Optable SDK to dispatch targeting data via event
-  const targetingData = await waitForOptableEvent('optable-targeting:change');
+  const targetingData = await waitForOptableEvent('optable-targeting:change', instance);
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -141,7 +160,7 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn) 
 
   mergeFn(
     reqBidsConfigObj.ortb2Fragments.global,
-    targetingData.ortb2,
+    toExtEids(targetingData.ortb2),
   );
   logMessage('Prebid\'s global ORTB2 object after merge: ', reqBidsConfigObj.ortb2Fragments.global);
 };
@@ -152,9 +171,9 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn) 
  * cached on a previous page.
  * @type {OptableHandleRtd}
  */
-export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
-  if (isBundleLoaded()) {
-    return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn);
+export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null) => {
+  if (isBundleLoaded(instance)) {
+    return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance);
   }
 
   // Bundle not loaded yet: use data cached on a previous page, without waiting
@@ -169,7 +188,7 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
   logMessage('Optable bundle not loaded yet and no cached data, waiting for the bundle');
   window.optable = window.optable || { cmd: [] };
   await new Promise((resolve) => window.optable.cmd.push(resolve));
-  return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn);
+  return handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance);
 };
 
 /**
@@ -180,9 +199,10 @@ export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, merge
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {OptableRtdConfig} optableExtraData Additional data to be used by the Optable SDK
  * @param {OptableMergeFn} mergeFn Function to merge data
+ * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
  */
-export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn) => {
-  await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn);
+export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExtraData, mergeFn, instance = null) => {
+  await handleRtdFn(reqBidsConfigObj, optableExtraData, mergeFn, instance);
 };
 
 /**
@@ -194,7 +214,7 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent) => {
   try {
     // Extract the bundle URL from the module configuration
-    const { bundleUrl, handleRtd } = parseConfig(moduleConfig);
+    const { bundleUrl, handleRtd, instance } = parseConfig(moduleConfig);
     const handleRtdFn = handleRtd || defaultHandleRtd;
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
@@ -208,7 +228,10 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
 
     // Call the handler right away. The default handler copes with the bundle
     // not being loaded yet; a custom handler decides for itself whether to wait.
-    mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep).then(callback, callback);
+    mergeOptableData(handleRtdFn, reqBidsConfigObj, optableExtraData, mergeDeep, instance).then(callback, (error) => {
+      logError('handleRtd failed, continuing the auction without Optable data', error);
+      callback();
+    });
   } catch (error) {
     // If an error occurs, log it and call the callback
     // to continue with the auction

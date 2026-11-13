@@ -35,6 +35,11 @@ export type OptableHandleRtd = (
   reqBidsConfigObj: StartAuctionOptions,
   optableExtraData: OptableRtdConfig,
   mergeFn: OptableMergeFn,
+  /**
+   * `params.instance`: property name of the SDK instance on `window.optable`,
+   * or `null` for the default (`window.optable.instance`).
+   */
+  instance?: string | null,
 ) => void | Promise<void>;
 
 export interface OptableRtdProviderParams {
@@ -49,8 +54,9 @@ export interface OptableRtdProviderParams {
    */
   adserverTargeting?: boolean;
   /**
-   * Property name on `window.optable` for the SDK instance used for ad-server
-   * targeting. Defaults to `'instance'` (`window.optable.instance`).
+   * Property name on `window.optable` for the SDK instance, used to tell
+   * whether the bundle has loaded and for ad-server targeting. Defaults to
+   * `'instance'` (`window.optable.instance`).
    */
   instance?: string;
   /**
