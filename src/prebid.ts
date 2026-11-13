@@ -48,7 +48,7 @@ import {
   markWinningBid,
   renderAdDirect,
   renderIfDeferred,
-  getRenderedBid
+  getBidToRender
 } from './adRendering.js';
 import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
@@ -1334,16 +1334,20 @@ function triggerBilling({ adId, adUnitCode }: {
   adId?: string;
   adUnitCode?: AdUnitCode
 }) {
-  if (adId != null) {
-    // the ad server only knows about the expired bid when another was rendered in its place (see `auctionOptions.replaceExpiredBid`)
-    adId = getRenderedBid(auctionManager.findBidByAdId(adId))?.adId ?? adId;
+  function bill(adId) {
+    auctionManager.getAllWinningBids()
+      .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+      .forEach((bid) => {
+        adapterManager.triggerBilling(bid);
+        renderIfDeferred(bid);
+      });
   }
-  auctionManager.getAllWinningBids()
-    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
-    .forEach((bid) => {
-      adapterManager.triggerBilling(bid);
-      renderIfDeferred(bid);
-    });
+  if (adId == null) {
+    bill(adId);
+  } else {
+    // the publisher knows only the ad ID of an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
+    getBidToRender(adId, false).then((bid) => bill(bid?.adId ?? adId));
+  }
 }
 addApiMethod('triggerBilling', triggerBilling);
 

@@ -6,11 +6,10 @@
 import { getAllAssetsMessage, getAssetMessage } from './native.js';
 import { BID_STATUS, MESSAGES } from './constants.js';
 import { isApnGetTagDefined, isGptPubadsDefined, logError, logWarn } from './utils.js';
-import { deferRendering, getRenderedBid, handleCreativeEvent, handleNativeMessage, handleRender, markWinner } from './adRendering.js';
+import { deferRendering, getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinner } from './adRendering.js';
 import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
-import { auctionManager } from './auctionManager.js';
 import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from './utils/gptTargeting.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
@@ -66,9 +65,16 @@ export function receiveMessage(ev, cb) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
-    cb && cb();
+    getBidToRender(data.adId, isRenderRequest(data)).then((adObject) => {
+      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
+      cb && cb();
+    });
   }
+}
+
+function isRenderRequest(data) {
+  // legacy native templates do not send a render request; they start by asking for assets
+  return data.message === REQUEST || (data.message === NATIVE && ['assetRequest', 'allAssetRequest'].includes(data.action));
 }
 
 function getResizer(adId, bidResponse) {
@@ -81,10 +87,10 @@ function getResizer(adId, bidResponse) {
 }
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
-    renderFn(adData, renderedBid = bidResponse) {
+    renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(renderedBid),
+        renderer: getCreativeRendererSource(bidResponse),
         rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
@@ -123,8 +129,6 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  // the creative only knows the requested adId, which may belong to an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
-  adObject = getRenderedBid(adObject);
   if (adObject.status !== BID_STATUS.RENDERED) {
     logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;

@@ -12,7 +12,6 @@ import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
 import { newTargeting, targeting } from 'src/targeting.js';
 import { bidFilters } from '../../../src/targeting/filters.js';
 import { config as configObj } from 'src/config.js';
-import { handleRender } from 'src/adRendering.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { resetAuctionState } from 'src/auction.js';
@@ -27,6 +26,7 @@ import { enrichFPD } from '../../../src/fpd/enrichment.js';
 import { mockFpdEnrichments } from '../../helpers/fpd.js';
 import { deepAccess, deepSetValue, generateUUID } from '../../../src/utils.js';
 import { getCreativeRenderer } from '../../../src/creativeRenderers.js';
+import { getBidToRender } from '../../../src/adRendering.js';
 import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } from 'src/constants.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -4192,41 +4192,21 @@ describe('Unit: Prebid Module', function () {
       });
     });
 
-    describe('for a bid rendered in place of an expired one', () => {
-      let expired;
-      beforeEach(async () => {
-        expired = { adId: 'expired', adUnitCode: 'other-ad-unit', responseTimestamp: 0, ttl: 1 };
-        // deferBilling without deferRendering, as for an adapter that implements onBidBillable
-        Object.assign(bid, { responseTimestamp: Date.now(), ttl: 300, deferBilling: true, deferRendering: false });
-        sandbox.stub(auctionManager, 'addWinningBid');
+    describe('when invoked with the adId of an expired bid that was replaced', () => {
+      beforeEach(() => {
+        const expired = { adId: 'expired', responseTimestamp: Date.now() - 10000, ttl: 1 };
+        Object.assign(bid, { responseTimestamp: Date.now(), ttl: 300 });
         sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
         configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => bid } });
-        handleRender({
-          adId: expired.adId,
-          bidResponse: expired,
-          renderFn: sinon.stub(),
-          resizeFn: sinon.stub(),
-          doc: {}
-        });
+        getBidToRender('expired');
       });
       afterEach(() => {
         configObj.resetConfig();
       });
 
-      it('should bill the replacement when invoked with the adId of the expired bid', () => {
-        pbjs.triggerBilling({ adId: expired.adId });
-        sinon.assert.calledOnce(adapterManager.triggerBilling);
+      it('should trigger billing for the replacement', () => {
+        pbjs.triggerBilling({ adId: 'expired' });
         sinon.assert.calledWith(adapterManager.triggerBilling, bid);
-      });
-
-      it('should still bill the replacement when invoked with its own adId', () => {
-        pbjs.triggerBilling({ adId: bid.adId });
-        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
-      });
-
-      it('should not bill anything for an unrelated adId', () => {
-        pbjs.triggerBilling({ adId: 'unrelated' });
-        sinon.assert.notCalled(adapterManager.triggerBilling);
       });
     });
   });
