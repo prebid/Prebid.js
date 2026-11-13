@@ -9,6 +9,10 @@ import {
   MODES,
 } from '../libraries/riseUtils/constants.js';
 
+/**
+ * @typedef {import('./riseBidAdapter.d.ts').RiseBidParams} RiseBidParams
+ */
+
 export const spec = {
   ...makeBaseSpec(BASE_URL, MODES),
   code: BIDDER_CODE,

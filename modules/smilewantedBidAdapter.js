@@ -16,6 +16,7 @@ const BIDDER_CODE = 'smilewanted';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./smilewantedBidAdapter.d.ts').SmilewantedBidParams} SmilewantedBidParams
  */
 
 const GVL_ID = 639;

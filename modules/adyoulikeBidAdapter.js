@@ -8,6 +8,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./adyoulikeBidAdapter.d.ts').AdyoulikeBidParams} AdyoulikeBidParams
  */
 
 const VERSION = '1.0';

@@ -16,6 +16,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./gumgumBidAdapter.d.ts').GumgumBidParams} GumgumBidParams
  */
 
 const BIDDER_CODE = 'gumgum';
