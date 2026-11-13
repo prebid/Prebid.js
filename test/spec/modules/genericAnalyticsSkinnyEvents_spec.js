@@ -2,6 +2,10 @@ import { GenericAnalytics } from '../../../modules/genericAnalyticsAdapter.js';
 import { bidClick, bidClickInferred, bidRequested, bidResponse, bidTimeout, bidWon, eidsSources, noBid, PRESET_NAME, stripEids } from '../../../modules/genericAnalyticsSkinnyEvents.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
+import fixtures from '../../fixtures/genericAnalyticsSkinnyEvents.json';
+
+// Test JSON as actually sent to a collector, not JS objects containing undefined.
+const onWire = (payload) => JSON.parse(JSON.stringify(payload));
 
 describe('Generic analytics skinny events', () => {
   describe('preset', () => {
@@ -78,6 +82,18 @@ describe('Generic analytics skinny events', () => {
   });
 
   describe('noBid', () => {
+    it('matches the published fixture', () => {
+      expect(onWire(noBid({
+        auctionId: 'auction',
+        bidId: 'bid',
+        bidderRequestId: 'bidderRequest',
+        adUnitCode: 'adUnit',
+        bidder: 'bidder',
+        src: 'client',
+        analyticsLabels: { label: 'value' }
+      }))).to.eql(fixtures.noBid);
+    });
+
     it('keeps only the relevant fields', () => {
       expect(noBid({
         auctionId: 'auction',
@@ -122,7 +138,15 @@ describe('Generic analytics skinny events', () => {
       dealId: 'deal',
       meta: { advertiserDomains: ['example.com'] },
       adserverTargeting: { hb_pb: '1.50' },
-      floorData: { floorValue: 1, floorCurrency: 'USD' },
+      floorData: {
+        floorValue: 1,
+        floorRule: 'banner|*',
+        floorRuleValue: 1,
+        floorCurrency: 'USD',
+        cpmAfterAdjustments: 1.5,
+        enforcements: { enforceJS: true },
+        matchedFields: { mediaType: 'banner' }
+      },
       requestTimestamp: 1000,
       responseTimestamp: 1200,
       timeToRespond: 200,
@@ -143,6 +167,11 @@ describe('Generic analytics skinny events', () => {
       };
     });
 
+    it('serializes bid responses and wins according to the fixtures', () => {
+      expect(onWire(bidResponse(bid))).to.eql(fixtures.bidResponse);
+      expect(onWire(bidWon(bid))).to.eql(fixtures.bidWon);
+    });
+
     it('bidResponse keeps only the relevant fields', () => {
       expect(bidResponse(bid)).to.eql({
         eventType: EVENTS.BID_RESPONSE,
@@ -156,6 +185,27 @@ describe('Generic analytics skinny events', () => {
         ...SKINNY_BID,
         status: 'rendered'
       });
+    });
+
+    it('serializes observed and inferred clicks according to the fixtures', () => {
+      const nativeBid = { ...bid, mediaType: 'native', clickUrl: 'https://adserver.example/click', native: {} };
+      expect(onWire(bidClick({
+        bid: nativeBid,
+        adId: nativeBid.adId,
+        adUnitCode: nativeBid.adUnitCode,
+        bidder: nativeBid.bidder,
+        method: 'nativeClick',
+        assetId: 3,
+        analyticsLabels: { label: 'value' }
+      }))).to.eql(fixtures.bidClick);
+      expect(onWire(bidClickInferred({
+        bid,
+        adId: bid.adId,
+        adUnitCode: bid.adUnitCode,
+        bidder: bid.bidder,
+        method: 'iframeFocus',
+        analyticsLabels: { label: 'value' }
+      }))).to.eql(fixtures.bidClickInferred);
     });
 
     it('formats observed native clicks without leaking the bid, creative or click URLs', () => {
@@ -272,9 +322,67 @@ describe('Generic analytics skinny events', () => {
       };
     }
 
+    describe('serialized contract', () => {
+      it('matches the published bidRequested fixture', () => {
+        expect(onWire(bidRequested({
+          auctionId: 'auction',
+          bidderRequestId: 'bidderRequest',
+          bidderCode: 'bidder',
+          auctionStart: 1000,
+          start: 1010,
+          timeout: 3000,
+          ortb2: ORTB2,
+          bids: [makeBidRequest(), makeBidRequest({ bidId: 'bid2' })],
+          analyticsLabels: { label: 'value' }
+        }))).to.eql(fixtures.bidRequested);
+      });
+
+      it('matches the published grouped bidTimeout fixture with labels', () => {
+        expect(onWire(bidTimeout({
+          analyticsLabels: { label: 'value' },
+          0: makeBidRequest(),
+          1: makeBidRequest({
+            bidId: 'bid2',
+            bidderRequestId: 'bidderRequest2',
+            bidder: 'bidder2',
+            ortb2: { site: { domain: 'other.com' } },
+            ortb2Imp: { ext: { gpid: '/other' } }
+          })
+        }))).to.eql(fixtures.bidTimeout);
+      });
+    });
+
+    it('preserves null bidder codes for stored-impression PBS events', () => {
+      const storedBid = makeBidRequest({ bidder: null, src: 's2s' });
+      const requested = onWire(bidRequested({
+        auctionId: 'auction',
+        bidderRequestId: 'bidderRequest',
+        bidderCode: null,
+        auctionStart: 1000,
+        timeout: 3000,
+        ortb2: ORTB2,
+        bids: [storedBid]
+      }));
+      expect(requested.bidderCode).to.equal(null);
+      expect(requested.bids[0].bidder).to.equal(null);
+
+      const timeout = onWire(bidTimeout([storedBid]));
+      expect(timeout.bidderRequests[0].bidderCode).to.equal(null);
+      expect(timeout.bidderRequests[0].bids[0].bidder).to.equal(null);
+    });
+
     describe('eidsSources', () => {
       it('collects unique sources from user.eids and user.ext.eids', () => {
         expect(eidsSources(ORTB2)).to.eql(['a.com', 'b.com']);
+      });
+
+      it('ignores invalid identity entries in OpenRTB and legacy extensions', () => {
+        expect(eidsSources({
+          user: {
+            eids: [null, { source: 'valid.org' }, { source: 42 }],
+            ext: { eids: ['invalid', { source: 'legacy.org' }, { source: null }] }
+          }
+        })).to.eql(['valid.org', 'legacy.org']);
       });
 
       [undefined, {}, { user: {} }].forEach(ortb2 => {

@@ -35,12 +35,19 @@ function getNpmVersion(version) {
   }
 }
 
+/**
+ * URL of a file under `dist/` as published on jsDelivr.
+ */
+function npmDistUrl(file) {
+  return `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/${file}`;
+}
+
 function buildOptions(options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
   const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
   const features = featureMap(options.disableFeatures);
   const skipCalls = skipCallSet(features); // expression calls to skip entirely
-  const distUrlBase = options.distUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/chunks/`;
+  const distUrlBase = options.distUrlBase || npmDistUrl('chunks/');
 
   return {
     pbGlobal,
@@ -52,5 +59,6 @@ function buildOptions(options) {
 }
 
 module.exports = {
-  buildOptions
+  buildOptions,
+  npmDistUrl,
 }

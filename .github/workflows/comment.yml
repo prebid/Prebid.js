@@ -6,6 +6,7 @@ on:
       - Check for linter warnings / exceptions
       - Check adapter naming conventions
       - Build metadata
+      - Check JSON schema changes
     types:
       - completed
 
