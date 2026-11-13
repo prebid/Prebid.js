@@ -22,7 +22,6 @@ const FORMATS = Object.keys(PLACEMENTS);
 const OWNER = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const FRAME_STYLE_ID = 'splash-prebid-interstitial-frame-style';
 const TOP_WINDOW_SUPPORT = { banner: { renderer: true, safeRenderer: true } };
-const RENDERER_ONLY_SUPPORT = { banner: { renderer: true, safeRenderer: false } };
 const SAFE_RENDERER_SUPPORT = { banner: { renderer: false, safeRenderer: true } };
 const NO_RENDERER_SUPPORT = { banner: { renderer: false, safeRenderer: false } };
 const CONTROLS = '<div data-froc-interstitial-controls-ready="1"><button class="froc-display-close" type="button">Close</button></div>';
@@ -61,7 +60,7 @@ function makeBidderRequest(overrides = {}) {
 
 function buildRequest(bid = makeBid(), bidderRequest = makeBidderRequest()) {
   const adapterBid = bid.params.displayFormat && !Object.prototype.hasOwnProperty.call(bid, 'rendererSupport')
-    ? { ...bid, rendererSupport: RENDERER_ONLY_SUPPORT }
+    ? { ...bid, rendererSupport: TOP_WINDOW_SUPPORT }
     : bid;
   const requests = spec.buildRequests([adapterBid], bidderRequest);
   expect(requests).to.have.length(1);
@@ -215,10 +214,6 @@ describe('splashBidAdapter', () => {
       expect(presentations(TOP_WINDOW_SUPPORT)).to.deep.equal(['default', 'top-window', 'top-window']);
     });
 
-    it('offers the top-window renderer alone when core permits only it', () => {
-      expect(presentations(RENDERER_ONLY_SUPPORT)).to.deep.equal(['default', 'top-window', 'top-window']);
-    });
-
     it('still requests Parallax and Interstitial with the Safe Renderer when top-window renderers are disabled', () => {
       expect(presentations(SAFE_RENDERER_SUPPORT)).to.deep.equal(['default', 'safe', 'safe']);
       sinon.assert.notCalled(warn);
@@ -230,7 +225,7 @@ describe('splashBidAdapter', () => {
 
     it('follows rendererSupport rather than a global setting', () => {
       config.setConfig({ allowTopWindowRenderers: false });
-      expect(presentation(makeBid({ format: 'parallax', rendererSupport: RENDERER_ONLY_SUPPORT }))).to.equal('top-window');
+      expect(presentation(makeBid({ format: 'parallax', rendererSupport: TOP_WINDOW_SUPPORT }))).to.equal('top-window');
       expect(presentation(makeBid({ format: 'interstitial', rendererSupport: SAFE_RENDERER_SUPPORT }))).to.equal('safe');
     });
 

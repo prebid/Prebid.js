@@ -44,7 +44,11 @@ describe('Splash rendererSupport integration', () => {
       bids: [{ bidder: 'splash', params: { publisherId: '725', placementId: '100023', displayFormat: format } }],
     };
     const [request] = adapterManager.makeBidRequests([adUnit], 'renderer-support-auction', Date.now(), 1000);
-    if (support) request.bids[0].rendererSupport = { banner: support };
+    if (support === undefined) {
+      delete request.bids[0].rendererSupport;
+    } else {
+      request.bids[0].rendererSupport = { banner: support };
+    }
 
     let built;
     const buildRequests = sandbox.stub().callsFake((bids, bidderRequest) => {
