@@ -3,6 +3,7 @@ import {
   createInvisibleIframe,
   inIframe,
   insertElement,
+  isFn,
   logError,
   logWarn,
   politeTriggerPixel,
@@ -25,6 +26,7 @@ import type { Bid } from "./bidfactory.ts";
 import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
+import { GreedyPromise } from "../libraries/greedy/greedyPromise.js";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -57,6 +59,69 @@ declare module './events' {
     [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' | 'nativeClick' }];
     [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
   }
+}
+
+/**
+ * Maps an expired bid to (a promise for) the bid that is rendered in its place - itself, if it was not replaced.
+ * See `auctionOptions.replaceExpiredBid`.
+ */
+const REPLACEMENTS = new WeakMap<Bid, Promise<Bid>>();
+
+/**
+ * Look up the bid that should handle a request about `adId`, coming from a creative or `renderAd`.
+ *
+ * This may not be the bid identified by `adId`: if that has expired, and `auctionOptions.replaceExpiredBid` is set,
+ * the first request that starts rendering (`forRender = true`) asks for a replacement, and all requests about that `adId`
+ * resolve to it from then on - the creative only knows about the ad ID it was given by the ad server.
+ *
+ * The returned promise resolves synchronously when possible; `legacyRender` relies on that to use `document.write`.
+ */
+export const getBidToRender = hook('sync', function (adId: string, forRender = true): Promise<Bid | undefined> {
+  const bid = auctionManager.findBidByAdId(adId);
+  if (bid != null && !REPLACEMENTS.has(bid) && forRender && canReplaceExpiredBid(bid)) {
+    REPLACEMENTS.set(bid, replaceExpiredBid(bid));
+  }
+  return REPLACEMENTS.get(bid) ?? GreedyPromise.resolve(bid);
+});
+
+function canReplaceExpiredBid(bid: Bid) {
+  // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply
+  return isFn(config.getConfig('auctionOptions')?.replaceExpiredBid) &&
+    bid.status !== BID_STATUS.RENDERED &&
+    !bidFilters.isBidNotExpired(bid);
+}
+
+function isValidReplacement(expiredBid: Bid, replacement: Bid) {
+  // a bid that already won (e.g. one waiting for `triggerBilling`) belongs to some other slot;
+  // a bid that defers rendering could only be released with an ad ID the publisher does not know about;
+  // a bid of a different media type cannot be rendered by the creative that was set up for the expired one
+  return replacement != null &&
+    replacement !== expiredBid &&
+    replacement.mediaType === expiredBid.mediaType &&
+    !replacement.deferRendering &&
+    !WINNERS.has(replacement) &&
+    bidFilters.isBidNotExpired(replacement) &&
+    bidFilters.isUnusedBid(replacement);
+}
+
+function replaceExpiredBid(expiredBid: Bid): Promise<Bid> {
+  const { adId } = expiredBid;
+  return new GreedyPromise((resolve) => resolve(config.getConfig('auctionOptions').replaceExpiredBid(expiredBid)))
+    .catch((e) => {
+      logError(`Could not replace expired ad id ${adId}`, e);
+    })
+    .then((replacement) => {
+      if (isValidReplacement(expiredBid, replacement)) {
+        logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
+        events.emit(EXPIRED_RENDER, expiredBid);
+        return replacement;
+      }
+      if (replacement != null) {
+        logWarn(`Replacement for expired ad id ${adId} is not usable, ignoring it`);
+      }
+      // the expired bid is rendered as usual, which emits EXPIRED_RENDER and honors `suppressExpiredRender`
+      return expiredBid;
+    }) as Promise<Bid>;
 }
 
 export const markWinningBid = hook('sync', function (bid) {
@@ -545,8 +610,10 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      bid = auctionManager.findBidByAdId(adId);
-      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+      getBidToRender(adId).then((bidResponse) => {
+        bid = bidResponse;
+        handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+      }).catch((e) => fail(EXCEPTION, e?.message));
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

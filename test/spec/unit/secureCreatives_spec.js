@@ -523,6 +523,84 @@ describe('secureCreatives', () => {
         });
       });
     });
+    describe('when the bid has expired and replaceExpiredBid is set', () => {
+      let replacement;
+
+      function sendMessage(data, source = { postMessage: sinon.stub() }) {
+        const ev = makeEvent({ data: JSON.stringify({ adId: bidId, ...data }), source });
+        return receive(ev).then(() => ev);
+      }
+
+      beforeEach(() => {
+        pushBidResponseToAuction({ responseTimestamp: Date.now() - 10000, ttl: 1 });
+        replacement = {
+          adId: 'replacement',
+          ad: 'replacement-ad',
+          width: 320,
+          height: 50,
+          responseTimestamp: Date.now(),
+          ttl: 300
+        };
+        configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => replacement } });
+      });
+      afterEach(() => {
+        configObj.resetConfig();
+      });
+
+      it('should reply to the render request with the replacement, under the requested adId', () => {
+        sandbox.stub(creativeRenderers, 'getCreativeRendererSource').callsFake((bid) => `${bid.adId}-renderer`);
+        return sendMessage({ message: 'Prebid Request' }).then((ev) => {
+          sinon.assert.calledOnce(ev.source.postMessage);
+          sinon.assert.match(JSON.parse(ev.source.postMessage.args[0][0]), {
+            adId: bidId,
+            ad: 'replacement-ad',
+            renderer: 'replacement-renderer'
+          });
+          sinon.assert.calledWith(stubEmit, EVENTS.EXPIRED_RENDER, adResponse);
+          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, replacement);
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        });
+      });
+
+      it('should attribute later events from the creative to the replacement', () => {
+        return sendMessage({ message: 'Prebid Request' }).then(() => sendMessage({
+          message: 'Prebid Event',
+          event: EVENTS.AD_RENDER_SUCCEEDED
+        })).then(() => {
+          sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+            adId: replacement.adId,
+            bid: replacement
+          }));
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ bid: adResponse }));
+        });
+      });
+
+      if (FEATURES.NATIVE) {
+        it('should fire the native trackers of the replacement', () => {
+          return sendMessage({ message: 'Prebid Request' }).then(() => sendMessage({
+            message: 'Prebid Native',
+            action: 'click'
+          })).then(() => {
+            sinon.assert.calledWith(stubFireNativeTrackers, sinon.match({ action: 'click' }), replacement);
+            sinon.assert.neverCalledWith(stubFireNativeTrackers, sinon.match.any, adResponse);
+          });
+        });
+
+        it('should replace the bid when a legacy native template asks for its assets', () => {
+          return sendMessage({ message: 'Prebid Native', action: 'allAssetRequest' }).then(() => {
+            sinon.assert.calledWith(stubGetAllAssetsMessage, sinon.match({ action: 'allAssetRequest' }), replacement);
+            sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, replacement);
+            sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          });
+        });
+      }
+
+      it('should not replace the bid on messages that do not start rendering', () => {
+        return sendMessage({ message: 'Prebid Event', event: EVENTS.AD_RENDER_SUCCEEDED }).then(() => {
+          sinon.assert.neverCalledWith(stubEmit, EVENTS.EXPIRED_RENDER);
+        });
+      });
+    });
   });
 
   describe('resizeRemoteCreative', () => {
