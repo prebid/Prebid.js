@@ -1,4 +1,14 @@
 # when a changed file paths matches the regex, send an alert email
+#
+# Module maintainers are also loaded automatically from Maintainer: or
+# Maintainers: fields in modules/*.md (plain, bold, or bulleted, with email
+# addresses inline or in an indented list). Website-only contacts are skipped.
+# Each module's docs, source files, source directory, matching _spec.js/_spec.ts
+# files (including nested specs), and test directory notify those maintainers.
+# Matching uses the Markdown filename as the module name, not the display name.
+# These explicit rules add recipients and cover aliases or shared libraries.
+# A recipient gets one email with each matching path listed once.
+#
 # structure of the file is:
 #
 # javascriptRegex : email address
