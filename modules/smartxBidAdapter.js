@@ -105,6 +105,7 @@ export const spec = {
       const fpdApp = deepAccess(bid, 'ortb2.app');
       const isApp = !isEmpty(fpdApp);
       const fpdContent = deepAccess(bid, isApp ? 'ortb2.app.content' : 'ortb2.site.content') || {};
+      const eids = deepAccess(bid, 'ortb2.user.ext.eids');
       let pubcid = null;
       const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
       const contentWidth = playerSize[0][0];
@@ -233,6 +234,11 @@ export const spec = {
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
+      }
+
+      // Add extended identifiers if available
+      if (isArray(eids) && eids.length) {
+        userExt.eids = eids;
       }
 
       // Add schain object if available from the new location

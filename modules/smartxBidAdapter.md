@@ -194,3 +194,7 @@ When `ortb2.app` is set, the request carries an `app` object instead of `site`. 
         }
     });
 ```
+
+# User IDs
+
+IDs from the Prebid userId modules go out as `user.ext.eids`, the OpenRTB 2.5 location. Prebid merges eids the publisher sets in `ortb2.user.eids` or `ortb2.user.ext.eids` into the same list and drops duplicates, so both are forwarded.

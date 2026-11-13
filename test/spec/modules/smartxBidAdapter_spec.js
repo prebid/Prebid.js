@@ -544,6 +544,98 @@ describe('The smartx adapter', function () {
         }
       });
     });
+
+    it('should pass eids', function () {
+      var request;
+      var eids = [{
+        source: 'id5-sync.com',
+        inserter: 'publisher.example',
+        matcher: 'id5-sync.com',
+        mm: 3,
+        uids: [{
+          id: 'ID5*foo',
+          atype: 1,
+          ext: {
+            linkType: 2
+          }
+        }],
+        ext: {
+          provider: 'publisher.example'
+        }
+      }, {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'bar',
+          atype: 1
+        }]
+      }];
+
+      var expected = JSON.parse(JSON.stringify(eids));
+
+      bid.ortb2 = {
+        user: {
+          ext: {
+            eids: eids
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user.ext.eids).to.deep.equal(expected);
+    });
+
+    it('should not send a user object when there are no eids', function () {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user).to.equal(undefined);
+    });
+
+    it('should leave the request unchanged when ortb2.user carries no eids', function () {
+      var baseline = spec.buildRequests([bid], bidRequestObj)[0].data;
+
+      [{ user: {} }, { user: { ext: {} } }, { user: { ext: { eids: [] } } }].forEach(function (ortb2) {
+        bid.ortb2 = ortb2;
+
+        var data = spec.buildRequests([bid], bidRequestObj)[0].data;
+
+        expect(data.user).to.equal(undefined);
+        expect({ ...data, id: baseline.id }).to.deep.equal(baseline);
+      });
+    });
+
+    it('should keep the eids when targeting is sent as well', function () {
+      var request;
+
+      bid.ortb2 = {
+        user: {
+          ext: {
+            eids: [{
+              source: 'id5-sync.com',
+              uids: [{
+                id: 'ID5*foo',
+                atype: 1
+              }]
+            }]
+          }
+        }
+      };
+      bid.params.user = {
+        data: [{
+          id: 'emq',
+          name: 'emq',
+          segment: [{
+            name: 'emq',
+            value: 'foo'
+          }]
+        }]
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user.ext.eids[0].source).to.equal('id5-sync.com');
+      expect(request.data.user.data[0].id).to.equal('emq');
+    });
   });
 
   describe('interpretResponse', function () {
