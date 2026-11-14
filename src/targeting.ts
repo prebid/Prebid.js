@@ -877,6 +877,34 @@ export function newTargeting(auctionManager) {
     return adUnitCodes.map(au => ({ [au]: [{ [TARGETING_KEYS.VERSION]: [version ?? DEFAULT_HB_VER] }] }));
   }
 
+  /**
+   * Ad units of a retained auction that is no longer the latest one for their code.
+   *
+   * `auctionManager.getAdUnits()` spans every retained auction, so one ad unit code can appear
+   * once per auction that used it. Merging their ad server targeting makes a key outlive the
+   * auction that set it: a module that sets `adUnit.adserverTargeting` (for example an RTD
+   * submodule through `getTargetingData`) can add a key, but can never retract it on a later
+   * auction for the same code, because the earlier auction's copy of the ad unit still carries it.
+   *
+   * Ad units of the latest auction are kept, including twins (same code, same auction) and an ad
+   * unit object the latest auction reused from an earlier one. An ad unit whose code has no
+   * recorded latest auction - it never went through `startAuction` - keeps the merged behavior.
+   */
+  function supersededAdUnits(adUnitCodes) {
+    const superseded = new Set();
+    const latest = new Set();
+    for (const auction of auctionManager.getAuctions()) {
+      const auctionId = auction.getAuctionId();
+      for (const adUnit of auction.getAdUnits()) {
+        const latestAuctionId = latestAuctionForAdUnit[adUnit.code];
+        if (latestAuctionId == null || !adUnitCodes.includes(adUnit.code)) continue;
+        (latestAuctionId === auctionId ? latest : superseded).add(adUnit);
+      }
+    }
+    latest.forEach(adUnit => superseded.delete(adUnit));
+    return superseded;
+  }
+
   function getAdUnitTargeting(adUnitCodes) {
     function getTargetingObj(adUnit) {
       return adUnit?.[JSON_MAPPING.ADSERVER_TARGETING];
@@ -893,8 +921,10 @@ export function newTargeting(auctionManager) {
         });
     }
 
+    const superseded = supersededAdUnits(adUnitCodes);
+
     return auctionManager.getAdUnits()
-      .filter(adUnit => adUnitCodes.includes(adUnit.code) && getTargetingObj(adUnit))
+      .filter(adUnit => adUnitCodes.includes(adUnit.code) && getTargetingObj(adUnit) && !superseded.has(adUnit))
       .reduce((result, adUnit) => {
         const targetingValues = getTargetingValues(adUnit);
 

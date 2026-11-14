@@ -403,6 +403,131 @@ describe('targeting tests', function () {
         });
       });
     });
+    describe('when an ad unit code ran in more than one auction', function () {
+      const adUnitCode = '/123456/header-bid-tag-0';
+      const otherAdUnitCode = '/123456/header-bid-tag-1';
+      let instance;
+      let auctions;
+      let retainedAdUnits;
+
+      function fakeAuction(auctionId, adUnits) {
+        return {
+          getAuctionId: () => auctionId,
+          getAdUnits: () => adUnits
+        };
+      }
+
+      function retain(...auctionList) {
+        auctions = auctionList;
+        retainedAdUnits = auctionList.flatMap(auction => auction.getAdUnits());
+      }
+
+      beforeEach(function () {
+        instance = newTargeting(auctionManager);
+        auctions = [];
+        retainedAdUnits = [];
+        sandbox.stub(auctionManager, 'getAuctions').callsFake(() => auctions);
+        sandbox.stub(auctionManager, 'getAdUnits').callsFake(() => retainedAdUnits);
+      });
+
+      it('drops ad server targeting from an auction that is no longer the latest for its code', function () {
+        const first = fakeAuction('auction-1', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1' } }
+        ]);
+        const second = fakeAuction('auction-2', [{ code: adUnitCode }]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode]).to.not.have.property('encypher_verified');
+      });
+
+      it('keeps ad server targeting set by the latest auction', function () {
+        const first = fakeAuction('auction-1', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1' } }
+        ]);
+        const second = fakeAuction('auction-2', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1', encypher_att: 'epa_two' } }
+        ]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].encypher_verified).to.equal('1');
+        expect(targeting[adUnitCode].encypher_att).to.equal('epa_two');
+      });
+
+      it('keeps every twin ad unit of the latest auction', function () {
+        const first = fakeAuction('auction-1', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { stale: 'yes' } }
+        ]);
+        const second = fakeAuction('auction-2', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { twin_banner: 'a' } },
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { twin_video: 'b' } }
+        ]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].twin_banner).to.equal('a');
+        expect(targeting[adUnitCode].twin_video).to.equal('b');
+        expect(targeting[adUnitCode]).to.not.have.property('stale');
+      });
+
+      it('keeps an ad unit object that the latest auction reused from an earlier one', function () {
+        const shared = { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { reused: 'kept' } };
+        retain(fakeAuction('auction-1', [shared]), fakeAuction('auction-2', [shared]));
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].reused).to.equal('kept');
+      });
+
+      it('leaves a code the latest auction did not include alone', function () {
+        const first = fakeAuction('auction-1', [
+          { code: otherAdUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { overlapping: 'kept' } }
+        ]);
+        const second = fakeAuction('auction-2', [{ code: adUnitCode }]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(otherAdUnitCode, 'auction-1');
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode, otherAdUnitCode], 0, []);
+
+        expect(targeting[otherAdUnitCode].overlapping).to.equal('kept');
+      });
+
+      it('keeps ad units that no retained auction claims', function () {
+        retainedAdUnits = [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { unattributed: 'kept' } }
+        ];
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].unattributed).to.equal('kept');
+      });
+
+      it('merges retained auctions for a code with no recorded latest auction', function () {
+        const first = fakeAuction('auction-1', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { from_first: '1' } }
+        ]);
+        const second = fakeAuction('auction-2', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { from_second: '2' } }
+        ]);
+        retain(first, second);
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].from_first).to.equal('1');
+        expect(targeting[adUnitCode].from_second).to.equal('2');
+      });
+    });
+
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
