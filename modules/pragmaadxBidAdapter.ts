@@ -1,75 +1,23 @@
 /**
  * Pragma Adx — Prebid.js Bid Adapter (video + banner)
  *
- * Bidder code: pragmaadx (all-lowercase, per Prebid naming convention)
+ * Bidder code : pragmaadx
+ * Endpoint    : POST https://apps.pragma-crm.com/api/adx/prebid
+ * Maintainer  : mike@pragma-crm.com
  *
- * 2026-09-20, "kannst du in earn noch prebid integrieren?" — scoped to
- * "Earn als Prebid-Bidder für fremde Publisher": this file lets a
- * THIRD-PARTY publisher who already runs Prebid.js add Pragma Adx as one
- * more configured bidder, competing client-side against their existing
- * demand. It changes nothing about Pragma's own auction or Earn's
- * rewarded-video tab.
+ * Pragma Adx responds with a bid only when a real external DSP has
+ * cleared a genuine market price through Pragma's own auction pipeline.
+ * House fills and self-serve campaigns deliberately return no bid
+ * ({bids:[]}) because neither carries a real market price to enter into
+ * a publisher's header auction against honestly-priced demand.
  *
- * 2026-09-26 — Display/Banner: supportedMediaTypes now includes BANNER;
- * POST /api/adx/prebid returns bid.ad (markup) for banner ad units, same
- * DSP-only price discipline as video (see the server-side handler).
+ * GDPR / USP / GPP consent strings are forwarded verbatim from Prebid
+ * and never invented client-side. Supply-chain (schain) is forwarded so
+ * Pragma can append its own seller node before the upstream DSP call.
  *
- * 2026-10-15 — Renamed pragmaAdx → pragmaadx (Prebid naming convention:
- * bidder codes must be all-lowercase alphanumeric). Converted to TypeScript.
- *
- * Interface verified 2026-09-20 against the real Prebid.js Bid Adapter
- * development guide (https://docs.prebid.org/dev-docs/bidder-adaptor.html)
- * — the `spec` object's required members (code, supportedMediaTypes,
- * isBidRequestValid, buildRequests, interpretResponse), the ServerRequest
- * shape {method, url, data, options}, the bid response fields
- * (requestId, cpm, currency, width, height, creativeId, netRevenue, ttl,
- * mediaType, meta.advertiserDomains) and the video-specific `vastXml`.
- * Not written from memory.
- *
- * ── How to actually use this file ──────────────────────────────────────
- * Two honest, different things:
- *
- * 1. WHAT WORKS TODAY — a custom Prebid.js build. Prebid.js is compiled;
- *    a publisher (or we, on their behalf) drops this file into the
- *    Prebid.js source tree as `modules/pragmaadxBidAdapter.ts`, then
- *    builds with it included:
- *
- *        git clone https://github.com/prebid/Prebid.js && cd Prebid.js
- *        npm ci
- *        cp pragmaadxBidAdapter.ts modules/
- *        gulp build --modules=pragmaadxBidAdapter,<their other modules>
- *
- *    This is a standard, fully supported Prebid workflow — most
- *    publishers already run a custom build, because Prebid.js only ever
- *    ships the modules you select. The file is downloadable from
- *    https://apps.pragma-crm.com/static/prebid/pragmaadxBidAdapter.js
- *
- * 2. WHAT IS *NOT* TRUE YET — Pragma is **not** a bidder listed in the
- *    official Prebid.js repository. Two real pull requests were opened
- *    2026-09-21 (prebid/Prebid.js#15639, prebid/prebid.github.io#6751)
- *    but neither is merged — that review is a real external process
- *    outside this codebase's control, with no guaranteed timeline. Until
- *    a Prebid maintainer actually merges both, `pragmaadx` will NOT
- *    appear in Prebid's hosted "download" builder or bidder list —
- *    option 1 is the real integration path. Don't let anyone read this
- *    file, or the mere existence of those PRs, as a claim of official
- *    Prebid listing.
- *
- * ── Consent ────────────────────────────────────────────────────────────
- * GDPR/US-Privacy/GPP strings are forwarded exactly as Prebid hands them
- * to us and never invented. Pragma has no consent pipeline of its own for
- * a third-party publisher's end users; server-side these land in the
- * outbound OpenRTB request's regs.us_privacy / regs.gdpr +
- * user.ext.consent / regs.gpp (see app/adx/bidding.py).
- *
- * ── No bid when there is no real price ─────────────────────────────────
- * The Pragma endpoint answers with a bid ONLY when a real external DSP
- * actually cleared a price. Pragma house creatives and self-serve
- * customer campaigns — which do serve on Pragma's other integration
- * paths — deliberately return no bid here, because neither has a genuine
- * market price, and entering a nominal internal number into a real header
- * auction could take an impression away from a bidder who truly paid
- * more. See POST /api/adx/prebid in app/main.py for the full reasoning.
+ * win/impression accounting is handled server-side via VAST tracking
+ * beacons in the returned creative, so onBidWon is intentionally omitted
+ * to avoid double-counting renders that never reached playback.
  */
 
 import { type BidderSpec, type ServerResponse, registerBidder } from '../src/adapters/bidderFactory.js';
@@ -167,13 +115,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  /**
-   * Pragma needs an api_key + ad_unit_id (both issued when a publisher
-   * registers — see https://apps.pragma-crm.com/adx/quickstart) and
-   * serves video or banner depending on the ad unit's own format, so a
-   * request with neither mediaType is rejected here rather than wasting
-   * a network call on a guaranteed no-bid.
-   */
   isBidRequestValid(bid: any): boolean {
     if (!bid) {
       return false;
@@ -184,11 +125,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return (hasVideo || hasBanner) && !!params.apiKey && !!params.adUnitId;
   },
 
-  /**
-   * One ServerRequest per bid: the Pragma endpoint decides a single
-   * impression per call (it maps onto one OpenRTB imp), so there is
-   * nothing honest to gain from batching them into one request.
-   */
   buildRequests(validBidRequests: any[], bidderRequest: any): any[] {
     return (validBidRequests || []).map((bid: any) => {
       const params: PragmaAdxParams = bid.params || {};
@@ -197,14 +133,11 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       const payload: PragmaAdxPayload = {
         api_key: params.apiKey,
         ad_unit_id: params.adUnitId,
-        // Prebid ties a response back to its request by this exact value.
         bid_id: bid.bidId,
         w: size[0],
         h: size[1]
       };
 
-      // Optional, purely reporting-side — forwarded only if the publisher
-      // configured them on the ad unit's bidder params.
       if (params.placement) {
         payload.placement = String(params.placement);
       }
@@ -220,21 +153,15 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           payload.page_url = bidderRequest.refererInfo.page;
         }
 
-        // GDPR: Prebid gives {consentString, gdprApplies}. We send the
-        // consent string only when GDPR actually applies — the Pragma
-        // backend treats a supplied string as "regs.gdpr = 1", so sending
-        // one when gdprApplies is false would misstate the regime.
         const gdpr = bidderRequest.gdprConsent;
         if (gdpr && gdpr.gdprApplies !== false && gdpr.consentString) {
           payload.gdpr_consent = gdpr.consentString;
         }
 
-        // CCPA / US Privacy string, passed through verbatim.
         if (bidderRequest.uspConsent) {
           payload.us_privacy = bidderRequest.uspConsent;
         }
 
-        // Global Privacy Platform string + applicable section IDs.
         const gpp = bidderRequest.gppConsent;
         if (gpp && gpp.gppString) {
           payload.gpp = gpp.gppString;
@@ -243,9 +170,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           }
         }
 
-        // Supply Chain: forward the publisher's upstream schain so Pragma
-        // can append its own seller node before the outbound DSP call.
-        // Prebid exposes it on bidderRequest; we prefer that over bid-level.
         const schain = bidderRequest.schain;
         if (schain && typeof schain === 'object') {
           payload.schain = schain;
@@ -256,9 +180,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         method: 'POST',
         url: ENDPOINT_URL,
         data: payload,
-        // 'text/plain' keeps this a CORS-simple request (no OPTIONS
-        // preflight) -- the server parses the body as JSON regardless of
-        // Content-Type, so nothing on the wire actually changes.
         options: {
           contentType: 'text/plain',
           withCredentials: false
@@ -267,12 +188,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     });
   },
 
-  /**
-   * Maps Pragma's JSON answer onto Prebid bid objects. The server already
-   * answers in Prebid's own field names, so this stays a thin, explicit
-   * mapping rather than a passthrough — an unexpected/extra server field
-   * must never silently become part of a Prebid bid.
-   */
   interpretResponse(serverResponse: any): any[] {
     const body = (serverResponse && serverResponse.body) || {};
     const bids: PragmaAdxServerBid[] = Array.isArray(body.bids) ? body.bids : [];
@@ -301,9 +216,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           width: bid.width,
           height: bid.height,
           creativeId: bid.creativeId,
-          // Gross price: Pragma's revenue share is settled per partner
-          // agreement after the fact, not deducted at bid time. Prebid's
-          // own rule is that gross-price bids set this to false.
           netRevenue: bid.netRevenue === true,
           ttl: bid.ttl,
           mediaType: isBanner ? BANNER : VIDEO,
@@ -315,7 +227,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         if (isBanner) {
           out.ad = bid.ad;
         } else if (bid.vastUrl) {
-          // Prefer vastUrl: instream works without publisher-side cache config.
           out.vastUrl = bid.vastUrl;
         } else {
           out.vastXml = bid.vastXml;
@@ -324,13 +235,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       });
   },
 
-  /**
-   * Cookie-sync pixel (image only; no iframe sync endpoint exists yet).
-   * Pragma does not operate its own user-ID graph, so this pixel does
-   * nothing except let DSP partners see that this browser visited a
-   * Pragma-monetised page. Consent strings are forwarded as query params
-   * so a future downstream sync redirect can honour them.
-   */
   getUserSyncs(
     syncOptions: { iframeEnabled: boolean; pixelEnabled: boolean },
     _serverResponses: ServerResponse[],
@@ -357,13 +261,26 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return [{ type: 'image', url: SYNC_URL + (qs ? '?' + qs : '') }];
   },
 
-  // Deliberately NOT implemented, rather than stubbed:
-  //
-  // onBidWon / onTimeout — Pragma's win/impression accounting already
-  //   happens server-side off the VAST tracking beacons baked into the
-  //   returned document (GET /api/adx/track/{bid_log_id}/...), which fire
-  //   from the actual player on actual playback. A client-side onBidWon
-  //   ping would double-count renders that never happened.
+  onTimeout(timeoutData: any[]): void {
+    // Forward timeout events to the Pragma endpoint for diagnostics;
+    // these are fire-and-forget and never affect the auction outcome.
+    if (!Array.isArray(timeoutData) || !timeoutData.length) {
+      return;
+    }
+    navigator.sendBeacon(
+      ENDPOINT_URL + '/timeout',
+      JSON.stringify(timeoutData.map((t: any) => ({
+        bid_id: t.bidId,
+        ad_unit_id: t.params && t.params.adUnitId,
+        timeout: t.timeout
+      })))
+    );
+  }
+
+  // onBidWon is intentionally omitted: win/impression accounting is
+  // handled server-side via VAST tracking beacons in the returned
+  // creative, which fire from the actual player on actual playback.
+  // A client-side ping here would double-count impressions.
 };
 
 registerBidder(spec);

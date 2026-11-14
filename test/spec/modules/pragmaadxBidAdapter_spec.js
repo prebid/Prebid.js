@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/pragmaadxBidAdapter.js';
+import { VIDEO, BANNER } from '../../../src/mediaTypes.js';
 
 describe('Pragma Adx Bid Adapter', function () {
   const validBidRequest = {
@@ -34,9 +35,34 @@ describe('Pragma Adx Bid Adapter', function () {
     }
   };
 
+  // ── spec metadata ────────────────────────────────────────────────────
+
+  describe('spec metadata', function () {
+    it('has the correct bidder code', function () {
+      expect(spec.code).to.equal('pragmaadx');
+    });
+
+    it('supports VIDEO and BANNER media types', function () {
+      expect(spec.supportedMediaTypes).to.include(VIDEO);
+      expect(spec.supportedMediaTypes).to.include(BANNER);
+    });
+
+    it('exposes isBidRequestValid, buildRequests and interpretResponse', function () {
+      expect(spec.isBidRequestValid).to.be.a('function');
+      expect(spec.buildRequests).to.be.a('function');
+      expect(spec.interpretResponse).to.be.a('function');
+    });
+  });
+
+  // ── isBidRequestValid ────────────────────────────────────────────────
+
   describe('isBidRequestValid', function () {
-    it('returns true for a valid video bid with apiKey and adUnitId', function () {
+    it('returns true for a valid video bid', function () {
       expect(spec.isBidRequestValid(validBidRequest)).to.be.true;
+    });
+
+    it('returns true for a valid banner bid', function () {
+      expect(spec.isBidRequestValid(validBannerBidRequest)).to.be.true;
     });
 
     it('returns false when apiKey is missing', function () {
@@ -51,20 +77,24 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
+    it('returns false when params is absent entirely', function () {
+      const bid = { bidder: 'pragmaadx', bidId: 'x', mediaTypes: { video: {} } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
     it('returns false when there is neither a video nor a banner mediaType', function () {
       const bid = JSON.parse(JSON.stringify(validBidRequest));
       delete bid.mediaTypes.video;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('returns true for a valid banner bid with apiKey and adUnitId', function () {
-      expect(spec.isBidRequestValid(validBannerBidRequest)).to.be.true;
-    });
-
     it('returns false for a falsy bid', function () {
       expect(spec.isBidRequestValid(null)).to.be.false;
+      expect(spec.isBidRequestValid(undefined)).to.be.false;
     });
   });
+
+  // ── buildRequests ────────────────────────────────────────────────────
 
   describe('buildRequests', function () {
     it('builds one POST ServerRequest per valid bid request', function () {
@@ -89,6 +119,12 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(payload.placement).to.equal('article_inline');
     });
 
+    it('handles a null bidderRequest without throwing', function () {
+      const requests = spec.buildRequests([validBidRequest], null);
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data.page_url).to.be.undefined;
+    });
+
     it('falls back to the documented default player size when none is configured', function () {
       const bid = JSON.parse(JSON.stringify(validBidRequest));
       delete bid.mediaTypes.video.playerSize;
@@ -105,6 +141,37 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(requests[0].data.h).to.equal(720);
     });
 
+    it('resolves the configured banner size for a banner bid', function () {
+      const requests = spec.buildRequests([validBannerBidRequest], {});
+      expect(requests[0].data.w).to.equal(300);
+      expect(requests[0].data.h).to.equal(250);
+    });
+
+    it('falls back to the default banner size when none is configured', function () {
+      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
+      delete bid.mediaTypes.banner.sizes;
+      const requests = spec.buildRequests([bid], {});
+      expect(requests[0].data.w).to.equal(300);
+      expect(requests[0].data.h).to.equal(250);
+    });
+
+    it('accepts a flat [w, h] banner size as well as [[w, h]]', function () {
+      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
+      bid.mediaTypes.banner.sizes = [728, 90];
+      const requests = spec.buildRequests([bid], {});
+      expect(requests[0].data.w).to.equal(728);
+      expect(requests[0].data.h).to.equal(90);
+    });
+
+    it('returns one ServerRequest per bid for multiple valid bid requests', function () {
+      const secondBid = JSON.parse(JSON.stringify(validBidRequest));
+      secondBid.bidId = 'other-bid-id';
+      secondBid.params.adUnitId = 2;
+      const requests = spec.buildRequests([validBidRequest, secondBid], {});
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[1].data.ad_unit_id).to.equal(2);
+    });
+
     it('forwards optional userId and ifa only when configured', function () {
       const bid = JSON.parse(JSON.stringify(validBidRequest));
       bid.params.userId = 'user-123';
@@ -112,6 +179,12 @@ describe('Pragma Adx Bid Adapter', function () {
       const requests = spec.buildRequests([bid], {});
       expect(requests[0].data.user_id).to.equal('user-123');
       expect(requests[0].data.ifa).to.equal('idfa-456');
+    });
+
+    it('omits userId and ifa when not configured', function () {
+      const requests = spec.buildRequests([validBidRequest], {});
+      expect(requests[0].data.user_id).to.be.undefined;
+      expect(requests[0].data.ifa).to.be.undefined;
     });
 
     it('forwards the page URL from bidderRequest.refererInfo', function () {
@@ -122,7 +195,7 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(requests[0].data.page_url).to.equal('https://publisher.example.com/article');
     });
 
-    it('forwards the GDPR consent string only when gdprApplies is not false', function () {
+    it('forwards the GDPR consent string when gdprApplies is true', function () {
       const bidderRequest = {
         gdprConsent: { gdprApplies: true, consentString: 'CONSENT_STRING' }
       };
@@ -153,41 +226,31 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(requests[0].data.gpp_sid).to.deep.equal([2, 6]);
     });
 
-    it('resolves the configured banner size for a banner bid request', function () {
-      const requests = spec.buildRequests([validBannerBidRequest], {});
-      expect(requests[0].data.w).to.equal(300);
-      expect(requests[0].data.h).to.equal(250);
-      expect(requests[0].data.ad_unit_id).to.equal(2);
+    it('omits gpp_sid when applicableSections is not an array', function () {
+      const bidderRequest = {
+        gppConsent: { gppString: 'DBABLA~BVQY' }
+      };
+      const requests = spec.buildRequests([validBidRequest], bidderRequest);
+      expect(requests[0].data.gpp).to.equal('DBABLA~BVQY');
+      expect(requests[0].data.gpp_sid).to.be.undefined;
     });
 
-    it('falls back to the documented default banner size when none is configured', function () {
-      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
-      delete bid.mediaTypes.banner.sizes;
-      const requests = spec.buildRequests([bid], {});
-      expect(requests[0].data.w).to.equal(300);
-      expect(requests[0].data.h).to.equal(250);
+    it('forwards schain from bidderRequest', function () {
+      const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'publisher.com', sid: 'pub-1', hp: 1 }] };
+      const requests = spec.buildRequests([validBidRequest], { schain });
+      expect(requests[0].data.schain).to.deep.equal(schain);
     });
 
-    it('accepts a flat [w, h] banner size as well as [[w, h]]', function () {
-      const bid = JSON.parse(JSON.stringify(validBannerBidRequest));
-      bid.mediaTypes.banner.sizes = [728, 90];
-      const requests = spec.buildRequests([bid], {});
-      expect(requests[0].data.w).to.equal(728);
-      expect(requests[0].data.h).to.equal(90);
-    });
-
-    it('returns one ServerRequest per bid for multiple valid bid requests', function () {
-      const secondBid = JSON.parse(JSON.stringify(validBidRequest));
-      secondBid.bidId = 'other-bid-id';
-      secondBid.params.adUnitId = 2;
-      const requests = spec.buildRequests([validBidRequest, secondBid], {});
-      expect(requests).to.have.lengthOf(2);
-      expect(requests[1].data.ad_unit_id).to.equal(2);
+    it('omits schain when bidderRequest has none', function () {
+      const requests = spec.buildRequests([validBidRequest], {});
+      expect(requests[0].data.schain).to.be.undefined;
     });
   });
 
+  // ── interpretResponse ────────────────────────────────────────────────
+
   describe('interpretResponse', function () {
-    it('maps a real DSP-priced bid onto a Prebid bid object', function () {
+    it('maps a real DSP-priced video bid onto a Prebid bid object', function () {
       const serverResponse = {
         body: {
           bids: [{
@@ -249,6 +312,54 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(bid.vastXml).to.be.undefined;
     });
 
+    it('handles a string cpm from the server correctly', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'x', cpm: '3.50', currency: 'USD',
+            vastXml: '<VAST></VAST>'
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].cpm).to.equal(3.50);
+    });
+
+    it('sets netRevenue to true when the server sends netRevenue: true', function () {
+      const serverResponse = {
+        body: {
+          bids: [{
+            requestId: 'x', cpm: 1.0, currency: 'USD',
+            netRevenue: true, vastXml: '<VAST></VAST>'
+          }]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids[0].netRevenue).to.be.true;
+    });
+
+    it('defaults currency to USD when absent', function () {
+      const serverResponse = {
+        body: { bids: [{ requestId: 'x', cpm: 1.0, vastXml: '<VAST></VAST>' }] }
+      };
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids[0].currency).to.equal('USD');
+    });
+
+    it('returns all valid bids from a multi-bid response', function () {
+      const serverResponse = {
+        body: {
+          bids: [
+            { requestId: 'a', cpm: 1.0, vastXml: '<VAST/>' },
+            { requestId: 'b', cpm: 2.0, mediaType: 'banner', ad: '<div/>' }
+          ]
+        }
+      };
+      const bids = spec.interpretResponse(serverResponse);
+      expect(bids).to.have.lengthOf(2);
+    });
+
     it('returns an empty array for an explicit no-bid response', function () {
       const serverResponse = { body: { bids: [], no_bid_reason: 'house' } };
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
@@ -256,11 +367,7 @@ describe('Pragma Adx Bid Adapter', function () {
 
     it('filters out a banner bid with no ad markup', function () {
       const serverResponse = {
-        body: {
-          bids: [{
-            requestId: 'x', cpm: 1.5, mediaType: 'banner', ad: '   '
-          }]
-        }
+        body: { bids: [{ requestId: 'x', cpm: 1.5, mediaType: 'banner', ad: '   ' }] }
       };
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
     });
@@ -272,18 +379,13 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
     });
 
-    it('uses vastUrl when server returns it (instream-safe, no cache needed)', function () {
+    it('uses vastUrl when server returns it', function () {
       const serverResponse = {
         body: {
           bids: [{
-            requestId: 'url-bid',
-            cpm: 3.00,
-            currency: 'USD',
-            width: 640,
-            height: 360,
-            creativeId: 'adx-url-1',
-            netRevenue: false,
-            ttl: 300,
+            requestId: 'url-bid', cpm: 3.00, currency: 'USD',
+            width: 640, height: 360, creativeId: 'adx-url-1',
+            netRevenue: false, ttl: 300,
             vastUrl: 'https://ads.pragma-crm.com/vast/abc123',
             meta: { advertiserDomains: ['advertiser.example.com'] }
           }]
@@ -295,24 +397,23 @@ describe('Pragma Adx Bid Adapter', function () {
       expect(bids[0].vastXml).to.be.undefined;
     });
 
-    it('filters out a bid with a zero or missing cpm', function () {
+    it('filters out a bid with a zero cpm', function () {
       const serverResponse = {
-        body: {
-          bids: [{ requestId: 'x', cpm: 0, vastXml: '<VAST></VAST>' }]
-        }
+        body: { bids: [{ requestId: 'x', cpm: 0, vastXml: '<VAST></VAST>' }] }
+      };
+      expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
+    });
+
+    it('filters out a bid with a negative cpm', function () {
+      const serverResponse = {
+        body: { bids: [{ requestId: 'x', cpm: -1, vastXml: '<VAST></VAST>' }] }
       };
       expect(spec.interpretResponse(serverResponse)).to.deep.equal([]);
     });
 
     it('defaults advertiserDomains to an empty array when meta is absent', function () {
       const serverResponse = {
-        body: {
-          bids: [{
-            requestId: 'x',
-            cpm: 1.5,
-            vastXml: '<VAST></VAST>'
-          }]
-        }
+        body: { bids: [{ requestId: 'x', cpm: 1.5, vastXml: '<VAST></VAST>' }] }
       };
       const bids = spec.interpretResponse(serverResponse);
       expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
@@ -321,50 +422,77 @@ describe('Pragma Adx Bid Adapter', function () {
     it('handles a missing response body without throwing', function () {
       expect(spec.interpretResponse({})).to.deep.equal([]);
     });
+
+    it('handles a null serverResponse without throwing', function () {
+      expect(spec.interpretResponse(null)).to.deep.equal([]);
+    });
   });
+
+  // ── getUserSyncs ─────────────────────────────────────────────────────
 
   describe('getUserSyncs', function () {
     it('returns a pixel sync URL when pixelEnabled is true', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, false);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://apps.pragma-crm.com/api/adx/sync');
     });
 
     it('returns no syncs when pixelEnabled is false', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [], null, null, null);
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [], null, null, null, false);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('appends gdpr_consent when GDPR applies', function () {
+    it('appends gdpr=1 and gdpr_consent when GDPR applies', function () {
       const gdpr = { gdprApplies: true, consentString: 'CONSENT_STRING' };
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null, false);
       expect(syncs[0].url).to.include('gdpr=1');
       expect(syncs[0].url).to.include('gdpr_consent=CONSENT_STRING');
     });
 
     it('omits gdpr_consent when gdprApplies is false', function () {
       const gdpr = { gdprApplies: false, consentString: 'CONSENT_STRING' };
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdpr, null, null, false);
       expect(syncs[0].url).to.not.include('gdpr_consent');
+      expect(syncs[0].url).to.not.include('gdpr=');
     });
 
     it('appends us_privacy when supplied', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, '1YNN', null);
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, '1YNN', null, false);
       expect(syncs[0].url).to.include('us_privacy=1YNN');
+    });
+
+    it('appends gpp when supplied', function () {
+      const gpp = { gppString: 'DBABLA~BVQY' };
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, gpp, false);
+      expect(syncs[0].url).to.include('gpp=DBABLA');
+    });
+
+    it('returns a clean URL with no query string when no consent params are present', function () {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, false);
+      expect(syncs[0].url).to.equal('https://apps.pragma-crm.com/api/adx/sync');
+      expect(syncs[0].url).to.not.include('?');
     });
   });
 
-  describe('buildRequests — schain', function () {
-    it('forwards schain from bidderRequest to the payload', function () {
-      const schain = { ver: '1.0', complete: 1, nodes: [{ asi: 'publisher.com', sid: 'pub-1', hp: 1 }] };
-      const requests = spec.buildRequests([validBidRequest], { schain });
-      expect(requests[0].data.schain).to.deep.equal(schain);
+  // ── onTimeout ────────────────────────────────────────────────────────
+
+  describe('onTimeout', function () {
+    it('is defined and does not throw on a valid timeout array', function () {
+      expect(spec.onTimeout).to.be.a('function');
+      expect(() => spec.onTimeout([{
+        bidId: '2f6g8h1',
+        params: { adUnitId: 1 },
+        timeout: 1000
+      }])).to.not.throw();
     });
 
-    it('omits schain when bidderRequest has none', function () {
-      const requests = spec.buildRequests([validBidRequest], {});
-      expect(requests[0].data.schain).to.be.undefined;
+    it('does not throw on an empty array', function () {
+      expect(() => spec.onTimeout([])).to.not.throw();
+    });
+
+    it('does not throw when called with null', function () {
+      expect(() => spec.onTimeout(null)).to.not.throw();
     });
   });
 });
