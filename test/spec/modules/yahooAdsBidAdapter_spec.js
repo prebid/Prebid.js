@@ -502,7 +502,13 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const ortb2 = { site: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site[param]).to.be.undefined;
+        const supportedSiteKeys = ['name', 'domain', 'page', 'ref', 'keywords', 'search', 'cat', 'sectioncat', 'pagecat'];
+
+        if (data.site != null) {
+          supportedSiteKeys.forEach(key => expect(data.site[key]).to.be.undefined);
+        } else {
+          expect(data.site).to.be.undefined;
+        }
       });
     });
 
