@@ -217,6 +217,23 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     }];
     const bidderRequest = generateBuildRequestMock({}).bidderRequest;
 
+    it('should parse mixed-case sync tags and src attributes with whitespace', () => {
+      const serverResponses = [{
+        body: {
+          ext: {
+            pixels: `<IMG width="1" SRC = '${IMAGE_PIXEL_URL}'><IFRAME\nSrC\t=\t"${IFRAME_ONE_URL}"></IFRAME>`
+          }
+        }
+      }];
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+
+      expect(syncs.map(sync => sync.type)).to.deep.equal(['image', 'iframe']);
+      expect(syncs.map(sync => new URL(sync.url).origin)).to.deep.equal([
+        new URL(IMAGE_PIXEL_URL).origin,
+        new URL(IFRAME_ONE_URL).origin
+      ]);
+    });
+
     it('for only iframe enabled syncs', () => {
       const syncOptions = {
         iframeEnabled: true,
@@ -286,56 +303,62 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         pixelEnabled: true
       };
       describe('when all consent data is set', () => {
-        const pixelObjects = spec.getUserSyncs(
-          syncOptions,
-          SERVER_RESPONSES,
-          bidderRequest.gdprConsent,
-          bidderRequest.uspConsent,
-          bidderRequest.gppConsent
-        );
-        pixelObjects.forEach(pixelObject => {
-          const url = pixelObject.url;
-          const urlParams = new URL(url).searchParams;
-          const expectedParams = {
-            'baz': 'true',
-            'gdpr_consent': bidderRequest.gdprConsent.consentString,
-            'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
-            'us_privacy': bidderRequest.uspConsent,
-            'gpp': bidderRequest.gppConsent.gppString,
-            'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
-          };
-          for (const [key, value] of Object.entries(expectedParams)) {
-            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
-              expect(urlParams.get(key)).to.equal(value);
-            });
-          };
+        it('updates consent params in all user sync URLs', () => {
+          const pixelObjects = spec.getUserSyncs(
+            syncOptions,
+            SERVER_RESPONSES,
+            bidderRequest.gdprConsent,
+            bidderRequest.uspConsent,
+            bidderRequest.gppConsent
+          );
+          expect(pixelObjects.length).to.equal(3);
+
+          pixelObjects.forEach(pixelObject => {
+            const url = pixelObject.url;
+            const urlParams = new URL(url).searchParams;
+            const expectedParams = {
+              'baz': 'true',
+              'gdpr_consent': bidderRequest.gdprConsent.consentString,
+              'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
+              'us_privacy': bidderRequest.uspConsent,
+              'gpp': bidderRequest.gppConsent.gppString,
+              'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+            };
+
+            for (const [key, value] of Object.entries(expectedParams)) {
+              expect(urlParams.get(key), `Updates the ${key} consent param in user sync URL ${url}`).to.equal(value);
+            }
+          });
         });
       });
 
       describe('when no consent data is set', () => {
-        const pixelObjects = spec.getUserSyncs(
-          syncOptions,
-          SERVER_RESPONSES,
-          undefined,
-          undefined,
-          undefined
-        );
-        pixelObjects.forEach(pixelObject => {
-          const url = pixelObject.url;
-          const urlParams = new URL(url).searchParams;
-          const expectedParams = {
-            'baz': 'true',
-            'gdpr_consent': '',
-            'gdpr': '0',
-            'us_privacy': '',
-            'gpp': '',
-            'gpp_sid': ''
-          };
-          for (const [key, value] of Object.entries(expectedParams)) {
-            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
-              expect(urlParams.get(key)).to.equal(value);
-            });
-          };
+        it('updates consent params in all user sync URLs', () => {
+          const pixelObjects = spec.getUserSyncs(
+            syncOptions,
+            SERVER_RESPONSES,
+            undefined,
+            undefined,
+            undefined
+          );
+          expect(pixelObjects.length).to.equal(3);
+
+          pixelObjects.forEach(pixelObject => {
+            const url = pixelObject.url;
+            const urlParams = new URL(url).searchParams;
+            const expectedParams = {
+              'baz': 'true',
+              'gdpr_consent': '',
+              'gdpr': '0',
+              'us_privacy': '',
+              'gpp': '',
+              'gpp_sid': ''
+            };
+
+            for (const [key, value] of Object.entries(expectedParams)) {
+              expect(urlParams.get(key), `Updates the ${key} consent param in user sync URL ${url}`).to.equal(value);
+            }
+          });
         });
       });
     });
@@ -393,6 +416,33 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('Price Floor module support:', () => {
+    it('should read the floor currency from the individual bid', () => {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidRequest.getFloor = sinon.stub().returns({ floor: 5.55, currency: 'EUR' });
+
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      sinon.assert.calledWith(bidRequest.getFloor, { currency: 'USD', mediaType: BANNER, size: '*' });
+      expect(data.cur).to.deep.equal(['EUR']);
+      expect(data.imp[0].bidfloor).to.equal(5.55);
+    });
+
+    [null, undefined, false, {}].forEach(floorData => {
+      [undefined, 'EUR'].forEach(currency => {
+        it(`should build a request when getFloor returns ${JSON.stringify(floorData)} with currency override ${currency}`, () => {
+          const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+          bidRequest.getFloor = () => floorData;
+          bidRequest.params.bidOverride = { cur: currency, imp: { bidfloor: 1.25 } };
+
+          const requests = spec.buildRequests(validBidRequests, bidderRequest);
+
+          expect(requests).to.have.lengthOf(1);
+          expect(requests[0].data.cur).to.deep.equal([currency || 'USD']);
+          expect(requests[0].data.imp[0].bidfloor).to.equal(1.25);
+        });
+      });
+    });
+
     it('should get bidfloor from getFloor method', () => {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       bidRequest.params.bidOverride = { cur: 'EUR' };
@@ -502,7 +552,10 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const ortb2 = { site: param };
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-        expect(data.site[param]).to.be.undefined;
+        expect(data.site).to.deep.equal({
+          page: bidderRequest.refererInfo.page,
+          id: validBidRequests[0].params.dcn
+        });
       });
     });
 
@@ -959,6 +1012,17 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     VALID_BIDDER_CODES.forEach(bidderCode => {
+      it(`should use the pubId endpoint in single-request mode for ${bidderCode}`, () => {
+        config.setConfig({ [bidderCode]: { singleRequestMode: true } });
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode, pubIdMode: true });
+
+        const requests = spec.buildRequests(validBidRequests, bidderRequest);
+
+        expect(requests).to.have.lengthOf(1);
+        expect(requests[0].url).to.equal('https://c2shb.pubgw.yahoo.com/admax/bid/partners/PBJS');
+        expect(requests[0].bidderRequest).to.equal(bidderRequest);
+      });
+
       it(`should route request to config override endpoint for ${bidderCode} override config`, () => {
         const { validBidRequests, bidderRequest } = generateBuildRequestMock({ bidderCode });
         const testOverrideEndpoint = 'http://foo.bar.baz.com/bidderRequest';
@@ -1023,6 +1087,96 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         id: BID_ID_2,
         ext: {
           dfp_ad_unit_code: AD_UNIT_CODE_2
+        }
+      });
+    });
+
+    it('should select the endpoint from the first bid remaining after filtering', () => {
+      config.setConfig({ yahooAds: { singleRequestMode: true } });
+      const { bidRequest: videoBid } = generateBuildRequestMock({ adUnitType: 'video' });
+      const { bidRequest: bannerBid } = generateBuildRequestMock({ bidId: 'banner-bid', pubIdMode: true });
+      const bids = [videoBid, bannerBid];
+      const bidderRequest = generateBidderRequest(bids);
+
+      const requests = spec.buildRequests(bids, bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].url).to.equal('https://c2shb.pubgw.yahoo.com/admax/bid/partners/PBJS');
+      expect(requests[0].data.imp.map(imp => imp.id)).to.deep.equal(['banner-bid']);
+      expect(requests[0].bidderRequest).to.equal(bidderRequest);
+    });
+
+    [false, true].forEach(pubIdMode => {
+      it(`should apply e2e testing options in single-request mode (pubIdMode: ${pubIdMode})`, () => {
+        config.setConfig({ yahooAds: { singleRequestMode: true } });
+        const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({ pubIdMode });
+        bidRequest.params.testing = { e2etest: true };
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
+
+        expect(request.options.withCredentials).to.equal(false);
+        expect(request.data.site.id).to.equal(pubIdMode ? '1234567' : '8a969516017a7a396ec539d97f540011');
+        if (!pubIdMode) {
+          expect(request.data.imp[0].tagid).to.equal('8a969978017a7aaabab4ab0bc01a0009');
+          expect(request.data.imp[0].ext.e2eTestMode).to.equal(true);
+        }
+        expect(request.bidderRequest).to.equal(bidderRequest);
+      });
+    });
+
+    it('should preserve each bid TTL through request construction and reordered responses', () => {
+      config.setConfig({ yahooAds: { singleRequestMode: true } });
+      const { bidRequest: firstBid } = generateBuildRequestMock({});
+      const { bidRequest: secondBid } = generateBuildRequestMock({ bidId: 'second-bid-id', adUnitCode: 'second-ad-unit' });
+      firstBid.params.ttl = 400;
+      secondBid.params.ttl = 500;
+      const bids = [firstBid, secondBid];
+      const request = spec.buildRequests(bids, generateBidderRequest(bids))[0];
+      const { serverResponse } = generateResponseMock('banner');
+      const serverBid = serverResponse.body.seatbid[0].bid[0];
+      serverResponse.body.seatbid[0].bid = [
+        { ...serverBid, impid: secondBid.bidId },
+        { ...serverBid, impid: firstBid.bidId }
+      ];
+
+      const response = spec.interpretResponse(serverResponse, request);
+
+      expect(response.map(bid => bid.requestId)).to.deep.equal([secondBid.bidId, firstBid.bidId]);
+      expect(response.map(bid => bid.ttl)).to.deep.equal([500, 400]);
+    });
+
+    ['instream', 'outstream', 'publisher-renderer'].forEach(firstContext => {
+      it(`should use each bid's renderer context in single-request mode when the first bid uses ${firstContext}`, () => {
+        config.setConfig({ yahooAds: { singleRequestMode: true, mode: VIDEO } });
+        const { bidRequest: firstBid } = generateBuildRequestMock({
+          adUnitType: 'video',
+          videoContext: firstContext === 'publisher-renderer' ? 'outstream' : firstContext
+        });
+        if (firstContext === 'publisher-renderer') {
+          firstBid.renderer = { url: 'https://publisher.example/renderer.js', render: () => {} };
+        }
+        const { bidRequest: secondBid } = generateBuildRequestMock({
+          bidId: 'second-video-bid', adUnitCode: 'second-video-ad-unit', adUnitType: 'video', videoContext: 'outstream'
+        });
+        const bids = [firstBid, secondBid];
+        const request = spec.buildRequests(bids, generateBidderRequest(bids))[0];
+        const { serverResponse } = generateResponseMock('video', 'vast');
+        const serverBid = serverResponse.body.seatbid[0].bid[0];
+        serverResponse.body.seatbid[0].bid = [
+          { ...serverBid, impid: secondBid.bidId },
+          { ...serverBid, impid: firstBid.bidId }
+        ];
+
+        const response = spec.interpretResponse(serverResponse, request);
+
+        expect(response).to.have.lengthOf(2);
+        expect(response[0].renderer).to.exist;
+        expect(response[0].renderer.adUnitCode).to.equal(secondBid.adUnitCode);
+        if (firstContext === 'outstream') {
+          expect(response[1].renderer).to.exist;
+          expect(response[1].renderer.adUnitCode).to.equal(firstBid.adUnitCode);
+        } else {
+          expect(response[1].renderer).to.be.undefined;
         }
       });
     });
@@ -1884,6 +2038,39 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   });
 
   describe('OpenRTB 2.6 compliance:', () => {
+    [
+      { gpp: 'top-level-gpp' },
+      { ext: { gpp: 'legacy-gpp' } }
+    ].forEach(regs => {
+      it(`should default GPP sections to [] when only a GPP string is supplied: ${JSON.stringify(regs)}`, () => {
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2: { regs } });
+
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+        expect(data.regs.gpp).to.equal(regs.gpp || regs.ext.gpp);
+        expect(data.regs.gpp_sid).to.deep.equal([]);
+      });
+    });
+
+    it('should read legacy GPP sections when top-level sections are missing', () => {
+      const ortb2 = { regs: { gpp: 'top-level-gpp', ext: { gpp: 'legacy-gpp', gpp_sid: [7] } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.gpp).to.equal('top-level-gpp');
+      expect(data.regs.gpp_sid).to.deep.equal([7]);
+    });
+
+    it('should prefer top-level GPP sections, including an empty array, over legacy sections', () => {
+      const ortb2 = { regs: { gpp: 'top-level-gpp', gpp_sid: [], ext: { gpp_sid: [7] } } };
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
+
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.regs.gpp_sid).to.deep.equal([]);
+    });
+
     it('should use text/plain content type and not send custom headers', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const request = spec.buildRequests(validBidRequests, bidderRequest)[0];
@@ -2299,8 +2486,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(data.site.content.data).to.deep.equal(ortb2.site.content.data);
     });
 
-    it('should send every ortb2.app.content.data segment, not just the last one', () => {
+    it('should keep site inventory when app content data is also provided', () => {
       const ortb2 = {
+        site: {
+          content: { data: [{ name: 'site-provider', segment: [{ id: 'site-segment' }] }] }
+        },
         app: {
           content: {
             data: [
@@ -2312,7 +2502,9 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       };
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({ ortb2 });
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.app.content.data).to.deep.equal(ortb2.app.content.data);
+      expect(data.site.page).to.equal(bidderRequest.refererInfo.page);
+      expect(data.site.content.data).to.deep.equal(ortb2.site.content.data);
+      expect(data).to.not.have.property('app');
     });
 
     [true, undefined].forEach(singleRequestMode => {
