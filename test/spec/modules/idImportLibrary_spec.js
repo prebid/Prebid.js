@@ -106,7 +106,7 @@ describe('IdImportLibrary Tests', function () {
     let userId;
     let refreshUserIdSpy;
     beforeEach(function() {
-      const sandbox = sinon.createSandbox();
+      sandbox = sinon.createSandbox();
       refreshUserIdSpy = sinon.stub(getGlobal(), 'refreshUserIds');
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver').returns(mockMutationObserver);
@@ -311,7 +311,6 @@ describe('IdImportLibrary Tests', function () {
       ]);
     });
     afterEach(function () {
-      sandbox.restore();
       clock.restore();
       jsonSpy.restore();
       mutationObserverStub.restore();
