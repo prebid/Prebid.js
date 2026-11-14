@@ -311,7 +311,6 @@ describe('IdImportLibrary Tests', function () {
       ]);
     });
     afterEach(function () {
-      sandbox.restore();
       clock.restore();
       jsonSpy.restore();
       mutationObserverStub.restore();
