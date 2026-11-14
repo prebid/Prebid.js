@@ -77,7 +77,7 @@ function transformSizes(sizes) {
 }
 
 function extractUserSyncUrls(syncOptions, pixels) {
-  const itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+  const itemsRegExp = /<(img|iframe)\b[^>]*?\ssrc\s*=\s*("|')(.*?)\2/gi;
   const userSyncObjects = [];
 
   if (pixels) {
@@ -272,7 +272,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
     const floorData = getFloorModuleData(bid);
     let outBoundBidRequest = {
       id: generateUUID(),
-      cur: [floorData.currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
+      cur: [floorData?.currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       cattax: bidderRequest.ortb2?.cattax || 1,
       ...(bidderRequest.ortb2?.wlangb && { wlangb: bidderRequest.ortb2.wlangb }),
       imp: [],
@@ -631,23 +631,23 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   return outBoundBidRequest;
 };
 
-function generateServerRequest({ payload, requestOptions, bidderRequest }) {
-  const pubIdMode = getPubIdMode(bidderRequest);
-  const overrideEndpoint = getConfigValue(bidderRequest, 'endpoint');
+function generateServerRequest({ payload, requestOptions, bidderRequest, bid = bidderRequest }) {
+  const pubIdMode = getPubIdMode(bid);
+  const overrideEndpoint = getConfigValue(bid, 'endpoint');
   let sspEndpoint = overrideEndpoint || SSP_ENDPOINT_DCN_POS;
 
   if (pubIdMode === true) {
     sspEndpoint = overrideEndpoint || SSP_ENDPOINT_PUBID;
   };
 
-  if (deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
+  if (deepAccess(bid, 'params.testing.e2etest') === true) {
     logInfo('Adapter e2etest mode is active');
     requestOptions.withCredentials = false;
 
     if (pubIdMode === true) {
       payload.site.id = TEST_MODE_PUBID_DCN;
     } else {
-      const mediaTypeMode = getAdapterMode(bidderRequest);
+      const mediaTypeMode = getAdapterMode(bid);
       payload.site.id = TEST_MODE_DCN;
       payload.imp.forEach(impObject => {
         impObject.ext.e2eTestMode = true;
@@ -656,7 +656,7 @@ function generateServerRequest({ payload, requestOptions, bidderRequest }) {
         } else if (mediaTypeMode === VIDEO) {
           impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
         } else {
-          const bidderCode = bidderRequest.bidderCode;
+          const bidderCode = bid.bidder || bid.bidderCode;
           logWarn(`e2etest mode does not support ${bidderCode}.mode="all". \n Please specify either "banner" or "video"`);
           logWarn(`Adapter e2etest mode: Please make sure your adUnit matches the ${bidderCode}.mode video or banner`);
         }
@@ -741,7 +741,7 @@ export const spec = {
       filteredBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
       });
-      return [generateServerRequest({ payload, requestOptions, bidderRequest: singleRequestBid })];
+      return [generateServerRequest({ payload, requestOptions, bidderRequest, bid: singleRequestBid })];
     }
 
     return filteredBidRequests.map(bid => {
