@@ -1,4 +1,4 @@
-const MESSAGE = 'Use getWindowTop(), getWindowTop(), getParentWindow() or getFrameElement() from src/utils.js instead: tests keep them inside the spec\'s own frame.';
+const MESSAGE = 'Use getWindowTop(), getParentWindow() or getFrameElement() from src/utils.js instead: tests keep them inside the spec\'s own frame.';
 const FRAME_PROPS = new Set(['top', 'parent', 'frameElement']);
 const GLOBAL_WINDOWS = new Set(['window', 'self', 'globalThis']);
 const WINDOW_GETTERS = new Set(['getWindowSelf', 'getWindowTop']);
