@@ -6,6 +6,15 @@ import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
 import { interpretNativeBid } from './bidNativeUtils.js';
 import { getTimeZone } from '../timezone/timezone.js';
 
+/**
+ * Prebid 10+ no longer sets `bid.userId`; read the SharedID / PubCommon ID from the `pubcid.org` EID.
+ */
+export function getPubcid(bidRequest, bidderRequest) {
+  const eids = bidRequest?.userIdAsEids || bidderRequest?.ortb2?.user?.ext?.eids || [];
+  const pubcidEid = eids.find(eid => eid?.source === 'pubcid.org');
+  return pubcidEid?.uids?.[0]?.id || '';
+}
+
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   logInfo('validBidRequests1 ::' + JSON.stringify(validBidRequests));
@@ -14,7 +23,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
     user: {
-      id: validBidRequests[0].userId.pubcid || '',
+      id: getPubcid(validBidRequests[0], bidderRequest),
       buyeruid: validBidRequests[0].buyerUid || '',
       geo: {
         country: validBidRequests[0].params.region || city,
