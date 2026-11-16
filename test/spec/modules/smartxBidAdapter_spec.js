@@ -693,6 +693,125 @@ describe('The smartx adapter', function () {
       });
     });
 
+    it('should pass ortb2.site.inventorypartnerdomain (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: { inventorypartnerdomain: 'partner.example' }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+    });
+
+    it('should pass ortb2.site.ext.inventorypartnerdomain (2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: { ext: { inventorypartnerdomain: 'partner.example' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+    });
+
+    it('should not set site.ext.inventorypartnerdomain when it is absent (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: {}
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site).not.to.have.property('ext');
+    });
+
+    it('should pass ortb2.app.inventorypartnerdomain (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { inventorypartnerdomain: 'partner.example' }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('partner.example'); // Side-effect of copying app
+    });
+
+    it('should pass ortb2.app.inventorypartnerdomain and preserve app.ext properties (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: {
+          inventorypartnerdomain: 'partner.example',
+          ext: { custom: 'bar' }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example',
+        custom: 'bar'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('partner.example'); // Side-effect of copying app
+    });
+
+    it('should pass ortb2.app.ext.inventorypartnerdomain (2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { ext: { inventorypartnerdomain: 'partner.example' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+      expect(request.data.app).to.not.have.property('inventorypartnerdomain');
+    });
+
+    it('should not set app.ext.inventorypartnerdomain when it is absent (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { ext: { custom: 'bar' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).not.to.have.property('inventorypartnerdomain');
+    });
+
+    it('should prefer ortb2.app.inventorypartnerdomain over ortb2.app.ext.inventorypartnerdomain (2.6 > 2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: {
+          inventorypartnerdomain: 'new.example',
+          ext: { inventorypartnerdomain: 'old.example' }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'new.example'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('new.example');  // Side-effect of copying app
+    });
+
     it('should pass eids', function () {
       var request;
       var eids = [{

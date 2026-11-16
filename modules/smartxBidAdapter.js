@@ -104,7 +104,8 @@ export const spec = {
       // carries no ortb2.site and goes out with an app object instead of a site.
       const fpdApp = deepAccess(bid, 'ortb2.app');
       const isApp = !isEmpty(fpdApp);
-      const fpdContent = deepAccess(bid, isApp ? 'ortb2.app.content' : 'ortb2.site.content') || {};
+      const fpdKey = isApp ? 'app' : 'site';
+      const fpdContent = deepAccess(bid, `ortb2.${fpdKey}.content`) || {};
       const eids = deepAccess(bid, 'ortb2.user.ext.eids');
       let pubcid = null;
       const videoMediaType = deepAccess(bid, 'mediaTypes.video') || {};
@@ -230,6 +231,13 @@ export const spec = {
           },
           content: content
         };
+      }
+
+      // Set inventorypartnerdomain if available
+      // Read 2.6 location and fallback to 2.5
+      const ipd = deepAccess(bid, `ortb2.${fpdKey}.inventorypartnerdomain`) ?? deepAccess(bid, `ortb2.${fpdKey}.ext.inventorypartnerdomain`);
+      if (ipd) {
+        requestPayload[fpdKey].ext = { ...requestPayload[fpdKey].ext, inventorypartnerdomain: ipd };
       }
 
       const userExt = {};

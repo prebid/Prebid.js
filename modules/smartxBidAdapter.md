@@ -229,3 +229,10 @@ When `ortb2.app` is set, the request carries an `app` object instead of `site`. 
 # User IDs
 
 IDs from the Prebid userId modules go out as `user.ext.eids`, the OpenRTB 2.5 location. Prebid merges eids the publisher sets in `ortb2.user.eids` or `ortb2.user.ext.eids` into the same list and drops duplicates, so both are forwarded.
+
+# Inventory Sharing
+
+Both oRTB 2.6 and 2.5 inventory sharing formats are supported:
+
+- In oRTB 2.6, the first-class param `inventorypartnerdomain` is passed to `[app|site].ext.inventorypartnerdomain`.
+- In oRTB 2.5, the param `ext.inventorypartnerdomain` is passed to `[app|site].ext.inventorypartnerdomain`.
