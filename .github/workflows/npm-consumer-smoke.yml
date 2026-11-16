@@ -1,23 +1,93 @@
 name: NPM consumer smoke test
 
-# This tests the latest *published* npm release, not the triggering commit, so
-# it never needs to run on PRs. It runs on every master push so that a broken
-# published package shows up as a failing master before the next release.
+# Bundles prebid.js the way an npm consumer would (Bun, no Prebid-specific
+# Babel/SWC configuration) and runs it in headless Chrome.
+#
+# - Pull requests that touch packaging or the build, and every push to master:
+#   test a package packed from the triggering commit, built the same way as a
+#   release (`gulp prepare-release`, then `npm pack`).
+# - Published releases: test the real package from the npm registry, to catch
+#   problems introduced by the publish step itself.
 on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - .npmrc
+      - .nvmrc
+      - .npmignore
+      - .gitignore # setup-npmignore derives .npmignore from it
+      - .babelrc.js
+      - babelConfig.js
+      - features.json
+      - gulpfile.js
+      - gulpHelpers.js
+      - gulp.*.js
+      - webpack.*.js
+      - tsconfig*.json
+      - plugins/**
+      - customize/**
+      - web-bundler/**
+      - public/**
+      - .github/consumer-smoke/**
+      - .github/actions/npm-ci/**
+      - .github/workflows/npm-consumer-smoke.yml
   push:
     branches: [master]
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      source:
+        description: 'packed: pack this ref; published: install from npm'
+        type: choice
+        options: [packed, published]
+        default: packed
+      version:
+        description: 'npm version or dist-tag to test when source is published'
+        default: latest
 
 permissions:
   contents: read
 
+concurrency:
+  group: npm-consumer-smoke-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   consumer-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
+    env:
+      SOURCE: ${{ github.event_name == 'release' && 'published' || inputs.source || 'packed' }}
+      # Release tags are plain versions (e.g. 11.50.0); tolerate a leading "v".
+      VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.version || 'latest' }}
     steps:
-      - name: Checkout fixtures
+      - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Install dependencies
+        if: env.SOURCE == 'packed'
+        uses: ./.github/actions/npm-ci
+
+      - name: Build and pack this commit as a release would publish it
+        if: env.SOURCE == 'packed'
+        run: |
+          npx gulp prepare-release
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+
+      - name: Wait for the release to reach npm
+        if: env.SOURCE == 'published'
+        run: |
+          version="${VERSION#v}"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          for _ in $(seq 1 60); do
+            if npm view "prebid.js@$version" version >/dev/null 2>&1; then exit 0; fi
+            echo "prebid.js@$version is not on npm yet; retrying in 30s"
+            sleep 30
+          done
+          echo "::error::prebid.js@$version did not appear on npm within 30 minutes"
+          exit 1
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -30,21 +100,18 @@ jobs:
         with:
           chrome-version: stable
 
-      - name: Install isolated consumer dependencies
+      - name: Install the packed prebid.js into the isolated consumer
+        if: env.SOURCE == 'packed'
         working-directory: .github/consumer-smoke
-        run: bun install --no-progress
+        run: bun add --no-progress "$RUNNER_TEMP"/prebid.js-*.tgz
+
+      - name: Install the published prebid.js into the isolated consumer
+        if: env.SOURCE == 'published'
+        working-directory: .github/consumer-smoke
+        run: bun add --no-progress "prebid.js@$VERSION"
 
       - name: Bundle with Bun and run browser smoke
         working-directory: .github/consumer-smoke
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: bun run smoke
-
-      - name: Note that a published release was tested
-        if: failure()
-        working-directory: .github/consumer-smoke
-        run: |
-          version=$(jq -r .version node_modules/prebid.js/package.json 2>/dev/null || echo unknown)
-          msg="This smoke test bundles the latest PUBLISHED prebid.js from npm ($version), not the commit that triggered this run (${GITHUB_SHA::9}). The failure may come from that older release and already be fixed on master, or from a change in Bun, Chrome or another dependency."
-          echo "::error title=npm consumer smoke failed on published prebid.js $version::$msg"
-          echo "$msg" >> "$GITHUB_STEP_SUMMARY"

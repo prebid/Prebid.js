@@ -9,10 +9,10 @@ import puppeteer from 'puppeteer-core';
 
 const cwd = fileURLToPath(new URL('.', import.meta.url));
 const dist = resolve(cwd, 'dist');
-const published = JSON.parse(readFileSync(resolve(cwd, 'node_modules/prebid.js/package.json'), 'utf8'));
+const pkg = JSON.parse(readFileSync(resolve(cwd, 'node_modules/prebid.js/package.json'), 'utf8'));
 mkdirSync(dist, { recursive: true });
 
-process.stdout.write('Testing published prebid.js ' + published.version + '\n');
+process.stdout.write('Testing prebid.js ' + pkg.version + '\n');
 execFileSync('bun', [
   'build', './entry.js', '--outfile=./dist/bun.js', '--minify', '--target=browser'
 ], { cwd, stdio: 'inherit' });
