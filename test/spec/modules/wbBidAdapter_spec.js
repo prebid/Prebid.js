@@ -83,12 +83,17 @@ describe('WB adapter', function () {
       expect(buildRequest().url).to.equal('https://stage.example.ru/custom/path/adn/v1/bids');
     });
 
-    it('should send credentials, text/plain content type and the display manager header', function () {
+    it('should send a CORS-simple request with credentials', function () {
       expect(buildRequest().options).to.deep.equal({
         contentType: 'text/plain',
-        customHeaders: { 'x-display-manager': 'prebid' },
         withCredentials: true,
       });
+    });
+
+    it('should mark the request as coming from Prebid and keep ortb2 ext', function () {
+      bidderRequest.ortb2.ext = { prebid: { channel: 'web' } };
+
+      expect(buildRequest().data.ext).to.deep.equal({ prebid: { channel: 'web' }, displaymanager: 'prebid' });
     });
 
     it('should fill imp fields', function () {

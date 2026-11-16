@@ -7,6 +7,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import type { MediaType } from '../src/mediaTypes.js';
 import { noCredsAjax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
+import { deepSetValue } from '../src/utils.js';
 
 export interface WbBidParams {
   /**
@@ -41,7 +42,6 @@ const DEFAULT_DOMAIN = 'ads-media.wildberries.ru';
 const BIDDER_PATH = '/adn/v1/bids';
 const DEFAULT_TTL = 300;
 const CURRENCY = 'RUB';
-const DISPLAY_MANAGER_HEADER = 'x-display-manager';
 const DISPLAY_MANAGER = 'prebid';
 
 const SUPPORTED_MEDIA_TYPES: MediaType[] = [BANNER];
@@ -72,6 +72,7 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     request.cur = [CURRENCY];
+    deepSetValue(request, 'ext.displaymanager', DISPLAY_MANAGER);
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -98,7 +99,6 @@ const buildRequests: WbBidderSpec['buildRequests'] = (validBidRequests, bidderRe
     data: converter.toORTB({ bidRequests: validBidRequests, bidderRequest }),
     options: {
       contentType: 'text/plain',
-      customHeaders: { [DISPLAY_MANAGER_HEADER]: DISPLAY_MANAGER },
       withCredentials: true,
     },
   }];
