@@ -11,11 +11,18 @@ const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
 
 export interface LinaBidParams {
   publisherId: string;
-  placementId: string;
+  placementId?: string;
 }
 
 type LinaMediaType = typeof BANNER | typeof VIDEO | typeof NATIVE;
-type BannerFormat = { w: number; h: number };
+type BannerFormat = {
+  w?: number;
+  h?: number;
+  wratio?: number;
+  hratio?: number;
+  wmin?: number;
+  [key: string]: unknown;
+};
 
 type LinaRequest = {
   auctionId?: string;
@@ -97,9 +104,38 @@ function getVideoSizes(bid: BidRequest<typeof BIDDER_CODE>): Size[] {
   return firstValidSize ? [firstValidSize] : [];
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
 function isValidBannerSize(size: unknown): size is Size {
-  return Array.isArray(size) && size.length === 2 &&
-    size.every((dimension) => typeof dimension === 'number' && Number.isInteger(dimension) && dimension > 0);
+  return Array.isArray(size) && size.length === 2 && size.every(isPositiveInteger);
+}
+
+function isValidBannerFormat(format: unknown): format is BannerFormat {
+  if (!isRecord(format)) return false;
+  const hasDimensions = isPositiveInteger(format.w) && isPositiveInteger(format.h);
+  const hasRatio = isPositiveInteger(format.wratio) && isPositiveInteger(format.hratio);
+  if (hasDimensions && format.wratio === undefined && format.hratio === undefined) return true;
+  if (hasRatio && format.w === undefined && format.h === undefined) {
+    return format.wmin === undefined || isPositiveInteger(format.wmin);
+  }
+  return false;
+}
+
+function findMatchingBannerFormat([w, h]: Size, formats: unknown): BannerFormat | undefined {
+  if (!Array.isArray(formats)) return undefined;
+  return formats.find((format): format is BannerFormat => {
+    if (!isValidBannerFormat(format)) return false;
+    return (format.w === w && format.h === h) || (format.wratio === w && format.hratio === h);
+  });
+}
+
+function getBannerFormats(bid: BidRequest<typeof BIDDER_CODE>): BannerFormat[] {
+  const bannerSizes = getBannerSizes(bid);
+  if (bannerSizes.length === 0) return [];
+  const formats = bid.mediaTypes?.banner?.format ?? bid.ortb2Imp?.banner?.format;
+  return bannerSizes.map((size) => findMatchingBannerFormat(size, formats) ?? { w: size[0], h: size[1] });
 }
 
 function getPrivacy(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): LinaRequest['privacy'] {
@@ -147,7 +183,7 @@ function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
 
 function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
   const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
-  const bannerSizes = getBannerSizes(bid);
+  const bannerFormats = getBannerFormats(bid);
   const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
   const generated: Pick<LinaImp, 'video'> = {};
   if (video) fillVideoImp(generated, { mediaTypes: { video } }, {});
@@ -156,7 +192,7 @@ function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
     ...original,
     id: bid.bidId,
     tagid: getPlacementId(bid)!,
-    ...(bannerSizes.length > 0 ? { banner: { ...banner, format: bannerSizes.map(([w, h]) => ({ w, h })) } } : {}),
+    ...(bannerFormats.length > 0 ? { banner: { ...banner, format: bannerFormats } } : {}),
     ...(generated.video ? { video: { ...originalVideo, ...generated.video } } : {}),
     ...(nativeRequest === undefined ? {} : { native: { ...native, request: nativeRequest } }),
   };
@@ -259,11 +295,17 @@ function getPublisherId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined
   return normalized.length > 0 && normalized.length <= 200 && !/[\r\n]/.test(normalized) ? normalized : undefined;
 }
 
-function getPlacementId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
-  const placementId = bid.params?.placementId;
-  if (typeof placementId !== 'string') return undefined;
-  const normalized = placementId.trim();
+function normalizePlacementId(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
   return normalized.length > 0 && normalized.length <= 100 && !/[\r\n]/.test(normalized) ? normalized : undefined;
+}
+
+function getPlacementId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
+  if (bid.params?.placementId !== undefined) {
+    return normalizePlacementId(bid.params.placementId);
+  }
+  return normalizePlacementId(bid.ortb2Imp?.tagid);
 }
 
 function getTimeout(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): number | undefined {
@@ -276,7 +318,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   supportedMediaTypes: [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] as const : [])],
 
   isBidRequestValid(bid) {
-    const hasValidBanner = getBannerSizes(bid).length > 0;
+    const hasValidBanner = getBannerFormats(bid).length > 0;
     const hasValidVideo = isValidVideo(bid);
     const hasValidNative = FEATURES.NATIVE && getNativeRequest(bid.mediaTypes?.native) !== undefined;
     return (hasValidBanner || hasValidVideo || hasValidNative) &&
