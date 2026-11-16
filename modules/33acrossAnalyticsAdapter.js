@@ -6,6 +6,7 @@ import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspD
  */
 import { EVENTS } from '../src/constants.js';
 import { sendBeacon } from '../src/ajax.js';
+import { analyticsAuctionOrtb2, eidsSources } from '../libraries/eidUtils/eidUtils.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**
@@ -53,7 +54,7 @@ export const log = getLogger();
  * @typedef {Object} Auction - Parsed auction data
  * @property {AdUnit[]} adUnits
  * @property {string} auctionId
- * @property {string[]} userIds
+ * @property {string[]} userIds sources of the auction's EIDs
  */
 
 /**
@@ -449,8 +450,8 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         bids: [],
       };
     }),
-    // Since Prebid 10, user IDs are not set on bids (only as EIDs in ortb2.user.ext.eids)
-    userIds: [],
+    // sources of the auction's EIDs, e.g. ['33across.com', 'pubcid.org']
+    userIds: eidsSources(analyticsAuctionOrtb2(auctionId, PROVIDER_NAME)),
   };
 
   locals.transactionManagers[auctionId] ||=

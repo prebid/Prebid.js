@@ -5,9 +5,26 @@ import * as events from 'src/events.js';
 import * as faker from 'faker';
 import { EVENTS } from 'src/constants.js';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
+import { auctionManager } from '../../../src/auctionManager.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
+import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
+
+const AUCTION_GLOBAL_FPD = {
+  user: {
+    ext: {
+      eids: [
+        { source: '33across.com', uids: [{ id: 'v1.0014', atype: 1 }] },
+        { source: 'pubcid.org', uids: [{ id: 'test-pubcid', atype: 1 }] },
+        { source: '33across.com', uids: [{ id: 'v1.0015', atype: 1 }] },
+      ]
+    }
+  }
+};
 
 describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
+  let auctionFpd;
   const assert = getLocalAssert();
 
   beforeEach(function () {
@@ -21,6 +38,13 @@ describe('33acrossAnalyticsAdapter:', function () {
     });
 
     sandbox.stub(events, 'getEvents').returns([]);
+
+    auctionFpd = { 'auction-000': AUCTION_GLOBAL_FPD };
+    sandbox.stub(auctionManager.index, 'getAuction').callsFake(({ auctionId }) => {
+      if (auctionFpd[auctionId]) {
+        return { getFPD: () => ({ global: auctionFpd[auctionId], bidder: {} }) };
+      }
+    });
 
     sandbox.spy(log, 'info');
     sandbox.spy(log, 'warn');
@@ -155,6 +179,56 @@ describe('33acrossAnalyticsAdapter:', function () {
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
+        });
+
+        context('userIds', function () {
+          function reportedUserIds() {
+            const [, jsonString] = navigator.sendBeacon.firstCall.args;
+            return JSON.parse(jsonString).auctions[0].userIds;
+          }
+
+          it("lists the unique sources of the auction's EIDs", function () {
+            this.enableAnalytics();
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1000);
+
+            assert.deepEqual(reportedUserIds(), ['33across.com', 'pubcid.org']);
+          });
+
+          it('is empty when the auction has no EIDs', function () {
+            auctionFpd['auction-000'] = { user: { ext: { eids: [] } } };
+            this.enableAnalytics();
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1000);
+
+            assert.deepEqual(reportedUserIds(), []);
+          });
+
+          it('is empty when there is no first party data for the auction (e.g. no User ID module)', function () {
+            delete auctionFpd['auction-000'];
+            this.enableAnalytics();
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1000);
+
+            assert.deepEqual(reportedUserIds(), []);
+          });
+
+          it('is empty when transmitEids is denied to the analytics adapter', function () {
+            const unregister = registerActivityControl(ACTIVITY_TRANSMIT_EIDS, 'test', (params) => {
+              if (params.componentType === MODULE_TYPE_ANALYTICS && params.componentName === '33across') {
+                return { allow: false };
+              }
+            });
+            try {
+              this.enableAnalytics();
+              performStandardAuction();
+            } finally {
+              unregister();
+            }
+            sandbox.clock.tick(this.defaultTimeout + 1000);
+
+            assert.deepEqual(reportedUserIds(), []);
+          });
         });
 
         it('logs an info message containing the report', function () {
@@ -869,7 +943,7 @@ function createReportWithThreeBidWonEvents() {
         }]
       }],
       auctionId: 'auction-000',
-      userIds: []
+      userIds: ['33across.com', 'pubcid.org']
     }],
   };
 }
