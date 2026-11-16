@@ -1,6 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
-import { insertVastTrackers } from '../libraries/vastTrackers/vastTrackers.js';
 import {
   type AdapterRequest,
   type BidderSpec,
@@ -10,6 +9,7 @@ import {
 import { EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG } from '../src/eventTrackers.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
+import { insertVastTrackers } from '../src/utils/vast.js';
 
 /**
  * Boldwin bid parameters.
