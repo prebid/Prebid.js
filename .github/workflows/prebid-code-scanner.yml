@@ -49,7 +49,9 @@ jobs:
         if: ${{ github.event_name == 'workflow_run' }}
         id: pr
         uses: ./.github/actions/trusted-pr
-      # Into a subdirectory, so nothing from the PR replaces the base branch's files. Its code is only read.
+      # Into a subdirectory, so nothing from the PR replaces the base branch's files. Its code is only read: no step
+      # after this one runs anything from it (the scanner is a remote action, and it skips symlinks), which is what
+      # makes checking out fork PRs here acceptable.
       - name: Checkout PR
         if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/checkout@v7
@@ -57,6 +59,7 @@ jobs:
           ref: ${{ steps.pr.outputs.sha }}
           path: pr
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
       - name: Scan (PR)
         if: ${{ github.event_name == 'workflow_run' }}
         uses: prebid/code-scanner@main
