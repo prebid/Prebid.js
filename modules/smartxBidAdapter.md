@@ -45,7 +45,7 @@ Each video field in the request comes from the bidder params first, then from `m
 
 # DSA Support
 
-Digital Services Act (DSA) data is passed from `ortb2.regs.ext.dsa` to `regs.ext.dsa`.
+Digital Services Act (DSA) data is passed from `ortb2.regs.ext.dsa` to `regs.ext.dsa`. The DSA transparency data of a bid (`ext.dsa`) is returned as `bid.meta.dsa`, where Prebid's `dsaControl` module checks it.
 
 # Test Parameters - Use case #1 - Out-Stream example and default rendering options
 ```
