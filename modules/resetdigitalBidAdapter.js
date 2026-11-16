@@ -10,6 +10,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'resetdigital';
 const CURRENCY = 'USD';
+const ENDPOINT_URL = 'https://adsreq.resetdigital.co/HB';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -180,7 +181,7 @@ export const spec = {
     }
 
     const params = validBidRequests[0].params;
-    const url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
+    const url = params.endpoint ? params.endpoint : ENDPOINT_URL;
     return {
       method: 'POST',
       url: url,
