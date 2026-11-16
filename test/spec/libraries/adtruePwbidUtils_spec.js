@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   DATA_TYPES, VIDEO_CUSTOM_PARAMS, NATIVE_ASSETS,
   parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets,
-  getResponseMeta, getDomainFromURL
+  getResponseMeta, getDomainFromURL, parseNativeAdm
 } from 'libraries/adtruePwbidUtils/bidderUtils.js';
 import { spec as adtrue } from 'modules/adtrueBidAdapter.js';
 import { spec as pwbid } from 'modules/pwbidBidAdapter.js';
@@ -76,6 +76,22 @@ describe('adtruePwbidUtils', function () {
     it('ignores inherited video params and leaves dimensions alone without a usable size', function () {
       const video = createVideoRequest(Object.create({ maxduration: 30 }), [], VIDEO_CUSTOM_PARAMS, sinon.spy());
       expect(video).to.deep.equal({});
+    });
+  });
+
+  describe('parseNativeAdm', function () {
+    it('keeps JSON escapes in a valid native response', function () {
+      const adm = JSON.stringify({ assets: [{ title: { text: 'Say "hi"\\now' } }] });
+      expect(parseNativeAdm(adm).assets[0].title.text).to.equal('Say "hi"\\now');
+    });
+
+    it('still parses a response whose JSON is escaped twice', function () {
+      const adm = '{\\"native\\":{\\"assets\\":[{\\"title\\":{\\"text\\":\\"Title\\"}}]}}';
+      expect(parseNativeAdm(adm).native.assets[0].title.text).to.equal('Title');
+    });
+
+    it('throws when neither form parses', function () {
+      expect(() => parseNativeAdm('<div>not json</div>')).to.throw();
     });
   });
 
