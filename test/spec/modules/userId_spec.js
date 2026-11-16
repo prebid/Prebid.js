@@ -512,7 +512,11 @@ describe('User ID', function () {
       }
 
       function serverSetsCookie(name, value) {
-        nativeCookie.set.call(document, `${name}=${value}; path=/`);
+        // replace the minted value wherever it was written (host-only or on the root domain), so the test doesn't
+        // depend on cookie order: on a real host the two scopes would otherwise coexist
+        serverDeletesCookie(name);
+        const domain = sharedIdSystemSubmodule.domainOverride?.();
+        nativeCookie.set.call(document, `${name}=${value}; path=/${domain ? `; domain=${domain}` : ''}`);
       }
 
       function serverDeletesCookie(name) {
