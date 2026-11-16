@@ -9,6 +9,11 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const { getModuleRules, groupMatches } = require('./module-notifications');
 
+// File names come from the PR, and may contain markup.
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+}
+
 (async () => {
   const configFilePath = path.join(__dirname, 'codepath-notification');
   const repo = process.env.GITHUB_REPOSITORY;
@@ -88,7 +93,7 @@ const { getModuleRules, groupMatches } = require('./module-notifications');
         <p>
         Files relevant to your integration have been changed in open source ${repo}. The <a href="https://github.com/${repo}/pull/${prNumber}">pull request is #${prNumber}</a>. These are the files you monitor that have been modified:
         <ul>
-          ${files.map(file => `<li>${file}</li>`).join('')}
+          ${files.map(file => `<li>${escapeHtml(file)}</li>`).join('')}
         </ul>
       `;
 
@@ -101,9 +106,9 @@ const { getModuleRules, groupMatches } = require('./module-notifications');
         });
 
         console.log(`Email sent successfully to ${email}`);
-        console.log(`${emailBody}`);
       } catch (error) {
         console.error(`Failed to send email to ${email}:`, error.message);
+        process.exitCode = 1;
       }
     }
   } catch (error) {
