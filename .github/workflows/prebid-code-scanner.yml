@@ -13,25 +13,22 @@ on:
       - master
       - '*-legacy'
 
-permissions:
-  contents: read
-  actions: read
-  pull-requests: read
-  security-events: write
+permissions: {}
 
 jobs:
-  scan:
+  scan-push:
     name: "Prebid code scanner"
-    if: ${{ github.event_name == 'push' || (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success') }}
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - name: Checkout (Push)
-        if: ${{ github.event_name == 'push' }}
+      - name: Checkout
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Scan (Push)
-        if: ${{ github.event_name == 'push' }}
+      - name: Scan
         uses: prebid/code-scanner@main
         with:
           token: ${{ github.token }}
@@ -39,29 +36,49 @@ jobs:
           appId: ${{ vars.CODE_SCANNER_APPID }}
           installationId: ${{ vars.CODE_SCANNER_INSTALLATION }}
 
-      # The base branch is checked out first, so the local trusted-pr action is the base branch's own.
-      - name: Checkout base branch (PR)
-        if: ${{ github.event_name == 'workflow_run' }}
+  # Works out which PR and commit to scan, from the base branch's own checkout and trusted-pr action.
+  # No secrets and no PR code here.
+  pr-info:
+    name: "Get PR"
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
+      sha: ${{ steps.pr.outputs.sha }}
+    steps:
+      - name: Checkout base branch
         uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Get PR
-        if: ${{ github.event_name == 'workflow_run' }}
         id: pr
         uses: ./.github/actions/trusted-pr
-      # Into a subdirectory, so nothing from the PR replaces the base branch's files. Its code is only read: no step
-      # after this one runs anything from it (the scanner is a remote action, and it skips symlinks), which is what
-      # makes checking out fork PRs here acceptable.
+
+  # The only job that has the scanner's secret and the PR's code. The PR's code is only read: this job must never
+  # run anything from it (no local actions, installs, builds or scripts), which is what makes checking out fork PRs
+  # acceptable here. Keep it to these two steps.
+  scan-pr:
+    name: "Prebid code scanner"
+    needs: pr-info
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+    steps:
       - name: Checkout PR
-        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/checkout@v7
         with:
-          ref: ${{ steps.pr.outputs.sha }}
+          ref: ${{ needs.pr-info.outputs.sha }}
           path: pr
           persist-credentials: false
           allow-unsafe-pr-checkout: true
-      - name: Scan (PR)
-        if: ${{ github.event_name == 'workflow_run' }}
+      - name: Scan
+        # A remote action: it runs its own code, reads the files under pr/ and skips symlinks.
         uses: prebid/code-scanner@main
         with:
           token: ${{ github.token }}
@@ -69,5 +86,5 @@ jobs:
           appId: ${{ vars.CODE_SCANNER_APPID }}
           installationId: ${{ vars.CODE_SCANNER_INSTALLATION }}
           root: pr
-          pr: ${{ steps.pr.outputs.number }}
-          sha: ${{ steps.pr.outputs.sha }}
+          pr: ${{ needs.pr-info.outputs.number }}
+          sha: ${{ needs.pr-info.outputs.sha }}
