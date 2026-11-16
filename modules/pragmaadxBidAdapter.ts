@@ -23,6 +23,7 @@
 import { type BidderSpec, type ServerResponse, registerBidder } from '../src/adapters/bidderFactory.js';
 import { type UserSync } from '../src/userSync.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'pragmaadx' as const;
 const ENDPOINT_URL = 'https://apps.pragma-crm.com/api/adx/prebid';
@@ -267,13 +268,15 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     if (!Array.isArray(timeoutData) || !timeoutData.length) {
       return;
     }
-    navigator.sendBeacon(
+    ajax(
       ENDPOINT_URL + '/timeout',
+      null,
       JSON.stringify(timeoutData.map((t: any) => ({
         bid_id: t.bidId,
         ad_unit_id: t.params && t.params.adUnitId,
         timeout: t.timeout
-      })))
+      }))),
+      { method: 'POST', contentType: 'application/json' }
     );
   }
 

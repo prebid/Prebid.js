@@ -316,7 +316,9 @@ describe('Pragma Adx Bid Adapter', function () {
       const serverResponse = {
         body: {
           bids: [{
-            requestId: 'x', cpm: '3.50', currency: 'USD',
+            requestId: 'x',
+            cpm: '3.50',
+            currency: 'USD',
             vastXml: '<VAST></VAST>'
           }]
         }
@@ -330,8 +332,11 @@ describe('Pragma Adx Bid Adapter', function () {
       const serverResponse = {
         body: {
           bids: [{
-            requestId: 'x', cpm: 1.0, currency: 'USD',
-            netRevenue: true, vastXml: '<VAST></VAST>'
+            requestId: 'x',
+            cpm: 1.0,
+            currency: 'USD',
+            netRevenue: true,
+            vastXml: '<VAST></VAST>'
           }]
         }
       };
@@ -383,9 +388,14 @@ describe('Pragma Adx Bid Adapter', function () {
       const serverResponse = {
         body: {
           bids: [{
-            requestId: 'url-bid', cpm: 3.00, currency: 'USD',
-            width: 640, height: 360, creativeId: 'adx-url-1',
-            netRevenue: false, ttl: 300,
+            requestId: 'url-bid',
+            cpm: 3.00,
+            currency: 'USD',
+            width: 640,
+            height: 360,
+            creativeId: 'adx-url-1',
+            netRevenue: false,
+            ttl: 300,
             vastUrl: 'https://ads.pragma-crm.com/vast/abc123',
             meta: { advertiserDomains: ['advertiser.example.com'] }
           }]
