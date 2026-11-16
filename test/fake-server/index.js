@@ -48,6 +48,27 @@ app.post('/triplelift', tripleliftHandler, (req, res) => {
   res.send();
 });
 
+// Analytics collector and landing page for e2e click tests. Data is kept per `run` query parameter,
+// so retries and parallel sessions don't see each other's requests.
+const analytics = {};
+const landings = {};
+
+app.post('/analytics', (req, res) => {
+  const run = String(req.query.run);
+  (analytics[run] = analytics[run] || []).push(req.body);
+  res.send();
+});
+
+app.get('/analytics', (req, res) => {
+  const run = String(req.query.run);
+  res.json({ landed: landings[run] === true, analytics: analytics[run] || [] });
+});
+
+app.get('/landing', (req, res) => {
+  landings[String(req.query.run)] = true;
+  res.type('html').send('<!DOCTYPE html><html><head><title>landing</title></head><body><p id="landed">landed</p></body></html>');
+});
+
 app.use((req, res) => {
   res.status(404).send('Not Found');
 });

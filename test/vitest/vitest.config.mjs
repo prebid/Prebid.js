@@ -236,7 +236,6 @@ export default defineConfig({
     include: [
       'chai', 'chai/index.js', 'chai/index.mjs', 'sinon', 'nise', 'faker', 'assert', 'lodash', 'lodash/cloneDeep', 'lodash/unset',
       'dset', 'dlv/index.js', 'klona/json', 'fun-hooks/no-eval/index.js', 'live-connect-js', 'url-parse', 'whatwg-fetch',
-      'crypto-js/sha1', 'crypto-js/md5.js', 'crypto-js/hmac-sha512', 'crypto-js/enc-utf8', 'crypto-js/enc-base64',
       'video.js', 'videojs-ima', 'videojs-contrib-ads', 'videojs-playlist',
     ],
   },
@@ -303,13 +302,10 @@ export default defineConfig({
           fs.mkdirSync(RAW, { recursive: true });
           fs.writeFileSync(path.join(RAW, `${name}.chunk-${chunk}_spec.json`), json);
         },
-        // nativeSetup.mjs, before each spec file; false when there is no provider to do it (the debug page)
+        // nativeSetup.mjs, before each spec file
         async clearCookies({ context, browser, provider }) {
-          if (context) {
-            await context.clearCookies();
-            return true;
-          }
-          if (!browser) return false;
+          if (context) return context.clearCookies();
+          if (!browser) return;
           // WebDriver Classic deletes only the cookies the current frame's document can see; the spec's is the iframe
           const switched = provider.isIframeSwitched();
           if (!switched) await provider.switchToTestFrame();
@@ -318,7 +314,6 @@ export default defineConfig({
           } finally {
             if (!switched) await provider.switchToMainFrame();
           }
-          return true;
         },
       },
     },

@@ -1,7 +1,9 @@
 // WebKit keeps a copy of a site's cookies in the web process (WebCookieCache), which a document.cookie write updates at
 // once and the network process's echo of that write updates again later. An echo of an older write can land after a
-// newer write, so for a moment document.cookie shows a value that was already overwritten or deleted: a test that
-// reads a cookie the previous test's afterEach expired can still see it. setup.mjs waits that out between runnables.
+// newer write, so document.cookie can show a value that was already overwritten or deleted: a test that reads a cookie
+// the previous test's afterEach expired can still see it. setup.mjs waits that out between runnables. A cookie expired
+// right after it was written can stay shown, even to later pages in the same process, until the page writes it again
+// (iOS 16, for one).
 
 /**
  * @param {string} assignment what was assigned to document.cookie
@@ -77,4 +79,28 @@ export function cookieSettler({ read, now, wait, barrier, quietMs, timeoutMs }) 
       })();
     },
   };
+}
+
+const EPOCH = 'Thu, 01 Jan 1970 00:00:00 GMT';
+
+/**
+ * document.cookie shows neither a cookie's path nor its domain, so this expires each cookie it shows under every path
+ * (along `pathname`) and domain (along `hostname`, and host-only) that could have set it.
+ * @param {string} cookies document.cookie
+ * @param {{hostname: string, pathname: string}} location
+ * @returns {string[]} assignments to document.cookie
+ */
+export function expiringAssignments(cookies, { hostname, pathname }) {
+  const pairs = new Set(cookies.split(';').map(c => c.trim()).filter(Boolean).map(c => {
+    const eq = c.indexOf('=');
+    // a nameless cookie shows as its value, and is replaced by assigning another value
+    return eq < 0 ? c : `${c.slice(0, eq).trim()}=`;
+  }));
+  const segments = pathname.split('/').filter(Boolean);
+  const paths = ['/', ...segments.map((_, i) => '/' + segments.slice(0, i + 1).join('/'))];
+  const labels = hostname.split('.');
+  const domains = [null, ...labels.slice(0, Math.max(labels.length - 1, 1)).map((_, i) => labels.slice(i).join('.'))];
+  return [...pairs].flatMap(pair => paths.flatMap(path => domains.map(domain =>
+    `${pair}; expires=${EPOCH}; path=${path}${domain ? `; domain=${domain}` : ''}`
+  )));
 }

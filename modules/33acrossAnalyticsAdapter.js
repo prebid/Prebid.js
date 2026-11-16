@@ -210,7 +210,8 @@ export const locals = {
  * @type {AnalyticsAdapter}
  */
 const analyticsAdapter = Object.assign(
-  buildAdapter({ analyticsType: 'endpoint' }),
+  // track only updates the cache, or sends the report with sendBeacon
+  buildAdapter({ analyticsType: 'endpoint', flushOnPageHide: true }),
   { track: analyticEventHandler }
 );
 

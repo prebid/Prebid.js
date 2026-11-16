@@ -591,6 +591,39 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.imp[0].bidFloor).to.exist;
     });
 
+    it('should request each bid\'s floor in its own currency, not one left over from an earlier bid', function() {
+      const floorBid = (bidId, currency) => {
+        const bid = {
+          bidder: 'optidigital',
+          bidId,
+          params: { publisherId: 's123', placementId: 'Billboard_Top', ...(currency ? { currency } : {}) },
+          adUnitCode: `div-${bidId}`,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          sizes: [[300, 250]]
+        };
+        bid.getFloor = sinon.stub().callsFake(({ currency }) => ({ currency, floor: 2 }));
+        return bid;
+      };
+      const eurBid = floorBid('eur-bid', 'EUR');
+      const defaultBid = floorBid('default-bid');
+      const payload = JSON.parse(spec.buildRequests([eurBid, defaultBid], bidderRequest).data);
+      expect(eurBid.getFloor.firstCall.args[0].currency).to.equal('EUR');
+      expect(defaultBid.getFloor.firstCall.args[0].currency).to.equal('USD');
+      expect(payload.imp.map(imp => imp.bidFloor)).to.deep.equal([2, 2]);
+
+      // nor from an earlier auction
+      const nextAuctionBid = floorBid('next-auction-bid');
+      spec.buildRequests([nextAuctionBid], bidderRequest);
+      expect(nextAuctionBid.getFloor.firstCall.args[0].currency).to.equal('USD');
+    });
+
+    it('should use params.bcat and params.badv when the bidder request has no ortb2', function() {
+      const { ortb2, ...bidderRequestWithoutOrtb2 } = bidderRequest;
+      const payload = JSON.parse(spec.buildRequests(bidderRequest.bids, bidderRequestWithoutOrtb2).data);
+      expect(payload.bcat).to.deep.equal(['IAB1-1']);
+      expect(payload.badv).to.deep.equal(['example.com']);
+    });
+
     it('should add userEids to payload', function() {
       const userIdAsEids = [{
         source: 'pubcid.org',
