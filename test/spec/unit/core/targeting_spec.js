@@ -9,6 +9,7 @@ import {
 } from 'src/targeting.js';
 import { bidFilters } from 'src/targeting/filters.js';
 import { config } from 'src/config.js';
+import pbjs from 'src/prebid.js';
 import { createBidReceived } from 'test/fixtures/fixtures.js';
 import { DEFAULT_TARGETING_KEYS, EVENTS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -411,9 +412,12 @@ describe('targeting tests', function () {
       let retainedAdUnits;
 
       function fakeAuction(auctionId, adUnits) {
+        // like a real auction, this keeps the ad unit code array of the request that started it
+        const adUnitCodes = adUnits.map(adUnit => adUnit.code);
         return {
           getAuctionId: () => auctionId,
-          getAdUnits: () => adUnits
+          getAdUnits: () => adUnits,
+          getAdUnitCodes: () => adUnitCodes
         };
       }
 
@@ -436,11 +440,29 @@ describe('targeting tests', function () {
         ]);
         const second = fakeAuction('auction-2', [{ code: adUnitCode }]);
         retain(first, second);
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', second.getAdUnitCodes());
 
         const targeting = instance.getAllTargeting([adUnitCode], 0, []);
 
         expect(targeting[adUnitCode]).to.not.have.property('encypher_verified');
+      });
+
+      it('does not resurrect stale targeting when a same-id latest auction misses and expires', function () {
+        const first = fakeAuction('shared-publisher-id', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1' } }
+        ]);
+        const second = fakeAuction('shared-publisher-id', [{ code: adUnitCode }]);
+        retain(first);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'shared-publisher-id', first.getAdUnitCodes());
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'shared-publisher-id', second.getAdUnitCodes());
+
+        expect(instance.getAllTargeting([adUnitCode], 0, [])[adUnitCode])
+          .to.not.have.property('encypher_verified');
+
+        retain(first);
+        expect(instance.getAllTargeting([adUnitCode], 0, [])[adUnitCode])
+          .to.not.have.property('encypher_verified');
       });
 
       it('keeps ad server targeting set by the latest auction', function () {
@@ -451,7 +473,7 @@ describe('targeting tests', function () {
           { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1', encypher_att: 'epa_two' } }
         ]);
         retain(first, second);
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', second.getAdUnitCodes());
 
         const targeting = instance.getAllTargeting([adUnitCode], 0, []);
 
@@ -468,7 +490,7 @@ describe('targeting tests', function () {
           { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { twin_video: 'b' } }
         ]);
         retain(first, second);
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', second.getAdUnitCodes());
 
         const targeting = instance.getAllTargeting([adUnitCode], 0, []);
 
@@ -479,8 +501,10 @@ describe('targeting tests', function () {
 
       it('keeps an ad unit object that the latest auction reused from an earlier one', function () {
         const shared = { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { reused: 'kept' } };
-        retain(fakeAuction('auction-1', [shared]), fakeAuction('auction-2', [shared]));
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        const first = fakeAuction('auction-1', [shared]);
+        const second = fakeAuction('auction-2', [shared]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', second.getAdUnitCodes());
 
         const targeting = instance.getAllTargeting([adUnitCode], 0, []);
 
@@ -493,8 +517,8 @@ describe('targeting tests', function () {
         ]);
         const second = fakeAuction('auction-2', [{ code: adUnitCode }]);
         retain(first, second);
-        instance.setLatestAuctionForAdUnit(otherAdUnitCode, 'auction-1');
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        instance.setLatestAuctionForAdUnit(otherAdUnitCode, 'auction-1', first.getAdUnitCodes());
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', second.getAdUnitCodes());
 
         const targeting = instance.getAllTargeting([adUnitCode, otherAdUnitCode], 0, []);
 
@@ -505,7 +529,7 @@ describe('targeting tests', function () {
         retainedAdUnits = [
           { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { unattributed: 'kept' } }
         ];
-        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2');
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'auction-2', [adUnitCode]);
 
         const targeting = instance.getAllTargeting([adUnitCode], 0, []);
 
@@ -525,6 +549,75 @@ describe('targeting tests', function () {
 
         expect(targeting[adUnitCode].from_first).to.equal('1');
         expect(targeting[adUnitCode].from_second).to.equal('2');
+      });
+
+      it('does not treat an inherited property name as a recorded latest auction', function () {
+        const code = 'constructor';
+        retain(
+          fakeAuction('auction-1', [
+            { code, [JSON_MAPPING.ADSERVER_TARGETING]: { from_first: '1' } }
+          ]),
+          fakeAuction('auction-2', [
+            { code, [JSON_MAPPING.ADSERVER_TARGETING]: { from_second: '2' } }
+          ])
+        );
+
+        const targeting = instance.getAllTargeting([code], 0, [])[code];
+
+        expect(targeting.from_first).to.equal('1');
+        expect(targeting.from_second).to.equal('2');
+      });
+
+      it('records the latest request for an ad unit named __proto__', function () {
+        const code = '__proto__';
+        const first = fakeAuction('auction-1', [
+          { code, [JSON_MAPPING.ADSERVER_TARGETING]: { stale: '1' } }
+        ]);
+        const second = fakeAuction('auction-2', [
+          { code, [JSON_MAPPING.ADSERVER_TARGETING]: { current: '2' } }
+        ]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(code, 'auction-2', second.getAdUnitCodes());
+
+        const targeting = instance.getAllTargeting([code], 0, [])[code];
+
+        expect(targeting.current).to.equal('2');
+        expect(targeting).to.not.have.property('stale');
+      });
+
+      it('supersedes a same-id auction that the cache returns after the latest one', function () {
+        const stale = fakeAuction('shared-publisher-id', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_verified: '1' } }
+        ]);
+        const current = fakeAuction('shared-publisher-id', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { encypher_att: 'epa_two' } }
+        ]);
+        retain(current, stale);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'shared-publisher-id', current.getAdUnitCodes());
+
+        const targeting = instance.getAllTargeting([adUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].encypher_att).to.equal('epa_two');
+        expect(targeting[adUnitCode]).to.not.have.property('encypher_verified');
+      });
+
+      it('supersedes each code on its own when two auctions share an id', function () {
+        const first = fakeAuction('shared-publisher-id', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { from_first: '1' } },
+          { code: otherAdUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { other_first: '1' } }
+        ]);
+        const second = fakeAuction('shared-publisher-id', [
+          { code: adUnitCode, [JSON_MAPPING.ADSERVER_TARGETING]: { from_second: '2' } }
+        ]);
+        retain(first, second);
+        instance.setLatestAuctionForAdUnit(adUnitCode, 'shared-publisher-id', second.getAdUnitCodes());
+        instance.setLatestAuctionForAdUnit(otherAdUnitCode, 'shared-publisher-id', first.getAdUnitCodes());
+
+        const targeting = instance.getAllTargeting([adUnitCode, otherAdUnitCode], 0, []);
+
+        expect(targeting[adUnitCode].from_second).to.equal('2');
+        expect(targeting[adUnitCode]).to.not.have.property('from_first');
+        expect(targeting[otherAdUnitCode].other_first).to.equal('1');
       });
     });
 
@@ -1545,7 +1638,7 @@ describe('targeting tests', function () {
         ]);
 
         const adUnitCodes = ['code-0'];
-        targetingInstance.setLatestAuctionForAdUnit('code-0', 2);
+        targetingInstance.setLatestAuctionForAdUnit('code-0', 2, adUnitCodes);
 
         let bids = targetingInstance.getWinningBids(adUnitCodes);
 
@@ -1575,10 +1668,7 @@ describe('targeting tests', function () {
         ]);
 
         const adUnitCodes = ['code-0', 'code-1', 'code-2', 'code-3'];
-        targetingInstance.setLatestAuctionForAdUnit('code-0', 2);
-        targetingInstance.setLatestAuctionForAdUnit('code-1', 2);
-        targetingInstance.setLatestAuctionForAdUnit('code-2', 2);
-        targetingInstance.setLatestAuctionForAdUnit('code-3', 2);
+        adUnitCodes.forEach(code => targetingInstance.setLatestAuctionForAdUnit(code, 2, adUnitCodes));
 
         // Bid Caching On, No Filter Function
         useBidCache = true;
@@ -2629,5 +2719,46 @@ describe('targeting tests', function () {
         'div-1': [slots[0]]
       });
     });
+  });
+});
+
+describe('native current-auction ad unit targeting', () => {
+  beforeEach(() => {
+    hook.ready();
+    config.resetConfig();
+    auctionManager.clearAllAuctions();
+  });
+
+  afterEach(() => {
+    auctionManager.clearAllAuctions();
+    config.resetConfig();
+  });
+
+  it('retracts a verified key through real requests that reuse publisher codes and auction IDs', async () => {
+    const code = 'native-current-auction-slot';
+    const publisherCodes = [code];
+    const options = {
+      auctionId: 'same-publisher-auction',
+      adUnitCodes: publisherCodes,
+      timeout: 100,
+    };
+    await pbjs.requestBids({
+      ...options,
+      adUnits: [{
+        code,
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [],
+        adserverTargeting: { encypher_verified: '1' },
+      }],
+    });
+    expect(pbjs.getAdserverTargetingForAdUnitCode(code))
+      .to.have.property('encypher_verified', '1');
+
+    await pbjs.requestBids({
+      ...options,
+      adUnits: [{ code, mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }],
+    });
+    expect(pbjs.getAdserverTargetingForAdUnitCode(code))
+      .to.not.have.property('encypher_verified');
   });
 });

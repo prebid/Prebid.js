@@ -215,7 +215,11 @@ declare module './config' {
 }
 
 export function newTargeting(auctionManager) {
-  const latestAuctionForAdUnit = {};
+  const latestAuctionForAdUnit = Object.create(null);
+  // An auction ID can be chosen by the publisher and reused across auctions, so it does not pick out
+  // one auction. The ad unit code array that `requestBids` builds once per request, and that the
+  // auction keeps as is, does: it is a fresh array for every request.
+  const latestRequestForAdUnit = Object.create(null);
 
   function getBidSlots(bid: Bid) {
     if (!isGptPubadsDefined() || bid?.adId == null) return [];
@@ -224,8 +228,18 @@ export function newTargeting(auctionManager) {
   }
 
   const targeting = {
-    setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier) {
+    /**
+     * Record the auction that is now the current one for `adUnitCode`.
+     *
+     * @param adUnitCode
+     * @param auctionId the auction's ID, used to pick its bids out of the bid cache.
+     * @param requestAdUnitCodes the ad unit codes of the request that started the auction, as
+     *   `auction.getAdUnitCodes()` returns them. This is what tells the auction apart from an
+     *   earlier one that carries the same ID.
+     */
+    setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier, requestAdUnitCodes: AdUnitCode[]) {
       latestAuctionForAdUnit[adUnitCode] = auctionId;
+      latestRequestForAdUnit[adUnitCode] = requestAdUnitCodes;
     },
 
     resetPresetTargetingAST(adUnitCode?: AdUnitCode | AdUnitCode[]) {
@@ -889,16 +903,25 @@ export function newTargeting(auctionManager) {
    * Ad units of the latest auction are kept, including twins (same code, same auction) and an ad
    * unit object the latest auction reused from an earlier one. An ad unit whose code has no
    * recorded latest auction - it never went through `startAuction` - keeps the merged behavior.
+   *
+   * Two retained auctions can carry the same ID, since `auctionId` can be supplied by the
+   * publisher and reused, so the latest one is the auction whose `getAdUnitCodes()` is the array
+   * recorded alongside that ID. Once the latest auction leaves the cache no retained auction
+   * matches that array, and the auctions it superseded stay superseded instead of becoming
+   * current again.
    */
   function supersededAdUnits(adUnitCodes) {
     const superseded = new Set();
     const latest = new Set();
     for (const auction of auctionManager.getAuctions()) {
       const auctionId = auction.getAuctionId();
+      const requestAdUnitCodes = auction.getAdUnitCodes();
       for (const adUnit of auction.getAdUnits()) {
         const latestAuctionId = latestAuctionForAdUnit[adUnit.code];
         if (latestAuctionId == null || !adUnitCodes.includes(adUnit.code)) continue;
-        (latestAuctionId === auctionId ? latest : superseded).add(adUnit);
+        const latestRequest = latestRequestForAdUnit[adUnit.code];
+        const isLatest = latestAuctionId === auctionId && latestRequest === requestAdUnitCodes;
+        (isLatest ? latest : superseded).add(adUnit);
       }
     }
     latest.forEach(adUnit => superseded.delete(adUnit));

@@ -950,7 +950,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
 
-    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId(), adUnitCodes));
     auction.callBids();
   }
 }, 'startAuction');
