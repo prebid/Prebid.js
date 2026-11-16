@@ -7,8 +7,8 @@ Maintainer: technical@sevio.com
 # Description
 
 The Sevio User ID submodule provides the Sevio ID, an opaque identifier issued by Sevio's Identity
-service, to bid adapters through `bidRequest.userId.sevioId` and as an OpenRTB Extended ID under the
-source `adx.ws`.
+service, to bid adapters as an OpenRTB Extended ID under the source `adx.ws` (in `ortb2.user.ext.eids`,
+also available as `bidRequest.userIdAsEids`). The decoded ID is available as `sevioId` via `pbjs.getUserIds()`.
 
 The ID is fetched from Sevio's Identity service (`https://id.adx.ws/identity/resolve`) and then
 kept in first-party storage by Prebid's `userId` module. The submodule never reads or writes storage
