@@ -9,7 +9,8 @@ import {
   logWarn,
   isFn,
   isPlainObject,
-  getBidIdParameter
+  getBidIdParameter,
+  deepSetValue
 } from '../src/utils.js';
 import {
   Renderer
@@ -254,6 +255,14 @@ export const spec = {
         }
       }
 
+      // Add regs.ext.dsa if available
+      const dsa = deepAccess(bid, 'ortb2.regs.ext.dsa');
+      if (dsa) {
+        // regs.ext could already exist if GDPR applies. deepSetValue will
+        // create the object if its missing.
+        deepSetValue(requestPayload, 'regs.ext.dsa', dsa);
+      }
+
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
@@ -361,12 +370,17 @@ export const spec = {
             vastXml: smartxBid.adm,
             mediaType: VIDEO,
             width: smartxBid.w,
-            height: smartxBid.h
+            height: smartxBid.h,
+            meta: {}
           };
 
-          bid.meta = bid.meta || {};
           if (smartxBid && smartxBid.adomain && smartxBid.adomain.length > 0) {
             bid.meta.advertiserDomains = smartxBid.adomain;
+          }
+
+          const dsa = deepAccess(smartxBid, 'ext.dsa');
+          if (dsa) {
+            bid.meta.dsa = dsa;
           }
 
           const context = deepAccess(currentBidRequest, 'mediaTypes.video.context');

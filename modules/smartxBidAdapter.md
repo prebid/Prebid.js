@@ -43,6 +43,10 @@ Each video field in the request comes from the bidder params first, then from `m
     }
 ```
 
+# DSA Support
+
+Digital Services Act (DSA) data is passed from `ortb2.regs.ext.dsa` to `regs.ext.dsa`.
+
 # Test Parameters - Use case #1 - Out-Stream example and default rendering options
 ```
     var adUnits = [{

@@ -495,6 +495,85 @@ describe('The smartx adapter', function () {
       expect(request.data.imp[0].video.maxduration).to.equal(15);
     });
 
+    it('should pass dsa param and initialize the regs.ext object', function () {
+      var request;
+
+      bid.ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: 1,
+              pubrender: 0,
+              datatopub: 2,
+              transparency: [
+                {
+                  domain: "platform.example",
+                  dsaparams: [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext).to.deep.equal({
+        dsa: bid.ortb2.regs.ext.dsa
+      });
+    });
+
+    it('should pass dsa param and extend the regs.ext object', function () {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'foo'
+      };
+
+      bid.ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: 1,
+              pubrender: 0,
+              datatopub: 2,
+              transparency: [
+                {
+                  domain: "platform.example",
+                  dsaparams: [1, 2]
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext).to.deep.equal({
+        gdpr: 1,
+        dsa: bid.ortb2.regs.ext.dsa
+      });
+    });
+
+    it('should not initialize the regs.ext object when dsa is not provided', function () {
+      var request;
+
+      bid.ortb2 = {
+        regs: {
+          ext: {}
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data).not.to.have.property('regs');
+    });
+
     it('should pass schain param', function () {
       var request;
 
@@ -966,7 +1045,8 @@ describe('The smartx adapter', function () {
               w: 400,
               h: 300,
               ext: {
-                slot: 'slot123'
+                slot: 'slot123',
+                dsa: {}
               }
             }, {
               impid: 124,
@@ -990,6 +1070,7 @@ describe('The smartx adapter', function () {
       expect(responses).to.be.an('array').with.length(2);
       expect(bidderRequestObj).to.be.an('Object');
       expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
+      expect(responses[0].meta.dsa).to.deep.equal({});
       expect(responses[0].meta.advertiserDomains[0]).to.equal('abc.com');
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].currency).to.equal('USD');
@@ -1000,6 +1081,7 @@ describe('The smartx adapter', function () {
       expect(responses[0].mediaType).to.equal('video');
       expect(responses[0].width).to.equal(400);
       expect(responses[0].height).to.equal(300);
+      expect(responses[1].meta.dsa).to.equal(undefined);
       expect(responses[1].meta.advertiserDomains[0]).to.equal('def.com');
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].currency).to.equal('USD');
