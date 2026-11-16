@@ -1,0 +1,119 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/msft",
+    "body": {
+      "imp": [
+        {
+          "ext": {
+            "tid": "ua7ae1d41-80d7-4d90-8ee1-96cb40bfe804",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13232354,
+              "allow_smaller_sizes": true
+            }
+          },
+          "id": "1e57e41f-3cf4-41dc-9427-8dab20b32821",
+          "secure": 1,
+          "native": {
+            "request": "{\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":1,\"required\":1,\"img\":{\"type\":3}},{\"id\":2,\"required\":1,\"data\":{\"type\":1}}]}",
+            "ver": "1.2"
+          }
+        },
+        {
+          "ext": {
+            "tid": "u36733076-9e23-410d-96c5-81b91914041b",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "placement_id": 13232354,
+              "allow_smaller_sizes": true
+            }
+          },
+          "id": "83dab5b1-aff5-4e1c-9f23-c29041476b2b",
+          "secure": 1,
+          "native": {
+            "request": "{\"ver\":\"1.2\",\"assets\":[{\"id\":0,\"required\":1,\"title\":{\"len\":140}},{\"id\":1,\"required\":1,\"data\":{\"type\":2}},{\"id\":2,\"required\":1,\"img\":{\"type\":3}},{\"id\":3,\"required\":1,\"data\":{\"type\":1}},{\"id\":4,\"required\":0,\"img\":{\"type\":1}}]}",
+            "ver": "1.2"
+          }
+        }
+      ],
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/native.html?pbjs_debug=true",
+        "ext": {
+          "data": {
+            "documentLang": "en"
+          }
+        },
+        "content": {
+          "language": "en"
+        }
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 748,
+          "vph": 477
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "Windows"
+          },
+          "browsers": [
+            {
+              "brand": "Not:A-Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "156"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "156"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "u1648676f-9bac-408d-a289-f9cfb1bf1490",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "be19f82d-455f-4e65-8f5f-7dbafcd44682",
+      "test": 0,
+      "tmax": 3000,
+      "ext": {
+        "appnexus": {
+          "prebid": true,
+          "hb_source": 1,
+          "sdk": {
+            "version": "11.47.0-pre",
+            "source": "pbjs"
+          },
+          "referrer_detection": {
+            "rd_ref": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fnative.html%3Fpbjs_debug%3Dtrue",
+            "rd_top": true,
+            "rd_ifs": 0,
+            "rd_stk": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fnative.html%3Fpbjs_debug%3Dtrue"
+          }
+        }
+      }
+    }
+  }
+}

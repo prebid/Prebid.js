@@ -442,320 +442,317 @@ describe('sizeMappingV2', function () {
       });
     });
 
-    describe('video mediaTypes checks', function () {
-      if (!FEATURES.VIDEO) {
-        return;
-      }
+    if (FEATURES.VIDEO) {
+      describe('video mediaTypes checks', function () {
+        beforeEach(function () {
+          sinon.spy(adUnitSetupChecks, 'validateVideoMediaType');
+        });
 
-      beforeEach(function () {
-        sinon.spy(adUnitSetupChecks, 'validateVideoMediaType');
+        afterEach(function () {
+          adUnitSetupChecks.validateVideoMediaType.restore();
+        });
+
+        it('should call function "validateVideoMediaType" if mediaTypes.video.playerSize is present in the Ad Unit (PART - 1)', function () {
+          // PART - 1 (Ad unit has banner.sizes defined, so, validateVideoMediaType function would be called with 'validatedBanner' as an argument)
+
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          checkAdUnitSetupHook(adUnits);
+
+          // since adUntis[1].mediaTypes.video has defined property "playserSize", it should call function "validateVideoMediaType" only once
+          sinon.assert.callCount(adUnitSetupChecks.validateVideoMediaType, 1);
+          /*
+            'validateVideoMediaType' function should be called with 'validatedBanner' as an argument instead of the adUnit because validatedBanner is already a processed form of adUnit and is validated by banner checks.
+            It is not 'undefined' in this case because the adUnit[1] is using 'mediaTypes.banner.sizes' which will populate data into 'validatedBanner' variable.
+
+            'validatedBanner' will be idetical to adUnits[1] with the exceptions of an added property, 'sizes' on the validateBanner object itself.
+          */
+          const validatedBanner = adUnits[1];
+          validatedBanner.sizes = [[300, 250], [300, 600]];
+          sinon.assert.calledWith(adUnitSetupChecks.validateVideoMediaType, validatedBanner);
+        });
+
+        it('should call function "validateVideoMediaType" if mediaTypes.video.playerSize" is present in the Ad Unit (PART - 2)', function () {
+          // PART - 2 (Ad unit does not have banner.sizes defined, so, validateVideoMediaType function would be called with 'adUnit' as an argument)
+
+          const adUnits = utils.deepClone(AD_UNITS);
+          delete adUnits[1].mediaTypes.banner;
+
+          checkAdUnitSetupHook(adUnits);
+
+          // since adUntis[1].mediaTypes.video has defined property "playserSize", it should call function "validateVideoMediaType" only once
+          sinon.assert.callCount(adUnitSetupChecks.validateVideoMediaType, 1);
+          sinon.assert.calledWith(adUnitSetupChecks.validateVideoMediaType, adUnits[1]);
+        });
+
+        it('should delete mediaTypes.video.sizeConfig property if sizeConfig is not declared as an array', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeConfig is declared as an object, it should have been an Array.
+          const badSizeConfig = {
+            minViewPort: [0, 0], playerSize: [640, 400]
+          };
+          adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
+
+          // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
+          expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
+          expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
+
+          // check if correct logError is written to the console.
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'sizeConfig' in 'mediaTypes.video.sizeConfig'. Removing mediaTypes.video.sizeConfig from ad unit.`);
+        });
+
+        it('should delete mediaTypes.video.sizeConfig property if sizeConfig does not contain the required properties "minViewPort" and "playerSize"', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeConfig[0] doest not contain the required property "playerSize".
+          const badSizeConfig = [
+            { minViewPort: [0, 0] },
+            { minViewPort: [1200, 0], playerSize: [640, 400] }
+          ];
+          adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
+
+          // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
+          expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
+          expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
+
+          // check if correct logError is written to the console.
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.video.sizeConfig[0]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
+        });
+
+        it('should delete mediaTypes.video.sizeConfig property if sizeConfig has declared minViewPort property which is NOT an Array of two integers', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeConfig[1].minViewPort is an Array of Integers. It should have been an Array of Array of Integers.
+          const badSizeConfig = [
+            { minViewPort: [0, 0], playerSize: [] },
+            { minViewPort: [1200], playerSize: [640, 400] }
+          ];
+          adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
+
+          // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
+          expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
+          expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
+
+          // check if correct logError is written to the console.
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'minViewPort' in 'mediaTypes.video.sizeConfig[1]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
+        });
+
+        it('should delete mediaTypes.video.sizeConfig property if sizeConfig has declared "playerSize" property which is not in the format, [[vw1, vh1]], where vw is viewport width and vh is viewport height', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeConfig[0].playerSize property is declared incorrectly.
+          const badSizeConfig = [
+            { minViewPort: [0, 0], playerSize: [600, 400, 500] },
+            { minViewPort: [1200, 0], playerSize: [640, 400] }
+          ];
+          adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
+
+          // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
+          expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
+          expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
+
+          // check if correct logError is written to the console.
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'playerSize' in 'mediaTypes.video.sizeConfig[0]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
+        });
+
+        it('should convert sizeConfig.playerSize to an array of array, i.e., [360, 600] to [[360, 600]]', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeConfig[] has declared "playerSize" as an Array of Intergers. It should be an Array of Array of Integers, like [[640, 400]].
+          // Although, it won't throw an error if you declare it like this, but internally, the system will convert it to the format listed above.
+          const badSizeConfig = [
+            { minViewPort: [0, 0], playerSize: [] },
+            { minViewPort: [1200, 0], playerSize: [360, 600] }
+          ];
+          adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          expect(validatedAdUnits[0].mediaTypes.video.sizeConfig[0].playerSize).to.deep.equal([[]]);
+          expect(validatedAdUnits[0].mediaTypes.video.sizeConfig[1].playerSize).to.deep.equal([[360, 600]]);
+        });
+
+        it('should convert mediaTypes.video.playerSize to an array of array, i.e., [360, 600] to [[360, 600]]', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          expect(validatedAdUnits[1].mediaTypes.video.playerSize).to.deep.equal([[300, 460]]);
+        });
+
+        it('should NOT delete mediaTypes.video.sizeConfig property if sizeConfig property is declared correctly', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // before checkAdUnitSetupHook is called
+          expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+
+          // after checkAdUnitSetupHook is called
+          expect(validatedAdUnits[0].mediaTypes.video).to.have.property('sizeConfig');
+        });
       });
+    }
 
-      afterEach(function () {
-        adUnitSetupChecks.validateVideoMediaType.restore();
-      });
+    if (FEATURES.NATIVE) {
+      describe('native mediaTypes checks', function () {
+        beforeEach(function () {
+          sinon.spy(adUnitSetupChecks, 'validateNativeMediaType');
+        });
 
-      it('should call function "validateVideoMediaType" if mediaTypes.video.playerSize is present in the Ad Unit (PART - 1)', function () {
-        // PART - 1 (Ad unit has banner.sizes defined, so, validateVideoMediaType function would be called with 'validatedBanner' as an argument)
+        afterEach(function () {
+          adUnitSetupChecks.validateNativeMediaType.restore();
+        });
 
-        const adUnits = utils.deepClone(AD_UNITS);
+        it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+          checkAdUnitSetupHook(adUnits);
 
-        checkAdUnitSetupHook(adUnits);
+          sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
+        });
 
-        // since adUntis[1].mediaTypes.video has defined property "playserSize", it should call function "validateVideoMediaType" only once
-        sinon.assert.callCount(adUnitSetupChecks.validateVideoMediaType, 1);
-        /*
-          'validateVideoMediaType' function should be called with 'validatedBanner' as an argument instead of the adUnit because validatedBanner is already a processed form of adUnit and is validated by banner checks.
-          It is not 'undefined' in this case because the adUnit[1] is using 'mediaTypes.banner.sizes' which will populate data into 'validatedBanner' variable.
-
-          'validatedBanner' will be idetical to adUnits[1] with the exceptions of an added property, 'sizes' on the validateBanner object itself.
-        */
-        const validatedBanner = adUnits[1];
-        validatedBanner.sizes = [[300, 250], [300, 600]];
-        sinon.assert.calledWith(adUnitSetupChecks.validateVideoMediaType, validatedBanner);
-      });
-
-      it('should call function "validateVideoMediaType" if mediaTypes.video.playerSize" is present in the Ad Unit (PART - 2)', function () {
-        // PART - 2 (Ad unit does not have banner.sizes defined, so, validateVideoMediaType function would be called with 'adUnit' as an argument)
-
-        const adUnits = utils.deepClone(AD_UNITS);
-        delete adUnits[1].mediaTypes.banner;
-
-        checkAdUnitSetupHook(adUnits);
-
-        // since adUntis[1].mediaTypes.video has defined property "playserSize", it should call function "validateVideoMediaType" only once
-        sinon.assert.callCount(adUnitSetupChecks.validateVideoMediaType, 1);
-        sinon.assert.calledWith(adUnitSetupChecks.validateVideoMediaType, adUnits[1]);
-      });
-
-      it('should delete mediaTypes.video.sizeConfig property if sizeConfig is not declared as an array', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeConfig is declared as an object, it should have been an Array.
-        const badSizeConfig = {
-          minViewPort: [0, 0], playerSize: [640, 400]
-        };
-        adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
-
-        // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
-        expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
-        expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
-
-        // check if correct logError is written to the console.
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'sizeConfig' in 'mediaTypes.video.sizeConfig'. Removing mediaTypes.video.sizeConfig from ad unit.`);
-      });
-
-      it('should delete mediaTypes.video.sizeConfig property if sizeConfig does not contain the required properties "minViewPort" and "playerSize"', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeConfig[0] doest not contain the required property "playerSize".
-        const badSizeConfig = [
-          { minViewPort: [0, 0] },
-          { minViewPort: [1200, 0], playerSize: [640, 400] }
-        ];
-        adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
-
-        // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
-        expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
-        expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
-
-        // check if correct logError is written to the console.
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.video.sizeConfig[0]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
-      });
-
-      it('should delete mediaTypes.video.sizeConfig property if sizeConfig has declared minViewPort property which is NOT an Array of two integers', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeConfig[1].minViewPort is an Array of Integers. It should have been an Array of Array of Integers.
-        const badSizeConfig = [
-          { minViewPort: [0, 0], playerSize: [] },
-          { minViewPort: [1200], playerSize: [640, 400] }
-        ];
-        adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
-
-        // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
-        expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
-        expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
-
-        // check if correct logError is written to the console.
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'minViewPort' in 'mediaTypes.video.sizeConfig[1]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
-      });
-
-      it('should delete mediaTypes.video.sizeConfig property if sizeConfig has declared "playerSize" property which is not in the format, [[vw1, vh1]], where vw is viewport width and vh is viewport height', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeConfig[0].playerSize property is declared incorrectly.
-        const badSizeConfig = [
-          { minViewPort: [0, 0], playerSize: [600, 400, 500] },
-          { minViewPort: [1200, 0], playerSize: [640, 400] }
-        ];
-        adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
-
-        // before calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be defined.
-        expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // after calling checkAdUnitSetupHook, mediaTypes.video.sizeConfig property should be deleted.
-        expect(validatedAdUnits[0].mediaTypes.video).to.not.have.property('sizeConfig');
-
-        // check if correct logError is written to the console.
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'playerSize' in 'mediaTypes.video.sizeConfig[0]'. Removing mediaTypes.video.sizeConfig from ad unit.`);
-      });
-
-      it('should convert sizeConfig.playerSize to an array of array, i.e., [360, 600] to [[360, 600]]', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeConfig[] has declared "playerSize" as an Array of Intergers. It should be an Array of Array of Integers, like [[640, 400]].
-        // Although, it won't throw an error if you declare it like this, but internally, the system will convert it to the format listed above.
-        const badSizeConfig = [
-          { minViewPort: [0, 0], playerSize: [] },
-          { minViewPort: [1200, 0], playerSize: [360, 600] }
-        ];
-        adUnits[0].mediaTypes.video.sizeConfig = badSizeConfig;
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        expect(validatedAdUnits[0].mediaTypes.video.sizeConfig[0].playerSize).to.deep.equal([[]]);
-        expect(validatedAdUnits[0].mediaTypes.video.sizeConfig[1].playerSize).to.deep.equal([[360, 600]]);
-      });
-
-      it('should convert mediaTypes.video.playerSize to an array of array, i.e., [360, 600] to [[360, 600]]', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        expect(validatedAdUnits[1].mediaTypes.video.playerSize).to.deep.equal([[300, 460]]);
-      });
-
-      it('should NOT delete mediaTypes.video.sizeConfig property if sizeConfig property is declared correctly', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // before checkAdUnitSetupHook is called
-        expect(adUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-
-        // after checkAdUnitSetupHook is called
-        expect(validatedAdUnits[0].mediaTypes.video).to.have.property('sizeConfig');
-      });
-    });
-
-    describe('native mediaTypes checks', function () {
-      if (!FEATURES.NATIVE) {
-        return;
-      }
-      beforeEach(function () {
-        sinon.spy(adUnitSetupChecks, 'validateNativeMediaType');
-      });
-
-      afterEach(function () {
-        adUnitSetupChecks.validateNativeMediaType.restore();
-      });
-
-      it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-        checkAdUnitSetupHook(adUnits);
-
-        sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
-      });
-
-      it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 1)', function () {
-        // PART - 1 (Ad unit contains 'banner', 'video' and 'native' media types)
-        const adUnit = [{
-          code: 'ad-unit-1',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 400]]
+        it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 1)', function () {
+          // PART - 1 (Ad unit contains 'banner', 'video' and 'native' media types)
+          const adUnit = [{
+            code: 'ad-unit-1',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 400]]
+              },
+              video: {
+                playerSize: [[600, 400]]
+              },
+              native: {}
             },
-            video: {
-              playerSize: [[600, 400]]
+            bids: [{ bidder: 'appnexus', params: 1234 }]
+          }];
+
+          checkAdUnitSetupHook(adUnit);
+
+          // 'validatedVideo' should be passed as an argument to "validatedNativeMediaType"
+          const validatedVideo = adUnit[0];
+          validatedVideo.sizes = [[600, 400]];
+          sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
+          sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, validatedVideo);
+        });
+
+        it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 2)', function () {
+          // PART - 2 (Ad unit contains only 'banner' and 'native' media types)
+          const adUnit = [{
+            code: 'ad-unit-1',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 400]]
+              },
+              native: {}
             },
-            native: {}
-          },
-          bids: [{ bidder: 'appnexus', params: 1234 }]
-        }];
+            bids: [{ bidder: 'appnexus', params: 1234 }]
+          }];
 
-        checkAdUnitSetupHook(adUnit);
+          checkAdUnitSetupHook(adUnit);
 
-        // 'validatedVideo' should be passed as an argument to "validatedNativeMediaType"
-        const validatedVideo = adUnit[0];
-        validatedVideo.sizes = [[600, 400]];
-        sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
-        sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, validatedVideo);
-      });
+          // 'validatedBanner' should be passed as an argument to "validatedNativeMediaType"
+          const validatedBanner = adUnit[0];
+          validatedBanner.sizes = [[300, 400]];
+          sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
+          sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, validatedBanner);
+        });
 
-      it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 2)', function () {
-        // PART - 2 (Ad unit contains only 'banner' and 'native' media types)
-        const adUnit = [{
-          code: 'ad-unit-1',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 400]]
+        it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 3)', function () {
+          // PART - 2 (Ad unit contains only 'native' media types)
+          const adUnit = [{
+            code: 'ad-unit-1',
+            mediaTypes: {
+              native: {}
             },
-            native: {}
-          },
-          bids: [{ bidder: 'appnexus', params: 1234 }]
-        }];
+            bids: [{ bidder: 'appnexus', params: 1234 }]
+          }];
 
-        checkAdUnitSetupHook(adUnit);
+          checkAdUnitSetupHook(adUnit);
 
-        // 'validatedBanner' should be passed as an argument to "validatedNativeMediaType"
-        const validatedBanner = adUnit[0];
-        validatedBanner.sizes = [[300, 400]];
-        sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
-        sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, validatedBanner);
+          // 'adUnit[0]' should be passed as an argument to "validatedNativeMediaType"
+          sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
+          sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, adUnit[0]);
+        });
+
+        it('should delete mediaTypes.native.sizeConfig property if sizeConfig does not contain the required properties "minViewPort" and "active"', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+          // badSizeConfig[1] doesn't include required property "active"
+          const badSizeConfig = [
+            { minViewPort: [0, 0], active: false },
+            { minViewPort: [1200, 0] }
+          ];
+          adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
+          expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+          expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.native.sizeConfig[1]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
+        });
+
+        it('should delete mediaTypes.native.sizeConfig property if sizeConfig[].minViewPort is NOT an array of TWO integers', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+          // badSizeConfig[0].minViewPort is an array of three integers. It should ideally be two integers.
+          const badSizeConfig = [
+            { minViewPort: [0, 0, 0], active: false },
+            { minViewPort: [1200, 0], active: true }
+          ];
+          adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
+          expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+          expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'minViewPort' in 'mediaTypes.native.sizeConfig[0]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
+        });
+
+        it('should delete mediaTypes.native.sizeConfig property if sizeConfig[].active is NOT a Boolean', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+
+          // badSizeCofnig[0].active is a String value, it should have been a boolean to be valid.
+          const badSizeConfig = [
+            { minViewPort: [0, 0], active: 'false' },
+            { minViewPort: [1200, 0], active: true }
+          ];
+          adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
+          expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
+
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+          expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
+          sinon.assert.callCount(utils.logError, 1);
+          sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'active' in 'mediaTypes.native.sizeConfig[0]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
+        });
+
+        it('should NOT delete mediaTypes.native.sizeConfig property if sizeConfig property is declared correctly', function () {
+          const adUnits = utils.deepClone(AD_UNITS);
+          expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
+          const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+          expect(validatedAdUnits[0].mediaTypes.native).to.have.property('sizeConfig');
+        });
       });
-
-      it('should call function "validateNativeMediaTypes" if mediaTypes.native is defined (PART - 3)', function () {
-        // PART - 2 (Ad unit contains only 'native' media types)
-        const adUnit = [{
-          code: 'ad-unit-1',
-          mediaTypes: {
-            native: {}
-          },
-          bids: [{ bidder: 'appnexus', params: 1234 }]
-        }];
-
-        checkAdUnitSetupHook(adUnit);
-
-        // 'adUnit[0]' should be passed as an argument to "validatedNativeMediaType"
-        sinon.assert.callCount(adUnitSetupChecks.validateNativeMediaType, 1);
-        sinon.assert.calledWith(adUnitSetupChecks.validateNativeMediaType, adUnit[0]);
-      });
-
-      it('should delete mediaTypes.native.sizeConfig property if sizeConfig does not contain the required properties "minViewPort" and "active"', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-        // badSizeConfig[1] doesn't include required property "active"
-        const badSizeConfig = [
-          { minViewPort: [0, 0], active: false },
-          { minViewPort: [1200, 0] }
-        ];
-        adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
-        expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-        expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.native.sizeConfig[1]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
-      });
-
-      it('should delete mediaTypes.native.sizeConfig property if sizeConfig[].minViewPort is NOT an array of TWO integers', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-        // badSizeConfig[0].minViewPort is an array of three integers. It should ideally be two integers.
-        const badSizeConfig = [
-          { minViewPort: [0, 0, 0], active: false },
-          { minViewPort: [1200, 0], active: true }
-        ];
-        adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
-        expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-        expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'minViewPort' in 'mediaTypes.native.sizeConfig[0]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
-      });
-
-      it('should delete mediaTypes.native.sizeConfig property if sizeConfig[].active is NOT a Boolean', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-
-        // badSizeCofnig[0].active is a String value, it should have been a boolean to be valid.
-        const badSizeConfig = [
-          { minViewPort: [0, 0], active: 'false' },
-          { minViewPort: [1200, 0], active: true }
-        ];
-        adUnits[0].mediaTypes.native.sizeConfig = badSizeConfig;
-        expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
-
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-        expect(validatedAdUnits[0].mediaTypes.native).to.not.have.property('sizeConfig');
-        sinon.assert.callCount(utils.logError, 1);
-        sinon.assert.calledWith(utils.logError, `Ad unit div-gpt-ad-1460505748561-0: Invalid declaration of 'active' in 'mediaTypes.native.sizeConfig[0]'. Removing mediaTypes.native.sizeConfig from ad unit.`);
-      });
-
-      it('should NOT delete mediaTypes.native.sizeConfig property if sizeConfig property is declared correctly', function () {
-        const adUnits = utils.deepClone(AD_UNITS);
-        expect(adUnits[0].mediaTypes.native).to.have.property('sizeConfig');
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
-        expect(validatedAdUnits[0].mediaTypes.native).to.have.property('sizeConfig');
-      });
-    });
+    }
   });
 
   describe('checkBidderSizeConfig(sizeConfig)', function () {

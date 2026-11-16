@@ -3,6 +3,8 @@ import sinon from 'sinon';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
 import pgamdirectAnalytics, { dep, maybePostAuctionContext, normalise } from 'modules/pgamdirectAnalyticsAdapter.js';
+import * as events from 'src/events.js';
+import { setDebounceDelay } from '../../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 /**
  * Spec for modules/pgamdirectAnalyticsAdapter.ts.
@@ -29,6 +31,32 @@ describe('pgamdirect Analytics Adapter', () => {
       const a = adapterManager.getAnalyticsAdapter('pgamdirect');
       expect(a).to.exist;
       expect(a.gvlid).to.equal(1353);
+    });
+  });
+
+  describe('when the page is hidden', () => {
+    let clock, ajaxStub;
+    beforeEach(() => {
+      setDebounceDelay(100);
+      clock = sinon.useFakeTimers();
+      ajaxStub = sinon.stub(dep, 'ajax');
+      sinon.stub(events, 'getEvents').returns([]);
+      pgamdirectAnalytics.enableAnalytics({ options: { orgId: 'pgam-acme-publisher' } });
+    });
+    afterEach(() => {
+      pgamdirectAnalytics.disableAnalytics();
+      events.getEvents.restore();
+      ajaxStub.restore();
+      clock.restore();
+      setDebounceDelay(0);
+    });
+
+    it('sends queued events with keepalive on pagehide, before the debounce delay', () => {
+      events.emit(EVENTS.BID_WON, { auctionId: 'a1', adId: 'b1', bidderCode: 'pgamdirect', cpm: 1, currency: 'USD' });
+      sinon.assert.notCalled(ajaxStub);
+      window.dispatchEvent(new Event('pagehide'));
+      sinon.assert.calledOnce(ajaxStub);
+      expect(ajaxStub.firstCall.args[3]).to.include({ keepalive: true });
     });
   });
 

@@ -1,4 +1,4 @@
 import manifest from 'manifest.json';
+import { MANIFEST, provideManifest } from '../load.mjs';
 
-const cb = new URL(document.currentScript.src).searchParams.get('callback');
-window[cb](manifest);
+provideManifest(document.currentScript, MANIFEST, manifest);

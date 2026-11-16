@@ -1,4 +1,5 @@
-import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
+import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
@@ -56,14 +57,6 @@ export const spec = {
         pubcontainerid,
       };
 
-      let windowTop;
-      try {
-        windowTop = window.top;
-      } catch (e) {
-        logMessage(e);
-        windowTop = window;
-      }
-
       return {
         method: 'POST',
         url: requestUrl,
@@ -86,8 +79,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: windowTop.scrollX,
-            scrollbary: windowTop.scrollY,
+            scrollbarx: getWinDimensions().scrollX,
+            scrollbary: getWinDimensions().scrollY,
           },
           bidrequest,
         },
@@ -190,8 +183,8 @@ function getIsHidden(elem) {
     m = m + 1;
     try {
       if (
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('display') === 'none' ||
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('visibility') === 'hidden'
+        getElementStyle(lastElem, getContext(elem)).display === 'none' ||
+        getElementStyle(lastElem, getContext(elem)).visibility === 'hidden'
       ) {
         return true;
       } else {

@@ -249,6 +249,7 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
   let _timeoutTimer;
   let _auctionStatus: AuctionStatus;
   let _nonBids = [];
+  let _timedOutRequests: BidRequest<BidderCode>[] = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
   function addBidReceived(bid) { _bidsReceived.add(bid); }
@@ -272,7 +273,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
       winningBids: _winningBids,
       timeout: _timeout,
       metrics: metrics,
-      seatNonBids: _nonBids
+      seatNonBids: _nonBids,
+      timedOutRequests: _timedOutRequests
     };
   }
 
@@ -287,12 +289,12 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
       events.emit(EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
-      let timedOutRequests = [];
+      _timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
-        if (timedOutRequests.length) {
-          events.emit(EVENTS.BID_TIMEOUT, timedOutRequests);
+        _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
+        if (_timedOutRequests.length) {
+          events.emit(EVENTS.BID_TIMEOUT, _timedOutRequests);
         }
       }
 
@@ -317,8 +319,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
           logError('Error executing bidsBackHandler', null, e);
         } finally {
           // Calling timed out bidders
-          if (timedOutRequests.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
+          if (_timedOutRequests.length) {
+            adapterManager.callTimedOutBidders(adUnits, _timedOutRequests, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           const userSyncConfig = config.getConfig('userSync') ?? {} as any;
@@ -796,8 +798,6 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
 
   // a publisher-defined renderer can be used to render bids
   const bidRequest = index.getBidRequest(bid);
-  const bidRenderer = bidRequest?.renderer || adUnit?.renderer;
-  const bidSafeRenderer = bidRequest?.safeRenderer || adUnit?.safeRenderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
@@ -807,22 +807,11 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
   const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
 
-  let renderer = null;
+  const renderer = [mediaTypeRenderer, bidRequest?.renderer, adUnit?.renderer]
+    .find(candidate => candidate?.render && !(candidate.backupOnly === true && bid.renderer));
 
-  // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
-    renderer = mediaTypeRenderer;
-  } else if (bidRenderer && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
-    renderer = bidRenderer;
-  }
-
-  let safeRenderer: SafeRendererConfig | undefined = null;
-
-  if (mediaTypeSafeRenderer && mediaTypeSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = mediaTypeSafeRenderer;
-  } else if (bidSafeRenderer && bidSafeRenderer?.url && !(mediaTypeRenderer?.backupOnly === true && bid.safeRenderer)) {
-    safeRenderer = bidSafeRenderer;
-  }
+  const safeRenderer: SafeRendererConfig | undefined = [mediaTypeSafeRenderer, bidRequest?.safeRenderer, adUnit?.safeRenderer]
+    .find(candidate => candidate?.url && !(candidate.backupOnly === true && bid.safeRenderer));
 
   if (safeRenderer != null) {
     bid.safeRenderer = safeRenderer;

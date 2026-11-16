@@ -22,6 +22,8 @@ describe('CriteoId module', function () {
   const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
   const nowTimestamp = new Date().getTime();
+  // the module computes the expiry when it writes, from utils.timestamp() (stubbed below)
+  const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
 
   let getCookieStub;
   let setCookieStub;
@@ -151,8 +153,6 @@ describe('CriteoId module', function () {
   ];
 
   responses.forEach(response => describe('test user sync response behavior', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     it('should save bidId if it exists', function () {
       const result = criteoIdSubmodule.getId(response.submoduleConfig);
       result.callback((id) => {
@@ -217,8 +217,6 @@ describe('CriteoId module', function () {
   ];
 
   it('should call sync pixels if request by backend', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     const result = criteoIdSubmodule.getId();
     result.callback((id) => {
 
@@ -259,8 +257,6 @@ describe('CriteoId module', function () {
   });
 
   it('should call sync pixels and use error handler', function () {
-    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
-
     const result = criteoIdSubmodule.getId();
     result.callback((id) => {
     });

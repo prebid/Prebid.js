@@ -119,18 +119,186 @@ describe('Renderer', function () {
 
       testRenderer3.setRender(func1);
       testRenderer3.render(testArg);
-      func1.calledWith(testArg).should.be.ok;
+      sinon.assert.calledWith(func1, testArg);
+      sinon.assert.notCalled(loadExternalScriptStub);
+    });
+  });
+
+  describe('render() result', function () {
+    function rejectionOf(promise) {
+      return promise.then(() => { throw new Error('did not reject'); }, (e) => e);
+    }
+
+    function failLoad(err) {
+      loadExternalScriptStub.callsFake((url, type, code, callback) => {
+        callback.error(err);
+      });
+    }
+
+    function install(options = {}) {
+      return Renderer.install({ url: 'https://renderer.example/r.js', ...options });
+    }
+
+    it('resolves once the script has loaded and the render function has run', async () => {
+      const renderer = install();
+      const renderFn = sinon.spy();
+      renderer.setRender(renderFn);
+      await renderer.render('bid');
+      sinon.assert.calledWith(renderFn, 'bid');
+    });
+
+    it('rejects when the script fails to load, without rendering', async () => {
+      const err = new Error('load failed');
+      failLoad(err);
+      const renderer = install();
+      const renderFn = sinon.spy();
+      renderer.setRender(renderFn);
+      expect(await rejectionOf(renderer.render())).to.equal(err);
+      sinon.assert.notCalled(renderFn);
+    });
+
+    it('rejects when the render function throws', async () => {
+      const err = new Error('render failed');
+      const renderer = install();
+      renderer.setRender(() => { throw err; });
+      expect(await rejectionOf(renderer.render())).to.equal(err);
+    });
+
+    it('rejects when a command pushed by the render function throws', async () => {
+      const err = new Error('command failed');
+      const renderer = install();
+      renderer.setRender(() => renderer.push(() => { throw err; }));
+      expect(await rejectionOf(renderer.render())).to.equal(err);
+    });
+
+    it('settles each queued render on its own outcome', async () => {
+      const callbacks = [];
+      loadExternalScriptStub.callsFake((url, type, code, callback) => { callbacks.push(callback); });
+      const err = new Error('render failed');
+      const renderer = install();
+      renderer.setRender((bid) => renderer.push(() => {
+        if (bid === 'bad') throw err;
+      }));
+      const good = renderer.render('good');
+      const bad = renderer.render('bad');
+      callbacks.forEach(cb => cb.success());
+      await good;
+      expect(await rejectionOf(bad)).to.equal(err);
+    });
+
+    it('resolves when the queue is drained by something other than process()', async () => {
+      let renderer;
+      renderer = install({
+        callback() {
+          renderer.loaded = true;
+          renderer.cmd.splice(0).forEach(cmd => cmd());
+        }
+      });
+      renderer.setRender(() => {});
+      await renderer.render();
+    });
+
+    it('does not render a failed attempt when rendering again', async () => {
+      failLoad(new Error('load failed'));
+      const renderer = install();
+      const renderFn = sinon.spy();
+      renderer.setRender(renderFn);
+      await rejectionOf(renderer.render());
+      loadExternalScriptStub.resetBehavior();
+      loadExternalScriptStub.callsFake((url, type, code, callback) => callback.success());
+      await renderer.render();
+      sinon.assert.calledOnce(renderFn);
+    });
+
+    describe('with a callback given to install', () => {
+      it('resolves once that callback processes the queue', async () => {
+        let renderer;
+        const callback = sinon.spy(() => {
+          renderer.loaded = true;
+          renderer.process();
+        });
+        renderer = install({ callback });
+        renderer.setRender(() => {});
+        await renderer.render();
+        sinon.assert.calledOnce(callback);
+      });
+
+      it('accepts it as a {success, error} object', async () => {
+        let renderer;
+        const callback = {
+          success: sinon.spy(() => {
+            renderer.loaded = true;
+            renderer.process();
+          }),
+          error: sinon.spy()
+        };
+        renderer = install({ callback });
+        const renderFn = sinon.spy();
+        renderer.setRender(renderFn);
+        await renderer.render();
+        sinon.assert.calledOnce(callback.success);
+        sinon.assert.calledOnce(renderFn);
+      });
+
+      it('calls the error handler of a {success, error} object on a load failure', async () => {
+        const err = new Error('load failed');
+        failLoad(err);
+        const callback = { success: sinon.spy(), error: sinon.spy() };
+        const renderer = install({ callback });
+        expect(await rejectionOf(renderer.render())).to.equal(err);
+        sinon.assert.calledWith(callback.error, err);
+        sinon.assert.notCalled(callback.success);
+      });
+
+      it('rejects when that callback throws', async () => {
+        const err = new Error('callback failed');
+        loadExternalScriptStub.callsFake((url, type, code, callback) => {
+          try {
+            callback.success();
+          } catch (e) {}
+        });
+        const renderer = install({ callback: () => { throw err; } });
+        expect(await rejectionOf(renderer.render())).to.equal(err);
+      });
+
+      it('rejects on a load failure and still calls its error handler', async () => {
+        const err = new Error('load failed');
+        failLoad(err);
+        const callback = Object.assign(sinon.spy(), { error: sinon.spy() });
+        const renderer = install({ callback });
+        expect(await rejectionOf(renderer.render())).to.equal(err);
+        sinon.assert.calledWith(callback.error, err);
+        sinon.assert.notCalled(callback);
+      });
+    });
+
+    describe('with renderNow', () => {
+      it('resolves after rendering, without loading a script', async () => {
+        const renderer = install({ url: undefined, renderNow: true });
+        const renderFn = sinon.spy();
+        renderer.setRender(renderFn);
+        await renderer.render();
+        sinon.assert.calledOnce(renderFn);
+        sinon.assert.notCalled(loadExternalScriptStub);
+      });
+
+      it('rejects when the render function throws', async () => {
+        const err = new Error('render failed');
+        const renderer = install({ url: undefined, renderNow: true });
+        renderer.setRender(() => { throw err; });
+        expect(await rejectionOf(renderer.render())).to.equal(err);
+      });
     });
   });
 
   describe('3rd party renderer', function () {
-    let utilsSpy;
-    before(function () {
-      utilsSpy = sinon.spy(utils, 'logWarn');
+    let logWarnSpy;
+    beforeEach(function () {
+      logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
-    after(function() {
-      utilsSpy.restore();
+    afterEach(function() {
+      logWarnSpy.restore();
     });
 
     it('should not load renderer and log warn message', function() {
@@ -148,10 +316,13 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
-      testRenderer.setRender(() => {});
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
 
       testRenderer.render();
-      expect(utilsSpy.callCount).to.equal(1);
+      sinon.assert.calledOnce(logWarnSpy);
+      sinon.assert.calledOnce(renderFn);
+      sinon.assert.notCalled(loadExternalScriptStub);
     });
 
     it('should load renderer adunit renderer when backupOnly', function() {
@@ -210,36 +381,42 @@ describe('Renderer', function () {
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
       getGlobal().adUnits = [{
         code: 'video1',
-        renderer: {
-          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
-          render: sinon.spy()
-        }
+        mediaTypes: { video: { context: 'outstream' } }
       }];
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { test: 'config1' },
         id: 1,
-        adUnitCode: undefined
+        adUnitCode: 'video1'
       });
-      expect(loadExternalScriptStub.called).to.be.false;
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
+      sinon.assert.notCalled(loadExternalScriptStub);
 
       testRenderer.render();
-      expect(loadExternalScriptStub.called).to.be.true;
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://httpbin.org/post');
+      sinon.assert.calledOnce(renderFn);
     });
 
-    it('call\'s documentResolver when configured', function () {
-      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
-        return document;
-      });
+    it('renders into the document returned by documentResolver', function () {
+      const resolvedDoc = document.implementation.createHTMLDocument('');
+      const renderDoc = document.implementation.createHTMLDocument('');
+      const documentResolver = sinon.stub().returns(resolvedDoc);
+      const bid = {};
 
       const testRenderer = Renderer.install({
         url: 'https://httpbin.org/post',
         config: { documentResolver: documentResolver }
       });
+      const renderFn = sinon.spy();
+      testRenderer.setRender(renderFn);
 
-      executeRenderer(testRenderer, {}, {});
+      executeRenderer(testRenderer, bid, renderDoc);
 
-      expect(documentResolver.called).to.be.true;
+      sinon.assert.calledWith(documentResolver, bid, document, renderDoc);
+      expect(testRenderer.documentContext).to.equal(resolvedDoc);
+      expect(loadExternalScriptStub.firstCall.args[4]).to.equal(resolvedDoc);
+      sinon.assert.calledWith(renderFn, bid, resolvedDoc);
     });
   });
 });

@@ -578,57 +578,57 @@ describe('smaatoBidAdapterTest', () => {
       });
     });
 
-    describe('buildRequests for video imps', () => {
-      const VIDEO_OUTSTREAM_PREBID_MEDIATYPE = {
-        context: 'outstream',
-        playerSize: [[768, 1024]],
-        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-        minduration: 5,
-        maxduration: 30,
-        startdelay: 0,
-        linearity: 1,
-        protocols: [7],
-        skip: 1,
-        skipmin: 5,
-        api: [7],
-        ext: { rewarded: 0 }
-      };
-      const VIDEO_OUTSTREAM_OPENRTB_IMP = {
-        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-        minduration: 5,
-        startdelay: 0,
-        linearity: 1,
-        h: 1024,
-        maxduration: 30,
-        skip: 1,
-        protocols: [7],
-        ext: {
-          rewarded: 0
-        },
-        skipmin: 5,
-        api: [7],
-        w: 768
-      };
-      const singleVideoBidRequest = {
-        bidder: 'smaato',
-        params: {
-          publisherId: 'publisherId',
-          adspaceId: 'adspaceId'
-        },
-        mediaTypes: {
-          video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
-        },
-        adUnitCode: '/19968336/header-bid-tag-0',
-        transactionId: 'transactionId',
-        bidId: 'bidId',
-        bidderRequestId: 'bidderRequestId',
-        src: 'client',
-        bidRequestsCount: 1,
-        bidderRequestsCount: 1,
-        bidderWinsCount: 0
-      };
+    if (FEATURES.VIDEO) {
+      describe('buildRequests for video imps', () => {
+        const VIDEO_OUTSTREAM_PREBID_MEDIATYPE = {
+          context: 'outstream',
+          playerSize: [[768, 1024]],
+          mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+          minduration: 5,
+          maxduration: 30,
+          startdelay: 0,
+          linearity: 1,
+          protocols: [7],
+          skip: 1,
+          skipmin: 5,
+          api: [7],
+          ext: { rewarded: 0 }
+        };
+        const VIDEO_OUTSTREAM_OPENRTB_IMP = {
+          mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+          minduration: 5,
+          startdelay: 0,
+          linearity: 1,
+          h: 1024,
+          maxduration: 30,
+          skip: 1,
+          protocols: [7],
+          ext: {
+            rewarded: 0
+          },
+          skipmin: 5,
+          api: [7],
+          w: 768
+        };
+        const singleVideoBidRequest = {
+          bidder: 'smaato',
+          params: {
+            publisherId: 'publisherId',
+            adspaceId: 'adspaceId'
+          },
+          mediaTypes: {
+            video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
+          },
+          adUnitCode: '/19968336/header-bid-tag-0',
+          transactionId: 'transactionId',
+          bidId: 'bidId',
+          bidderRequestId: 'bidderRequestId',
+          src: 'client',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        };
 
-      if (FEATURES.VIDEO) {
         it('sends correct video imps', () => {
           const reqs = spec.buildRequests([singleVideoBidRequest], defaultBidderRequest);
 
@@ -697,8 +697,8 @@ describe('smaatoBidAdapterTest', () => {
           expect(JSON.parse(reqs[1].data).imp[0].banner).to.not.exist;
           expect(JSON.parse(reqs[1].data).imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
         });
-      }
-    });
+      });
+    }
 
     if (FEATURES.NATIVE) {
       describe('buildRequests for native imps', () => {
@@ -795,7 +795,7 @@ describe('smaatoBidAdapterTest', () => {
             },
             {
               id: 12,
-              require: 0,
+              required: 0,
               data: {
                 type: 10
               }

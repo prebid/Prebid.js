@@ -1,7 +1,10 @@
 const helpers = require('../gulpHelpers.js');
 const addCommonConfig = require('../webpack.common.js');
 
-const MANIFEST_FILES = ['manifest.json', 'checksums.json', 'manifest.json.checksum', 'manifest.js.checksum'];
+const MANIFEST_FILES = [
+  'manifest.json', 'manifest.metadata.json', 'checksums.json',
+  'manifest.json.checksum', 'manifest.js.checksum', 'manifest.metadata.js.checksum'
+];
 
 function makeConfig(dev, cfg) {
   return addCommonConfig({
@@ -31,6 +34,9 @@ module.exports = {
     entry: {
       'manifest': {
         import: './web-bundler/out/manifest.js'
+      },
+      'manifest.metadata': {
+        import: './web-bundler/out/manifest.metadata.js'
       }
     }
   }),

@@ -310,6 +310,76 @@ describe('objectGuard', () => {
       expect(guard).to.eql({ foo: null });
     });
   });
+  describe('writing views from another guard', () => {
+    let guard;
+    beforeEach(() => {
+      guard = objectGuard([
+        redactRule({
+          paths: ['secret', 'outer.secret'],
+          applies: () => true,
+          get: () => undefined
+        }),
+        writeProtectRule({
+          paths: ['outer.list'],
+          applies: () => false
+        })
+      ]);
+    });
+
+    it('stores a copy, not the view or the object behind it', () => {
+      const src = { outer: { inner: 'val' } };
+      const dst = {};
+      guard(dst).copy = guard(src).outer;
+      expect(dst.copy).to.eql({ inner: 'val' });
+      expect(dst.copy).to.not.equal(src.outer);
+      dst.copy.inner = 'changed';
+      expect(src.outer.inner).to.equal('val');
+      expect(() => structuredClone(dst)).to.not.throw();
+    });
+
+    it('stores a copy of views nested in plain objects', () => {
+      const src = { outer: { list: [{ inner: 'val' }] } };
+      const dst = {};
+      guard(dst).copy = { wrapped: guard(src).outer };
+      expect(dst.copy).to.eql({ wrapped: { list: [{ inner: 'val' }] } });
+      expect(dst.copy.wrapped.list[0]).to.not.equal(src.outer.list[0]);
+      expect(() => structuredClone(dst)).to.not.throw();
+    });
+
+    it('does not copy what the view redacts', () => {
+      const src = { secret: 'val', other: 'val', outer: { secret: 'val', other: 'val' } };
+      const dst = {};
+      guard(dst).copy = guard(src);
+      expect(dst.copy).to.eql({ other: 'val', outer: { other: 'val' } });
+    });
+
+    it('handles circular references', () => {
+      const src = { outer: { list: [] } };
+      src.outer.list.push(src.outer.list);
+      const dst = {};
+      guard(dst).copy = guard(src).outer.list;
+      expect(dst.copy[0]).to.equal(dst.copy);
+      expect(dst.copy).to.not.equal(src.outer.list);
+      expect(() => structuredClone(dst)).to.not.throw();
+    });
+
+    it('copies __proto__ keys as own properties', () => {
+      const src = JSON.parse('{"outer": {"__proto__": {"polluted": true}, "other": "val"}}');
+      const dst = {};
+      guard(dst).copy = guard(src).outer;
+      expect(Object.getPrototypeOf(dst.copy)).to.equal(Object.prototype);
+      expect(dst.copy.polluted).to.not.exist;
+      expect(Object.keys(dst.copy)).to.have.members(['__proto__', 'other']);
+    });
+
+    it('still unwraps its own views', () => {
+      const obj = { outer: { inner: 'val' } };
+      const g = guard(obj);
+      g.copy = g.outer;
+      expect(obj.copy).to.equal(obj.outer);
+    });
+  });
+
   describe('multiple rules on the same path', () => {
     it('should each be checked for redacts', () => {
       const obj = objectGuard([

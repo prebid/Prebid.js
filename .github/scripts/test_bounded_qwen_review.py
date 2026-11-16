@@ -273,6 +273,58 @@ class ReviewTests(unittest.TestCase):
         finding = dict(FINDING, failure_case="")
         self.assertFalse(review.validate(finding, review.added_lines(PATCH)))
 
+    def test_comment_neutralizes_model_text(self):
+        finding = dict(FINDING,
+                       problem="See https://evil.example and [here](//evil.example) or \\[x\\](//evil.example), ping @everyone <img src=x>",
+                       failure_case="Copy <!-- bounded-qwen:x --> ```js",
+                       fix="  return `[x](//evil.example)` @everyone;")
+        comment = review.build_comment(finding, "a" * 64)
+        prose = comment.split("**Suggested fix:**")[0]
+        self.assertNotIn("https://evil.example", prose)
+        self.assertNotIn("@everyone", prose)
+        self.assertNotIn("<img", prose)
+        self.assertNotIn("<!-- bounded-qwen:x", comment)
+        # Every bracket in the prose is escaped by an odd run of backslashes.
+        for index, char in enumerate(prose):
+            if char in "[]":
+                run = len(prose[:index]) - len(prose[:index].rstrip("\\"))
+                self.assertEqual(run % 2, 1, prose)
+        # The fix is shown literally inside a fence longer than its backticks.
+        self.assertIn("```\n" + finding["fix"].strip() + "\n```", comment)
+        self.assertEqual(review.code_block("a ``` b"), "````\na ``` b\n````")
+
+    def test_marker_is_stable_across_pushes(self):
+        marker = review.finding_marker("a.js", FINDING)
+        self.assertEqual(marker, review.finding_marker("a.js", dict(FINDING, line=9)))
+        self.assertNotEqual(marker, review.finding_marker("b.js", FINDING))
+        self.assertNotEqual(marker, review.finding_marker("a.js", dict(FINDING, fix="  return true;")))
+        self.assertRegex(marker, r"^[0-9a-f]{64}$")
+
+    def test_prior_markers_only_trusted_from_workflow_bot(self):
+        marker = "b" * 64
+        body = "<!-- bounded-qwen:" + marker + " -->"
+        self.assertEqual(review.prior_markers([{"user": {"login": "someone"}, "body": body}]), set())
+        self.assertEqual(review.prior_markers([{"user": None, "body": body}]), set())
+        self.assertEqual(review.prior_markers([{"user": {"login": "github-actions[bot]"}, "body": body}]), {marker})
+
+    def test_prior_markers_ignore_marker_planted_in_fix(self):
+        planted = "c" * 64
+        finding = dict(FINDING, fix="  return x >= a && x <= b; /* <!-- bounded-qwen:" + planted + " --> */")
+        real = review.finding_marker("a.js", finding)
+        comment = {"user": {"login": "github-actions[bot]"}, "body": review.build_comment(finding, real)}
+        self.assertEqual(review.prior_markers([comment]), {real})
+
+    def test_marker_distinguishes_repeated_identical_lines(self):
+        lines = {2: "  return x >= a || x <= b;", 9: "  return x >= a || x <= b;", 5: "  other();"}
+        first, second = dict(FINDING, line=2), dict(FINDING, line=9)
+        self.assertEqual(review.occurrence(lines, first), 0)
+        self.assertEqual(review.occurrence(lines, second), 1)
+        self.assertNotEqual(review.finding_marker("a.js", first, review.occurrence(lines, first)),
+                            review.finding_marker("a.js", second, review.occurrence(lines, second)))
+        # An unrelated line shifting both down keeps each occurrence's marker.
+        shifted = {3: lines[2], 10: lines[9], 1: "  added();"}
+        self.assertEqual(review.occurrence(shifted, dict(FINDING, line=10)), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

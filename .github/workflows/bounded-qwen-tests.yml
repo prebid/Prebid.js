@@ -1,0 +1,25 @@
+name: Bounded Qwen reviewer tests
+
+# The review workflow uses pull_request_target and runs the trusted base
+# branch's scripts, so it never exercises reviewer changes in a PR. Run the
+# PR's own unit tests here: read-only token, no secrets, no model download.
+on:
+  pull_request:
+    paths:
+      - '.github/scripts/*qwen*'
+      - '.github/workflows/bounded-qwen-*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s .github/scripts -p 'test_bounded_qwen_review.py' -v

@@ -1,4 +1,4 @@
-/** @module adaptermanger */
+/** @module adapterManager */
 
 import {
   deepClone,
@@ -63,6 +63,7 @@ import type {
   Size, StorageDisclosure
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
+import type { AnyFunction } from "./types/functions.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
@@ -113,7 +114,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -223,8 +224,12 @@ export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderReques
 const ADUNIT_BID_PROPERTIES = [
   'nativeParams',
   'nativeOrtbRequest',
-  'renderer',
   'element',
+] as const;
+
+const RENDERER_PROPERTIES = [
+  'renderer',
+  'safeRenderer',
 ] as const;
 
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
@@ -272,7 +277,9 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
     result.push(
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
-        bid = Object.assign({}, bid,
+        bid = Object.assign({},
+          getDefinedParams(adUnit, RENDERER_PROPERTIES),
+          bid,
           {
             ortb2Imp: mergeDeep(
               {},
@@ -797,7 +804,7 @@ const adapterManager = {
             // make bid requests
             s2sAdapter.callBids(
               s2sBidRequest,
-              serverBidderRequests,
+              uniqueServerRequests,
               addBidResponse,
               (timedOut) => doneCbs.forEach(done => done(timedOut)),
               s2sAjax
@@ -1090,7 +1097,7 @@ function getSupportedMediaTypes(bidderCode) {
   return supportedMediaTypes;
 }
 
-function getBidderMethod(bidder, method): [string, string] {
+function getBidderMethod(bidder, method): [Record<string, any>, AnyFunction] | undefined {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {

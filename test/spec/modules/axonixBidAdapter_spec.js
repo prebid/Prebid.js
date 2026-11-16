@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec } from 'modules/axonixBidAdapter.js';
+import { _internal, spec } from 'modules/axonixBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
@@ -53,6 +53,7 @@ describe('Axonix Bid Adapter', function () {
   let triggerPixelStub;
 
   beforeEach(function () {
+    _internal.resetDeletionEndpoints();
     sandbox = sinon.createSandbox();
     logWarnStub = sandbox.stub(utils, 'logWarn');
     triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
@@ -423,11 +424,42 @@ describe('Axonix Bid Adapter', function () {
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(DATA_DELETION_URL);
       expect(server.requests[0].requestBody).to.equal(JSON.stringify({ bidderRequests }));
+      expect(server.requests[0].fetch.request.keepalive).to.equal(true);
     });
 
     it('should not send data deletion request when supplyId is missing', function () {
       spec.onDataDeletionRequest([{ bids: [{ params: {} }] }]);
       expect(server.requests).to.be.empty;
+    });
+
+    it('should notify endpoints used by auctions that have since expired', function () {
+      spec.buildRequests([buildBidRequest()], buildBidderRequest());
+
+      // once an auction expires (its TTL elapses), its bid requests are no longer passed in
+      spec.onDataDeletionRequest([]);
+
+      expect(server.requests).to.have.lengthOf(1);
+      expect(server.requests[0].url).to.equal(DATA_DELETION_URL);
+      expect(server.requests[0].requestBody).to.equal(JSON.stringify({ bidderRequests: [] }));
+    });
+
+    it('should notify every supplyId and region used, once each', function () {
+      const otherSupply = buildBidRequest({ bidId: 'test-bid-2', params: { supplyId: 'other-supply', region: 'eu-west-1' } });
+      spec.buildRequests([buildBidRequest(), otherSupply], buildBidderRequest());
+
+      // the first endpoint again, from the deletion request itself: not notified twice
+      spec.onDataDeletionRequest([{ bids: [buildBidRequest()] }]);
+
+      expect(server.requests.map(request => request.url)).to.have.members([
+        DATA_DELETION_URL,
+        'https://openrtb-eu-west-1.axonix.com/supply/prebid-js/data-deletion/v2/other-supply',
+      ]);
+    });
+
+    it('should treat an empty region as the default region', function () {
+      spec.onDataDeletionRequest([{ bids: [buildBidRequest(), buildBidRequest({ params: { supplyId: SUPPLY_ID, region: '' } })] }]);
+
+      expect(server.requests.map(request => request.url)).to.eql([DATA_DELETION_URL]);
     });
   });
 });

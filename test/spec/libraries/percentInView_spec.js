@@ -212,6 +212,7 @@ describe('percentInView', () => {
     describe('promise resolution', () => {
       let adUnits;
       beforeEach(() => {
+        hook = mkIntersectionHook(intersections, () => defer().promise);
         adUnits = {
           el1: {
             element: 'el1',
@@ -247,7 +248,7 @@ describe('percentInView', () => {
       });
 
       it('should continue if promises never resolve', async () => {
-        hook(next, request);
+        mkIntersectionHook(intersections)(next, request);
         await delay(100);
         sinon.assert.called(next);
       });

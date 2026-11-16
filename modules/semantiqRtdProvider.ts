@@ -3,10 +3,11 @@ import { ajax, fetch } from '../src/ajax.js';
 import type { XHR } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
+import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep, uniques } from '../src/utils.js';
 import { isPlainObject } from '../src/utils/objects.ts';
 import type { AllConsentData } from '../src/consentHandler.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
+import type { ORTBRequest } from '../src/types/ortb/request.d.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
 const MODULE_NAME = 'realTimeData' as const;
@@ -19,6 +20,26 @@ const AUDIENZZ_COMPANY_ID = 1;
 const FALLBACK_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
 const AUDIENZZ_GLOBAL_VENDOR_ID = 783;
 const DEFAULT_TIMEOUT = 1000;
+const SEGTAX_CONTENT_2_2 = 6;
+const SEGTAX_CONTENT_3_0 = 7;
+
+/**
+ * IAB content taxonomy, as an ORTB segtax / cattax id.
+ */
+type SemantiqTaxonomy = typeof SEGTAX_CONTENT_2_2 | typeof SEGTAX_CONTENT_3_0;
+
+/**
+ * Taxonomies written to `site.content.data`, in this order.
+ */
+const CONTENT_TAXONOMIES: SemantiqTaxonomy[] = [SEGTAX_CONTENT_2_2, SEGTAX_CONTENT_3_0];
+
+/**
+ * SemantIQ keyword field that holds the category ids for each taxonomy.
+ */
+const KEYWORD_FIELD_BY_TAXONOMY: Record<SemantiqTaxonomy, string> = {
+  [SEGTAX_CONTENT_2_2]: 'iab2_category_id',
+  [SEGTAX_CONTENT_3_0]: 'iab_category_id',
+};
 
 /**
  * Keyword value returned by the SemantIQ page-keywords API.
@@ -60,6 +81,8 @@ declare global {
     };
   }
 }
+
+type OrtbSite = NonNullable<ORTBRequest['site']>;
 
 interface StoredSemantiqKeywords {
   url: string;
@@ -225,6 +248,60 @@ export const getOrtbKeywords = (keywords: SemantiqKeywords): string => Object.en
   return ortbKeywordString ? [...acc, ortbKeywordString] : acc;
 }, []).join(',');
 
+const isSemantiqTaxonomy = (value: unknown): value is SemantiqTaxonomy => (
+  value === SEGTAX_CONTENT_2_2 || value === SEGTAX_CONTENT_3_0
+);
+
+/**
+ * Gets the IAB category ids of a taxonomy from SemantIQ keywords.
+ * Blank and duplicate ids are dropped.
+ */
+const getCategoryIds = (keywords: SemantiqKeywords, taxonomy: SemantiqTaxonomy): string[] => {
+  const value = keywords[KEYWORD_FIELD_BY_TAXONOMY[taxonomy]] ?? [];
+  const ids = Array.isArray(value) ? value : [value];
+
+  return ids
+    .map((id) => id.trim())
+    .filter(Boolean)
+    .filter(uniques);
+};
+
+/**
+ * Gets `site.content.data`, with one entry per taxonomy that has ids.
+ */
+const getOrtbContent = (keywords: SemantiqKeywords): Pick<OrtbSite, 'content'> => {
+  const data = CONTENT_TAXONOMIES.flatMap((taxonomy) => {
+    const ids = getCategoryIds(keywords, taxonomy);
+
+    if (!ids.length) {
+      return [];
+    }
+
+    return [{
+      name: SUBMODULE_NAME,
+      ext: { segtax: taxonomy },
+      segment: ids.map((id) => ({ id })),
+    }];
+  });
+
+  return data.length ? { content: { data } } : {};
+};
+
+/**
+ * Gets `site.cat` in the taxonomy the publisher set in `site.cattax`.
+ * Without `site.cattax` 6 or 7, `site.cat` is left alone:
+ * the module never sets `site.cattax`, which also applies to `site.sectioncat` and `site.pagecat`.
+ */
+const getOrtbSiteCategories = (keywords: SemantiqKeywords, site: OrtbSite = {}): Pick<OrtbSite, 'cat'> => {
+  if (!isSemantiqTaxonomy(site.cattax)) {
+    return {};
+  }
+
+  const ids = getCategoryIds(keywords, site.cattax);
+
+  return ids.length ? { cat: ids } : {};
+};
+
 /**
  * Dispatches a page impression event to the SemantIQ service.
  */
@@ -297,14 +374,22 @@ const getBidRequestData = (
           return;
         }
 
+        const site = reqBidsConfigObj.ortb2Fragments?.global?.site;
         const ortbKeywords = getOrtbKeywords(keywords);
-        const siteKeywords = reqBidsConfigObj.ortb2Fragments?.global?.site?.keywords;
-        const updatedGlobalOrtb = { site: { keywords: [siteKeywords, ortbKeywords].filter(Boolean).join(',') } };
+        const updatedGlobalOrtb = {
+          site: {
+            keywords: [site?.keywords, ortbKeywords].filter(Boolean).join(','),
+            ...getOrtbContent(keywords),
+            ...getOrtbSiteCategories(keywords, site),
+          },
+        };
 
         mergeDeep(reqBidsConfigObj.ortb2Fragments.global, updatedGlobalOrtb);
-      })
-      .catch(() => {
+      }, () => {
         // The keyword request already logged the failure.
+      })
+      .catch((error) => {
+        logError(LOG_PREFIX, error);
       })
       .finally(() => {
         if (isDone) {

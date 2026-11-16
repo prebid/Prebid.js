@@ -1,4 +1,4 @@
-import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, deepAccess, isBoolean } from '../src/utils.js';
+import { logWarn, isArray, inIframe, isNumber, isStr, deepClone, deepSetValue, logError, isBoolean } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -615,7 +615,7 @@ export const spec = {
       return [];
     }
     return responses.reduce((accum, rsp) => {
-      const cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
+      const cookieSyncs = rsp?.body?.ext?.cookie_sync;
       if (cookieSyncs) {
         const cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {

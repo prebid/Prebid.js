@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
-  deepAccess,
   mergeDeep,
   isFn,
   isStr,
@@ -32,7 +31,7 @@ const converter = ortbConverter({
     const { width, height } = getSize(mediaType, bidRequest);
     const floor = getFloor(bidRequest, { width, height }, mediaType);
 
-    imp.tagid = deepAccess(bidRequest, 'params.AV_CHANNELID');
+    imp.tagid = bidRequest?.params?.AV_CHANNELID;
 
     if (floor) {
       imp.bidfloor = floor;
