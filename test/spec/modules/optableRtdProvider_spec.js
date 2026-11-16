@@ -854,6 +854,15 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(mergeFn.firstCall.args[1].user.ext.eids).to.deep.equal([{ source: 'optable.co', uids: [{ id: 'oid' }] }]);
     });
 
+    it('clears a split test assignment the current response no longer has', function () {
+      reqBidsConfigObj.adUnits = [{ code: 'au1' }];
+
+      targetingHandleRtd(reqBidsConfigObj, { split_test_assignment: 'test' }, mergeFn);
+      targetingHandleRtd(reqBidsConfigObj, { ortb2: { user: { eids: [] } } }, mergeFn);
+
+      expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.optable).to.deep.equal({ variant: 'optable-rtd-1.0.0' });
+    });
+
     it('stamps the split test assignment on ad units without ortb2', function () {
       reqBidsConfigObj.adUnits = [{ code: 'au1' }];
 
@@ -936,7 +945,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
       expect(ajaxStub.calledOnce).to.be.true;
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true });
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true, keepalive: true });
       expect(callback.calledOnce).to.be.true;
     });
 
@@ -1397,6 +1406,16 @@ describe('Optable RTD Submodule - enableTargeting', function () {
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.optable.splitTestAssignment).to.equal('treatment');
+    });
+
+    it('uses an assignment-only SDK cache without waiting for the event', async function () {
+      window.optable.instance.targetingFromCache.returns({ split_test_assignment: 'test' });
+      reqBidsConfigObj.adUnits = [{ code: 'au1' }];
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.optable.splitTestAssignment).to.equal('test');
     });
 
     it('waits for the event when the SDK has no targetingFromCache', async function () {

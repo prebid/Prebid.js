@@ -152,7 +152,8 @@ const waitForOptableEvent = (eventName, instance = null) => {
     const optableBundle = /** @type {Object} */ (window.optable);
     const cachedData = optableBundle?.[instance || 'instance']?.targetingFromCache?.();
 
-    if (cachedData && cachedData.ortb2) {
+    // A split test holdout response carries the assignment without ortb2
+    if (cachedData) {
       logMessage('Optable SDK already has cached data');
       resolve(cachedData);
       return;
@@ -661,7 +662,7 @@ const callTargetingAPI = (params) => {
         logError('Targeting API call failed', error);
         resolve(null);
       }
-    }, null, { method: 'GET', withCredentials: params.consent.deviceAccess });
+    }, null, { method: 'GET', withCredentials: params.consent.deviceAccess, keepalive: true });
   });
 };
 
@@ -745,8 +746,11 @@ export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, opt
       adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
       adUnit.ortb2Imp.ext.optable = adUnit.ortb2Imp.ext.optable || {};
       adUnit.ortb2Imp.ext.optable.variant = RTD_MODULE_VARIANT;
+      // Ad unit objects are reused across auctions, so drop an assignment the current response no longer has
       if (targetingData.split_test_assignment) {
         adUnit.ortb2Imp.ext.optable.splitTestAssignment = targetingData.split_test_assignment;
+      } else {
+        delete adUnit.ortb2Imp.ext.optable.splitTestAssignment;
       }
     });
     logMessage(`Variant "${RTD_MODULE_VARIANT}" added to ${reqBidsConfigObj.adUnits.length} ad units`);
