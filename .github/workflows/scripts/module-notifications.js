@@ -1,4 +1,3 @@
-// Added by Codex, an AI bot, on behalf of @patmmccann.
 const fs = require('fs');
 const path = require('path');
 
