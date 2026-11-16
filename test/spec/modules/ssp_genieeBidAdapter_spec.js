@@ -651,9 +651,9 @@ describe('ssp_genieeBidAdapter', function () {
       const expectedBanner = {
         ...expected,
         ad:
-          '<body marginwidth="0" marginheight="0"><div><script>window.addEventListener("load",function(){window.parent.document.getElementById("' +
+          '<body marginwidth="0" marginheight="0"><div><script>window.addEventListener("load",function(){try{var element=window.parent.document.getElementById("' +
           BANNER_BID.adUnitCode +
-          '").height=document.body.scrollHeight})</script>' +
+          '");if(element){element.height=document.body.scrollHeight}}catch(e){}})</script>' +
           response[ZONE_ID].adm +
           '</div></body>',
         mediaType: 'banner',
@@ -661,6 +661,35 @@ describe('ssp_genieeBidAdapter', function () {
       const request = spec.buildRequests([BANNER_BID])[0];
       const result = spec.interpretResponse({ body: response }, request);
       expect(result[0]).to.deep.equal(expectedBanner);
+    });
+
+    it('handles a missing parent element, a cross-origin parent and resizes an existing element on load', function () {
+      const request = spec.buildRequests([BANNER_BID])[0];
+      const ad = spec.interpretResponse({ body: response }, request)[0].ad;
+      const script = ad.match(/<script>([\s\S]*?)<\/script>/)[1];
+      let loadHandler;
+      let parentElement = null;
+      let crossOrigin = false;
+      const frameWindow = {
+        addEventListener: (event, handler) => { loadHandler = handler; },
+        parent: {
+          get document() {
+            if (crossOrigin) throw new Error('SecurityError: Blocked a frame from accessing a cross-origin frame.');
+            return { getElementById: () => parentElement };
+          },
+        },
+      };
+      // Execute the generated creative script with controlled frame and parent documents.
+      // eslint-disable-next-line no-new-func
+      new Function('window', 'document', script)(frameWindow, { body: { scrollHeight: 250 } });
+
+      expect(() => loadHandler()).not.to.throw();
+      crossOrigin = true;
+      expect(() => loadHandler()).not.to.throw();
+      crossOrigin = false;
+      parentElement = { height: 0 };
+      loadHandler();
+      expect(parentElement.height).to.equal(250);
     });
   });
 
