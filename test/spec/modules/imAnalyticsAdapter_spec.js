@@ -4,6 +4,10 @@ import { EVENTS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import sinon from 'sinon';
+import { auctionManager } from 'src/auctionManager.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS } from 'src/activities/activities.js';
+import { MODULE_TYPE_ANALYTICS } from 'src/activities/modules.js';
 
 describe('imAnalyticsAdapter', function() {
   let sandbox;
@@ -73,7 +77,15 @@ describe('imAnalyticsAdapter', function() {
       }
     };
 
+    let auctionFpd;
+
     beforeEach(function() {
+      auctionFpd = {};
+      sandbox.stub(auctionManager.index, 'getAuction').callsFake(({ auctionId }) => {
+        if (auctionFpd[auctionId]) {
+          return { getFPD: () => ({ global: auctionFpd[auctionId], bidder: {} }) };
+        }
+      });
       imAnalyticsAdapter.enableAnalytics({
         provider: 'imAnalytics',
         options: {
@@ -81,6 +93,15 @@ describe('imAnalyticsAdapter', function() {
         }
       });
     });
+
+    function setAuctionEids(auctionId, eids) {
+      auctionFpd[auctionId] = { user: { ext: { eids } } };
+    }
+
+    const IM_EIDS = [
+      { source: 'ppid.intimatemerger.com', uids: [{ id: 'test-imppid', atype: 1 }] },
+      { source: 'intimatemerger.com', uids: [{ id: 'test-imuid', atype: 1 }] }
+    ];
 
     describe('AUCTION_INIT', function() {
       it('should send pv event immediately', function() {
@@ -100,6 +121,27 @@ describe('imAnalyticsAdapter', function() {
 
         expect(requests.length).to.equal(1);
         expect(requests[0].url).to.include('/pv');
+      });
+
+      it("should include the IM-UID from the auction's EIDs as uid in pv payload", async function() {
+        setAuctionEids('auc-1', [{ source: 'pubcid.org', uids: [{ id: 'test-pubcid' }] }, ...IM_EIDS]);
+        const args = {
+          auctionId: 'auc-1',
+          timestamp: 1234567890,
+          bidderRequests: [{
+            bids: [{}]
+          }],
+          adUnits: [{}, {}]
+        };
+
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args
+        });
+
+        expect(requests.length).to.equal(1);
+        const payload = JSON.parse(await requests[0].data.text());
+        expect(payload.uid).to.equal('test-imuid');
       });
 
       it('should not read a raw bid.userId.imuid into the pv payload uid', async function() {
@@ -122,6 +164,37 @@ describe('imAnalyticsAdapter', function() {
         });
 
         expect(requests.length).to.equal(1);
+        const payload = JSON.parse(await requests[0].data.text());
+        expect(payload.uid).to.equal('');
+      });
+
+      it('should set uid to empty string when the auction has no IM-UID EID', async function() {
+        setAuctionEids('auc-1', [{ source: 'ppid.intimatemerger.com', uids: [{ id: 'test-imppid' }] }]);
+        imAnalyticsAdapter.track({
+          eventType: EVENTS.AUCTION_INIT,
+          args: { auctionId: 'auc-1', timestamp: 1234567890, bidderRequests: [], adUnits: [] }
+        });
+
+        const payload = JSON.parse(await requests[0].data.text());
+        expect(payload.uid).to.equal('');
+      });
+
+      it('should set uid to empty string when transmitEids is denied to the analytics adapter', async function() {
+        setAuctionEids('auc-1', IM_EIDS);
+        const unregister = registerActivityControl(ACTIVITY_TRANSMIT_EIDS, 'test', (params) => {
+          if (params.componentType === MODULE_TYPE_ANALYTICS && params.componentName === 'imAnalytics') {
+            return { allow: false };
+          }
+        });
+        try {
+          imAnalyticsAdapter.track({
+            eventType: EVENTS.AUCTION_INIT,
+            args: { auctionId: 'auc-1', timestamp: 1234567890, bidderRequests: [], adUnits: [] }
+          });
+        } finally {
+          unregister();
+        }
+
         const payload = JSON.parse(await requests[0].data.text());
         expect(payload.uid).to.equal('');
       });
@@ -419,8 +492,9 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/won');
       });
 
-      it('should include uid (empty) in won payload', async function() {
+      it('should include uid in won payload', async function() {
         const clock = sandbox.useFakeTimers();
+        setAuctionEids('auc-1', IM_EIDS);
 
         imAnalyticsAdapter.track({
           eventType: EVENTS.AUCTION_INIT,
@@ -444,7 +518,7 @@ describe('imAnalyticsAdapter', function() {
 
         clock.tick(BID_WON_TIMEOUT + 10);
         const payload = JSON.parse(await requests[0].data.text());
-        expect(payload.uid).to.equal('');
+        expect(payload.uid).to.equal('test-imuid');
       });
 
       it('should not send if no won bids', function() {

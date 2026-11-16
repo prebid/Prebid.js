@@ -3,7 +3,11 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { sendBeacon } from '../src/ajax.js';
+import { analyticsAuctionOrtb2, eidValue } from '../libraries/eidUtils/eidUtils.js';
 
+const ANALYTICS_CODE = 'imAnalytics';
+// EID source of the IM-UID (`imuid`) from the imuIdSystem module
+const IM_UID_SOURCE = 'intimatemerger.com';
 const DEFAULT_BID_WON_TIMEOUT = 1500; // 1.5 second for initial batch
 const DEFAULT_CID = 5126;
 const DEFAULT_CACHE_TTL = 30 * 1000; // 30 seconds
@@ -174,8 +178,7 @@ const imAnalyticsAdapter = Object.assign(
       });
 
       const consentData = getConsentData();
-      // Since Prebid 10, user IDs are not set on bids (only as EIDs in ortb2.user.ext.eids)
-      const imUid = '';
+      const imUid = eidValue(analyticsAuctionOrtb2(args.auctionId, ANALYTICS_CODE), IM_UID_SOURCE) ?? '';
       if (cache.auctions[args.auctionId]) {
         clearTimer(cache.auctions[args.auctionId].wonBidsTimer);
       }
@@ -316,7 +319,7 @@ imAnalyticsAdapter.disableAnalytics = function() {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: imAnalyticsAdapter,
-  code: 'imAnalytics',
+  code: ANALYTICS_CODE,
   acpId: 2279 // Google Additional Consent provider ID
 });
 
