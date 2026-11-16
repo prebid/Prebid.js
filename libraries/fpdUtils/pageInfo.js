@@ -1,12 +1,12 @@
-import { getWindowTopOf } from '../../src/utils.js';
+import { getWindowTop } from '../../src/utils.js';
 /**
  * get page title
  * @returns {string}
  */
 export function getPageTitle(win = window) {
   try {
-    const ogTitle = getWindowTopOf(win).document.querySelector('meta[property="og:title"]');
-    return getWindowTopOf(win).document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = getWindowTop(win).document.querySelector('meta[property="og:title"]');
+    return getWindowTop(win).document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
     const ogTitle = document.querySelector('meta[property="og:title"]');
     return document.title || (ogTitle && ogTitle.content) || '';
@@ -21,8 +21,8 @@ export function getPageDescription(win = window) {
   let element;
 
   try {
-    element = getWindowTopOf(win).document.querySelector('meta[name="description"]') ||
-      getWindowTopOf(win).document.querySelector('meta[property="og:description"]');
+    element = getWindowTop(win).document.querySelector('meta[name="description"]') ||
+      getWindowTop(win).document.querySelector('meta[property="og:description"]');
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
       document.querySelector('meta[property="og:description"]');
@@ -39,7 +39,7 @@ export function getPageKeywords(win = window) {
   let element;
 
   try {
-    element = getWindowTopOf(win).document.querySelector('meta[name="keywords"]');
+    element = getWindowTop(win).document.querySelector('meta[name="keywords"]');
   } catch (e) {
     element = document.querySelector('meta[name="keywords"]');
   }

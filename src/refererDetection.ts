@@ -9,7 +9,7 @@
  */
 
 import { config } from './config.js';
-import { getParentWindow, getWindowTopOf, logWarn } from './utils.js';
+import { getParentWindow, getWindowTop, logWarn } from './utils.js';
 
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
@@ -22,7 +22,7 @@ export function ensureProtocol(url, win = window) {
   }
   let windowProto = win.location.protocol;
   try {
-    windowProto = getWindowTopOf(win).location.protocol;
+    windowProto = getWindowTop(win).location.protocol;
   } catch (e) {}
   if (/^\/\//.exec(url)) {
     // url uses relative protocol ("//example.com")
@@ -125,7 +125,7 @@ export function detectReferer(win) {
     const stack: string[] = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
-    const top = getWindowTopOf(win);
+    const top = getWindowTop(win);
 
     let currentWindow;
     let bestLocation: string;
@@ -297,7 +297,7 @@ export function detectReferer(win) {
 // - we are the top window
 // - canonical URL tag and window location have not changed
 export function cacheWithLocation(fn, win = window) {
-  if (getWindowTopOf(win) !== win) return fn;
+  if (getWindowTop(win) !== win) return fn;
   let canonical, href, value;
   return function () {
     const newCanonical = getCanonicalUrl(win.document);

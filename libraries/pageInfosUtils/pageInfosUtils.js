@@ -1,4 +1,4 @@
-import { getWindowTopOf } from '../../src/utils.js';
+import { getWindowTop } from '../../src/utils.js';
 /**
  * Retrieves the referrer information from the bidder request.
  *
@@ -26,8 +26,8 @@ export function getReferrerInfo(bidderRequest) {
  */
 export function getPageTitle(win = window) {
   try {
-    const ogTitle = getWindowTopOf(win).document.querySelector('meta[property="og:title"]');
-    return getWindowTopOf(win).document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = getWindowTop(win).document.querySelector('meta[property="og:title"]');
+    return getWindowTop(win).document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
     const ogTitle = win.document.querySelector('meta[property="og:title"]');
     return win.document.title || (ogTitle && ogTitle.content) || '';
@@ -45,8 +45,8 @@ export function getPageTitle(win = window) {
  */
 export function getPageDescription(win = window) {
   try {
-    const element = getWindowTopOf(win).document.querySelector('meta[name="description"]') ||
-        getWindowTopOf(win).document.querySelector('meta[property="og:description"]');
+    const element = getWindowTop(win).document.querySelector('meta[name="description"]') ||
+        getWindowTop(win).document.querySelector('meta[property="og:description"]');
     return (element && element.content) || '';
   } catch (e) {
     const element = win.document.querySelector('meta[name="description"]') ||

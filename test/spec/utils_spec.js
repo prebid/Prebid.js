@@ -74,13 +74,42 @@ describe('Utils', function () {
     it('getFrameElement returns null for the top window', function () {
       expect(utils.getFrameElement(root)).to.equal(null);
     });
+  });
 
-    it('getWindowTopOf returns getWindowTop() for the current window', function () {
-      expect(utils.getWindowTopOf(window)).to.equal(root);
+  describe('frame helpers in a spec', function () {
+    let iframe;
+
+    beforeEach(function () {
+      iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
     });
 
-    it('getWindowTopOf returns the top of another window', function () {
-      expect(utils.getWindowTopOf({ top: root })).to.equal(root);
+    afterEach(function () {
+      iframe.remove();
+    });
+
+    it('treat the spec window as the top of its frame tree', function () {
+      const child = iframe.contentWindow;
+      expect(utils.getWindowTop()).to.equal(window);
+      expect(utils.getWindowTop(child)).to.equal(window);
+      expect(utils.getParentWindow(child)).to.equal(window);
+      expect(utils.getParentWindow(window)).to.equal(window);
+      expect(utils.getFrameElement(window)).to.equal(null);
+    });
+
+    it('return the top of a window outside the real frame tree', function () {
+      const top = {};
+      expect(utils.getWindowTop({ top })).to.equal(top);
+    });
+
+    it('do not climb out of the spec window when getWindowTop is stubbed', function () {
+      const stub = sinon.stub(utils, 'getWindowTop').returns({});
+      try {
+        expect(utils.getParentWindow(window)).to.equal(window);
+        expect(utils.getFrameElement(window)).to.equal(null);
+      } finally {
+        stub.restore();
+      }
     });
   });
 

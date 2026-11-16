@@ -151,33 +151,28 @@ function isValidGPTSingleSize(singleSize) {
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
-export function getWindowTop() {
-  // eslint-disable-next-line prebid/no-window-top
-  return window.top;
-}
-
 /**
  * The top window of `win`'s frame tree.
  */
-export function getWindowTopOf(win) {
+export function getWindowTop(win = window) {
   // eslint-disable-next-line prebid/no-window-top
-  return win === getWindowSelf() ? getWindowTop() : win.top;
+  return win.top;
 }
 
 /**
- * `win`'s parent window. Like `window.top.parent`, the parent of getWindowTop() is itself.
+ * `win`'s parent window. Like `window.top.parent`, the parent of the top window is itself.
  */
 export function getParentWindow(win) {
   // eslint-disable-next-line prebid/no-window-top
-  return win === getWindowTop() ? win : win.parent;
+  return win === getWindowTop(win) ? win : win.parent;
 }
 
 /**
- * The element embedding `win`, or null for getWindowTop().
+ * The element embedding `win`, or null for the top window.
  */
 export function getFrameElement(win) {
   // eslint-disable-next-line prebid/no-window-top
-  return win === getWindowTop() ? null : win.frameElement;
+  return win === getWindowTop(win) ? null : win.frameElement;
 }
 
 export function getWindowSelf() {

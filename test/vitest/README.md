@@ -28,8 +28,9 @@ handled exactly as for the Prebid.js builds, and each spec file runs in a page o
   and at its own path. Within a file nothing is reset, so a spec still cleans up what one test writes before
   the next.
 - `getWindowTop()` returns the spec's own window (`test/helpers/windowTop.js`), not the page Vitest runs each spec
-  file in and reuses for the next one. So `inIframe()` is false; a spec that needs a frame stubs `inIframe()` or
-  `getWindowTop()`.
+  file in and reuses for the next one, also for the frames the spec creates. So `inIframe()` is false; a spec that
+  needs a frame stubs `inIframe()` or `getWindowTop()`. Either way `getParentWindow()` and `getFrameElement()` do not
+  climb past the spec's window.
 
 `setup.mjs` emulates the Mocha behaviors the specs rely on, and provides Karma's chai/sinon globals:
 - suite `this`, `done` callbacks, and the 3000ms timeout with `this.timeout()`;
@@ -278,7 +279,7 @@ page share. sevio's spec once hid `window.top.performance.timing`, which broke o
   module added in an `after()` hook. Modules that keep a global on the top window (`ADAGIO`, `sublime`, ...) reach it
   through `getWindowTop()`, which `test/helpers/windowTop.js` points at the spec's own frame.
 - **`prebid/no-window-top`, at lint time:** keeps code from reaching `window.top` directly, through `window.top`,
-  `parent` or `frameElement`, in favor of `getWindowTop()`, `getWindowTopOf()`, `getParentWindow()` and
+  `parent` or `frameElement`, in favor of `getWindowTop()`, `getParentWindow()` and
   `getFrameElement()` (`src/utils.js`), which specs can stub so they stay inside their own frame.
 - **`vitest-shuffle.yml`, daily and on demand:** the whole suite in Chromium with the spec files in a random order,
   one page at a time, for order dependencies the guard can't see. The job summary has the seed;

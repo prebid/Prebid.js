@@ -1,8 +1,8 @@
-import { getWindowTopOf } from '../../src/utils.js';
+import { getWindowTop } from '../../src/utils.js';
 export function getHLen(win = window) {
   let hLen;
   try {
-    hLen = getWindowTopOf(win).history.length;
+    hLen = getWindowTop(win).history.length;
   } catch (error) {
     hLen = undefined;
   }
