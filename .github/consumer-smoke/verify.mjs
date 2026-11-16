@@ -5,7 +5,6 @@ import { createServer } from 'node:http';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Installed only in the isolated consumer fixture, not the root workspace.
-// eslint-disable-next-line import/no-unresolved -- Resolved from test/consumer-smoke/node_modules.
 import puppeteer from 'puppeteer-core';
 
 const cwd = fileURLToPath(new URL('.', import.meta.url));
@@ -59,9 +58,11 @@ try {
       void request.respond({
         status: 200,
         contentType: 'application/json',
+        // Bidder requests are credentialed (withCredentials), and CORS rejects a
+        // wildcard origin on those: name the page's origin and allow credentials.
         headers: {
-          'access-control-allow-origin': '*',
-          'access-control-allow-headers': '*'
+          'access-control-allow-origin': 'http://127.0.0.1:' + server.address().port,
+          'access-control-allow-credentials': 'true'
         },
         body: JSON.stringify({ id: 'consumer-smoke', seatbid: [] })
       });
@@ -108,6 +109,12 @@ try {
 
       const requested = new Set();
       pbjs.onEvent('bidRequested', request => requested.add(request.bidderCode));
+      // bidRequested fires before the network call; these show the stubbed response was delivered.
+      const done = new Set();
+      const bidderErrors = [];
+      pbjs.onEvent('bidderDone', request => done.add(request.bidderCode));
+      pbjs.onEvent('bidderError', ({ error, bidderRequest }) =>
+        bidderErrors.push(bidderRequest.bidderCode + ' (status ' + error.status + ')'));
 
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Auction did not complete')), 8000);
@@ -125,8 +132,12 @@ try {
             clearTimeout(timeout);
             if (!requested.has('magnite') || !requested.has('msft')) {
               reject(new Error('Missing bidRequested events for Magnite or Microsoft: ' + [...requested]));
+            } else if (bidderErrors.length) {
+              reject(new Error('Stubbed bidder responses were not delivered: ' + bidderErrors.join(', ')));
+            } else if (!done.has('magnite') || !done.has('msft')) {
+              reject(new Error('Missing bidderDone events for Magnite or Microsoft: ' + [...done]));
             } else {
-              resolve({ version: pbjs.version, bidderCodes: [...requested] });
+              resolve({ version: pbjs.version, bidderCodes: [...done] });
             }
           }
         });
@@ -136,7 +147,7 @@ try {
     assert.match(result.version, /^v?\d+\.\d+\.\d+/, 'Missing Prebid version');
     assert.deepEqual(errors, [], 'Browser page errors');
     process.stdout.write('Bun browser smoke passed: Prebid ' + result.version +
-      '; bidRequested events: ' + result.bidderCodes.join(', ') + '\n');
+      '; bidderDone events: ' + result.bidderCodes.join(', ') + '\n');
   } finally {
     await page.close();
   }
