@@ -1,4 +1,4 @@
-import { vanegraphSubmodule, pageUrl, setGptTargeting } from 'modules/vanegraphRtdProvider.js';
+import { vanegraphSubmodule, pageUrl, setGptTargeting, consentMissing } from 'modules/vanegraphRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 const KEY = 'pk_test123';
@@ -43,8 +43,22 @@ describe('vanegraphRtdProvider', function () {
   });
 
   describe('pageUrl', function () {
-    it('uses the configured url without its fragment', function () {
-      expect(pageUrl({ url: 'https://a.example.pl/x?y=1#comments' })).to.equal('https://a.example.pl/x?y=1');
+    it('drops the query string and fragment by default', function () {
+      expect(pageUrl({ url: 'https://a.example.pl/x?token=secret&y=1#comments' })).to.equal('https://a.example.pl/x');
+    });
+
+    it('keeps only the query parameters the publisher lists', function () {
+      expect(pageUrl({ url: 'https://a.example.pl/article?id=123&session=abc#top', keepParams: ['id'] })).to.equal('https://a.example.pl/article?id=123');
+      expect(pageUrl({ url: 'https://a.example.pl/article?session=abc', keepParams: ['id'] })).to.equal('https://a.example.pl/article');
+    });
+  });
+
+  describe('consentMissing', function () {
+    it('is true only when GDPR applies without a consent string', function () {
+      expect(consentMissing({ gdpr: { gdprApplies: true } })).to.equal(true);
+      expect(consentMissing({ gdpr: { gdprApplies: true, consentString: 'CPabc' } })).to.equal(false);
+      expect(consentMissing({ gdpr: { gdprApplies: false } })).to.equal(false);
+      expect(consentMissing(undefined)).to.equal(false);
     });
   });
 
@@ -58,13 +72,32 @@ describe('vanegraphRtdProvider', function () {
       window.googletag = savedGoogletag;
     });
 
-    it('asks the API for the page with the publishable key', function () {
+    it('asks the API for the page with the publishable key, without query or fragment', function () {
       const callback = sinon.spy();
-      vanegraphSubmodule.getBidRequestData(bidConfig(), callback, { params: { publishableKey: KEY, url: 'https://news.example.pl/article#top' } });
+      vanegraphSubmodule.getBidRequestData(bidConfig(), callback, { params: { publishableKey: KEY, url: 'https://news.example.pl/article?reset=tok123#top' } });
       const request = server.requests[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.equal(`https://api.vanegraph.com/v1/rtd?key=${KEY}&url=${encodeURIComponent('https://news.example.pl/article')}`);
       expect(request.withCredentials).to.not.equal(true);
+    });
+
+    it('makes no request when GDPR applies and there is no consent string', function () {
+      const callback = sinon.spy();
+      vanegraphSubmodule.getBidRequestData(bidConfig(), callback, { params: { publishableKey: KEY } }, { gdpr: { gdprApplies: true } });
+      expect(server.requests.length).to.equal(0);
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('leaves the publisher\'s own categories in another taxonomy untouched', function () {
+      const callback = sinon.spy();
+      const reqBidsConfigObj = { ortb2Fragments: { global: { site: { content: { cattax: 6, cat: ['IAB2'] } } }, bidder: {} } };
+      vanegraphSubmodule.getBidRequestData(reqBidsConfigObj, callback, { params: { publishableKey: KEY, setGptTargeting: false } });
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(readyResponse()));
+      const content = reqBidsConfigObj.ortb2Fragments.global.site.content;
+      expect(content.cattax).to.equal(6);
+      expect(content.cat).to.deep.equal(['IAB2']);
+      expect(content.data[0].ext.segtax).to.equal(9);
+      expect(content.data[0].segment.map((s) => s.id)).to.deep.equal(['22', '30']);
     });
 
     it('merges labels into ortb2 and queues GAM key-values when the page is classified', function () {

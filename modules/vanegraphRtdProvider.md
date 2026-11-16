@@ -48,5 +48,13 @@ pbjs.setConfig({
 | :--- | :--- | :--- | :--- |
 | `publishableKey` | String | Publishable key (`pk_…`) | required |
 | `url` | String | Page URL to look up | current page |
+| `keepParams` | Array of strings | Query parameters that identify the content (for example `["id"]`); every other query parameter and the fragment are removed before the URL is sent | `[]` |
 | `setGptTargeting` | Boolean | Also set GAM key-values | `true` |
 | `endpoint` | String | API endpoint override | `https://api.vanegraph.com/v1/rtd` |
+
+# Privacy
+
+- Only the page address is sent: origin and path, plus any parameters listed in `keepParams`. Query strings, which can carry user-specific values, and fragments are removed.
+- No cookies, no storage, no user identifiers.
+- When GDPR applies and the CMP has given no consent string, the module makes no request.
+- When the publisher already sends `site.content.cat` in another taxonomy, it is left untouched; Vanegraph's categories are then sent only as `site.content.data` segments (segtax 9).

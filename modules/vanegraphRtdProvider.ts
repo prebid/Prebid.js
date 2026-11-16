@@ -27,6 +27,11 @@ export interface VanegraphRtdParams {
   publishableKey: string;
   /** Page URL to look up. Defaults to the current page. */
   url?: string;
+  /**
+   * Query parameters that identify the content (for example ["id"] for /article?id=123). All other query
+   * parameters, and the fragment, are removed before the URL leaves the page. Default: none kept.
+   */
+  keepParams?: string[];
   /** Also set Google Ad Manager key-values (vg_cat, vg_safety, vg_intent, vg_seg). Default true. */
   setGptTargeting?: boolean;
   /** API endpoint override. */
@@ -60,10 +65,41 @@ function init(config: RTDProviderConfig<'vanegraph'>): boolean {
   return true;
 }
 
-/** The page to classify, without its fragment. */
+/**
+ * The page to classify: origin and path only, plus any query parameters the publisher listed in keepParams.
+ * Query strings can carry user-specific values (account ids, reset tokens), so they are dropped by default.
+ */
 export function pageUrl(params?: Partial<VanegraphRtdParams>): string {
-  const url = params?.url || getRefererInfo().page || window.location.href;
-  return String(url).split('#')[0];
+  const raw = String(params?.url || getRefererInfo().page || window.location.href);
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch (e) {
+    return raw.split('#')[0].split('?')[0];
+  }
+  const keep = Array.isArray(params?.keepParams) ? params.keepParams : [];
+  const query = keep
+    .filter((name) => parsed.searchParams.has(name))
+    .map((name) => `${encodeURIComponent(name)}=${encodeURIComponent(parsed.searchParams.get(name) || '')}`)
+    .join('&');
+  return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
+}
+
+/** GDPR applies but the CMP has given no consent string: make no third-party request. */
+export function consentMissing(userConsent?: { gdpr?: { gdprApplies?: boolean; consentString?: string } }): boolean {
+  return Boolean(userConsent?.gdpr?.gdprApplies) && !userConsent?.gdpr?.consentString;
+}
+
+/**
+ * When the publisher already sends site.content.cat in another taxonomy, keep it untouched: Vanegraph's
+ * categories then travel only as site.content.data segments (segtax 9), never mixed into the publisher's list.
+ */
+export function withoutConflictingCategories(existing: any, ortb2: any): any {
+  const current = existing?.site?.content;
+  const ours = ortb2?.site?.content;
+  if (!ours || !Array.isArray(current?.cat) || current.cat.length === 0 || current.cattax === ours.cattax) return ortb2;
+  const { cat, cattax, ...rest } = ours;
+  return { ...ortb2, site: { ...ortb2.site, content: rest } };
 }
 
 /** Mirrors the labels as Google Ad Manager key-values for direct-sold line items. */
@@ -78,8 +114,13 @@ export function setGptTargeting(targeting?: VanegraphTargeting): void {
   });
 }
 
-function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<'vanegraph'>): void {
+function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<'vanegraph'>, userConsent?: any): void {
   const params = config?.params || ({} as VanegraphRtdParams);
+  if (consentMissing(userConsent)) {
+    logInfo(`${MODULE_NAME}: GDPR applies and no consent string is available; skipping`);
+    callback();
+    return;
+  }
   const endpoint = `${params.endpoint || DEFAULT_ENDPOINT}?key=${encodeURIComponent(params.publishableKey)}&url=${encodeURIComponent(pageUrl(params))}`;
   ajax(
     endpoint,
@@ -91,7 +132,8 @@ function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () =
           } else {
             const data = JSON.parse(response) as VanegraphResponse;
             if (data && data.status === 'ready' && data.ortb2) {
-              mergeDeep(reqBidsConfigObj.ortb2Fragments.global, data.ortb2);
+              const global = reqBidsConfigObj.ortb2Fragments.global;
+              mergeDeep(global, withoutConflictingCategories(global, data.ortb2));
               if (params.setGptTargeting !== false) setGptTargeting(data.targeting);
             }
           }
