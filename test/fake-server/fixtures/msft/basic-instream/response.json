@@ -1,0 +1,36 @@
+{
+  "httpResponse": {
+    "body": {
+      "id": "98df919d-c160-483f-9234-1ed869ed8d46",
+      "seatbid": [
+        {
+          "bid": [
+            {
+              "id": "1398509384102899505",
+              "impid": "0",
+              "price": 10,
+              "adid": "97517771",
+              "crid": "97517771",
+              "cid": "9325",
+              "nurl": "http://sin3-ib.adnxs.com/vast_track/v2?info=aAAAAAMArgAFAQklKBNeAAAAABEx74AO4IBoExklKBNeAAAAACDLgcAuKAAw7Ug47UhA0-hISLuv1AFQ6dGnBljDlQtiAi0taAFwAXgAgAEBiAEBkAGABZgB4AOgAQCoAcuBwC6wAQE.&s=07e6e5f2f03cc92e899c3ddbf4e2988e966caaa2&event_type=1",
+              "w": 640,
+              "h": 480,
+              "ext": {
+                "appnexus": {
+                  "brand_id": 36,
+                  "auction_id": 1398509384102899500,
+                  "bid_ad_type": 1,
+                  "buyer_member_id": 9325,
+                  "advertiser_id": 2529885,
+                  "asset_url": "http://sin3-ib.adnxs.com/ab?ro=1&an_audit=0&referrer=http%3A%2F%2Ftest.localhost%3A9999%2Ftest%2Fpages%2Finstream.html&e=wqT_3QKNCaCNBAAAAwDWAAUBCKXQzPAFELHeg_SAnKC0ExjCs_b6q5D9_0oqNgkAAAECCBRAEQEHNAAAFEAZAAAA4HoUFEAhERIAKREJADERG6gw6dGnBjjtSEDtSEgCUMuBwC5YnPFbYABozbp1eJG4BYABAYoBA1VTRJIBAQbwUpgBAaABAagBAbABALgBA8ABBMgBAtABANgBAOABAPABAIoCO3VmKCdhJywgMjUyOTg4NSwgMTU3ODMxMzc2NSk7dWYoJ3InLCA5NzUxNzc3MSwgLh4A8PWSArUCIXlqd21vZ2kyLUx3S0VNdUJ3QzRZQUNDYzhWc3dBRGdBUUFSSTdVaFE2ZEduQmxnQVlNSUdhQUJ3S0hnR2dBRThpQUVHa0FFQW1BRUFvQUVCcUFFRHNBRUF1UUh6cldxa0FBQVVRTUVCODYxcXBBQUFGRURKQWZmNTBxUXI0ZW9fMlFFQUFBQUFBQUR3UC1BQkFQVUJBQUFBQUpnQ0FLQUNBTFVDQUFBQUFMMENBQUFBQU9BQ0FPZ0NBUGdDQUlBREFaZ0RBYWdEdHZpOENyb0RDVk5KVGpNNk5EY3pPT0FELVJpSUJBQ1FCQUNZQkFIQkIFRQkBCHlRUQkJAQEUTmdFQVBFEY0BkCw0QkFDSUJZSWxxUVUBEQEUPHdQdy4umgKJASFMZzlaRFE2OQEkblBGYklBUW9BRBVIVFVRRG9KVTBsT016bzBOek00UVBrWVMReAxQQV9VEQwMQUFBVx0MAFkdDABhHQwAYx0M8FJlQUEuwgI_aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc2hvdy12aWRlby13aXRoLWEtZGZwLXZpZGVvLXRhZy5odG1s2AIA4AKtmEjqAjNodAVKSHRlc3QubG9jYWxob3N0Ojk5OTkFFDgvcGFnZXMvaW5zdHJlYW0FPmjyAhMKD0NVU1RPTV9NT0RFTF9JRBIA8gIaChYyFgAgTEVBRl9OQU1FAR0IHgoaNh0ACEFTVAE-4ElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgDAOADAOgDAPgDAYAEAJIEDS91dC92Mw398F6YBACiBAsxMC43NS43NC42OagEtCyyBBIIARACGIAFIOADKAEoAjAAOAO4BADABADIBADSBA45MzI1I1NJTjM6NDczONoEAggB4AQA8ATLgcAuiAUBmAUAoAX______wEDFAHABQDJBWnbFPA_0gUJCQkMeAAA2AUB4AUB8AXDlQv6BQQIABAAkAYBmAYAuAYAwQYJJSjwP9AG9S_aBhYKEAkRGQFQEAAYAOAGBPIGAggAgAcBiAcAoAdA&s=68b9d39d60a72307a201e479000a8c7be5508188"
+                }
+              }
+            }
+          ],
+          "seat": "9325"
+        }
+      ],
+      "cur": "USD"
+    }
+  }
+}

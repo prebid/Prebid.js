@@ -28,13 +28,15 @@ is present; without it, the floor cannot be honoured and is ignored with a warni
 
 # Configuration
 
-Requests are gzip compressed by default. To disable:
+Requests are **not** gzip compressed by default. Gzip compression is temporarily disabled
+because the compression step adds asynchronous waits after the auction starts, which can
+delay the bid request hitting the wire on busy pages. To opt in:
 
 ```javascript
 pbjs.setBidderConfig({
     bidders: ['triplelift'],
     config: {
-        gzipEnabled: false
+        gzipEnabled: true
     }
 });
 ```

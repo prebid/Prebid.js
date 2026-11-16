@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput } from '../src/utils.js';
+import { deepSetValue, isArray, isNumber, isStr, logInfo, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getBidFloor } from '../libraries/adkernelUtils/adkernelUtils.js';
@@ -20,8 +20,8 @@ function buildImp(bidRequest) {
     tagid: bidRequest.adUnitCode
   };
   let mediaType;
-  const bannerReq = deepAccess(bidRequest, `mediaTypes.banner`);
-  const videoReq = deepAccess(bidRequest, `mediaTypes.video`);
+  const bannerReq = bidRequest?.mediaTypes?.banner;
+  const videoReq = bidRequest?.mediaTypes?.video;
   if (bannerReq) {
     const sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
