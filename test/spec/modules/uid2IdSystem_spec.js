@@ -839,6 +839,22 @@ describe(`UID2 module`, function () {
       sinon.assert.calledWithMatch(logWarn, /Stored identity changed/);
     });
 
+    it('discards a refresh if a refresh for a different token was started after it', async function () {
+      // Neither expired token is written to storage before its refresh, so storage alone can't tell them apart.
+      const resultA = getId({ paramToken: expiredToken('token-a') });
+      const resultB = getId({ paramToken: expiredToken('token-b') });
+      respondToRefresh(0, makeToken('refreshed-a'));
+      const tokensA = await runCallback(resultA);
+      expect(tokensA).to.equal(null);
+      expect(store[storageName]).to.equal(undefined);
+
+      respondToRefresh(1, makeToken('refreshed-b'));
+      const tokensB = await runCallback(resultB);
+      expect(tokensB.latestToken.advertising_token).to.equal('refreshed-b');
+      expect(getStored().originalToken.advertising_token).to.equal('token-b');
+      expect(getStored().latestToken.advertising_token).to.equal('refreshed-b');
+    });
+
     it('stores a refresh if the same identity was refreshed elsewhere while it was in flight', async function () {
       const supplied = expiredToken('token-a');
       setStored({ originalToken: supplied, latestToken: supplied });

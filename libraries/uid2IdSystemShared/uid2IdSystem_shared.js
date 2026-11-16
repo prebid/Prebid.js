@@ -241,6 +241,10 @@ function storedIdentityKey(storedValue) {
   ]);
 }
 
+// For each storage name, the identity of the most recent refresh started on this page. A refresh that resolves after a
+// refresh for a different identity was started is out of date, even if neither has written to storage yet.
+const latestRefreshIdentity = {};
+
 /**
  * Refresh `token` and store the result.
  * @param {string} baseUrl
@@ -253,24 +257,29 @@ function storedIdentityKey(storedValue) {
  * loads can tell whether it still belongs to the current user: `originalToken` (the token the publisher supplied,
  * defaults to `token`) and `originalIdentity` (for client-side token generation).
  * @returns {Promise<object>} the stored tokens. If the stored identity changed while the request was in flight (another
- * user logged in), the result is discarded and the tokens now in storage are returned instead.
+ * user logged in), or a refresh for a different identity was started since, the result is discarded and the tokens
+ * now in storage are returned instead.
  */
 function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn, original = {}) {
   _logInfo('UID2 base url provided: ', baseUrl);
   const client = new Uid2ApiClient({ baseUrl }, clientId, _logInfo, _logWarn);
+  const tokens = {
+    originalToken: original.originalToken ?? token,
+  };
+  if (original.originalIdentity) tokens.originalIdentity = original.originalIdentity;
+  const requestIdentity = storedIdentityKey(tokens);
+  const storageName = storageManager._storageName;
+  latestRefreshIdentity[storageName] = requestIdentity;
   const identityAtRequest = storedIdentityKey(storageManager.getStoredValueWithFallback());
   return client.callRefreshApi(token).then((response) => {
     _logInfo('Refresh endpoint responded with:', response);
     const storedTokens = storageManager.getStoredValueWithFallback();
-    if (storedTokens && storedIdentityKey(storedTokens) !== identityAtRequest) {
+    if (latestRefreshIdentity[storageName] !== requestIdentity ||
+      (storedTokens && storedIdentityKey(storedTokens) !== identityAtRequest)) {
       _logWarn('UID2 shared library - Stored identity changed while a token refresh was in flight; discarding the refreshed token.');
       return storedTokens;
     }
-    const tokens = {
-      originalToken: original.originalToken ?? token,
-      latestToken: response.identity,
-    };
-    if (original.originalIdentity) tokens.originalIdentity = original.originalIdentity;
+    tokens.latestToken = response.identity;
     storageManager.storeValue(tokens);
     return tokens;
   });
