@@ -374,7 +374,7 @@ function makeBannerBidResponse(bid, request) {
  */
 function makeChangeHeightEventMarkup(request) {
   return (
-    '<script>window.addEventListener("load",function(){window.parent.document.getElementById("' + request.bid.adUnitCode + '").height=document.body.scrollHeight})</script>'
+    '<script>window.addEventListener("load",function(){try{var element=window.parent.document.getElementById("' + request.bid.adUnitCode + '");if(element){element.height=document.body.scrollHeight}}catch(e){}})</script>'
   );
 }
 
