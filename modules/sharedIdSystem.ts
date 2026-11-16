@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, logError, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, logWarn, logError, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
@@ -35,6 +35,9 @@ export type SharedIdParams = {
   extend?: boolean;
   /**
    * For publisher server support only. Where to call out to for a server cookie.
+   * After the pixel loads, the ID in memory follows what storage then holds: an ID the endpoint set is adopted,
+   * and one it deleted is dropped for later auctions on the page. Use cookie-only storage with it: the endpoint
+   * can't delete localStorage.
    */
   pixelUrl?: string;
   /**
@@ -144,6 +147,27 @@ function queuePixelCallback(pixelUrl, id = '', callback?) {
   };
 }
 
+let warnedPixelStorage = false;
+
+/**
+ * Warn, once, when `pixelUrl` is used with storage other than cookies only: the endpoint can set and delete
+ * cookies, but not localStorage, so a deletion it makes (for example for an opt-out) is not seen.
+ */
+function checkPixelStorage(config, pixelUrl) {
+  if (!pixelUrl || warnedPixelStorage) return;
+  const types = config?.storage?.type?.trim().split(/s*&s*/) ?? [];
+  if (types.some(type => type !== COOKIE)) {
+    warnedPixelStorage = true;
+    logWarn(`sharedId: pixelUrl is set with storage type '${config.storage.type}'. The pixel endpoint can't delete ` +
+      `localStorage, so if it deletes the ID cookie (for example for an opt-out), the ID kept in localStorage is still ` +
+      `used. Use storage type 'cookie' with pixelUrl.`);
+  }
+}
+
+export function resetPixelStorageWarning() {
+  warnedPixelStorage = false;
+}
+
 function hasOptedOut() {
   return !!((storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
@@ -181,6 +205,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       return;
     }
     const { params: { create = true, pixelUrl } = {} } = config;
+    checkPixelStorage(config, pixelUrl);
     let newId = storedId;
     if (!newId) {
       try {
@@ -219,6 +244,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       return;
     }
     const { params: { extend = false, pixelUrl } = {} } = config;
+    if (extend) checkPixelStorage(config, pixelUrl);
 
     if (extend) {
       if (pixelUrl) {

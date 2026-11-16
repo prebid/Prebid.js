@@ -1,4 +1,4 @@
-import { sharedIdSystemSubmodule } from 'modules/sharedIdSystem.js';
+import { sharedIdSystemSubmodule, resetPixelStorageWarning } from 'modules/sharedIdSystem.js';
 import { config } from 'src/config.js';
 
 import sinon from 'sinon';
@@ -257,6 +257,58 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
+  describe('pixelUrl with storage other than cookies', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+      sandbox.stub(utils, 'triggerPixel');
+      sandbox.stub(utils, 'logWarn');
+      resetPixelStorageWarning();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      resetPixelStorageWarning();
+    });
+
+    function cfg(type, params = { pixelUrl: '/wp-json/pubcid/v1/extend/' }) {
+      return { params, storage: { type, name: '_pubcid', expires: 10 } };
+    }
+
+    ['html5', 'cookie&html5', 'html5 & cookie'].forEach(type => {
+      it(`should warn from getId, since the endpoint can't delete localStorage, with type '${type}'`, function () {
+        sharedIdSystemSubmodule.getId(cfg(type), undefined);
+        sinon.assert.calledOnce(utils.logWarn);
+        expect(utils.logWarn.firstCall.args[0]).to.include('pixelUrl').and.include(type);
+      });
+    });
+
+    it('should warn from extendId when it fires the pixel', function () {
+      sharedIdSystemSubmodule.extendId(cfg('cookie&html5', { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }), undefined, 'TestId');
+      sinon.assert.calledOnce(utils.logWarn);
+    });
+
+    it('should warn only once', function () {
+      sharedIdSystemSubmodule.getId(cfg('html5'), undefined);
+      sharedIdSystemSubmodule.getId(cfg('html5'), undefined);
+      sharedIdSystemSubmodule.extendId(cfg('html5', { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }), undefined, 'TestId');
+      sinon.assert.calledOnce(utils.logWarn);
+    });
+
+    it('should not warn with cookie storage', function () {
+      sharedIdSystemSubmodule.getId(cfg('cookie'), undefined);
+      sharedIdSystemSubmodule.extendId(cfg('cookie', { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }), undefined, 'TestId');
+      sinon.assert.notCalled(utils.logWarn);
+    });
+
+    it('should not warn without pixelUrl', function () {
+      sharedIdSystemSubmodule.getId(cfg('html5', {}), undefined);
+      sinon.assert.notCalled(utils.logWarn);
+    });
+  });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(sharedIdSystemSubmodule);
