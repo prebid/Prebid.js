@@ -45,7 +45,7 @@ function guessMediaType(bid, imp) {
   const offered = SUPPORTED_MEDIA_TYPES.filter((mediaType) => imp?.[mediaType] != null);
   if (offered.length === 1) return offered[0];
   const adm = isStr(bid.adm) ? bid.adm.trim() : '';
-  if (offered.includes(VIDEO) && (/^<\?xml|^<VAST/i.test(adm) || (adm === '' && isStr(bid.nurl)))) return VIDEO;
+  if (offered.includes(VIDEO) && (/^<\?xml|^(?:<!--[\s\S]*?-->\s*)*<VAST/i.test(adm) || (adm === '' && isStr(bid.nurl)))) return VIDEO;
   if (offered.includes(NATIVE) && (adm.startsWith('{') || isPlainObject(bid.adm))) return NATIVE;
   if (offered.includes(BANNER)) return BANNER;
   return offered[0];
