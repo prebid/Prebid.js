@@ -35,12 +35,52 @@ export type OptableHandleRtd = (
   reqBidsConfigObj: StartAuctionOptions,
   optableExtraData: OptableRtdConfig,
   mergeFn: OptableMergeFn,
+  /**
+   * `params.instance`: property name of the SDK instance on `window.optable`,
+   * or `null` for the default (`window.optable.instance`).
+   */
+  instance?: string | null,
+) => void | Promise<void>;
+
+/**
+ * Targeting data handed to `handleRtd` when `enableTargeting` is set: the targeting
+ * API response, or the `optable-targeting:change` event detail when the SDK is on the page.
+ */
+export interface OptableTargetingData {
+  ortb2?: {
+    user?: {
+      eids?: object[];
+      data?: object[];
+    };
+  };
+  /**
+   * Split test arm assigned by the DCN, stamped on `ortb2Imp.ext.optable.splitTestAssignment`.
+   */
+  split_test_assignment?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Options passed to `handleRtd` as its fourth argument when `enableTargeting` is set.
+ */
+export interface OptableTargetingHandleRtdOptions {
+  skipMergeIfUid2Exists?: boolean;
+}
+
+/**
+ * Custom RTD handler used when `enableTargeting` is set. May be sync or async.
+ */
+export type OptableTargetingHandleRtd = (
+  reqBidsConfigObj: StartAuctionOptions,
+  targetingData: OptableTargetingData,
+  mergeFn: OptableMergeFn,
+  options: OptableTargetingHandleRtdOptions,
 ) => void | Promise<void>;
 
 export interface OptableRtdProviderParams {
   /**
    * HTTPS URL of the Optable SDK bundle. When omitted, the module assumes the
-   * bundle is already present on the page (`window.optable`).
+   * bundle is already present on the page (`window.optable`). Ignored when `enableTargeting` is set.
    */
   bundleUrl?: string | null;
   /**
@@ -49,16 +89,65 @@ export interface OptableRtdProviderParams {
    */
   adserverTargeting?: boolean;
   /**
-   * Property name on `window.optable` for the SDK instance used for ad-server
-   * targeting. Defaults to `'instance'` (`window.optable.instance`).
+   * Property name on `window.optable` for the SDK instance, used to tell
+   * whether the bundle has loaded and for ad-server targeting. Defaults to
+   * `'instance'` (`window.optable.instance`).
    */
-  instance?: string;
+  instance?: string | null;
   /**
    * Optional custom handler that enriches the bid request with Optable data.
-   * When omitted, the module waits for the `optable-targeting:change` event
-   * (or cached targeting) and merges `ortb2` into the global fragment.
+   * It is called as soon as the auction starts, whether or not the Optable
+   * bundle has loaded, and decides for itself whether to wait for it (for
+   * example through `window.optable.cmd`). When omitted, the module uses
+   * the bundle's `window.optable.rtd.handleRtd` if available; before the bundle
+   * loads, it merges targeting data cached on a previous page, or waits for the
+   * bundle if there is none.
+   * With `enableTargeting`, it is called once targeting data is available,
+   * with `OptableTargetingHandleRtd` arguments.
    */
-  handleRtd?: OptableHandleRtd | null;
+  handleRtd?: OptableHandleRtd | OptableTargetingHandleRtd | null;
+  /**
+   * When `true`, the module fetches targeting itself: from the Web SDK's targeting
+   * event when the SDK is on the page, otherwise from the targeting API using
+   * `host`, `node` and `site`. Defaults to `false`.
+   */
+  enableTargeting?: boolean;
+  /**
+   * DCN host, e.g. `'dcn.example.com'`. `enableTargeting` only.
+   */
+  host?: string | null;
+  /**
+   * DCN node identifier. `enableTargeting` only.
+   */
+  node?: string | null;
+  /**
+   * Site slug configured on the DCN. `enableTargeting` only.
+   */
+  site?: string | null;
+  /**
+   * When `false`, the visitor passport is sent as a query parameter instead of
+   * relying on cookies. Defaults to `true`. `enableTargeting` only.
+   */
+  cookies?: boolean;
+  /**
+   * Targeting API timeout as a duration, e.g. `'500ms'`, or a number of milliseconds.
+   * Defaults to `auctionDelay` minus 100ms when the auction is delayed. `enableTargeting` only.
+   */
+  timeout?: string | number | null;
+  /**
+   * Optable identifiers sent as `id` (e.g. `'e:<sha256>'`, `'c:<ppid>'`). Defaults to
+   * `['__passport__']`. `enableTargeting` only.
+   */
+  ids?: string[];
+  /**
+   * Hint identifiers sent as `hid`. `enableTargeting` only.
+   */
+  hids?: string[];
+  /**
+   * When `true`, UID2 EIDs from Optable are not merged if the bid request already
+   * carries one. `enableTargeting` only.
+   */
+  skipMergeIfUid2Exists?: boolean;
 }
 
 export interface OptableRtdProviderConfig {
