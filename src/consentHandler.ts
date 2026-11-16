@@ -1,4 +1,4 @@
-import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp } from './utils.js';
+import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp, uniques } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
 import type { ModuleType } from "./activities/modules.ts";
@@ -241,7 +241,33 @@ export const coppaDataHandler = (() => {
   return handler;
 })();
 
-export type GVLID = number | typeof VENDORLESS_GVLID;
+/**
+ * One or more GVL IDs. A module that acts on behalf of several vendors may declare all of their IDs;
+ * the TCF control module then requires every one of them to have a legal basis.
+ */
+export type GVLIDs = number | readonly number[];
+export type GVLID = GVLIDs | typeof VENDORLESS_GVLID;
+
+/**
+ * Normalize a GVL ID declaration: lists are deduplicated and sorted, an empty list becomes `null`,
+ * and a list with a single element becomes that element.
+ */
+export function normalizeGvlid<T>(gvlid: T | readonly number[]): T | number | number[] | null {
+  if (Array.isArray(gvlid)) {
+    const ids = gvlid.filter(id => typeof id === 'number').filter(uniques).sort((a, b) => a - b);
+    return ids.length === 0 ? null : ids.length === 1 ? ids[0] : ids;
+  }
+  return (gvlid as T) ?? null;
+}
+
+/**
+ * Turn a (normalized) GVL ID declaration into a list.
+ */
+export function gvlidList<T>(gvlid: T | readonly number[] | null | undefined): (T | number)[] {
+  if (gvlid == null) return [];
+  return Array.isArray(gvlid) ? [...gvlid] : [gvlid as T];
+}
+
 type GVLIDResult<T = GVLID> = {
   /**
    * A map from module type to that module's GVL ID.
@@ -267,10 +293,11 @@ export function gvlidRegistry<T = GVLID>() {
      * @param gvlid
      */
     register(moduleType: ModuleType, moduleName: string, gvlid: T) {
+      gvlid = normalizeGvlid(gvlid) as T;
       if (gvlid) {
         (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
         if (flat.hasOwnProperty(moduleName)) {
-          if (flat[moduleName] !== gvlid) flat[moduleName] = none;
+          if (!deepEqual(flat[moduleName], gvlid)) flat[moduleName] = none;
         } else {
           flat[moduleName] = gvlid;
         }

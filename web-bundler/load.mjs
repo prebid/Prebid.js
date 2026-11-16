@@ -1,4 +1,4 @@
-import { METADATA_SUFFIX, resolveDependencies } from './dependencies.mjs';
+import { METADATA_SUFFIX, requiresMetadata, resolveDependencies } from './dependencies.mjs';
 
 export function scriptLoader(base, scope) {
   return function (chunk, checksum) {
@@ -19,18 +19,56 @@ export function scriptLoader(base, scope) {
   };
 }
 
-export async function getManifest(loader, checksum) {
-  let callback;
-  do {
-    callback = `__pbjsManifest${(Math.random() + 1).toString(36).substring(2)}`;
-  } while (window[callback] != null);
-  let manifest;
-  window[callback] = function (response) {
-    manifest = response;
+export const MANIFEST = 'manifest.js';
+export const METADATA_MANIFEST = 'manifest.metadata.js';
+const MANIFEST_KEYS = {
+  [MANIFEST]: '__pbjsManifest',
+  [METADATA_MANIFEST]: '__pbjsMetadataManifest',
+};
+
+/**
+ * Called by a manifest script (`manifest.js`, `manifest.metadata.js`) to hand its data to the loader that loaded it,
+ * through the script's `__pbjsScope` (see scriptLoader), as the chunks do. The script's URL has no query string, so
+ * the browser caches it.
+ */
+export function provideManifest(script, file, data) {
+  // loaders before 11.48 asked for manifest.js through a JSONP callback in its URL
+  const callback = new URL(script.src).searchParams.get('callback');
+  if (callback) {
+    window[callback](data);
+  } else if (script.__pbjsScope) {
+    script.__pbjsScope[MANIFEST_KEYS[file]] = data;
+  }
+}
+
+/**
+ * Load a manifest script (`manifest.js`, or `manifest.metadata.js` for the metadata chunks' checksums), and
+ * resolve to its data.
+ */
+export async function getManifest(loader, checksum, scope, file = MANIFEST) {
+  const key = MANIFEST_KEYS[file];
+  return loader(file, checksum)
+    .then(() => {
+      if (scope[key] == null) {
+        throw new Error(`${file} did not provide a manifest`);
+      }
+      return scope[key];
+    })
+    .finally(() => delete scope[key]);
+}
+
+/**
+ * Load the manifest, and the metadata manifest too if any of `modules` needs metadata (storageControl).
+ */
+export async function getManifests(loader, checksums, scope, modules, requiresMeta = requiresMetadata) {
+  const [manifest, metadata] = await Promise.all([
+    getManifest(loader, checksums[MANIFEST], scope, MANIFEST),
+    modules.some(requiresMeta) ? getManifest(loader, checksums[METADATA_MANIFEST], scope, METADATA_MANIFEST) : null
+  ]);
+  return metadata == null ? manifest : {
+    ...manifest,
+    checksums: { ...manifest.checksums, ...metadata.checksums }
   };
-  return loader(`manifest.js?callback=${callback}`, checksum)
-    .then(() => manifest)
-    .finally(() => delete window[callback]);
 }
 
 export async function loadModules(loader, manifest, modules, resolveDeps = resolveDependencies) {

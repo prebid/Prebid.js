@@ -7,11 +7,11 @@ class GlobalTypeProperty0 extends string {
   
   GlobalTypeProperty0() {
       
-      ( this = "x"  and weight = 5956.48  and global0 = "Gyroscope" )
+      ( this = "x"  and weight = 8931.84  and global0 = "Gyroscope" )
        or 
-      ( this = "y"  and weight = 5956.48  and global0 = "Gyroscope" )
+      ( this = "y"  and weight = 8931.84  and global0 = "Gyroscope" )
        or 
-      ( this = "z"  and weight = 5956.48  and global0 = "Gyroscope" )
+      ( this = "z"  and weight = 8931.84  and global0 = "Gyroscope" )
   }  
 
   float getWeight() {

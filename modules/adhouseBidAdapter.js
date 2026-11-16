@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { deepAccess, deepSetValue, isFn, isPlainObject, logWarn } from '../src/utils.js';
+import { deepSetValue, isFn, isPlainObject, logWarn } from '../src/utils.js';
 import { OUTSTREAM } from '../src/video.js';
 
 /**
@@ -53,7 +53,7 @@ const converter = ortbConverter({
 });
 
 function isOutstream(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.video.context') === OUTSTREAM;
+  return bidRequest?.mediaTypes?.video?.context === OUTSTREAM;
 }
 
 function getFloor(bidRequest) {
@@ -91,7 +91,7 @@ export const spec = {
       logWarn('adhouse: videoType must be standart_video or sticky_video');
       return false;
     }
-    if (isOutstream(bid) && !deepAccess(bid, 'mediaTypes.banner')) {
+    if (isOutstream(bid) && !bid?.mediaTypes?.banner) {
       logWarn('adhouse: outstream video is not supported');
       return false;
     }

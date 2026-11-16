@@ -21,6 +21,7 @@ import 'modules/debugging/index.js'; // some tests look for debugging side effec
 import { AuctionIndex } from '../../src/auctionIndex.js';
 import { expect } from 'chai';
 import { deepClone } from '../../src/utils.js';
+import { DEFAULT_PRIORITY, PRIORITY_INCREMENT } from '../../src/utils/desirability.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import { PrebidServer } from '../../modules/prebidServerBidAdapter/index.js';
 
@@ -788,6 +789,162 @@ describe('auctionmanager.js', function () {
       // reset bidderSettings so we don't mess up further tests
       getGlobal().bidderSettings = {};
     });
+
+    it('should rank bids answering a request with allowPriorityBids on meta.deal.priorityAdjustedCpm', function () {
+      const bid = Object.assign({}, createBid(), fixtures.getBidResponses()[5], {
+        meta: { deal: { type: 2, priorityAdjustedCpm: 4 } }
+      });
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+      assert.equal(bid.cpm, 0.5);
+      assert.equal(bid.desirability, 4);
+
+      adjustBids(bid, { index: index({ src: 's2s', bidderCode: bid.bidderCode, allowPriorityBids: false }) });
+      assert.equal(bid.desirability, 0.5);
+    });
+
+    describe('sets .priority', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      const HIGH_PRIORITY = DEFAULT_PRIORITY + PRIORITY_INCREMENT;
+
+      function mkBid(meta) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { meta });
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      Object.entries({
+        'there is no bidder request': undefined,
+        'the bidder request does not set allowPriorityBids': { bidderCode: 'brealtime' },
+        'the bidder request sets allowPriorityBids = false': { bidderCode: 'brealtime', allowPriorityBids: false },
+      }).forEach(([t, bidderRequest]) => {
+        describe(`when ${t}`, () => {
+          Object.entries({
+            'no meta': undefined,
+            'no meta.deal.priority': { deal: {} },
+            'meta.deal.priority': { deal: { priority: HIGH_PRIORITY } },
+          }).forEach(([t, meta]) => {
+            it(`to the default on bids with ${t}`, () => {
+              const bid = mkBid(meta);
+              adjustBids(bid, { index: index(bidderRequest) });
+              expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+            });
+          });
+        });
+      });
+
+      describe('when the bidder request sets allowPriorityBids = true', () => {
+        const bidderRequest = { src: 's2s', bidderCode: 'brealtime', allowPriorityBids: true };
+
+        Object.entries({
+          'no meta': undefined,
+          'no meta.deal.priority': { deal: {} },
+          'non-numeric meta.deal.priority': { deal: { priority: 'high' } },
+        }).forEach(([t, meta]) => {
+          it(`to the default on bids with ${t}`, () => {
+            const bid = mkBid(meta);
+            adjustBids(bid, { index: index(bidderRequest) });
+            expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+          });
+        });
+
+        it('to meta.deal.priority', () => {
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+
+        it('replacing any .priority the adapter set', () => {
+          const bid = Object.assign(mkBid({ deal: { priority: HIGH_PRIORITY } }), { priority: 0 });
+          adjustBids(bid, { index: index(bidderRequest) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('to the default, replacing any .priority the adapter set, when priority bids are not allowed', () => {
+        const bid = Object.assign(mkBid(), { priority: 0 });
+        adjustBids(bid, { index: index({ bidderCode: 'brealtime' }) });
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      Object.entries({
+        'discarded for being negative': (cpm) => cpm * -1,
+        'zero': () => 0,
+        'positive': (cpm) => cpm * 2,
+      }).forEach(([t, bidCpmAdjustment]) => {
+        it(`even when the cpm adjustment is ${t}`, () => {
+          getGlobal().bidderSettings = { brealtime: { bidCpmAdjustment } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        });
+      });
+
+      it('even when bidDesirabilityAdjustment throws', () => {
+        const logError = sinon.stub(utils, 'logError');
+        try {
+          getGlobal().bidderSettings = { brealtime: { bidDesirabilityAdjustment: () => { throw new Error(); } } };
+          const bid = mkBid({ deal: { priority: HIGH_PRIORITY } });
+          adjustBids(bid, { index: index({ bidderCode: 'brealtime', allowPriorityBids: true }) });
+          expect(bid.priority).to.equal(HIGH_PRIORITY);
+        } finally {
+          logError.restore();
+        }
+      });
+    });
+
+    describe('house bids', () => {
+      const index = (bidderRequest) => ({ getBidRequest: () => undefined, getBidderRequest: () => bidderRequest });
+      function mkHouseBid(deal = {}) {
+        return Object.assign({}, createBid(), fixtures.getBidResponses()[5], { cpm: 0, meta: { deal: { priority: 14, ...deal } } });
+      }
+      function allowHouseBids(bid) {
+        getGlobal().bidderSettings = { [bid.bidderCode]: { allowHouseBids: true } };
+      }
+
+      afterEach(() => {
+        getGlobal().bidderSettings = {};
+      });
+
+      it('are flagged when the adapter is allowed house and priority bids and the trusted priority is above the default', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.true;
+        expect(bid.priority).to.equal(14);
+      });
+
+      it('are not flagged when the adapter is not allowed house bids', () => {
+        const bid = mkHouseBid();
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged when the bidder request does not allow priority bids', () => {
+        const bid = mkHouseBid();
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode }) });
+        expect(bid.houseBid).to.be.false;
+      });
+
+      it('are not flagged for declaring the house deal type without a low priority', () => {
+        const bid = mkHouseBid({ type: 4, priority: undefined });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+        expect(bid.priority).to.equal(DEFAULT_PRIORITY);
+      });
+
+      it('overwrite a houseBid flag set by the adapter', () => {
+        const bid = Object.assign(mkHouseBid({ priority: DEFAULT_PRIORITY }), { houseBid: true });
+        allowHouseBids(bid);
+        adjustBids(bid, { index: index({ bidderCode: bid.bidderCode, allowPriorityBids: true }) });
+        expect(bid.houseBid).to.be.false;
+      });
+    });
   });
 
   describe('createAuction', () => {
@@ -1391,6 +1548,71 @@ describe('auctionmanager.js', function () {
           }).to.not.throw();
           expect(prepared.renderer).to.not.exist;
         });
+
+        describe('bid-level configuration', () => {
+          function makeBidRequest(adUnitProps, bidProps) {
+            const adUnit = {
+              code: 'precedence',
+              mediaTypes: { banner: { sizes: [[300, 250]] } },
+              bids: [{ bidder: BIDDER_CODE, params: {}, ...bidProps }],
+              ...adUnitProps,
+            };
+            const [bidderRequest] = adapterManager.makeBidRequests.wrappedMethod([adUnit], 'precedence-auction', Date.now(), 1000);
+            return { bidderRequest, adUnit };
+          }
+
+          function prepareResponse({ adUnit, bidderRequest }) {
+            const index = {
+              getAdUnit: () => adUnit,
+              getBidRequest: () => bidderRequest.bids[0],
+              getMediaTypes: () => bidderRequest.bids[0].mediaTypes,
+            };
+            return auctionModule.getPreparedBidForAuction({ cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner' }, { index });
+          }
+
+          ['renderer', 'safeRenderer'].forEach(prop => {
+            describe(`for ${prop}`, () => {
+              Object.entries({
+                'defined only on adUnit': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                },
+                'defined on adUnit bid': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'noise.js',
+                      render() {}
+                    }
+                  },
+                  bidProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                }
+              }).forEach(([desc, { adUnitProps, bidProps }]) => {
+                describe(desc, () => {
+                  let adUnit, bidderRequest, bidResponse;
+                  beforeEach(() => {
+                    ({ adUnit, bidderRequest } = makeBidRequest(adUnitProps, bidProps));
+                    bidResponse = prepareResponse({ adUnit, bidderRequest });
+                  });
+                  it('should be set on the request', () => {
+                    expect(bidderRequest.bids[0][prop].url).to.eql('target.js');
+                  });
+                  it('should be set on the response', () => {
+                    expect(bidResponse[prop].url).to.eql('target.js');
+                  });
+                });
+              });
+            });
+          });
+        });
       });
 
       it('installs publisher-defined backup renderers on bids', function () {
@@ -1657,6 +1879,9 @@ describe('auctionmanager.js', function () {
           assert.equal(auctionProps.adUnits, adUnits);
           assert.equal(auctionProps.timeout, 20);
           assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED);
+          assert.equal(auctionProps.timedOutRequests.length, 1);
+          assert.equal(auctionProps.timedOutRequests[0].bidder, BIDDER_CODE1);
+          assert.equal(auctionProps.timedOutRequests[0].bidId, timedOutBids[0].bidId);
         });
         respondToRequest(0);
         return pm;
@@ -1718,28 +1943,21 @@ describe('auctionmanager.js', function () {
           }]
         });
         adUnits[0].bids.push({ bidder: 'mock-s2s-1' }, { bidder: 'mock-s2s-2' });
-        const s2sAdUnits = deepClone(adUnits);
-        bids.unshift(
-          mockBid({ bidderCode: 'mock-s2s-1', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '1' }),
-          mockBid({ bidderCode: 'mock-s2s-2', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '2' })
-        );
-        Object.assign(s2sAdUnits[0], {
+        const s2sBids = ['1', '2'].map(pbsTid => mockBid({
+          bidderCode: `mock-s2s-${pbsTid}`,
+          src: S2S.SRC,
+          adUnits: deepClone(adUnits),
+          uniquePbsTid: pbsTid
+        }));
+        s2sBids.forEach(bid => Object.assign(bid._ctx.adUnits[0], {
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [300, 600]]
             }
           },
-          bids: [
-            {
-              bidder: 'mock-s2s-1',
-              bid_id: bids[0].requestId
-            },
-            {
-              bidder: 'mock-s2s-2',
-              bid_id: bids[1].requestId
-            }
-          ]
-        });
+          bids: [{ bidder: bid.bidderCode, bid_id: bid.requestId }]
+        }));
+        bids.unshift(...s2sBids);
 
         const pm = runAuction().then(() => {
           const toBids = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0].args[1];

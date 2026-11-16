@@ -442,6 +442,25 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].bidfloor).to.be.equal(floorPriceForAnySize);
     });
 
+    it('should read user agent from ortb2 and derive device type from it', function () {
+      const bidderRequest = createBidderRequest();
+      const expectedDeviceTypes = {
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1': 4,
+        'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1': 5,
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36': 2
+      };
+
+      Object.entries(expectedDeviceTypes).forEach(([ua, devicetype]) => {
+        const validBidRequest = createValidBidRequest();
+        validBidRequest.ortb2 = { device: { ua } };
+
+        const openRtbRequest = JSON.parse(spec.buildRequests([validBidRequest], bidderRequest).data);
+
+        expect(openRtbRequest.device.ua).to.be.equal(ua);
+        expect(openRtbRequest.device.devicetype).to.be.equal(devicetype);
+      });
+    });
+
     it('should create whole OpenRTB request', function () {
       const pageViewId = 'aa9f0b20-a642-4d0e-acb5-e35805253ef7';
       const validBidRequests = [
@@ -470,6 +489,8 @@ describe('KoblerAdapter', function () {
           'ad-unit-3'
         )
       ];
+      validBidRequests[0].ortb2 = { device: { ua: 'test-user-agent' } };
+      validBidRequests[0].ortb2Imp = { ext: { gpid: '/1234/ad-unit-1' } };
       const bidderRequest = createBidderRequest(
         '9ff580cf-e10e-4b66-add7-40ac0c804e21',
         4500,
@@ -525,6 +546,7 @@ describe('KoblerAdapter', function () {
               ]
             },
             ext: {
+              gpid: '/1234/ad-unit-1',
               prebid: {
                 adunitcode: 'ad-unit-1'
               }
@@ -592,7 +614,7 @@ describe('KoblerAdapter', function () {
         ],
         device: {
           devicetype: 2,
-          ua: navigator.userAgent
+          ua: 'test-user-agent'
         },
         site: {
           page: 'bid.kobler.no'

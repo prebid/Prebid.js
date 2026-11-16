@@ -4,6 +4,7 @@ import { PbPromise } from '../../src/utils/promise.js';
 import { buildActivityParams } from '../../src/activities/params.js';
 import { getHook } from '../../src/hook.js';
 import { type ConsentHandler } from "../../src/consentHandler.ts";
+import { cmpClient, pollForCmp } from '../cmp/cmpClient.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -17,7 +18,10 @@ export function consentManagementHook(name, loadConsentData) {
     }).catch((error) => {
       logError(`${error?.message} Canceling auction as per consentManagement config.`, ...(error?.args || []));
       fn.stopTiming();
-      reqBidsConfigObj.defer.reject(error);
+      const reject = reqBidsConfigObj?.defer?.reject;
+      if (typeof reject === 'function') {
+        reject(error);
+      }
     });
   });
 }
@@ -28,6 +32,7 @@ export function consentManagementHook(name, loadConsentData) {
  *   through consent data handlers' `setConsentData`.
  * @param {SetProvisionalConsent} setProvisionalConsent optionally, the function can call this with provisional consent
  *   data, which will be used if the lookup times out before "proper" consent data can be retrieved.
+ * @param {Function} [cmp] the CMP client, if the lookup was given `findCmp`.
  * @returns {Promise<{void}>} a promise that resolves when the auction should be continued, or rejects if it should be canceled.
  *
  * @typedef {Function} SetProvisionalConsent
@@ -42,6 +47,9 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {String} options.name e.g. 'GPP'. Used only for log messages.
  * @param {ConsentHandler} options.consentDataHandler consent data handler object (from src/consentHandler)
  * @param {CmpLookupFn} options.setupCmp
+ * @param {Function?} options.findCmp if provided, `setupCmp` runs only once this returns a CMP client;
+ *   the lookup is rejected if it does not.
+ * @param {Boolean?} options.waitForCmp if true, keep calling `findCmp` until it returns a client or `cmpTimeout` expires.
  * @param {Number?} options.cmpTimeout timeout (in ms) after which the auction should continue without consent data.
  * @param {Number?} options.actionTimeout timeout (in ms) from when provisional consent is available to when the auction should continue with it
  * @param {() => {}} options.getNullConsent consent data to use on timeout
@@ -52,16 +60,20 @@ export function lookupConsentData(
     name,
     consentDataHandler,
     setupCmp,
+    findCmp,
+    waitForCmp = false,
     cmpTimeout,
     actionTimeout,
-    getNullConsent
+    getNullConsent,
   }
 ) {
   consentDataHandler.enable();
   let timeoutHandle;
+  let stopPolling;
 
   return new Promise((resolve, reject) => {
     let provisionalConsent;
+    let cmpFound = false;
     let cmpLoaded = false;
 
     function setProvisionalConsent(consentData) {
@@ -76,6 +88,10 @@ export function lookupConsentData(
       if (timeoutHandle != null) clearTimeout(timeoutHandle);
       if (timeout != null) {
         timeoutHandle = setTimeout(() => {
+          if (!cmpFound) {
+            reject(new Error(`${name} CMP not found`));
+            return;
+          }
           const consentData = consentDataHandler.getConsentData() ?? (cmpLoaded ? provisionalConsent : getNullConsent());
           const message = `timeout waiting for ${cmpLoaded ? 'user action on CMP' : 'CMP to load'}`;
           consentDataHandler.setConsentData(consentData);
@@ -85,11 +101,25 @@ export function lookupConsentData(
         timeoutHandle = null;
       }
     }
-    setupCmp(setProvisionalConsent)
-      .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
+    function start(cmp?) {
+      cmpFound = true;
+      setupCmp(setProvisionalConsent, cmp)
+        .then(() => resolve({ consentData: consentDataHandler.getConsentData() }), reject);
+    }
+
+    if (findCmp == null) {
+      start();
+    } else {
+      stopPolling = pollForCmp(findCmp, {
+        onFound: start,
+        onMissing: () => reject(new Error(`${name} CMP not found`)),
+        wait: waitForCmp && cmpTimeout != null
+      });
+    }
     cmpTimeout != null && resetTimeout(cmpTimeout);
   }).finally(() => {
     timeoutHandle && clearTimeout(timeoutHandle);
+    stopPolling?.();
   }).catch((e) => {
     consentDataHandler.error(e);
     throw e;
@@ -97,6 +127,12 @@ export function lookupConsentData(
 }
 
 export interface BaseCMConfig {
+  /**
+   * Wait for a CMP API that is not present when consent lookup begins.
+   * This supports non-compliant integrations that load the CMP stub late and defaults to false.
+   * The CMP is looked for every 100ms, until `timeout`.
+   */
+  waitForCmp?: boolean;
   /**
    * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
    * Default is 10,000.
@@ -147,6 +183,7 @@ export function configParser(
     return `consentManagement.${namespace} ${message}`;
   }
   let requestBidsHook, cdLoader, staticConsentData;
+  const lookupsWaitingForCmp = new Set();
 
   function attachActivityParams(next, params) {
     return next(Object.assign({ [`${namespace}Consent`]: consentDataHandler.getConsentData() }, params));
@@ -216,7 +253,7 @@ export function configParser(
       logInfo(msg(`config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`));
     }
     const actionTimeout = isNumber(cmConfig.actionTimeout) ? cmConfig.actionTimeout : null;
-    let setupCmp;
+    let setupCmp, findCmp;
     if (cmpHandler === 'static') {
       if (isPlainObject(cmConfig.consentData)) {
         staticConsentData = cmConfig.consentData;
@@ -230,17 +267,35 @@ export function configParser(
       logWarn(`${displayName} CMP framework (${cmpHandler}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
       setupCmp = () => PbPromise.resolve();
     } else {
-      setupCmp = cmpHandlers[cmpHandler];
+      const { api, lookup } = cmpHandlers[cmpHandler];
+      setupCmp = lookup;
+      let cmp;
+      findCmp = () => cmp ?? (cmp = cmpClient(api));
     }
 
-    const lookup = () => lookupConsentData({
-      name: displayName,
-      consentDataHandler,
-      setupCmp,
-      cmpTimeout,
-      actionTimeout,
-      getNullConsent,
-    });
+    const lookup = () => {
+      if (lookupsWaitingForCmp.size > 0) {
+        logError(msg(`started a consent lookup while another is still waiting for the CMP; either may overwrite the other's consent data. Avoid changing consentManagement config while waiting for the CMP.`));
+      }
+      const waiting = {};
+      const stopWaiting = () => lookupsWaitingForCmp.delete(waiting);
+      if (findCmp != null && cmConfig.waitForCmp === true) {
+        lookupsWaitingForCmp.add(waiting);
+      }
+      return lookupConsentData({
+        name: displayName,
+        consentDataHandler,
+        setupCmp: (...args) => {
+          stopWaiting();
+          return setupCmp(...args);
+        },
+        findCmp,
+        waitForCmp: cmConfig.waitForCmp === true,
+        cmpTimeout,
+        actionTimeout,
+        getNullConsent,
+      }).finally(stopWaiting);
+    };
 
     cdLoader = (() => {
       let cd;

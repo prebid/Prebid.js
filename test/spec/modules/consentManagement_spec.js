@@ -102,7 +102,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(5000);
       });
 
-      it('should ignore config.usp and use config.gdpr, with default cmpAip and timeout', async function () {
+      it('should ignore config.usp and use config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {},
           usp: { cmpApi: 'daa', timeout: 50 }
@@ -112,7 +112,7 @@ describe('consentManagement', function () {
         expect(consentConfig.cmpTimeout).to.be.equal(10000);
       });
 
-      it('should recognize config.gdpr, with default cmpAip and timeout', async function () {
+      it('should recognize config.gdpr, with default cmpApi and timeout', async function () {
         await setConsentConfig({
           gdpr: {}
         });
@@ -381,6 +381,70 @@ describe('consentManagement', function () {
         expect(gdprDataHandler.ready).to.be.true;
       });
 
+      it('should wait for a late CMP only when configured', async function () {
+        const configPromise = setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 500,
+          waitForCmp: true,
+        });
+        setTimeout(() => {
+          window.__tcfapi = mockCMP({ gdprApplies: true, tcString: 'late-consent' });
+        }, 10);
+        try {
+          await configPromise;
+          expect(await runHook()).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('late-consent');
+        } finally {
+          delete window.__tcfapi;
+        }
+      });
+
+      it('should cancel the auction, and look again on the next one, if a late CMP does not appear within the timeout', async () => {
+        await setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 20,
+          waitForCmp: true,
+        });
+        expect(await runHook()).to.be.false;
+        try {
+          window.__tcfapi = mockCMP({ gdprApplies: true, tcString: 'late-consent' });
+          expect(await runHook()).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('late-consent');
+        } finally {
+          delete window.__tcfapi;
+        }
+      });
+
+      describe('when reconfigured while an auction waits for the user to act on the CMP', () => {
+        let cmpCallbacks;
+        beforeEach(() => {
+          cmpCallbacks = [];
+          window.__tcfapi = (command, version, callback) => {
+            if (command === 'addEventListener') {
+              cmpCallbacks.push(callback);
+              callback({ eventStatus: 'cmpuishown', gdprApplies: true, tcString: 'pending' }, true);
+            }
+          };
+        });
+        afterEach(() => {
+          delete window.__tcfapi;
+        });
+
+        it('should keep the auction waiting for consent', async () => {
+          const cmConfig = { cmpApi: 'iab', timeout: 5000 };
+          setConsentConfig(cmConfig);
+          let hookRan = false;
+          consentConfig.requestBidsHook(() => { hookRan = true; }, {});
+          setConsentConfig(cmConfig);
+          await new Promise(resolve => setTimeout(resolve, 20));
+          expect(hookRan).to.be.false;
+          cmpCallbacks.forEach(cb => cb({ eventStatus: 'useractioncomplete', gdprApplies: true, tcString: 'user-consent' }, true));
+          await new Promise(resolve => setTimeout(resolve));
+          expect(hookRan).to.be.true;
+          expect(gdprDataHandler.getConsentData().consentString).to.eql('user-consent');
+        });
+      });
+
       it('should poll again to check if it appears later', async () => {
         await setConsentConfig({
           cmpApi: 'iab',
@@ -418,7 +482,7 @@ describe('consentManagement', function () {
           'CMP is not found': goodConfig,
           'static config has no consentData': { cmpApi: 'static' },
         }).forEach(([t, cmConfig]) => {
-          it(`rejectgs when ${t}`, async () => {
+          it(`rejects when ${t}`, async () => {
             await setConsentConfig(cmConfig);
             const bidsBackHandler = sinon.stub();
             expect(await settlement(pbjs.requestBids({ adUnits, bidsBackHandler }))).to.equal('rejected');
@@ -817,7 +881,7 @@ describe('consentManagement', function () {
           });
         });
 
-        it('It still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
+        it('it still considers it a valid cmp response if gdprApplies is not a boolean', async function () {
           // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
           const testConsentData = {
             tcString: 'abc12345234',

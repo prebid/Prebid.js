@@ -53,7 +53,7 @@ describe('secureCreatives', () => {
       sinon.assert.calledWith(ev.source.postMessage, JSON.stringify('test'));
     });
 
-    it('should use MesagePort.postMessage if available', () => {
+    it('should use MessagePort.postMessage if available', () => {
       const ev = {
         ports: [{
           postMessage: sinon.spy()
@@ -244,6 +244,7 @@ describe('secureCreatives', () => {
           sinon.assert.notCalled(adResponse.renderer.render);
           sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
           sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
+        }).finally(() => {
           configObj.setConfig({ 'auctionOptions': {} });
         });
       });
@@ -348,128 +349,127 @@ describe('secureCreatives', () => {
       }
     });
 
-    describe('Prebid Native', function() {
-      if (!FEATURES.NATIVE) {
-        return;
-      }
+    if (FEATURES.NATIVE) {
+      describe('Prebid Native', function() {
+        it('Prebid native should render', function () {
+          pushBidResponseToAuction({});
 
-      it('Prebid native should render', function () {
-        pushBidResponseToAuction({});
+          const data = {
+            adId: bidId,
+            message: 'Prebid Native',
+            action: 'allAssetRequest'
+          };
 
-        const data = {
-          adId: bidId,
-          message: 'Prebid Native',
-          action: 'allAssetRequest'
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-          source: {
-            postMessage: sinon.stub()
-          },
-          origin: 'any origin'
-        });
-
-        return receive(ev).then(() => {
-          sinon.assert.neverCalledWith(spyLogWarn, warning);
-          sinon.assert.calledOnce(stubGetAllAssetsMessage);
-          sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-          sinon.assert.calledOnce(ev.source.postMessage);
-          sinon.assert.notCalled(stubFireNativeTrackers);
-          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-          sinon.assert.calledOnce(spyAddWinningBid);
-          sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
-        });
-      });
-
-      it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
-        const adId = 3;
-        pushBidResponseToAuction({ adId });
-
-        const data = {
-          adId: adId,
-          message: 'Prebid Native',
-          action: 'allAssetRequest'
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-          source: {
-            postMessage: sinon.stub()
-          },
-          origin: 'any origin'
-        });
-
-        return receive(ev).then(() => {
-          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-          return receive(ev);
-        }).then(() => {
-          expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
-        });
-      });
-
-      it('should fire BID_WON when no asset is requested', () => {
-        pushBidResponseToAuction({});
-        const data = {
-          adId: bidId,
-          message: 'Prebid Native',
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-        });
-        return receive(ev).then(() => {
-          sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
-        });
-      });
-
-      describe('resizing', () => {
-        let container, slot;
-        before(() => {
-          const [gtag, atag] = [window.googletag, window.apntag];
-          delete window.googletag;
-          delete window.apntag;
-          after(() => {
-            window.googletag = gtag;
-            window.apntag = atag;
-          });
-        });
-        beforeEach(() => {
-          pushBidResponseToAuction({
-            adUnitCode: 'mock-au'
-          });
-          container = document.createElement('div');
-          container.id = 'mock-au';
-          slot = document.createElement('iframe');
-          container.appendChild(slot);
-          document.body.appendChild(container);
-        });
-        afterEach(() => {
-          if (container) {
-            document.body.removeChild(container);
-          }
-        });
-        it('should handle resize request', () => {
           const ev = makeEvent({
-            data: JSON.stringify({
-              adId: bidId,
-              message: 'Prebid Native',
-              action: 'resizeNativeHeight',
-              width: 123,
-              height: 321
-            }),
+            data: JSON.stringify(data),
             source: {
               postMessage: sinon.stub()
             },
             origin: 'any origin'
           });
+
           return receive(ev).then(() => {
-            expect(slot.style.width).to.eql('123px');
-            expect(slot.style.height).to.eql('321px');
+            sinon.assert.neverCalledWith(spyLogWarn, warning);
+            sinon.assert.calledOnce(stubGetAllAssetsMessage);
+            sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
+            sinon.assert.calledOnce(ev.source.postMessage);
+            sinon.assert.notCalled(stubFireNativeTrackers);
+            sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+            sinon.assert.calledOnce(spyAddWinningBid);
+            sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
+          });
+        });
+
+        it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
+          const adId = 3;
+          pushBidResponseToAuction({ adId });
+
+          const data = {
+            adId: adId,
+            message: 'Prebid Native',
+            action: 'allAssetRequest'
+          };
+
+          const ev = makeEvent({
+            data: JSON.stringify(data),
+            source: {
+              postMessage: sinon.stub()
+            },
+            origin: 'any origin'
+          });
+
+          return receive(ev).then(() => {
+            sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+            return receive(ev);
+          }).then(() => {
+            expect(stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce).to.be.true;
+          });
+        });
+
+        it('should fire BID_WON when no asset is requested', () => {
+          pushBidResponseToAuction({});
+          const data = {
+            adId: bidId,
+            message: 'Prebid Native',
+          };
+
+          const ev = makeEvent({
+            data: JSON.stringify(data),
+          });
+          return receive(ev).then(() => {
+            sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+          });
+        });
+
+        describe('resizing', () => {
+          let container, slot;
+          let gtag, atag;
+          before(() => {
+            [gtag, atag] = [window.googletag, window.apntag];
+            delete window.googletag;
+            delete window.apntag;
+          });
+          after(() => {
+            window.googletag = gtag;
+            window.apntag = atag;
+          });
+          beforeEach(() => {
+            pushBidResponseToAuction({
+              adUnitCode: 'mock-au'
+            });
+            container = document.createElement('div');
+            container.id = 'mock-au';
+            slot = document.createElement('iframe');
+            container.appendChild(slot);
+            document.body.appendChild(container);
+          });
+          afterEach(() => {
+            if (container) {
+              document.body.removeChild(container);
+            }
+          });
+          it('should handle resize request', () => {
+            const ev = makeEvent({
+              data: JSON.stringify({
+                adId: bidId,
+                message: 'Prebid Native',
+                action: 'resizeNativeHeight',
+                width: 123,
+                height: 321
+              }),
+              source: {
+                postMessage: sinon.stub()
+              },
+              origin: 'any origin'
+            });
+            return receive(ev).then(() => {
+              expect(slot.style.width).to.eql('123px');
+              expect(slot.style.height).to.eql('321px');
+            });
           });
         });
       });
-    });
+    }
 
     describe('Prebid Event', () => {
       Object.entries({

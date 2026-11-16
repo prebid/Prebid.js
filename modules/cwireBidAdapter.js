@@ -127,7 +127,13 @@ const converter = ortbConverter({
       if (mt?.video && !mt?.banner) context.mediaType = VIDEO;
       else if (mt?.banner && !mt?.video) context.mediaType = BANNER;
     }
-    return buildBidResponse(bid, context);
+    const response = buildBidResponse(bid, context);
+    if (response.mediaType === VIDEO && typeof bid.adm === 'string' &&
+        (bid.adm.startsWith('https://') || bid.adm.startsWith('http://'))) {
+      response.vastUrl = bid.adm;
+      delete response.vastXml;
+    }
+    return response;
   },
 });
 
@@ -196,7 +202,7 @@ export const spec = {
     );
 
     const syncs = [];
-    if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
+    if (hasPurpose1Consent(gdprConsent) && gdprConsent?.consentString) {
       logInfo('GDPR purpose 1 consent was given, adding user-syncs');
       const type = syncOptions.pixelEnabled
         ? 'image'
@@ -206,7 +212,7 @@ export const spec = {
       if (type) {
         syncs.push({
           type,
-          url: `https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${
+          url: `https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${
             gdprConsent.gdprApplies ? 1 : 0
           }&gdpr_consent=${gdprConsent.consentString}`,
         });

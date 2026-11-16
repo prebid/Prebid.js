@@ -75,6 +75,10 @@ describe('AdmixerAdapter', function () {
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
+    it('should validate aditgen bids by RTB params', function () {
+      expect(spec.isBidRequestValid(Object.assign({}, rtbBid, { bidder: 'aditgen' }))).to.equal(true);
+      expect(spec.isBidRequestValid(Object.assign({}, rtbBid, { bidder: 'aditgen', params: { zone: ZONE_ID } }))).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -132,7 +136,7 @@ describe('AdmixerAdapter', function () {
       validRequest: [
         {
           bidder: bidder,
-          params: bidder === 'rtbstack' ? {
+          params: ['rtbstack', 'aditgen'].includes(bidder) ? {
             tagId: ENDPOINT_ID
           } : {
             zone: ZONE_ID,
@@ -198,6 +202,18 @@ describe('AdmixerAdapter', function () {
         config: { bidderURL: ENDPOINT_URL_CUSTOM },
       });
       const request = config.runWithBidder(BIDDER_CODE, () =>
+        spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest)
+      );
+      expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for aditgen', function () {
+      const requestParams = requestParamsFor('aditgen');
+      config.setBidderConfig({
+        bidders: ['aditgen'],
+        config: { bidderURL: ENDPOINT_URL_CUSTOM },
+      });
+      const request = config.runWithBidder('aditgen', () =>
         spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest)
       );
       expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);

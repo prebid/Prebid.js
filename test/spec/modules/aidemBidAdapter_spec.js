@@ -463,6 +463,11 @@ describe('Aidem adapter', () => {
       });
     }
 
+    it('should leave navigator environment data empty', () => {
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data.environment.nav).to.deep.equal({});
+    });
+
     it('should hav wpar keys in environment object', function () {
       const { data } = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
       expect(data).to.have.property('environment');

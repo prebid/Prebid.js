@@ -9,6 +9,11 @@ const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout';
 
 describe('OguryBidAdapter', () => {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.OG_PREBID_BID_OBJECT;
+  });
+
   let bidRequests, bidderRequestBase, ortb2;
 
   const currentLocation = 'https://mwtt.ogury.tech/advanced';

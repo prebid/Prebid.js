@@ -1,5 +1,6 @@
 import * as utils from 'src/utils.js';
 import { lookupConsentData, consentManagementHook, configParser } from '../../../libraries/consentManagement/cmUtils.js';
+import { CMP_POLL_INTERVAL } from '../../../libraries/cmp/cmpClient.js';
 
 describe('consent management utils', () => {
   let sandbox, clock;
@@ -125,14 +126,15 @@ describe('consent management utils', () => {
       });
     });
 
-    function runLookup() {
+    function runLookup(options = {}) {
       return lookupConsentData({
         name,
         consentDataHandler,
         setupCmp,
         cmpTimeout,
         actionTimeout,
-        getNullConsent
+        getNullConsent,
+        ...options
       });
     }
 
@@ -226,6 +228,71 @@ describe('consent management utils', () => {
         expect(consentData).to.eql({ consent: 2 });
       });
     });
+
+    describe('with findCmp', () => {
+      let findCmp, cmp;
+      beforeEach(() => {
+        cmp = sinon.stub();
+        findCmp = sinon.stub();
+        cmpTimeout = 1000;
+        setupCmp.returns(Promise.resolve());
+      });
+
+      async function lookupError(lookup) {
+        try {
+          await lookup;
+        } catch (e) {
+          return e;
+        }
+        sinon.assert.fail('should have rejected');
+      }
+
+      it('should pass the CMP client to the cmp handler', async () => {
+        findCmp.returns(cmp);
+        await runLookup({ findCmp });
+        sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
+      });
+
+      it('should reject, without running the cmp handler, if no CMP is found', async () => {
+        const error = await lookupError(runLookup({ findCmp }));
+        expect(error.message).to.contain('CMP not found');
+        sinon.assert.notCalled(setupCmp);
+      });
+
+      describe('and waitForCmp', () => {
+        it('should run the cmp handler once the CMP appears', async () => {
+          const lookup = runLookup({ findCmp, waitForCmp: true });
+          clock.tick(CMP_POLL_INTERVAL);
+          sinon.assert.notCalled(setupCmp);
+          findCmp.returns(cmp);
+          clock.tick(CMP_POLL_INTERVAL);
+          await lookup;
+          sinon.assert.calledWith(setupCmp, sinon.match.func, cmp);
+        });
+
+        it('should reject, and stop looking, if the CMP does not appear within cmpTimeout', async () => {
+          const lookup = runLookup({ findCmp, waitForCmp: true });
+          clock.tick(cmpTimeout + 1);
+          const error = await lookupError(lookup);
+          expect(error.message).to.contain('CMP not found');
+          sinon.assert.notCalled(consentDataHandler.setConsentData);
+          findCmp.resetHistory();
+          clock.tick(CMP_POLL_INTERVAL * 2);
+          sinon.assert.notCalled(findCmp);
+        });
+
+        it('should time out with null consent if the CMP is found but does not reply', async () => {
+          setupCmp.returns(new Promise(() => null));
+          const lookup = runLookup({ findCmp, waitForCmp: true });
+          clock.tick(CMP_POLL_INTERVAL);
+          findCmp.returns(cmp);
+          clock.tick(cmpTimeout);
+          const { consentData, error } = await lookup;
+          expect(consentData).to.eql({ consent: null });
+          expect(error.message).to.match(/.*CMP to load.*/);
+        });
+      });
+    });
   });
 
   describe('configParser', () => {
@@ -237,6 +304,8 @@ describe('consent management utils', () => {
       displayName = 'TEST';
       sinon.stub();
       consentDataHandler = {
+        enable: sinon.stub(),
+        error: sinon.stub(),
         reset: sinon.stub(),
         removeCmpEventListener: sinon.stub(),
         getConsentData: sinon.stub(),
@@ -245,7 +314,10 @@ describe('consent management utils', () => {
       parseConsentData = sinon.stub().callsFake(data => data);
       getNullConsent = sinon.stub().returns({ consent: null });
       cmpHandlers = {
-        iab: sinon.stub().returns(Promise.resolve())
+        iab: {
+          api: { apiName: '__testCmp' },
+          lookup: sinon.stub().returns(Promise.resolve())
+        }
       };
       cmpEventCleanup = sinon.stub();
 
@@ -344,6 +416,61 @@ describe('consent management utils', () => {
         const result = configParserWithNonFunction({ [namespace]: { enabled: false } });
         expect(result).to.deep.equal({});
         // Should not throw error when cmpEventCleanup is not a function
+      });
+    });
+
+    describe('CMP lookup', () => {
+      afterEach(() => {
+        delete window.__testCmp;
+        getConsentConfig({});
+      });
+
+      describe('when a lookup starts while another is waiting for the CMP', () => {
+        function startLookup(cmConfig = { cmpApi: 'iab', waitForCmp: true, timeout: 1000 }) {
+          return getConsentConfig({ [namespace]: cmConfig }).loadConsentData().catch(() => null);
+        }
+
+        function assertWaitingError(called) {
+          (called ? sinon.assert.calledWith : sinon.assert.neverCalledWith)(utils.logError, sinon.match('still waiting for the CMP'));
+        }
+
+        it('should log an error', () => {
+          startLookup();
+          startLookup({ cmpApi: 'static', consentData: {} });
+          assertWaitingError(true);
+        });
+
+        it('should not log an error if the CMP was found', () => {
+          window.__testCmp = sinon.stub();
+          startLookup();
+          startLookup();
+          assertWaitingError(false);
+        });
+
+        it('should not log an error after the previous lookup times out', async () => {
+          const previous = startLookup();
+          await clock.tickAsync(1000);
+          await previous;
+          startLookup();
+          assertWaitingError(false);
+        });
+
+        it('should not log an error without waitForCmp', () => {
+          startLookup({ cmpApi: 'iab' });
+          startLookup({ cmpApi: 'iab' });
+          assertWaitingError(false);
+        });
+      });
+
+      it('should pass the CMP client to the cmp handler, reusing it across lookups', async () => {
+        window.__testCmp = sinon.stub();
+        cmpHandlers.iab.lookup.onFirstCall().returns(Promise.reject(new Error()));
+        const { loadConsentData } = getConsentConfig({ [namespace]: { cmpApi: 'iab' } });
+        await loadConsentData().catch(() => null);
+        await loadConsentData();
+        const [first, second] = cmpHandlers.iab.lookup.getCalls().map(call => call.args[1]);
+        expect(first.isDirect).to.be.true;
+        expect(second).to.equal(first);
       });
     });
 

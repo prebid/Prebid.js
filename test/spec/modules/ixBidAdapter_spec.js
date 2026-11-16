@@ -3460,7 +3460,7 @@ describe('IndexexchangeAdapter', function () {
         expect(diag.mfu).to.equal(2);
         expect(diag.allu).to.equal(2);
         expect(diag.version).to.equal('$prebid.version$');
-        expect(diag.url).to.equal('http://localhost:9876/context.html');
+        expect(diag.url).to.equal(window.location.href);
         expect(diag.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId);
         expect(diag.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode);
       });

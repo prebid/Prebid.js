@@ -11,6 +11,8 @@ export interface SafeRendererConfig {
   url: string;
   config?: any; // set by the bidder adapter
   getConfig?(bidResponse: Bid): any; // set by the publisher
+  /** If true, this safeRenderer is used only when the bid adapter doesn't provide its own. */
+  backupOnly?: boolean;
   /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
   requiresVastUrl?: boolean;
 }
@@ -112,6 +114,14 @@ export interface AdUnitDefinition {
    */
   bids?: AdUnitBidDefinition[];
   mediaTypes?: MediaTypes;
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules): the ad unit is active if any of these labels is.
+   */
+  labelAny?: string[];
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules): the ad unit is active only if all of these labels are.
+   */
+  labelAll?: string[];
   /**
    * TTL buffer override for this adUnit.
    */

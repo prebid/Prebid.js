@@ -1,4 +1,4 @@
-import { isStr, logError, isFn, deepAccess } from '../src/utils.js';
+import { isStr, logError, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -15,10 +15,12 @@ const ALIASES = [
   { code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx' },
   'rtbstack',
   'theads',
+  'aditgen',
 ];
 const RTB_RELATED_ALIASES = [
   'rtbstack',
   'theads',
+  'aditgen',
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -132,7 +134,7 @@ function getEndpointUrl(code) {
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
+    return bid?.params?.bidFloor ?? 0;
   }
 
   try {

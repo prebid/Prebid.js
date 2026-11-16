@@ -8,7 +8,9 @@ import {
   logInfo,
   safeJSONEncode,
   deepClone,
-  deepSetValue, getWindowTop
+  deepSetValue,
+  getWindowTop,
+  getWinDimensions
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -312,7 +314,7 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
-  const { scrollX, scrollY } = window;
+  const { scrollX, scrollY } = getWinDimensions(window);
   return {
     top_left: {
       x: coordinates.top_left.x + scrollX,

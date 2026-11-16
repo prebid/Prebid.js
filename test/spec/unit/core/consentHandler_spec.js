@@ -1,4 +1,4 @@
-import { consentHandler, coppaDataHandler, gdprDataHandler, gvlidRegistry, multiHandler } from '../../../../src/consentHandler.js';
+import { consentHandler, coppaDataHandler, gdprDataHandler, gvlidList, gvlidRegistry, multiHandler, normalizeGvlid, VENDORLESS_GVLID } from '../../../../src/consentHandler.js';
 import { config } from 'src/config.js';
 
 describe('Consent data handler', () => {
@@ -263,7 +263,7 @@ describe('gvlidRegistry', () => {
     registry = gvlidRegistry();
   });
 
-  it('returns undef when id cannoot be found', () => {
+  it('returns undef when id cannot be found', () => {
     expect(registry.get('name')).to.eql({ modules: {} });
   });
 
@@ -282,5 +282,58 @@ describe('gvlidRegistry', () => {
     registry.register('type', 'name', 123);
     registry.register('otherType', 'name', 321);
     expect(registry.get('name')).to.eql({ modules: { type: 123, otherType: 321 } });
+  });
+
+  describe('lists of GVL IDs', () => {
+    it('can register a list', () => {
+      registry.register('type', 'name', [321, 123, 321]);
+      expect(registry.get('name')).to.eql({ gvlid: [123, 321], modules: { type: [123, 321] } });
+    });
+
+    it('returns `gvlid` when the same list is registered by more than one module', () => {
+      registry.register('type', 'name', [123, 321]);
+      registry.register('otherType', 'name', [321, 123]);
+      expect(registry.get('name').gvlid).to.eql([123, 321]);
+    });
+
+    it('does not return `gvlid` when different lists are registered', () => {
+      registry.register('type', 'name', [123, 321]);
+      registry.register('otherType', 'name', [123]);
+      expect(registry.get('name')).to.eql({ modules: { type: [123, 321], otherType: 123 } });
+    });
+
+    it('does not register empty lists', () => {
+      registry.register('type', 'name', []);
+      expect(registry.get('name')).to.eql({ modules: {} });
+    });
+  });
+});
+
+describe('normalizeGvlid', () => {
+  Object.entries({
+    'null': [null, null],
+    'undefined': [undefined, null],
+    'a number': [123, 123],
+    'VENDORLESS_GVLID': [VENDORLESS_GVLID, VENDORLESS_GVLID],
+    'an empty list': [[], null],
+    'a list with a single element': [[123], 123],
+    'a list with duplicates': [[3, 1, 3, 2], [1, 2, 3]],
+    'a list with non-numbers': [[2, 'x', null, 1], [1, 2]],
+  }).forEach(([t, [input, expected]]) => {
+    it(`handles ${t}`, () => {
+      expect(normalizeGvlid(input)).to.eql(expected);
+    });
+  });
+});
+
+describe('gvlidList', () => {
+  Object.entries({
+    'null': [null, []],
+    'a number': [123, [123]],
+    'a list': [[1, 2], [1, 2]],
+  }).forEach(([t, [input, expected]]) => {
+    it(`handles ${t}`, () => {
+      expect(gvlidList(input)).to.eql(expected);
+    });
   });
 });

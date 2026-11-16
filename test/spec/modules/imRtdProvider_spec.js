@@ -133,10 +133,6 @@ describe('imRtdProvider', function () {
     });
   });
 
-  describe('processBidderFunction', function () {
-
-  });
-
   describe('setRealTimeData', function () {
     it('should return true when empty params', function () {
       expect(setRealTimeData({ adUnits: [] }, { params: {} }, { im_segments: [] })).to.equal(undefined);

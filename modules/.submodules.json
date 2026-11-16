@@ -137,6 +137,7 @@
       "sirdataRtdProvider",
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
+      "transfonSecurityRtdProvider",
       "weboramaRtdProvider",
       "wurflRtdProvider",
       "encypherRtdProvider",

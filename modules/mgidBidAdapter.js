@@ -11,10 +11,10 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { config } from '../src/config.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   deepAccess,
+  deepClone,
   deepSetValue,
   getBidIdParameter,
   isArray,
@@ -83,18 +83,16 @@ const converter = ortbConverter({
         delete imp.bidfloorcur;
       }
     }
-    const legacyNative = normalizeLegacyNativeParams(bidRequest.nativeParams || deepAccess(bidRequest, 'mediaTypes.native'));
-    const nativeReq = bidRequest.nativeOrtbRequest || (legacyNative ? toOrtbNativeRequest(legacyNative) : null);
-    if (nativeReq) {
+    if (bidRequest.nativeOrtbRequest) {
       try {
-        populateNativeImp(imp, nativeReq);
+        populateNativeImp(imp, deepClone(bidRequest.nativeOrtbRequest));
       } catch (e) {
         logWarn(LOG_WARN_PREFIX + `populateNativeImp failed: ${e.message}`);
         delete imp.native;
-        if (!imp.banner) {
-          return null;
-        }
       }
+    }
+    if (!imp.banner && !imp.native) {
+      return null;
     }
 
     const { id: storageId, type: storageIdType } = resolveStorageId(bidRequest);
@@ -322,28 +320,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-const LEGACY_NATIVE_ALIASES = {
-  sponsored: 'sponsoredBy',
-  saleprice: 'salePrice',
-  displayurl: 'displayUrl',
-  data: 'body',
-};
-
-function normalizeLegacyNativeParams(params) {
-  if (!params) {
-    return params;
-  }
-  let normalized = Object.assign({}, params);
-  for (const alias of Object.keys(LEGACY_NATIVE_ALIASES)) {
-    const canonical = LEGACY_NATIVE_ALIASES[alias];
-    if (params[alias] && !params[canonical]) {
-      normalized[canonical] = normalized[alias];
-      delete normalized[alias];
-    }
-  }
-  return normalized;
-}
 
 function populateNativeImp(imp, nativeReq) {
   if (!nativeReq) {
