@@ -133,20 +133,34 @@ describe('module maintainer notifications', () => {
     });
   });
 
-  it('sends grouped notifications through the workflow script, including paginated test changes', async () => {
-    writeDoc('example', 'Maintainer: owner@example.com');
+  async function runScript({ pages, sendMail = async () => {} }) {
     const config = path.join(modulesDir, 'manual-rules');
     fs.writeFileSync(config, '# Existing subscriptions\n\nmodules/example\\.js : owner@example.com\n');
     const messages = [];
     const requested = [];
+    const proc = {
+      env: {
+        GITHUB_REPOSITORY: 'prebid/Prebid.js',
+        GITHUB_PR_NUMBER: '123',
+        GITHUB_TOKEN: 'test-token',
+        NOTIFICATION_EMAIL: 'sender@example.com',
+        NOTIFICATION_PASSWORD: 'test-password'
+      },
+      exit(code) { throw new Error(`Unexpected exit: ${code}`); }
+    };
+    const errors = [];
     const script = new vm.Script(fs.readFileSync(path.join(scriptsDir, 'send-notification-on-change.js'), 'utf8'));
-    const nextPage = 'https://api.github.com/repos/prebid/Prebid.js/pulls/123/files?page=2';
     await script.runInNewContext({
       __dirname: scriptsDir,
       require(id) {
         if (id === 'nodemailer') {
           return {
-            createTransport: () => ({ sendMail: async message => messages.push(message) })
+            createTransport: () => ({
+              sendMail: async message => {
+                messages.push(message);
+                await sendMail(message);
+              }
+            })
           };
         }
         if (id === 'fs') {
@@ -161,32 +175,53 @@ describe('module maintainer notifications', () => {
         }
         return require(id);
       },
-      process: {
-        env: {
-          GITHUB_REPOSITORY: 'prebid/Prebid.js',
-          GITHUB_PR_NUMBER: '123',
-          GITHUB_TOKEN: 'test-token',
-          NOTIFICATION_EMAIL: 'sender@example.com',
-          NOTIFICATION_PASSWORD: 'test-password'
-        },
-        exit(code) { throw new Error(`Unexpected exit: ${code}`); }
-      },
-      console: { log() {}, error(message) { throw new Error(message); } },
+      process: proc,
+      console: { log() {}, error(...args) { errors.push(args.join(' ')); } },
       fetch: async url => {
+        const page = requested.length;
         requested.push(url);
-        const first = requested.length === 1;
+        const next = pages[page + 1] ? `<https://api.github.com/repos/prebid/Prebid.js/pulls/123/files?page=${page + 2}>; rel="next"` : null;
         return {
           ok: true,
-          json: async () => [{ filename: first ? 'modules/example.js' : 'test/spec/modules/example_spec.js' }],
-          headers: { get: () => first ? `<${nextPage}>; rel="next"` : null }
+          json: async () => pages[page].map(filename => ({ filename })),
+          headers: { get: () => next }
         };
       }
     });
+    return { messages, requested, errors, exitCode: proc.exitCode };
+  }
+
+  it('sends grouped notifications through the workflow script, including paginated test changes', async () => {
+    writeDoc('example', 'Maintainer: owner@example.com');
+    const { messages, requested, errors, exitCode } = await runScript({
+      pages: [['modules/example.js'], ['test/spec/modules/example_spec.js']]
+    });
+    expect(errors).to.eql([]);
+    expect(exitCode).to.be.undefined;
     expect(requested).to.have.length(2);
-    expect(requested[1]).to.equal(nextPage);
+    expect(requested[1]).to.equal('https://api.github.com/repos/prebid/Prebid.js/pulls/123/files?page=2');
     expect(messages).to.have.length(1);
     expect(messages[0].to).to.equal('owner@example.com');
     expect(messages[0].html).to.include('<li>test/spec/modules/example_spec.js</li>');
     expect(messages[0].html.match(/<li>modules\/example.js<\/li>/g)).to.have.length(1);
+  });
+
+  it('escapes markup in file names', async () => {
+    writeDoc('example', 'Maintainer: owner@example.com');
+    const { messages } = await runScript({
+      pages: [['modules/example/<a href="https://evil.example">x</a>.js']]
+    });
+    expect(messages[0].html).to.not.include('<a href="https://evil.example"');
+    expect(messages[0].html).to.include('&#60;a href=&#34;https:');
+  });
+
+  it('fails the run when an email cannot be sent', async () => {
+    writeDoc('example', 'Maintainer: owner@example.com');
+    const { errors, exitCode } = await runScript({
+      pages: [['modules/example.js']],
+      sendMail: async () => { throw new Error('auth failed'); }
+    });
+    expect(exitCode).to.equal(1);
+    expect(errors.join()).to.include('auth failed');
   });
 });
