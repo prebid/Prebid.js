@@ -47,17 +47,15 @@ const REQUEST = [{
 }];
 
 const DEFAULT_OPTIONS = {
-  userId: {
-    britepoolid: 'pangle-britepool',
-    criteoId: 'pangle-criteo',
-    digitrustid: { data: { id: 'pangle-digitrust' } },
-    id5id: { uid: 'pangle-id5' },
-    idl_env: 'pangle-idl-env',
-    lipb: { lipbid: 'pangle-liveintent' },
-    netId: 'pangle-netid',
-    parrableId: { eid: 'pangle-parrable' },
-    pubcid: 'pangle-pubcid',
-    tdid: 'pangle-ttd',
+  ortb2: {
+    user: {
+      ext: {
+        eids: [
+          { source: 'criteo.com', uids: [{ id: 'pangle-criteo', atype: 1 }] },
+          { source: 'pubcid.org', uids: [{ id: 'pangle-pubcid', atype: 1 }] },
+        ]
+      }
+    }
   }
 };
 
@@ -136,6 +134,23 @@ describe('pangle bid adapter', function () {
       expect(request2).to.exist.and.to.be.a('object');
       const payload2 = request2.data;
       expect(payload2.imp[0]).to.have.property('id', REQUEST[1].bidId);
+    });
+
+    afterEach(function () {
+      document.cookie = '_pangle_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+    });
+
+    it('appends the pangle id EID when user ID EIDs are present', function () {
+      const payload = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0].data;
+      const eids = payload.user.ext.eids;
+      expect(eids.map(eid => eid.source)).to.deep.equal(['criteo.com', 'pubcid.org', document.location.host]);
+      expect(eids[2].uids[0].atype).to.equal(1);
+      expect(eids[2].uids[0].id).to.be.a('string').and.not.be.empty;
+    });
+
+    it('does not add the pangle id EID when there are no user ID EIDs', function () {
+      const payload = spec.buildRequests(REQUEST, {})[0].data;
+      expect(payload.user?.ext?.eids).to.equal(undefined);
     });
   });
 

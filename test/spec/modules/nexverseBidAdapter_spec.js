@@ -6,6 +6,34 @@ import { getOsVersion } from '../../../libraries/advangUtils/index.js';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
+  describe('buildRequests: user.buyeruid', function () {
+    const bid = {
+      bidId: 'bid-1',
+      adUnitCode: 'div-nexverse-test',
+      bidder: 'nexverse',
+      params: { uid: '77d4a2eb3d209ce6c7691dc79fcab358', pubId: '24051', pubEpid: '34561' },
+      mediaTypes: { banner: { sizes: [[300, 250]] } },
+      sizes: [[300, 250]],
+    };
+    const baseBidderRequest = {
+      auctionId: 'auction-1',
+      refererInfo: { page: 'https://example.com/page', domain: 'example.com', ref: '' },
+    };
+
+    function buyeruidFor(bidderRequest) {
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      return JSON.parse(request.data).user.buyeruid;
+    }
+
+    it('should send ortb2.user.buyeruid as user.buyeruid', function () {
+      expect(buyeruidFor({ ...baseBidderRequest, ortb2: { user: { buyeruid: 'buyer-123' } } })).to.equal('buyer-123');
+    });
+
+    it('should send an empty user.buyeruid when no buyeruid is provided', function () {
+      expect(buyeruidFor(baseBidderRequest)).to.equal('');
+    });
+  });
+
   describe('getUserSyncs', () => {
     it('includes configured COPPA in the sync URL', () => {
       const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, true);

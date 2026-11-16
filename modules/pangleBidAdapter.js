@@ -57,10 +57,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   });
   const devicetype = spec.getDeviceType(navigator.userAgent);
   deepSetValue(data, 'device.devicetype', devicetype);
-  if (bidderRequest.userId && typeof bidderRequest.userId === 'object') {
+  // add the pangle cookie alongside user IDs (Prebid 10+ provides them only as EIDs)
+  const _eids = data.user?.ext?.eids ?? [];
+  if (_eids.length > 0) {
     const pangleId = getPangleCookieId();
-    // add pangle cookie
-    const _eids = data.user?.ext?.eids ?? [];
     deepSetValue(data, 'user.ext.eids', [
       ..._eids,
       {
