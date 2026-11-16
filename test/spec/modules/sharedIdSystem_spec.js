@@ -61,10 +61,11 @@ describe('SharedId System', function () {
           expires: 10
         }
       };
-      let pixelDone;
+      let pixelDone, clock;
 
       beforeEach(function () {
         pixelDone = null;
+        clock = sandbox.useFakeTimers();
         sandbox.stub(utils, 'triggerPixel').callsFake((url, done) => { pixelDone = done; });
       });
 
@@ -74,49 +75,50 @@ describe('SharedId System', function () {
         expect(result.callback).to.be.a('function');
       });
 
-      const nextTask = () => new Promise(resolve => setTimeout(resolve, 10));
-
-      it('should fire the pixel with the new id and complete once it has loaded', async function () {
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
+      it('should fire the pixel with the new id and complete once it has loaded', function () {
+        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include(UUID);
         sinon.assert.notCalled(callbackSpy);
         pixelDone();
-        // storage is re-read on the next task, so the callback has not completed yet
+        // storage is read on the next task, so the callback has not completed yet
         sinon.assert.notCalled(callbackSpy);
-        await nextTask();
+        clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
       });
 
-      it('should complete without an id when storage holds one after the pixel, so the server-set cookie is not rewritten', async function () {
+      it('should complete without an id when storage still holds the minted one after the re-check, so the server-set cookie is not rewritten', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
         pixelDone();
-        await nextTask();
+        clock.tick(0);
+        // storage still holds the minted id, so it is read again a little later
+        sinon.assert.notCalled(callbackSpy);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.be.undefined;
       });
 
-      it('should adopt the id the server generated when create is false and getId returned none', async function () {
+      it('should adopt the id the server generated when create is false and getId returned none', function () {
         const noCreate = { ...config, params: { ...config.params, create: false } };
         const result = sharedIdSystemSubmodule.getId(noCreate, undefined);
         expect(result.id).to.be.undefined;
         result.callback(callbackSpy, () => 'server-generated-id');
         pixelDone();
-        await nextTask();
+        clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.equal('server-generated-id');
       });
 
-      it('should adopt a different id the server set, for example one it restored', async function () {
+      it('should adopt a different id the server set, for example one it restored', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
         pixelDone();
-        await nextTask();
+        clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
       });
 
-      it('should adopt an id that only becomes visible in storage after the pixel load event', async function () {
+      it('should adopt an id that only becomes visible in storage after the pixel load event', function () {
         // In some WebKit builds the pixel response's Set-Cookie is not yet applied at the load
         // event, so storage still holds the minted id synchronously; it shows the restored id
         // by the next task (see #16158).
@@ -124,18 +126,40 @@ describe('SharedId System', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => storedId);
         pixelDone();
         storedId = 'restored-by-server';
-        await nextTask();
+        clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
       });
 
-      it('should complete without an id when the server removed the cookie, so script does not write it back', async function () {
+      it('should adopt an id that only becomes visible in storage at the re-check', function () {
+        let storedId = UUID;
+        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => storedId);
+        pixelDone();
+        clock.tick(0);
+        sinon.assert.notCalled(callbackSpy);
+        storedId = 'restored-by-server';
+        clock.tick(50);
+        sinon.assert.calledOnce(callbackSpy);
+        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+      });
+
+      it('should complete without an id when the server removed the cookie, so script does not write it back', function () {
         // e.g. the endpoint deleted it for Global Privacy Control or denied consent
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
         pixelDone();
-        await nextTask();
+        clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+      });
+
+      it('should still complete, without an id, when reading storage throws', function () {
+        sandbox.stub(utils, 'logError');
+        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => { throw new Error('storage unavailable'); });
+        pixelDone();
+        clock.tick(0);
+        sinon.assert.calledOnce(callbackSpy);
+        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        sinon.assert.calledOnce(utils.logError);
       });
     });
     it('should abort if coppa is set', function () {
