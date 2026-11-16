@@ -230,17 +230,47 @@ export class Uid2StorageManager {
   }
 }
 
-function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
+// The parts of a stored value that say whose identity it is: the token the publisher supplied, or the (hashed) DII used
+// for client-side token generation. Refreshing a token changes latestToken but none of these.
+function storedIdentityKey(storedValue) {
+  if (!storedValue || typeof storedValue !== 'object') return JSON.stringify(storedValue ?? null);
+  return JSON.stringify([
+    storedValue.originalToken?.advertising_token ?? null,
+    storedValue.originalIdentity?.identity ?? null,
+    storedValue.originalIdentity?.salt ?? null,
+  ]);
+}
+
+/**
+ * Refresh `token` and store the result.
+ * @param {string} baseUrl
+ * @param {object} token the token to refresh
+ * @param {string} clientId
+ * @param {Uid2StorageManager} storageManager
+ * @param {function} _logInfo
+ * @param {function} _logWarn
+ * @param {object} [original] what the refreshed token was originally derived from, kept in storage so later page
+ * loads can tell whether it still belongs to the current user: `originalToken` (the token the publisher supplied,
+ * defaults to `token`) and `originalIdentity` (for client-side token generation).
+ * @returns {Promise<object>} the stored tokens. If the stored identity changed while the request was in flight (another
+ * user logged in), the result is discarded and the tokens now in storage are returned instead.
+ */
+function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn, original = {}) {
   _logInfo('UID2 base url provided: ', baseUrl);
   const client = new Uid2ApiClient({ baseUrl }, clientId, _logInfo, _logWarn);
+  const identityAtRequest = storedIdentityKey(storageManager.getStoredValueWithFallback());
   return client.callRefreshApi(token).then((response) => {
     _logInfo('Refresh endpoint responded with:', response);
+    const storedTokens = storageManager.getStoredValueWithFallback();
+    if (storedTokens && storedIdentityKey(storedTokens) !== identityAtRequest) {
+      _logWarn('UID2 shared library - Stored identity changed while a token refresh was in flight; discarding the refreshed token.');
+      return storedTokens;
+    }
     const tokens = {
-      originalToken: token,
+      originalToken: original.originalToken ?? token,
       latestToken: response.identity,
     };
-    const storedTokens = storageManager.getStoredValueWithFallback();
-    if (storedTokens?.originalIdentity) tokens.originalIdentity = storedTokens.originalIdentity;
+    if (original.originalIdentity) tokens.originalIdentity = original.originalIdentity;
     storageManager.storeValue(tokens);
     return tokens;
   });
@@ -390,7 +420,10 @@ if (FEATURES.UID2_CSTG) {
       }
 
       try {
-        return btoa(atob(value)) === value;
+        // A SHA-256 hash is 32 bytes. 44 Base64 characters can also encode 33 bytes (with no padding), so check the
+        // decoded length too.
+        const decoded = atob(value);
+        return decoded.length === 32 && btoa(decoded) === value;
       } catch (err) {
         return false;
       }
@@ -762,12 +795,18 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
   logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  // Whatever we store keeps pointing at the token the publisher supplied (or the CSTG identity), across any number of
+  // refreshes, so that the originalToken / originalIdentity checks above keep accepting it on later page loads.
+  const original = {
+    originalToken: suppliedToken ?? storedTokens?.originalToken,
+    originalIdentity: storedTokens?.originalIdentity,
+  };
   if ((!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires)) {
     logInfo('Newest available token is expired and not refreshable.');
     return { id: null };
   }
   if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn, original);
     logInfo('Token is expired but can be refreshed, attempting refresh.');
     return {
       callback: (cb) => {
@@ -779,11 +818,11 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     };
   }
   const tokens = {
-    originalToken: suppliedToken ?? storedTokens?.originalToken,
+    originalToken: original.originalToken,
     latestToken: newestAvailableToken,
   };
   if (FEATURES.UID2_CSTG && isCstgEnabled) {
-    tokens.originalIdentity = storedTokens?.originalIdentity;
+    tokens.originalIdentity = original.originalIdentity;
   }
   storageManager.storeValue(tokens);
 
@@ -791,7 +830,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   // Return both immediate id and callback so idObj gets updated when refresh completes.
   if (Date.now() > newestAvailableToken.refresh_from) {
     logInfo(`Refreshing token in background with low priority.`);
-    const refreshPromise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    const refreshPromise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn, original);
     return {
       id: tokens,
       callback: (cb) => {
