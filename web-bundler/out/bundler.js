@@ -1,6 +1,7 @@
 import { parseParams } from '../options.mjs';
-import { checkAndRun, loadModules, scriptLoader, getManifest } from '../load.mjs';
+import { checkAndRun, loadModules, scriptLoader, getManifests, MANIFEST, METADATA_MANIFEST } from '../load.mjs';
 import manifestChecksum from 'manifest.js.checksum';
+import metadataManifestChecksum from 'manifest.metadata.js.checksum';
 import {injectBuildOptions} from 'injectBuildOptions';
 
 const options = parseParams(new URL(document.currentScript.src).search);
@@ -13,6 +14,7 @@ const global = options.buildOptions.pbGlobal;
 checkAndRun(global, () => {
   injectBuildOptions(options.buildOptions);
   const loader = scriptLoader(options.buildOptions.distUrlBase, scope);
-  return getManifest(loader, manifestChecksum)
+  const checksums = { [MANIFEST]: manifestChecksum, [METADATA_MANIFEST]: metadataManifestChecksum };
+  return getManifests(loader, checksums, scope, options.modules)
     .then(manifest => loadModules(loader, manifest, options.modules));
 });

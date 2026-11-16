@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adhashBidAdapter.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
+import { deepClone } from 'src/utils.js';
 
 describe('adhashBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -26,43 +28,43 @@ describe('adhashBidAdapter', function () {
     });
 
     it('should return false when there are no params', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when unsupported media type is requested', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.mediaTypes = { native: { sizes: [[300, 250]] } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when publisherId is not a string', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.publisherId = 123;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when publisherId is not valid', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.publisherId = 'short string';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when publisherId is not a string', function () {
-      const bid = { ...validBid };
+    it('should return false when platformURL is not a string', function () {
+      const bid = deepClone(validBid);
       bid.params.platformURL = 123;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when publisherId is not valid', function () {
-      const bid = { ...validBid };
+    it('should return false when platformURL is not valid', function () {
+      const bid = deepClone(validBid);
       bid.params.platformURL = 'https://';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when bidderURL is present but not https://', function () {
-      const bid = { ...validBid };
+      const bid = deepClone(validBid);
       bid.params.bidderURL = 'http://example.com/';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -81,6 +83,23 @@ describe('adhashBidAdapter', function () {
         }
       }
     };
+    it('preserves page dimensions used for ad density, including offset measurements', function () {
+      const dimensions = sinon.stub(winDimensions, 'getWinDimensions').returns({
+        document: {
+          body: { scrollHeight: 100, offsetHeight: 500, scrollWidth: 200, offsetWidth: 600 },
+          documentElement: { clientHeight: 200, scrollHeight: 300, offsetHeight: 400, clientWidth: 300, scrollWidth: 400, offsetWidth: 500 }
+        }
+      });
+      try {
+        const [request] = spec.buildRequests([bidRequest], { gdprConsent: {} });
+        expect(request.data.pageHeight).to.equal(500);
+        expect(request.data.pageWidth).to.equal(600);
+        sinon.assert.calledWithExactly(dimensions, window);
+      } finally {
+        dimensions.restore();
+      }
+    });
+
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [bidRequest],

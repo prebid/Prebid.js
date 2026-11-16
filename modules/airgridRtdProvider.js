@@ -6,7 +6,7 @@
  * @requires module:modules/realTimeData
  */
 import { submodule } from '../src/hook.js';
-import { deepAccess, deepSetValue, mergeDeep } from '../src/utils.js';
+import { deepSetValue, mergeDeep } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
@@ -69,7 +69,7 @@ export function getMatchedAudiencesFromStorage() {
  * @return {void}
  */
 export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
-  const bidders = deepAccess(rtdConfig, 'params.bidders');
+  const bidders = rtdConfig?.params?.bidders;
   if (!bidders || bidders.length === 0 || !audiences || audiences.length === 0) return;
 
   const agOrtb2 = {};

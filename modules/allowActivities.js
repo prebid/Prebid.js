@@ -1,6 +1,10 @@
 import { config } from '../src/config.js';
 import { registerActivityControl } from '../src/activities/rules.js';
 
+/**
+ * @typedef {import('./allowActivities.d.ts').AllowActivitiesConfig} AllowActivitiesConfig
+ */
+
 const CFG_NAME = 'allowActivities';
 const RULE_NAME = `${CFG_NAME} config`;
 const DEFAULT_PRIORITY = 1;

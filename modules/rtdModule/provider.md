@@ -5,12 +5,16 @@ New provider must include the following:
 |  param name | type  | Scope | Description | Params |
 | :------------ | :------------ | :------ | :------ | :------ |
 | name  | string  | required | must match the name provided by the publisher in the on-page config | n/a |
-|  init | function | required | defines the function that does any auction-level initialization required | config, userConsent |
-|  getTargetingData  | function | optional | defines a function that provides ad server targeting data to RTD-core | adUnitArray, config, userConsent |
-|  getBidRequestData  | function | optional | defines a function that provides ad server targeting data to RTD-core | reqBidsConfigObj, callback, config, userConsent  |
-|  onAuctionInitEvent | function | optional | listens to the AUCTION_INIT event and calls a sub-module function that lets it inspect and/or update the auction | auctionDetails, config, userConsent |
-|  onAuctionEndEvent | function |optional | listens to the AUCTION_END event and calls a sub-module function that lets it know when auction is done | auctionDetails, config, userConsent |
-|  onBidResponseEvent | function |optional | listens to the BID_RESPONSE event and calls a sub-module function that lets it know when a bid response has been collected | bidResponse, config, userConsent |
+| gvlid | number or number[] | optional | global vendor list ID(s) of the submodule | n/a |
+|  init | function | required | performs any initialization the submodule needs; return `true` to enable the submodule, `false` to disable it | config, userConsent |
+|  getTargetingData  | function | optional | provides ad server targeting data to RTD-core | adUnitCodes, config, userConsent, auction |
+|  getBidRequestData  | function | optional | updates the auction's request (ad units, `ortb2Fragments`) before it starts; must call `callback` when done | reqBidsConfigObj, callback, config, userConsent, timeout |
+|  onAuctionInitEvent | function | optional | called on the AUCTION_INIT event | auctionDetails, config, userConsent |
+|  onAuctionEndEvent | function |optional | called on the AUCTION_END event | auctionDetails, config, userConsent |
+|  onBidRequestEvent | function |optional | called on the BID_REQUESTED event | bidderRequest, config, userConsent |
+|  onBidResponseEvent | function |optional | called on the BID_RESPONSE event | bidResponse, config, userConsent |
+|  onBidAcceptedEvent | function |optional | called on the BID_ACCEPTED event | bid, config, userConsent |
+|  onDataDeletionRequest | function |optional | called when the USP CMP registers a data deletion request (`registerDeletion`) | config |
 
 2. `getTargetingData` function (if defined) should return ad unit targeting data according to the following structure:
 ```json

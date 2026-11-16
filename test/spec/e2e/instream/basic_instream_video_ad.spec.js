@@ -8,11 +8,11 @@ const EXPECTED_TARGETING_KEYS = {
   hb_format: 'video',
   hb_size: '640x480',
   hb_pb: '10.00',
-  hb_bidder: 'appnexus',
-  hb_format_appnexus: 'video',
-  hb_size_appnexus: '640x480',
-  hb_pb_appnexus: '10.00',
-  hb_bidder_appnexus: 'appnexus'
+  hb_bidder: 'msft',
+  hb_format_msft: 'video',
+  hb_size_msft: '640x480',
+  hb_pb_msft: '10.00',
+  hb_bidder_msft: 'msft'
 };
 setupTest({
   url: TEST_PAGE_URL,
@@ -26,8 +26,8 @@ setupTest({
     const targetingKeys = result['video1'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     expect(targetingKeys.hb_adid).to.be.a('string');
-    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_adid_msft).to.be.a('string');
     expect(targetingKeys.hb_uuid).to.be.a('string');
-    expect(targetingKeys.hb_uuid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_uuid_msft).to.be.a('string');
   });
 });

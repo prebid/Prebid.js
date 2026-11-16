@@ -1,5 +1,5 @@
 import { VIDEO_CUSTOM_PARAMS, parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets, getResponseMeta, getDomainFromURL } from '../libraries/adtruePwbidUtils/bidderUtils.js';
-import { logWarn, isArray, inIframe, isStr, deepClone, deepSetValue, logError, deepAccess } from '../src/utils.js';
+import { logWarn, isArray, inIframe, isStr, deepClone, deepSetValue, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -404,7 +404,7 @@ export const spec = {
       return [];
     }
     return responses.reduce((accum, rsp) => {
-      const cookieSyncs = deepAccess(rsp, 'body.ext.cookie_sync');
+      const cookieSyncs = rsp?.body?.ext?.cookie_sync;
       if (cookieSyncs) {
         const cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {

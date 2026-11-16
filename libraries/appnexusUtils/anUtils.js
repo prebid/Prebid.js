@@ -2,7 +2,9 @@
  * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
  * @param {string} value string value to convert
  */
-import { deepClone, isPlainObject } from '../../src/utils.js';
+import { deepClone, isArray, isArrayOfNums, isNumber, isPlainObject, logError } from '../../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
+import { transformSizes } from '../sizeUtils/tranformSize.js';
 
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) {
@@ -36,4 +38,170 @@ export function fill(value, length) {
   }
 
   return newArray;
+}
+
+/**
+ * The /ut `user` fields for a bid's `params.user`: names in snake case, and `segments` as `{id}` objects (numbers)
+ * or objects as given.
+ * @param {Object} user the bid's `params.user`
+ * @param {string[]} [allowedParams] the params to pass on; all if not given
+ */
+export function convertUserParams(user, allowedParams) {
+  const userObj = {};
+  Object.keys(user)
+    .filter(param => !allowedParams || allowedParams.includes(param))
+    .forEach(param => {
+      const uparam = convertCamelToUnderscore(param);
+      if (param === 'segments' && isArray(user[param])) {
+        const segs = [];
+        user[param].forEach(val => {
+          if (isNumber(val)) {
+            segs.push({ id: val });
+          } else if (isPlainObject(val)) {
+            segs.push(val);
+          }
+        });
+        userObj[uparam] = segs;
+      } else if (param !== 'segments') {
+        userObj[uparam] = user[param];
+      }
+    });
+  return userObj;
+}
+
+/**
+ * The /ut `app` object for the first bid with `params.app`: its allowed params, if there is such a bid.
+ */
+export function getAppDeviceObj(appDeviceObjBid, allowedParams) {
+  if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
+    const appDeviceObj = {};
+    Object.keys(appDeviceObjBid.params.app)
+      .filter(param => allowedParams.includes(param))
+      .forEach(param => {
+        appDeviceObj[param] = appDeviceObjBid.params.app[param];
+      });
+    return appDeviceObj;
+  }
+}
+
+/**
+ * The /ut `app` id object for the first bid with `params.app.id`, if there is one (and the app bid has an id too).
+ */
+export function getAppIdObj(appIdObjBid, appDeviceObjBid) {
+  if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
+    return {
+      appid: appIdObjBid.params.app.id
+    };
+  }
+}
+
+/**
+ * Whether a /ut response body is missing or an error, logging it if so.
+ */
+export function isErrorResponse(body, bidderRequest) {
+  if (!body || body.error) {
+    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
+    if (body && body.error) {
+      errorMessage += `: ${body.error}`;
+    }
+    logError(errorMessage);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Whether the bid's `member` param is set (a non-zero number).
+ */
+export function hasMemberId(bid) {
+  return !!parseInt(bid.params.member, 10);
+}
+
+/**
+ * The first ad in a /ut response tag that has an RTB bid, if any.
+ */
+export function getRtbBid(tag) {
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
+}
+
+/**
+ * The Prebid media type of an RTB bid from a /ut response, from its `ad_type`.
+ */
+export function parseMediaType(rtbBid) {
+  const adType = rtbBid.ad_type;
+  if (adType === VIDEO) {
+    return VIDEO;
+  } else if (adType === NATIVE) {
+    return NATIVE;
+  } else {
+    return BANNER;
+  }
+}
+
+/**
+ * Passes an event from the AppNexus outstream renderer (ANOutstreamVideo) on to the bid's renderer.
+ */
+export function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
+}
+
+/**
+ * Prebid's native asset names that /ut names differently. A mapping is either the /ut name, or
+ * `{serverName, requiredParams}` with params that are always sent for the asset.
+ */
+export const NATIVE_MAPPING = {
+  body: 'description',
+  body2: 'desc2',
+  cta: 'ctatext',
+  image: {
+    serverName: 'main_image',
+    requiredParams: { required: true }
+  },
+  icon: {
+    serverName: 'icon',
+    requiredParams: { required: true }
+  },
+  sponsoredBy: 'sponsored_by',
+  privacyLink: 'privacy_link',
+  salePrice: 'saleprice',
+  displayUrl: 'displayurl'
+};
+
+/**
+ * The /ut native request for an ad unit's native params.
+ */
+export function buildNativeRequest(params) {
+  const request = {};
+
+  // map standard prebid native asset identifier to /ut parameters
+  // e.g., tag specifies `body` but /ut only knows `description`.
+  // mapping may be in form {tag: '<server name>'} or
+  // {tag: {serverName: '<server name>', requiredParams: {...}}}
+  Object.keys(params).forEach(key => {
+    // check if one of the <server name> forms is used, otherwise
+    // a mapping wasn't specified so pass the key straight through
+    const requestKey =
+      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
+      NATIVE_MAPPING[key] ||
+      key;
+
+    // required params are always passed on request
+    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
+    request[requestKey] = Object.assign({}, requiredParams, params[key]);
+
+    // convert the sizes of image/icon assets to proper format (if needed)
+    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
+    if (isImageAsset && request[requestKey].sizes) {
+      const sizes = request[requestKey].sizes;
+      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
+        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
+      }
+    }
+
+    if (requestKey === NATIVE_MAPPING.privacyLink) {
+      request.privacy_supported = true;
+    }
+  });
+
+  return request;
 }

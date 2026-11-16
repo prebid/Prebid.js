@@ -494,6 +494,18 @@ describe('Taboola Adapter', function () {
     });
 
     describe('first party data', function () {
+      it('should use params.bcat, badv and wlang when the bidder request has no ortb2', function () {
+        const { ortb2, ...bidderRequest } = commonBidderRequest;
+        const bidRequest = {
+          ...defaultBidRequest,
+          params: { ...commonBidRequest.params, bcat: ['IAB1'], badv: ['blocked.com'], wlang: ['fr'] }
+        };
+        const [res] = spec.buildRequests([bidRequest], bidderRequest);
+        expect(res.data.bcat).to.deep.equal(['IAB1']);
+        expect(res.data.badv).to.deep.equal(['blocked.com']);
+        expect(res.data.wlang).to.deep.equal(['fr']);
+      });
+
       it('should parse first party data', function () {
         const bidderRequest = {
           ...commonBidderRequest,
@@ -650,6 +662,22 @@ describe('Taboola Adapter', function () {
         const [res] = spec.buildRequests([defaultBidRequest], { ...commonBidderRequest, ortb2 });
         expect(res.data.regs.ext.gpp).to.equal('testGpp');
         expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3]);
+      });
+
+      it('should keep the OpenRTB 2.6 regs fields from ortb2 when it has no regs.ext', function () {
+        const ortb2 = {
+          regs: {
+            gpp: 'testGpp',
+            gpp_sid: [1, 2, 3],
+            us_privacy: '1YNN',
+            gdpr: 1
+          }
+        };
+
+        const [res] = spec.buildRequests([defaultBidRequest], { ...commonBidderRequest, ortb2 });
+        expect(res.data.regs).to.include({ gpp: 'testGpp', us_privacy: '1YNN', gdpr: 1 });
+        expect(res.data.regs.gpp_sid).to.deep.equal([1, 2, 3]);
+        expect(res.data.regs.ext.gpp).to.equal('testGpp');
       });
 
       it('should pass us privacy consent', function () {

@@ -50,11 +50,13 @@ export const unifiedIdSubmodule = {
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
-    if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
+    const hasValidPartner = typeof configParams.partner === 'string' && configParams.partner.trim() !== '';
+    const hasValidUrl = typeof configParams.url === 'string' && configParams.url.trim() !== '';
+    if (!hasValidPartner && !hasValidUrl) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
-    let url = configParams.url;
+    let url = hasValidUrl ? configParams.url : undefined;
     const customUrl = url && parseUrl(url, { noDecodeWholeURL: true });
     if (!url || customUrl.hostname === 'match.adsrvr.org') {
       const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };

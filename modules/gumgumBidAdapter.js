@@ -152,7 +152,7 @@ function isBidRequestValid(bid) {
     adUnitCode
   } = bid;
   const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
-  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
+  const id = legacyParamID || params.slot || params.native || params.zone || params.pubId;
 
   if (invalidRequestIds[id]) {
     logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);

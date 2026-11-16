@@ -19,6 +19,7 @@ const DIST_TEST = path.join(DIST, 'test') + path.sep;
 // root-relative URLs
 const STUBS = '/test/vitest/stubs.mjs';
 const HOOK_SETUP = '/dist/src/test/helpers/hookSetup.js';
+const STATE_GUARD = '/test/vitest/stateGuard.mjs';
 // what webpack resolves bare specifiers against first (resolve.modules in webpack.conf.js): `src/`, `modules/`,
 // `test/`, ..., and top-level files such as `buildOptions.mjs`
 export const DIST_ENTRIES = fs.existsSync(DIST)
@@ -98,7 +99,8 @@ function transformFile(code, id, { coverage, facades }) {
     out = result.code;
     map = result.map;
   }
-  if (isSpec(id)) out += `\nawait import('${HOOK_SETUP}');\n`;
+  // hookSetup.js as Karma loaded it, then the window.top state guard, whose afterAll runs after the spec's own
+  if (isSpec(id)) out += `\nawait import('${HOOK_SETUP}');\n(await import('${STATE_GUARD}')).registerStateGuard();\n`;
   return out === code ? null : { code: out, map };
 }
 

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { cookieName, cookieValues, cookieSettler } from '../vitest/cookies.mjs';
+import { cookieName, cookieValues, cookieSettler, expiringAssignments } from '../vitest/cookies.mjs';
 
 describe('Vitest cookie settling (test/vitest/cookies.mjs)', function () {
   it('cookieName', function () {
@@ -90,5 +90,19 @@ describe('Vitest cookie settling (test/vitest/cookies.mjs)', function () {
       expect(await s.settle()).to.eql({ ms: 20, timedOut: true });
       expect(s.settle()).to.equal(null);
     });
+  });
+
+  it('expiringAssignments', function () {
+    const EXPIRES = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    expect(expiringAssignments('a=1; nameless; a=2; b=', { hostname: 'sub.example.com', pathname: '/dir/page.html' })).to.eql(
+      ['a=', 'nameless', 'b='].flatMap(pair => ['/', '/dir', '/dir/page.html'].flatMap(path =>
+        [null, 'sub.example.com', 'example.com'].map(domain => `${pair}; ${EXPIRES}; path=${path}${domain ? `; domain=${domain}` : ''}`)
+      ))
+    );
+    expect(expiringAssignments('a=1', { hostname: 'localhost', pathname: '/' })).to.eql([
+      `a=; ${EXPIRES}; path=/`,
+      `a=; ${EXPIRES}; path=/; domain=localhost`,
+    ]);
+    expect(expiringAssignments('', { hostname: 'localhost', pathname: '/' })).to.eql([]);
   });
 });

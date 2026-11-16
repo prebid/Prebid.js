@@ -6,19 +6,31 @@
       "maxAgeSeconds": 31536000,
       "cookieRefresh": false,
       "domains": ["*"],
-      "purposes": []
+      "purposes": [],
+      "optOut": true
     },
     {
       "identifier": "_pubcid_optout",
       "type": "web",
       "domains": ["*"],
-      "purposes": []
+      "purposes": [],
+      "optOut": true
     },
     {
       "identifier": "_pubcid_optout_exp",
       "type": "web",
       "domains": ["*"],
-      "purposes": []
+      "purposes": [],
+      "optOut": true
+    },
+    {
+      "identifier": "_gd*_sharedId",
+      "type": "cookie",
+      "maxAgeSeconds": 0,
+      "cookieRefresh": false,
+      "domains": ["*"],
+      "purposes": [1],
+      "description": "Temporary probing cookie, written and immediately deleted, to determine the top-level domain on which cookies can be set"
     }
   ],
   "domains": [

@@ -14,6 +14,11 @@ import {
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
+  it('declares its Google Additional Consent provider ID instead of the deleted GVL ID', () => {
+    expect(spec.acpId).to.equal(21731);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
   describe('function getImp', () => {
     const dataTests = [
       {

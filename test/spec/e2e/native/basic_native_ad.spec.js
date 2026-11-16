@@ -5,14 +5,14 @@ const TEST_PAGE_URL = testPageURL('native.html?pbjs_debug=true');
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_native_example_1_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  hb_pb_appnexus: '10.00',
+  hb_pb_msft: '10.00',
   hb_format: 'native',
   hb_size: '0x0',
-  hb_bidder_appnexus: 'appnexus',
+  hb_bidder_msft: 'msft',
   hb_pb: '10.00',
-  hb_bidder: 'appnexus',
-  hb_format_appnexus: 'native',
-  hb_size_appnexus: '0x0'
+  hb_bidder: 'msft',
+  hb_format_msft: 'native',
+  hb_size_msft: '0x0'
 };
 
 setupTest({
