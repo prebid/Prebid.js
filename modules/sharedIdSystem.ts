@@ -84,43 +84,49 @@ function readValue(name, type) {
 // this page view minted.
 const PIXEL_RECHECK_MS = 50;
 
-function getIdCallback(pubcid, pixelUrl) {
+/**
+ * Fire the pixel, then report what storage holds once the endpoint has had the chance to set or delete the cookie.
+ * @param pubcid the id this page view already holds: the one getId minted or found, or extendId's stored id
+ * @param pixelUrl the pixel endpoint
+ */
+function pixelSyncCallback(pubcid, pixelUrl) {
   return function (callback, getStoredId) {
-    if (pixelUrl) {
-      queuePixelCallback(pixelUrl, pubcid, () => {
-        // By now the User ID module has stored `pubcid` (getId's `id`, when there is one), and the pixel endpoint has
-        // had the chance to set the cookie from the server. Storage is read on the next task, not synchronously in the
-        // pixel's load handler: in some WebKit builds the response's Set-Cookie is not yet visible in document.cookie
-        // at the load event, so a synchronous read can miss an id the endpoint set, for example one it restored
-        // (see #16158). If storage still holds the minted id then, it is read once more after a short delay.
-        // - A different id: the server generated or restored it (for example with `create: false`, where getId
-        //   returned no id), so adopt it.
-        // - The same id: complete without one; passing it would have the User ID module write it again from script,
-        //   turning the server-set cookie back into a script-set one.
-        // - No id: the endpoint removed the cookie (for example for Global Privacy Control or denied consent);
-        //   complete without one, so script doesn't write back what the server deleted.
-        const complete = (storedId) => callback(storedId && storedId !== pubcid ? storedId : undefined);
-        const read = (recheck) => {
-          let storedId;
-          try {
-            storedId = getStoredId();
-          } catch (e) {
-            logError('sharedId: could not read the stored id after the pixel', e);
-            complete(undefined);
-            return;
-          }
-          if (recheck && storedId && storedId === pubcid) {
-            setTimeout(() => read(false), PIXEL_RECHECK_MS);
-          } else {
-            complete(storedId);
-          }
-        };
-        setTimeout(() => read(true), 0);
-      })();
-    } else {
-      callback(pubcid);
-    }
+    queuePixelCallback(pixelUrl, pubcid, () => {
+      // By now the User ID module has stored `pubcid` (getId's `id`, when there is one), and the pixel endpoint has
+      // had the chance to set the cookie from the server. Storage is read on the next task, not synchronously in the
+      // pixel's load handler: in some WebKit builds the response's Set-Cookie is not yet visible in document.cookie
+      // at the load event, so a synchronous read can miss an id the endpoint set, for example one it restored
+      // (see #16158). If storage still holds `pubcid` then, it is read once more after a short delay.
+      // What storage holds is reported with `fromStorage`, so the User ID module mirrors it in memory without
+      // writing it back from script, which would turn the server-set cookie back into a script-set one:
+      // - a different id: the server generated or restored it (for example with `create: false`, where getId
+      //   returned no id), so it is adopted;
+      // - the same id: nothing changes;
+      // - no id: the endpoint removed the cookie (for example for Global Privacy Control or denied consent), so the
+      //   id is dropped from memory too, and later auctions on this page don't send it.
+      const read = (recheck) => {
+        let storedId;
+        try {
+          storedId = getStoredId();
+        } catch (e) {
+          logError('sharedId: could not read the stored id after the pixel', e);
+          // what storage holds is unknown: complete without changing anything
+          callback(undefined);
+          return;
+        }
+        if (recheck && storedId && storedId === pubcid) {
+          setTimeout(() => read(false), PIXEL_RECHECK_MS);
+        } else {
+          callback(storedId || undefined, { fromStorage: true });
+        }
+      };
+      setTimeout(() => read(true), 0);
+    })();
   };
+}
+
+function getIdCallback(pubcid, pixelUrl) {
+  return pixelUrl ? pixelSyncCallback(pubcid, pixelUrl) : (callback) => callback(pubcid);
 }
 
 function queuePixelCallback(pixelUrl, id = '', callback?) {
@@ -217,11 +223,10 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     if (extend) {
       if (pixelUrl) {
         // Complete the callback once the pixel settles so the User ID module's batch (and
-        // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
-        // would have the User ID module re-store it, overwriting the server-set cookie from script.
-        return {
-          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined))()
-        };
+        // getUserIdsAsync / auctions waiting on it) can finish. It reports what storage then holds without
+        // having it re-stored, which would overwrite the server-set cookie from script; if the endpoint deleted
+        // the cookie, the id is dropped from memory as well.
+        return { callback: pixelSyncCallback(storedId, pixelUrl) };
       } else {
         return { id: storedId };
       }

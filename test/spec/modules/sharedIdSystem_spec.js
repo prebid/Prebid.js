@@ -88,7 +88,7 @@ describe('SharedId System', function () {
         sinon.assert.calledOnce(callbackSpy);
       });
 
-      it('should complete without an id when storage still holds the minted one after the re-check, so the server-set cookie is not rewritten', function () {
+      it('should report the minted id as already stored when storage still holds it after the re-check, so the server-set cookie is not rewritten', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
         pixelDone();
         clock.tick(0);
@@ -96,7 +96,7 @@ describe('SharedId System', function () {
         sinon.assert.notCalled(callbackSpy);
         clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        sinon.assert.calledWithExactly(callbackSpy, UUID, { fromStorage: true });
       });
 
       it('should adopt the id the server generated when create is false and getId returned none', function () {
@@ -107,15 +107,16 @@ describe('SharedId System', function () {
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('server-generated-id');
+        sinon.assert.calledWithExactly(callbackSpy, 'server-generated-id', { fromStorage: true });
       });
 
-      it('should adopt a different id the server set, for example one it restored', function () {
+      it('should adopt a different id the server set, for example one it restored, as already stored', function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+        // fromStorage: the User ID module must not write it again from script
+        sinon.assert.calledWithExactly(callbackSpy, 'restored-by-server', { fromStorage: true });
       });
 
       it('should adopt an id that only becomes visible in storage after the pixel load event', function () {
@@ -143,13 +144,13 @@ describe('SharedId System', function () {
         expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
       });
 
-      it('should complete without an id when the server removed the cookie, so script does not write it back', function () {
+      it('should report that storage is empty when the server removed the cookie, so the id is dropped and not written back', function () {
         // e.g. the endpoint deleted it for Global Privacy Control or denied consent
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        sinon.assert.calledWithExactly(callbackSpy, undefined, { fromStorage: true });
       });
 
       it('should still complete, without an id, when reading storage throws', function () {
@@ -158,7 +159,8 @@ describe('SharedId System', function () {
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        // what storage holds is unknown, so nothing is reported as stored
+        sinon.assert.calledWithExactly(callbackSpy, undefined);
         sinon.assert.calledOnce(utils.logError);
       });
     });
@@ -205,10 +207,11 @@ describe('SharedId System', function () {
           expires: 10
         }
       };
-      let pixelDone;
+      let pixelDone, clock;
 
       beforeEach(function () {
         pixelDone = null;
+        clock = sandbox.useFakeTimers();
         sandbox.stub(utils, 'triggerPixel').callsFake((url, done) => { pixelDone = done; });
       });
 
@@ -225,18 +228,28 @@ describe('SharedId System', function () {
         expect(utils.triggerPixel.firstCall.args[0]).to.include('TestId');
       });
 
-      it('should complete the callback once the pixel has loaded', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy);
+      it('should complete the callback once the pixel has loaded and storage has been read', function () {
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, () => 'TestId');
         sinon.assert.notCalled(callbackSpy);
         expect(pixelDone).to.be.a('function');
         pixelDone();
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
       });
 
-      it('should complete the callback without an id, so the server-set cookie is not rewritten', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy);
+      it('should report the id as already stored, so the server-set cookie is not rewritten', function () {
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, () => 'TestId');
         pixelDone();
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        clock.tick(50);
+        sinon.assert.calledWithExactly(callbackSpy, 'TestId', { fromStorage: true });
+      });
+
+      it('should report that storage is empty when the server removed the cookie, so the stored id is dropped', function () {
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, () => undefined);
+        pixelDone();
+        clock.tick(0);
+        sinon.assert.calledOnce(callbackSpy);
+        sinon.assert.calledWithExactly(callbackSpy, undefined, { fromStorage: true });
       });
     });
     it('should abort if coppa is set', function () {

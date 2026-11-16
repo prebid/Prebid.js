@@ -474,6 +474,120 @@ describe('User ID', function () {
       }
     });
 
+    describe('with pixelUrl, once the pixel endpoint has set or deleted the cookie', function () {
+      let clock, nativeCookie, scriptWrites, writesBeforePixel, triggerPixel;
+
+      beforeEach(function () {
+        // fake only the timers: setStoredValue derives cookie expiry from Date.now()
+        clock = sinon.useFakeTimers({ now: Date.now(), toFake: ['setTimeout', 'clearTimeout'] });
+        // record script writes to document.cookie, and how many came before the pixel fired
+        let proto = Object.getPrototypeOf(document);
+        while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
+        nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
+        scriptWrites = [];
+        writesBeforePixel = null;
+        Object.defineProperty(document, 'cookie', {
+          configurable: true,
+          get() { return nativeCookie.get.call(document); },
+          set(value) {
+            scriptWrites.push(value);
+            nativeCookie.set.call(document, value);
+          }
+        });
+      });
+
+      afterEach(function () {
+        delete document.cookie;
+        triggerPixel?.restore();
+        clock.restore();
+      });
+
+      // the endpoint answers the pixel by running `serverResponse` (standing in for its Set-Cookie), then it loads
+      function stubPixel(serverResponse) {
+        triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => {
+          writesBeforePixel = scriptWrites.length;
+          serverResponse(url);
+          setTimeout(done, 5);
+        });
+      }
+
+      function serverSetsCookie(name, value) {
+        nativeCookie.set.call(document, `${name}=${value}; path=/`);
+      }
+
+      function serverDeletesCookie(name) {
+        // the cookie may have been written on the root domain or host-only; clear both, bypassing the recorder
+        const domain = sharedIdSystemSubmodule.domainOverride?.();
+        nativeCookie.set.call(document, `${name}=; path=/; expires=${EXPIRED_COOKIE_DATE}`);
+        if (domain) nativeCookie.set.call(document, `${name}=; path=/; domain=${domain}; expires=${EXPIRED_COOKIE_DATE}`);
+      }
+
+      async function setUp(storageName, params) {
+        let customConfig = getConfigMock(['pubCommonId', storageName, 'cookie']);
+        customConfig = addConfig(customConfig, 'params', params);
+        // run submodule callbacks right away instead of after the first auction
+        customConfig.userSync.auctionDelay = 10;
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(customConfig);
+        const ids = getGlobal().getUserIdsAsync();
+        // pixel load, the next-task read and the 50 ms re-check
+        await clock.tickAsync(100);
+        return ids;
+      }
+
+      function scriptWritesAfterPixel(name) {
+        return scriptWrites.slice(writesBeforePixel).filter(w => w.startsWith(`${name}=`));
+      }
+
+      it('drops the minted id from memory when the endpoint deleted the cookie on the first visit', async function () {
+        stubPixel(() => serverDeletesCookie('pubcid'));
+        const ids = await setUp('pubcid', { pixelUrl: '/any/pubcid/url' });
+        sinon.assert.calledOnce(triggerPixel);
+        // getId's minted id was stored from script before the pixel
+        expect(scriptWrites.slice(0, writesBeforePixel).some(w => w.startsWith('pubcid='))).to.be.true;
+        expect(ids).to.eql({});
+        expect(getGlobal().getUserIds()).to.eql({});
+        expect(getGlobal().getUserIdsAsEids()).to.eql([]);
+        expect(coreStorage.getCookie('pubcid')).to.be.null;
+        expect(scriptWritesAfterPixel('pubcid')).to.eql([]);
+      });
+
+      it('drops the stored id from memory when the endpoint deleted the cookie on an extend visit', async function () {
+        stubPixel(() => serverDeletesCookie('pubcid_alt'));
+        const ids = await setUp('pubcid_alt', { extend: true, pixelUrl: '/any/pubcid/url' });
+        sinon.assert.calledOnce(triggerPixel);
+        expect(triggerPixel.firstCall.args[0]).to.include('altpubcid200000');
+        expect(ids).to.eql({});
+        expect(getGlobal().getUserIds()).to.eql({});
+        expect(coreStorage.getCookie('pubcid_alt')).to.be.null;
+      });
+
+      it('adopts a different id the endpoint set without rewriting its cookie from script', async function () {
+        stubPixel(() => serverSetsCookie('pubcid', 'server-restored-id'));
+        const ids = await setUp('pubcid', { pixelUrl: '/any/pubcid/url' });
+        expect(ids).to.eql({ pubcid: 'server-restored-id' });
+        expect(getGlobal().getUserIds()).to.eql({ pubcid: 'server-restored-id' });
+        expect(scriptWritesAfterPixel('pubcid')).to.eql([]);
+      });
+
+      it('adopts the id the endpoint generated with create: false without rewriting its cookie from script', async function () {
+        stubPixel(() => serverSetsCookie('pubcid', 'server-generated-id'));
+        const ids = await setUp('pubcid', { create: false, pixelUrl: '/any/pubcid/url' });
+        // getId returned no id, so nothing was stored from script
+        expect(scriptWrites.slice(0, writesBeforePixel).some(w => w.startsWith('pubcid='))).to.be.false;
+        expect(ids).to.eql({ pubcid: 'server-generated-id' });
+        expect(scriptWritesAfterPixel('pubcid')).to.eql([]);
+      });
+
+      it('keeps the id when the endpoint re-set the same one', async function () {
+        stubPixel(() => serverSetsCookie('pubcid_alt', 'altpubcid200000'));
+        const ids = await setUp('pubcid_alt', { extend: true, pixelUrl: '/any/pubcid/url' });
+        expect(ids).to.eql({ pubcid: 'altpubcid200000' });
+        expect(scriptWritesAfterPixel('pubcid_alt')).to.eql([]);
+      });
+    });
+
     it('Disable auto create', async function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', { create: false });

@@ -50,6 +50,7 @@ import type {
   IdProviderSpec,
   ProviderParams,
   ProviderResponse,
+  SetIdOptions,
   UserId,
   UserIdConfig,
   UserIdProvider
@@ -308,12 +309,17 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
     const token = {};
     submodule.callbackToken = token;
     const isStale = () => submodule.callbackToken !== token || priorityMaps !== initializedSubmodules;
-    function callbackCompleted(idObj) {
+    function callbackCompleted(idObj, options?: SetIdOptions) {
       // callbacks often complete asynchronously, out of reach of the catch below: never let an error here leave the
       // batch (and with it the auction delay) waiting
       try {
         if (isStale()) {
           logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring a callback superseded by a refresh`);
+        } else if (options?.fromStorage === true) {
+          // storage already holds this value (or no longer holds any): mirror it without writing it again
+          submodule.idObj = idObj ? submodule.submodule.decode(idObj, submodule.config) : undefined;
+          priorityMaps.refresh();
+          updatePPID(priorityMaps);
         } else if (idObj) {
           // if valid, id data should be saved to cookie/html storage
           if (submodule.config.storage) {

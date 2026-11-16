@@ -90,7 +90,16 @@ export type ProviderResponse = {
   /**
    * If provided, will be invoked at a later point.
    */
-  callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
+  callback?: (setId: (id?: SerializableId, options?: SetIdOptions) => void, getStoredValue: () => SerializableId) => void;
+};
+
+export type SetIdOptions = {
+  /**
+   * Set when `id` is what `getStoredValue` returned, because something other than the User ID module,
+   * such as a server's Set-Cookie, wrote or deleted it. The User ID module then updates the in-memory ID to
+   * match, and clears it when `id` is empty, but does not write the value to storage again.
+   */
+  fromStorage?: boolean;
 };
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
