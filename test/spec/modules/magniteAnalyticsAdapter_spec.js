@@ -680,7 +680,7 @@ describe('magnite analytics adapter', function () {
       });
     });
 
-    it('should pass along user ids', function () {
+    it('should not read user ids from a raw bid.userId', function () {
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].userId = {
         criteoId: 'sadfe4334',
@@ -698,14 +698,7 @@ describe('magnite analytics adapter', function () {
 
       const message = JSON.parse(server.requests[0].requestBody);
 
-      expect(message.auctions[0].user).to.deep.equal({
-        ids: [
-          { provider: 'criteoId', 'hasId': true },
-          { provider: 'lotamePanoramaId', 'hasId': true },
-          { provider: 'pubcid', 'hasId': true },
-          { provider: 'sharedId', 'hasId': true },
-        ]
-      });
+      expect(message.auctions[0].user).to.equal(undefined);
     });
 
     // A-Domain tests

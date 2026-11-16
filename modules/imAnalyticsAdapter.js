@@ -1,4 +1,4 @@
-import { logMessage, deepAccess } from '../src/utils.js';
+import { logMessage } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
@@ -174,7 +174,8 @@ const imAnalyticsAdapter = Object.assign(
       });
 
       const consentData = getConsentData();
-      const imUid = deepAccess(args.bidderRequests, '0.bids.0.userId.imuid') ?? '';
+      // Since Prebid 10, user IDs are not set on bids (only as EIDs in ortb2.user.ext.eids)
+      const imUid = '';
       if (cache.auctions[args.auctionId]) {
         clearTimer(cache.auctions[args.auctionId].wonBidsTimer);
       }
