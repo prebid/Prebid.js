@@ -11,6 +11,7 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 import { checkAdUnitSetup, startAuction } from 'src/prebid.js';
+import { auctionManager } from 'src/auctionManager.js';
 import { config } from 'src/config.js';
 import * as rtdModule from '../../../modules/rtdModule/index.js';
 import { gdprDataHandler, gppDataHandler } from 'src/consentHandler.js';
@@ -248,6 +249,7 @@ function configureActualRtd(realTimeData) {
 }
 
 function prepareAuction(auction) {
+  auction.adUnitCodes = (Array.isArray(auction.adUnits) ? auction.adUnits : []).map(adUnit => adUnit.code);
   let isolatedAuction;
   function stopAfterIsolation(_next, request) {
     isolatedAuction = request;
@@ -397,11 +399,12 @@ function describeSecureContext(name, fn) {
   if (window.isSecureContext) describe(name, fn);
 }
 
-function getTargeting(adUnitCodes, params = {}, userConsent) {
+function getTargeting(auction, adUnitCodes, params = {}, userConsent) {
   return encypherSubmodule.getTargetingData(
     adUnitCodes,
     { params: Object.assign({ timeout: 300 }, params) },
     userConsent,
+    auction,
   );
 }
 
@@ -2057,7 +2060,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 200));
     await run.completion;
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle', 'sidebar'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard', 'rectangle', 'sidebar'], { gamTargeting: {} }), {
       leaderboard: { encypher_verified: '1' },
       rectangle: { encypher_verified: '1' },
     });
@@ -2069,10 +2072,10 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 201));
     await run.completion;
     assert.strictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa.id, 'epa_s');
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
       leaderboard: { encypher_verified: '1', encypher_att: 'epa_s' },
     });
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: false } }), {
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard'], { gamTargeting: { includeAttestationId: false } }), {
       leaderboard: { encypher_verified: '1' },
     });
   });
@@ -2083,13 +2086,13 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 202));
     await run.completion;
     const packages = ['VPP-V1', 'house_2026'];
-    const emitted = getTargeting(['leaderboard'], { gamTargeting: { packages } });
+    const emitted = getTargeting(run.auction, ['leaderboard'], { gamTargeting: { packages } });
     assert.deepStrictEqual(emitted, {
       leaderboard: { encypher_verified: '1', encypher_pkg: ['VPP-V1', 'house_2026'] },
     });
     emitted.leaderboard.encypher_pkg.push('injected-by-caller');
     assert.deepStrictEqual(packages, ['VPP-V1', 'house_2026'], 'publisher configuration must not be mutable through targeting');
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { packages: [] } }), {
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard'], { gamTargeting: { packages: [] } }), {
       leaderboard: { encypher_verified: '1' },
     });
   });
@@ -2106,7 +2109,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(spacedId, 203));
     await run.completion;
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, spacedId);
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard'], { gamTargeting: { includeAttestationId: true } }), {
       leaderboard: { encypher_verified: '1' },
     });
   });
@@ -2124,7 +2127,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
       await run.completion;
       assertNoInjection(run.auction);
       assert.deepStrictEqual(
-        getTargeting(['leaderboard', 'rectangle'], {
+        getTargeting(run.auction, ['leaderboard', 'rectangle'], {
           gamTargeting: { includeAttestationId: true, packages: ['VPP-V1'] },
         }),
         {},
@@ -2139,7 +2142,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     clock.tick(100);
     await run.completion;
     assertNoInjection(run.auction);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
   });
 
   it('emits no targeting for an auction the module does not own', async () => {
@@ -2148,7 +2151,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await run.completion;
     assertNoInjection(run.auction);
     assert.strictEqual(server.requests.length, 0);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
   });
 
   it('keeps a 256-byte payload and drops packages first above the cap', async () => {
@@ -2159,13 +2162,13 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 208));
     await run.completion;
 
-    const fits = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: atCap } });
+    const fits = getTargeting(run.auction, ['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: atCap } });
     assert.deepStrictEqual(fits, {
       leaderboard: { encypher_verified: '1', encypher_att: 'epa_s', encypher_pkg: atCap },
     });
     assert.strictEqual(targetingBytes(fits.leaderboard), 256);
 
-    const dropped = getTargeting(['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: overCap } });
+    const dropped = getTargeting(run.auction, ['leaderboard'], { gamTargeting: { includeAttestationId: true, packages: overCap } });
     assert.deepStrictEqual(dropped, {
       leaderboard: { encypher_verified: '1', encypher_att: 'epa_s' },
     });
@@ -2177,14 +2180,14 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     const allowed = beginAuction();
     await respondDecision(ready(STORY_SIGNAL, 209));
     await allowed.completion;
-    assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(allowed.auction, ['leaderboard'], { gamTargeting: {} }), {
       leaderboard: { encypher_verified: '1' },
     });
 
     const blocked = beginAuction({}, makeAuction(), { coppa: true, gdpr: null, usp: null, gpp: null });
     await blocked.completion;
     assertNoInjection(blocked.auction);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+    assert.deepStrictEqual(getTargeting(blocked.auction, ['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
   });
 
   it('emits no targeting when consent no longer permits transmission at auction end', async () => {
@@ -2193,7 +2196,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 210));
     await run.completion;
     assert.deepStrictEqual(
-      getTargeting(['leaderboard'], { gamTargeting: {} }, { coppa: false, gdpr: null, usp: '1YYN', gpp: null }),
+      getTargeting(run.auction, ['leaderboard'], { gamTargeting: {} }, { coppa: false, gdpr: null, usp: '1YYN', gpp: null }),
       {},
     );
   });
@@ -2204,8 +2207,8 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(ready(STORY_SIGNAL, 211));
     await run.completion;
     assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle']), {});
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: false }), {});
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard', 'rectangle']), {});
+    assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard', 'rectangle'], { gamTargeting: false }), {});
   });
 
   [
@@ -2231,7 +2234,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
       await respondDecision(ready(STORY_SIGNAL, 212 + index));
       await run.completion;
       assert.deepStrictEqual(run.auction.adUnits[0].ortb2Imp.ext.c2pa, STORY_SIGNAL);
-      assert.deepStrictEqual(getTargeting(['leaderboard'], { gamTargeting }), {});
+      assert.deepStrictEqual(getTargeting(run.auction, ['leaderboard'], { gamTargeting }), {});
     });
   });
 
@@ -2256,7 +2259,7 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     const hit = beginAuction();
     await respondDecision(ready(STORY_SIGNAL, 230));
     await hit.completion;
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {
+    assert.deepStrictEqual(getTargeting(hit.auction, ['leaderboard', 'rectangle'], { gamTargeting: {} }), {
       leaderboard: { encypher_verified: '1' },
       rectangle: { encypher_verified: '1' },
     });
@@ -2266,10 +2269,54 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
     await respondDecision(miss('revoked', 231));
     await revoked.completion;
     assertNoInjection(revoked.auction);
-    assert.deepStrictEqual(getTargeting(['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
+    assert.deepStrictEqual(getTargeting(revoked.auction, ['leaderboard', 'rectangle'], { gamTargeting: {} }), {});
   });
 
-  it('places the V1 keys on auction ad units through the RTD core', async () => {
+  it('does not target a missed auction with a hit that completed after it started', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    const hit = beginAuction({}, { ...makeAuction(), auctionId: 'same-publisher-auction' });
+    const hitLookup = pendingLookup();
+    canonical.href = PAGE_URL;
+    const missed = beginAuction({}, { ...makeAuction(), auctionId: 'same-publisher-auction' });
+    const missedLookup = pendingLookup();
+
+    hitLookup.respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 240)));
+    await respondJwksIfRequested();
+    await hit.completion;
+    missedLookup.respond(200, HEADERS, JSON.stringify(miss('miss', 241)));
+    await missed.completion;
+    assertNoInjection(missed.auction);
+    assert.deepStrictEqual(encypherSubmodule.getTargetingData(
+      ['leaderboard', 'rectangle'],
+      { params: { gamTargeting: { includeAttestationId: true } } },
+      undefined,
+      missed.auction,
+    ), {});
+  });
+
+  it('preserves a closing auction hit when another auction starts and is revoked', async () => {
+    const canonical = addCanonical(STORY_URL, cleanups);
+    const hit = beginAuction();
+    await respondDecision(ready(STORY_SIGNAL, 242));
+    await hit.completion;
+
+    canonical.href = PAGE_URL;
+    const revoked = beginAuction();
+    await respondDecision(miss('revoked', 243));
+    await revoked.completion;
+    assertNoInjection(revoked.auction);
+    assert.deepStrictEqual(encypherSubmodule.getTargetingData(
+      ['leaderboard', 'rectangle'],
+      { params: { gamTargeting: { includeAttestationId: true } } },
+      undefined,
+      hit.auction,
+    ), {
+      leaderboard: { encypher_verified: '1', encypher_att: 'epa_s' },
+      rectangle: { encypher_verified: '1', encypher_att: 'epa_s' },
+    });
+  });
+
+  it('keeps verified GAM keys through native auction completion and RTD targeting', async () => {
     addCanonical(STORY_URL, cleanups);
     try {
       configureActualRtd({
@@ -2283,16 +2330,23 @@ describeSecureContext('encypherRtdProvider decision-network v1', () => {
       const run = beginAuction();
       await respondDecision(ready(STORY_SIGNAL, 232));
       await run.completion;
-      const adUnits = rtdModule.getAdUnitTargeting({
-        adUnitCodes: ['leaderboard'],
-        adUnits: [{ code: 'leaderboard' }],
+      const adUnits = checkAdUnitSetup(run.auction.adUnits);
+      adUnits.forEach(adUnit => { adUnit.bids = []; });
+      const auction = auctionManager.createAuction({
+        adUnitCodes: run.auction.adUnitCodes,
+        adUnits,
+        ortb2Fragments: run.auction.ortb2Fragments,
+        cbTimeout: 300,
       });
+      auction.callBids();
+      await auction.end;
       assert.deepStrictEqual(adUnits[0].adserverTargeting, {
         encypher_verified: '1',
         encypher_att: 'epa_s',
         encypher_pkg: ['VPP-V1'],
       });
     } finally {
+      auctionManager.clearAllAuctions();
       startAuction.getHooks({ hook: rtdModule.setBidRequestsData }).remove();
       config.resetConfig();
     }

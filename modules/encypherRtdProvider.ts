@@ -90,8 +90,8 @@ type TargetingValues = {
 };
 
 const decisions = new Map<string, DecisionState>();
-/** Attestation IDs injected on the ad units of the auction the module last served, by ad unit code. */
-const injectedAttestationIds = new Map<AdUnitCode, string>();
+/** Core preserves this per-request codes array while deep-cloning ad units; auction IDs may be reused. */
+let injectedAttestationIds = new WeakMap<object, Map<AdUnitCode, string>>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
@@ -398,18 +398,6 @@ function closeAuctionOwnership(next: (auction?: StartAuctionOptions) => void, au
   next(auction);
 }
 
-/** Ad unit codes carried by an auction the module is about to serve. */
-function auctionAdUnitCodes(auction: StartAuctionOptions): AdUnitCode[] {
-  return (Array.isArray(auction.adUnits) ? auction.adUnits : [])
-    .map(adUnit => adUnit.code)
-    .filter((code): code is AdUnitCode => typeof code === 'string');
-}
-
-/** Drop this auction's ad units from targeting memory so an earlier hit cannot leak forward. */
-function forgetTargeting(auction: StartAuctionOptions): void {
-  auctionAdUnitCodes(auction).forEach(code => injectedAttestationIds.delete(code));
-}
-
 /** `null` when the publisher value does not match Targeting Contract V1. */
 function parseGamTargeting(value: unknown): GamTargetingSettings | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -439,11 +427,12 @@ function gamTargetingSettings(moduleConfig: RTDProviderConfig<'encypher'>): GamT
  * Only the `encypher_pkg` step is reachable in practice: without it the payload is at most
  * 75 bytes, since `record.id` is limited to 32 characters. The later steps stay as a guard
  * in case the contract admits a longer value.
+ * Fixed keys and validated ASCII values make JSON string length equal its UTF-8 byte length.
  */
 function fitTargetingCap(values: TargetingValues): TargetingValues | null {
   let dropIndex = 0;
   while (
-    new TextEncoder().encode(JSON.stringify(values)).byteLength > MAX_TARGETING_BYTES &&
+    JSON.stringify(values).length > MAX_TARGETING_BYTES &&
     dropIndex < TARGETING_DROP_ORDER.length
   ) {
     delete values[TARGETING_DROP_ORDER[dropIndex]];
@@ -455,12 +444,14 @@ function fitTargetingCap(values: TargetingValues): TargetingValues | null {
 function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number | null {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
   const adUnits = auction.adUnits;
+  const attestationIds = new Map<AdUnitCode, string>();
   adUnits.forEach(adUnit => {
     const impression = adUnit.ortb2Imp || (adUnit.ortb2Imp = {});
     const extension = impression.ext || (impression.ext = {});
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
-    if (typeof adUnit.code === 'string') injectedAttestationIds.set(adUnit.code, record.id);
+    if (typeof adUnit.code === 'string') attestationIds.set(adUnit.code, record.id);
   });
+  if (Array.isArray(auction.adUnitCodes)) injectedAttestationIds.set(auction.adUnitCodes, attestationIds);
   return adUnits.length;
 }
 
@@ -742,7 +733,7 @@ const getBidRequestData = (
   userConsent?: AllConsentData,
   rtdTimeout?: number
 ): void => {
-  forgetTargeting(auction);
+  if (Array.isArray(auction.adUnitCodes)) injectedAttestationIds.delete(auction.adUnitCodes);
   if (!hasConsentForDataTransmission(userConsent)) {
     callback();
     return;
@@ -921,16 +912,18 @@ const getBidRequestData = (
  * Targeting Contract V1 GPT key-values, emitted only for ad units that reached the
  * `injected` state in the auction being closed.
  */
-const getTargetingData = (
-  adUnitCodes: AdUnitCode[],
-  moduleConfig: RTDProviderConfig<'encypher'>,
-  userConsent?: AllConsentData
+const getTargetingData: NonNullable<RtdProviderSpec<'encypher'>['getTargetingData']> = (
+  adUnitCodes,
+  moduleConfig,
+  userConsent,
+  auction
 ): ByAdUnit<TargetingMap<string | string[]>> => {
   const targeting: ByAdUnit<TargetingValues> = {};
   const settings = gamTargetingSettings(moduleConfig);
-  if (settings === null || !hasConsentForDataTransmission(userConsent)) return targeting;
+  const attestationIds = auction && injectedAttestationIds.get(auction.adUnitCodes);
+  if (settings === null || !hasConsentForDataTransmission(userConsent) || !attestationIds) return targeting;
   adUnitCodes.forEach(adUnitCode => {
-    const attestationId = injectedAttestationIds.get(adUnitCode);
+    const attestationId = attestationIds.get(adUnitCode);
     if (attestationId === undefined) return;
     const values: TargetingValues = { encypher_verified: '1' };
     if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(attestationId)) {
@@ -946,7 +939,7 @@ const getTargetingData = (
 /** Clear page-lifecycle memory between isolated module tests. */
 export function resetProviderState(): void {
   decisions.clear();
-  injectedAttestationIds.clear();
+  injectedAttestationIds = new WeakMap<object, Map<AdUnitCode, string>>();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
