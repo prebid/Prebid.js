@@ -105,6 +105,45 @@ describe('linaBidAdapter', function () {
     expect(spec.isBidRequestValid({ ...BID_REQUEST, params: { publisherId: 'pub-10001' } })).to.equal(false);
   });
 
+  it('falls back to ortb2Imp.tagid when params.placementId is omitted and lets params.placementId override it', function () {
+    const tagIdBid = {
+      ...BID_REQUEST,
+      params: { publisherId: 'pub-10001' },
+      ortb2Imp: { ...BID_REQUEST.ortb2Imp, tagid: 'imp-tag-001' },
+    };
+    expect(spec.isBidRequestValid(tagIdBid)).to.equal(true);
+    expect(spec.buildRequests([tagIdBid], BIDDER_REQUEST).data.bids[0].ortb2Imp.tagid).to.equal('imp-tag-001');
+
+    expect(spec.isBidRequestValid({
+      ...tagIdBid,
+      params: { publisherId: 'pub-10001', placementId: '' },
+    })).to.equal(false);
+
+    const overrideBid = {
+      ...tagIdBid,
+      params: { publisherId: 'pub-10001', placementId: 'override-tag-002' },
+    };
+    expect(spec.buildRequests([overrideBid], BIDDER_REQUEST).data.bids[0].ortb2Imp.tagid).to.equal('override-tag-002');
+  });
+
+  it('preserves responsive banner format objects instead of replacing them with placeholder sizes', function () {
+    const responsiveFormat = [{ wratio: 16, hratio: 9, wmin: 300 }];
+    const responsiveBid = {
+      ...BID_REQUEST,
+      mediaTypes: {
+        banner: {
+          format: responsiveFormat,
+          sizes: [[16, 9]],
+        },
+      },
+      sizes: [[16, 9]],
+    };
+
+    expect(spec.isBidRequestValid(responsiveBid)).to.equal(true);
+    const request = spec.buildRequests([responsiveBid], BIDDER_REQUEST);
+    expect(request.data.bids[0].ortb2Imp.banner.format).to.deep.equal(responsiveFormat);
+  });
+
   it('declares only media types enabled in the build', function () {
     expect(spec.supportedMediaTypes).to.deep.equal(['banner', 'video', ...(FEATURES.NATIVE ? ['native'] : [])]);
   });
