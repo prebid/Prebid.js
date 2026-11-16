@@ -74,44 +74,66 @@ describe('SharedId System', function () {
         expect(result.callback).to.be.a('function');
       });
 
-      it('should fire the pixel with the new id and complete once it has loaded', function () {
+      const nextTask = () => new Promise(resolve => setTimeout(resolve, 10));
+
+      it('should fire the pixel with the new id and complete once it has loaded', async function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include(UUID);
         sinon.assert.notCalled(callbackSpy);
         pixelDone();
+        // storage is re-read on the next task, so the callback has not completed yet
+        sinon.assert.notCalled(callbackSpy);
+        await nextTask();
         sinon.assert.calledOnce(callbackSpy);
       });
 
-      it('should complete without an id when storage holds one after the pixel, so the server-set cookie is not rewritten', function () {
+      it('should complete without an id when storage holds one after the pixel, so the server-set cookie is not rewritten', async function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
         pixelDone();
+        await nextTask();
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.be.undefined;
       });
 
-      it('should adopt the id the server generated when create is false and getId returned none', function () {
+      it('should adopt the id the server generated when create is false and getId returned none', async function () {
         const noCreate = { ...config, params: { ...config.params, create: false } };
         const result = sharedIdSystemSubmodule.getId(noCreate, undefined);
         expect(result.id).to.be.undefined;
         result.callback(callbackSpy, () => 'server-generated-id');
         pixelDone();
+        await nextTask();
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.equal('server-generated-id');
       });
 
-      it('should adopt a different id the server set, for example one it restored', function () {
+      it('should adopt a different id the server set, for example one it restored', async function () {
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
         pixelDone();
+        await nextTask();
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
       });
 
-      it('should complete without an id when the server removed the cookie, so script does not write it back', function () {
+      it('should adopt an id that only becomes visible in storage after the pixel load event', async function () {
+        // In some WebKit builds the pixel response's Set-Cookie is not yet applied at the load
+        // event, so storage still holds the minted id synchronously; it shows the restored id
+        // by the next task (see #16158).
+        let storedId = UUID;
+        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => storedId);
+        pixelDone();
+        storedId = 'restored-by-server';
+        await nextTask();
+        sinon.assert.calledOnce(callbackSpy);
+        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+      });
+
+      it('should complete without an id when the server removed the cookie, so script does not write it back', async function () {
         // e.g. the endpoint deleted it for Global Privacy Control or denied consent
         sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
         pixelDone();
+        await nextTask();
         sinon.assert.calledOnce(callbackSpy);
         expect(callbackSpy.firstCall.args[0]).to.be.undefined;
       });
