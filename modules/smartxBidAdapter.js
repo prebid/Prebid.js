@@ -26,6 +26,8 @@ import { getDNT } from '../libraries/dnt/index.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./smartxBidAdapter.d.ts').SmartxBidderParams} SmartxBidderParams
+ * @typedef {BidRequest & { params: SmartxBidderParams }} SmartxBidRequest
  */
 
 const BIDDER_CODE = 'smartx';
@@ -85,7 +87,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
    *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {SmartxBidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
