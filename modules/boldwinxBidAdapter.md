@@ -34,8 +34,9 @@ no sync is made when COPPA applies.
 
 # Test Parameters
 
-Replace `epid` with the value issued by Boldwin. Instream video bids return VAST XML, so
-they need Prebid Cache (`cache: { url: ... }` or `cache: { useLocal: true }`).
+The `epid` below is a Boldwin test endpoint that returns test ads. In production, replace it
+with the value issued by Boldwin. Instream video bids return VAST XML, so they need Prebid Cache
+(`cache: { url: ... }` or `cache: { useLocal: true }`).
 
 ```js
 var adUnits = [
@@ -50,7 +51,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwinx',
       params: {
-        epid: '12345'
+        epid: '20132'
       }
     }]
   },
@@ -69,7 +70,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwinx',
       params: {
-        epid: '12345'
+        epid: '20132'
       }
     }]
   },
@@ -92,7 +93,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwinx',
       params: {
-        epid: '12345'
+        epid: '20132'
       }
     }]
   }
