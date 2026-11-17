@@ -63,9 +63,10 @@ Follow steps above for general review process. In addition, please verify the fo
     - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
     - Eids object is to be preferred to Userids object in the bid request, as the userid object may be removed in a future version
     - Global OpenRTB fields should come from bidrequest.ortb2
-        - bcat, battr, badv
+        - bcat, badv
     - Impression-specific OpenRTB fields should come from bidrequest.ortb2imp
         - instl
+        - battr (from media objects, e.g. bidrequest.ortb2imp.banner.battr or bidrequest.ortb2imp.video.battr)
 - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/BIDDER.md file):
     - If they support the TCF consentManagementTcf module and TCF2, add `tcf2_supported: true`
     - If they support the US Privacy consentManagementUsp module, add `usp_supported: true`
