@@ -205,6 +205,25 @@ describe('config API', function () {
     sinon.assert.calledWithExactly(listener, { logging: true });
   });
 
+  ['getConfig', 'getAnyConfig', 'readConfig', 'readAnyConfig'].forEach(method => {
+    it(`${method} unsubscribe handles do not remove other subscribers when called twice`, () => {
+      const removed = sinon.spy();
+      const existing = sinon.spy();
+      const addedLater = sinon.spy();
+      config[method](existing);
+      const unsubscribe = config[method](removed);
+
+      unsubscribe();
+      config[method](addedLater);
+      unsubscribe();
+      setConfig({ logging: true });
+
+      sinon.assert.notCalled(removed);
+      sinon.assert.calledOnceWithExactly(existing, { logging: true });
+      sinon.assert.calledOnceWithExactly(addedLater, { logging: true });
+    });
+  });
+
   it('topic subscribers are only called when that topic is changed', function () {
     const listener = sinon.spy();
     const wildcard = sinon.spy();
