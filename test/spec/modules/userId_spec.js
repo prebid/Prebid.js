@@ -1459,6 +1459,19 @@ describe('User ID', function () {
           expect(read()).to.equal('newValue');
         });
 
+        it('should complete even when the reported ID cannot be stored', async () => {
+          sandbox.stub(utils, 'logError');
+          const circular = { id: 'value' };
+          circular.self = circular;
+          const ids = await Promise.race([
+            run(withCallback((setId) => setId(circular))),
+            new Promise((resolve, reject) => setTimeout(() => reject(new Error('getUserIdsAsync did not resolve')), 1000))
+          ]);
+          expect(ids.mid.id).to.equal('value');
+          expect(read()).to.not.exist;
+          sinon.assert.called(utils.logError);
+        });
+
         it('should ignore storage calls made after setId, but apply later IDs', async () => {
           const ids = await run(withCallback((setId, handle) => {
             setId('fresh');

@@ -168,8 +168,11 @@ function processSubmoduleCallbacks(submodules, cb) {
       if (handle.managed) {
         handle.setId(id);
       } else if (id) {
-        handle.store(id);
-        handle.setId(id);
+        try {
+          handle.store(id);
+        } finally {
+          handle.setId(id);
+        }
       } else {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
         handle.close();

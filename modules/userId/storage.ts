@@ -53,7 +53,7 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
 }
 
 export function setStoredValue(submodule, value) {
-  writeStorage(submodule, isPlainObject(value) ? JSON.stringify(value) : value);
+  writeStorage(submodule, value);
 }
 
 /**
@@ -64,10 +64,11 @@ export function touchStoredValue(submodule) {
   writeStorage(submodule);
 }
 
-function writeStorage(submodule, valueStr?: string) {
+function writeStorage(submodule, value?: SerializableId) {
   const storage = submodule.config.storage;
 
   try {
+    const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
 
     submodule.enabledStorageTypes.forEach(storageType => {
