@@ -201,14 +201,16 @@ export const cadentAdapter = {
     return cadentData;
   },
   // supporting eids
-  getEids(bidRequests) {
+  // Prebid 10+ provides user IDs only as EIDs (ortb2.user.ext.eids / bid.userIdAsEids)
+  getEids(bidderRequest) {
+    const eids = bidderRequest?.ortb2?.user?.ext?.eids || bidderRequest?.bids?.[0]?.userIdAsEids || [];
     return EIDS_SUPPORTED
-      .map(cadentAdapter.getUserId(bidRequests))
+      .map(cadentAdapter.getUserId(eids))
       .filter(x => x);
   },
-  getUserId(bidRequests) {
-    return ({ key, source, rtiPartner }) => {
-      const id = deepAccess(bidRequests, `userId.${key}`);
+  getUserId(eids) {
+    return ({ source, rtiPartner }) => {
+      const id = eids.find(eid => eid?.source === source)?.uids?.[0]?.id;
       return id ? cadentAdapter.formatEid(id, source, rtiPartner) : null;
     };
   },
@@ -311,16 +313,14 @@ export const spec = {
     }
 
     // adding eid support
-    if (bidderRequest.userId) {
-      const eids = cadentAdapter.getEids(bidderRequest);
-      if (eids.length > 0) {
-        if (cadentData.user && cadentData.user.ext) {
-          cadentData.user.ext.eids = eids;
-        } else {
-          cadentData.user = {
-            ext: { eids }
-          };
-        }
+    const eids = cadentAdapter.getEids(bidderRequest);
+    if (eids.length > 0) {
+      if (cadentData.user && cadentData.user.ext) {
+        cadentData.user.ext.eids = eids;
+      } else {
+        cadentData.user = {
+          ext: { eids }
+        };
       }
     }
 
