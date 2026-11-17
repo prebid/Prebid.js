@@ -1820,6 +1820,67 @@ describe('User ID', function () {
         });
       });
 
+      it('should ignore a callback that completes after a refresh returned an id without a callback', () => {
+        startInit();
+        return clearStack().then(() => {
+          sinon.assert.calledOnce(mockIdCallback); // still pending
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: 'fresh' } }));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          // the first callback completes late, with an older id
+          mockIdCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          expect(coreStorage.getCookie('MOCKID')).to.include('fresh');
+        });
+      });
+
+      it('should keep a callback in flight when the same config is applied again', () => {
+        startInit();
+        return clearStack().then(() => {
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+          mockIdCallback.callArg(0, { MOCKID: 'kept' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('kept');
+          expect(coreStorage.getCookie('MOCKID')).to.include('kept');
+        });
+      });
+
+      it('should ignore a callback from before a config update once a refresh supersedes it', () => {
+        startInit();
+        return clearStack().then(() => {
+          // recreates the submodule container; the callback still belongs to the old one
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: 'fresh' } }));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          mockIdCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          expect(coreStorage.getCookie('MOCKID')).to.include('fresh');
+        });
+      });
+
       it('should ignore a callback that completes after the ID system was reinitialized', () => {
         startInit();
         return clearStack().then(() => {

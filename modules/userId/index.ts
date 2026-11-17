@@ -964,6 +964,8 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
           advertiseKeys: false,
         }),
         store: undefined,
+        // a plain config update leaves the previous invocation running, but the next one must still supersede it
+        handle: previousSubmodule?.handle,
         dirty: previousSubmodule == null || !deepEqual(newConfig, previousSubmodule.config),
         new: previousSubmodule == null
       };
@@ -981,7 +983,8 @@ export type SubmoduleContainer<P extends UserIdProvider> = {
   idObj;
   storageMgr: StorageManager;
   store: IdStore;
-  // the latest getId / extendId invocation; an older one completing late is ignored
+  // the latest getId / extendId invocation, carried over from the container this one replaces;
+  // an older one completing late is ignored
   handle?: InvocationHandle;
   // true if this module was reconfigured (latest config is different from previous config)
   dirty: boolean;
