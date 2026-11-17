@@ -297,34 +297,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "ampliffy",
-      "aliasOf": "ampliffy",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "amp",
-      "aliasOf": "ampliffy",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "videoffy",
-      "aliasOf": "ampliffy",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "publiffy",
-      "aliasOf": "ampliffy",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "amx",
       "aliasOf": null,
       "gvlid": 737,
