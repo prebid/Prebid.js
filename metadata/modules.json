@@ -941,20 +941,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "retailspot",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "rs",
-      "aliasOf": "retailspot",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "revantage",
       "aliasOf": null,
       "gvlid": null,
