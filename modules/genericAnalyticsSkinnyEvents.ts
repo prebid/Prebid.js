@@ -8,6 +8,7 @@
 import { submodule } from '../src/hook.js';
 import { EVENTS } from '../src/constants.js';
 import { deepClone } from '../src/utils/objects.js';
+import { eidsSources } from '../libraries/eidUtils/eidUtils.js';
 import type { EventMapping } from './genericAnalyticsAdapter.ts';
 import type { BidderRequest, BidRequest } from '../src/adapterManager.ts';
 import type { Bid } from '../src/bidfactory.ts';
@@ -160,14 +161,7 @@ export function bidWon(bid: BidWithExtras): SkinnyBidWon {
 
 type ORTB2 = BidRequest<any>['ortb2'];
 
-/**
- * List of unique sources across the EIDs in `ortb2.user` (both `user.eids` and `user.ext.eids`).
- */
-export function eidsSources(ortb2: ORTB2): string[] {
-  const user: any = ortb2?.user;
-  const eids = [...(user?.eids ?? []), ...(user?.ext?.eids ?? [])];
-  return [...new Set(eids.map(eid => eid?.source).filter(source => source != null))] as string[];
-}
+export { eidsSources };
 
 /**
  * Copy of `ortb2` without EIDs (which tend to be the bulk of it).

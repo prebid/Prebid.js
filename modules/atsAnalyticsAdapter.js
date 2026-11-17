@@ -227,11 +227,6 @@ export function bidRequestedHandler(args) {
           }
         }
 
-        // Fallback for older versions (backward compatibility)
-        if (bid.userId && bid.userId.idl_env) {
-          return true;
-        }
-
         return false;
       })(),
       bidder: bid.bidder,
