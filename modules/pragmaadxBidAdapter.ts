@@ -276,7 +276,10 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         ad_unit_id: t.params && t.params.adUnitId,
         timeout: t.timeout
       }))),
-      { method: 'POST', contentType: 'application/json' }
+      // text/plain avoids a CORS preflight (unlike application/json), matching
+      // the main buildRequests() call - this is fire-and-forget diagnostics,
+      // so an extra round trip here would be pure overhead with no benefit.
+      { method: 'POST', contentType: 'text/plain' }
     );
   }
 
