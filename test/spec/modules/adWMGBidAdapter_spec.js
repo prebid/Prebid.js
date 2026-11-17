@@ -328,3 +328,13 @@ describe('adWMGBidAdapter', function () {
     });
   });
 });
+
+describe('adWMGBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(959);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'wmg')).to.have.property('gvlid', 959);
+  });
+});

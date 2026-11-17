@@ -327,3 +327,9 @@ describe('AdButler adapter', function () {
     });
   });
 });
+
+describe('adbutlerBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(977);
+  });
+});

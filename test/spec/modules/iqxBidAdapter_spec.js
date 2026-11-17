@@ -436,3 +436,13 @@ describe('iqxBidAdapter', () => {
     });
   });
 });
+
+describe('iqxBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1577);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'iqx')).to.have.property('gvlid', 1577);
+  });
+});

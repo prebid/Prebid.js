@@ -19,6 +19,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  */
 
 const BIDDER_CODE = 'trustx';
+const GVLID = 1624;
 const BID_TTL = 360;
 const NET_REVENUE = false;
 const SUPPORTED_CURRENCY = 'USD';
@@ -211,6 +212,7 @@ const ortbAdapterConverter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   VERSION: ADAPTER_VERSION,
   supportedMediaTypes: [BANNER, VIDEO],
   ENDPOINT: 'https://ads.trustx.org/pbhb',

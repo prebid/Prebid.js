@@ -470,3 +470,9 @@ describe('AnzuSSPBidAdapter', function () {
     });
   });
 });
+
+describe('anzuSSPBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(733);
+  });
+});
