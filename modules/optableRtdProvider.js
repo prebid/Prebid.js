@@ -151,7 +151,7 @@ export const parseTargetingConfig = (moduleConfig) => {
  * Wait for Optable SDK event to fire with targeting data
  * @param {string} eventName Name of the event to listen for
  * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
- * @param {number|null} [timeout] Stop waiting after this many ms (the RTD auctionDelay)
+ * @param {number|null} [timeout] Stop waiting after this many ms (the RTD auctionDelay); no wait when unset or 0
  * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
  */
 const waitForOptableEvent = (eventName, instance = null, timeout = null) => {
@@ -163,6 +163,12 @@ const waitForOptableEvent = (eventName, instance = null, timeout = null) => {
     if (cachedData?.ortb2 || cachedData?.split_test_assignment) {
       logMessage('Optable SDK already has cached data');
       resolve(cachedData);
+      return;
+    }
+
+    // The RTD framework passes 0 when it is not delaying the auction, so nothing would use a later event
+    if (!timeout) {
+      resolve(null);
       return;
     }
 
@@ -178,13 +184,11 @@ const waitForOptableEvent = (eventName, instance = null, timeout = null) => {
     logMessage(`Waiting for ${eventName} event`);
 
     // The RTD framework stops waiting after auctionDelay; a later event would land in a released auction
-    if (timeout) {
-      timer = setTimeout(() => {
-        window.removeEventListener(eventName, eventListener);
-        logWarn(`No ${eventName} event within ${timeout}ms`);
-        resolve(null);
-      }, timeout);
-    }
+    timer = setTimeout(() => {
+      window.removeEventListener(eventName, eventListener);
+      logWarn(`No ${eventName} event within ${timeout}ms`);
+      resolve(null);
+    }, timeout);
   });
 };
 
@@ -215,9 +219,16 @@ const toExtEids = (ortb2) => {
 };
 
 /**
+ * Drop `_`-prefixed keys from an EID: cache-only metadata the bundles keep on it,
+ * like `_ref` (UID2 refresh material) and `_id5`, that must not reach bidders.
+ * @param {Object} eid ORTB2 EID
+ * @returns {Object} EID without `_`-prefixed keys
+ */
+const withoutPrivateKeys = (eid) => Object.fromEntries(Object.entries(eid).filter(([key]) => !key.startsWith('_')));
+
+/**
  * Read targeting data cached by the Optable bundle on a previous page, in the
- * SDK's shape (EIDs under `user.eids`). Strips cache-only `_ref` metadata (UID2
- * refresh material written by older bundles) so it never reaches bid requests.
+ * SDK's shape (EIDs under `user.eids`), with `_`-prefixed EID metadata stripped.
  * @returns {Object|null} Cached ORTB2 object with at least one EID, or null
  */
 const readResolvedCache = () => {
@@ -226,12 +237,7 @@ const readResolvedCache = () => {
     if (!ortb2?.user?.eids?.length) {
       return null;
     }
-    const eids = ortb2.user.eids.map((eid) => {
-      const clean = { ...eid };
-      delete clean._ref;
-      return clean;
-    });
-    return { ...ortb2, user: { ...ortb2.user, eids } };
+    return { ...ortb2, user: { ...ortb2.user, eids: ortb2.user.eids.map(withoutPrivateKeys) } };
   } catch (error) {
     logWarn('Could not read cached targeting data', error);
     return null;
@@ -451,6 +457,17 @@ const getCachedTargeting = (cacheKey) => {
 };
 
 /**
+ * Read cached targeting data that is worth serving instead of waiting for the SDK:
+ * EIDs or a split test assignment. The bundles write an empty cache by default.
+ * @param {string} cacheKey localStorage key of the targeting cache
+ * @returns {Object|null} Cached targeting data or null
+ */
+const readUsableCache = (cacheKey) => {
+  const cached = getCachedTargeting(cacheKey);
+  return (cached?.ortb2?.user?.eids?.length || cached?.split_test_assignment) ? cached : null;
+};
+
+/**
  * Set targeting data in localStorage
  * @param {string} cacheKey localStorage key of the targeting cache
  * @param {Object} targetingData Targeting response
@@ -489,7 +506,7 @@ const stripRefPointer = (uid) => {
 
 /**
  * Normalize a targeting response into the Web SDK cache format: refs keyed by
- * EID source, ext.optable.ref pointers and legacy _ref stripped from EIDs.
+ * EID source, ext.optable.ref pointers and `_`-prefixed metadata stripped from EIDs.
  * Idempotent and never mutates its input.
  * @param {Object} response Targeting response
  * @returns {Object} Response in cache format
@@ -516,7 +533,7 @@ export const toCacheFormat = (response) => {
       ...response.ortb2,
       user: {
         ...user,
-        eids: eids.map(({ _ref, ...eid }) => ({ ...eid, uids: (eid.uids || []).map(stripRefPointer) })),
+        eids: eids.map((eid) => ({ ...withoutPrivateKeys(eid), uids: (eid.uids || []).map(stripRefPointer) })),
       },
     };
   }
@@ -806,17 +823,20 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const options = { skipMergeIfUid2Exists };
 
     const sdkAvailable = isSDKAvailable(instance);
-    if (!sdkAvailable && !hasDirectApiConfig && (host || node || site)) {
+    // Pages set up window.optable before loading the Optable bundle, which keeps its own merged cache under
+    // OPTABLE_RESOLVED; let it answer rather than overwrite that cache with a direct call
+    const bundleExpected = !sdkAvailable && !!window.optable;
+    if (!sdkAvailable && !bundleExpected && !hasDirectApiConfig && (host || node || site)) {
       logError('host, node and site are all required for direct API calls, skipping Optable RTD');
       callback();
       return;
     }
 
-    if (sdkAvailable || !hasDirectApiConfig) {
+    if (sdkAvailable || bundleExpected || !hasDirectApiConfig) {
       logMessage('SDK mode: using the Optable Web SDK targeting');
       await withBundleOrCache(
         sdkAvailable,
-        () => getCachedTargeting(cacheKey),
+        () => readUsableCache(cacheKey),
         () => handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, options, instance, timeout),
         (cachedData) => handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options),
       );

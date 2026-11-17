@@ -116,9 +116,12 @@ A `handleRtd` function implementation has access to its surrounding context incl
 
 With `params.enableTargeting: true` the module fetches targeting itself instead of handing off to the Optable bundle:
 
-1. If the Optable Web SDK instance (`window.optable[instance]`) is on the page, it waits for the SDK's `optable-targeting:change` event, or uses the SDK's cached targeting.
-2. Otherwise, if `host`, `node` and `site` are set, it calls the DCN targeting API (`https://<host>/v2/targeting`) directly.
-3. Otherwise, when none of `host`, `node` and `site` is set, it relies on the Web SDK loading later: like the [default handler](#default-handler), it uses the targeting the SDK cached under `OPTABLE_RESOLVED` on a previous page, or waits for the SDK when nothing is cached, then continues as in step 1.
+1. If the Optable Web SDK instance (`window.optable[instance]`) is on the page, it waits for the SDK's `optable-targeting:change` event (up to `auctionDelay`), or uses the SDK's cached targeting.
+2. If `window.optable` exists but the SDK has not loaded yet, the page is loading an Optable bundle: like the [default handler](#default-handler), the module uses the targeting cached under `OPTABLE_RESOLVED` (EIDs or a split test assignment), or waits for the SDK when nothing usable is cached, then continues as in step 1. It does not call the DCN itself, so the bundle's merged cache is left alone.
+3. Otherwise, if `host`, `node` and `site` are set, it calls the DCN targeting API (`https://<host>/v2/targeting`) directly. This is for pages without the Optable bundle.
+4. Otherwise, when none of `host`, `node` and `site` is set, it relies on the Web SDK loading later, as in step 2.
+
+When the auction is not delayed (`auctionDelay` unset or 0), the module does not wait for the SDK's event.
 
 `bundleUrl` and `optableRtdConfig` are ignored in this mode.
 

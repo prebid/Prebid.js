@@ -124,7 +124,7 @@ describe('Optable RTD Submodule', function () {
         window.dispatchEvent(event);
       }, 10);
 
-      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 1000);
       expect(mergeFn.called).to.be.false;
     });
 
@@ -134,6 +134,16 @@ describe('Optable RTD Submodule', function () {
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
+    });
+
+    it('does not wait for the targeting event when the auction is not delayed', async function () {
+      window.optable.instance.targetingFromCache.returns(null);
+      const addListener = sandbox.spy(window, 'addEventListener');
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 0);
+
+      expect(mergeFn.called).to.be.false;
+      expect(addListener.calledWith('optable-targeting:change')).to.be.false;
     });
 
     it('stops waiting for the targeting event after the timeout', async function () {
@@ -158,7 +168,7 @@ describe('Optable RTD Submodule', function () {
         window.dispatchEvent(event);
       }, 10);
 
-      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 1000);
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
     });
 
@@ -175,7 +185,7 @@ describe('Optable RTD Submodule', function () {
       const logs = captureLogs();
       try {
         setTimeout(() => window.dispatchEvent(new CustomEvent('optable-targeting:change', { detail: {} })), 10);
-        await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+        await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 1000);
         expect(logs.WARNING.some((msg) => msg.includes('No targeting data found'))).to.be.true;
       } finally {
         logs.stop();
@@ -298,9 +308,9 @@ describe('Optable RTD Submodule', function () {
       }
     });
 
-    it('strips cache-only _ref metadata from cached EIDs', function () {
+    it('strips cache-only _-prefixed metadata from cached EIDs', function () {
       sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({
-        ortb2: { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }], _ref: { refreshToken: 'secret' } }] } }
+        ortb2: { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }], _ref: { refreshToken: 'secret' }, _id5: { signature: 'sig' } }] } }
       }));
       expect(readCachedTargeting()).to.deep.equal({
         user: { ext: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }] }] } }
@@ -386,7 +396,7 @@ describe('Optable RTD Submodule', function () {
         }
       };
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       // The bundle is loaded, so the default handler runs right away
       expect(window.optable.cmd.length).to.equal(0);
@@ -490,7 +500,7 @@ describe('Optable RTD Submodule', function () {
         }
       };
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       expect(window.optable.cmd.length).to.equal(0);
 
@@ -512,7 +522,7 @@ describe('Optable RTD Submodule', function () {
       moduleConfig.params.bundleUrl = null;
       delete window.optable;
 
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       // The code should have created window.optable with cmd array
       expect(window.optable).to.exist;
@@ -896,7 +906,8 @@ describe('Optable RTD Submodule - enableTargeting', function () {
           user: {
             eids: [
               { source: 'uidapi.com', _ref: 'legacy', uids: [{ id: 'uid2', ext: { optable: { ref: 'r1' } } }] },
-              { source: 'optable.co', uids: [{ id: 'oid', ext: { stype: 'ppuid', optable: { ref: 'r2' } } }] }
+              { source: 'optable.co', uids: [{ id: 'oid', ext: { stype: 'ppuid', optable: { ref: 'r2' } } }] },
+              { source: 'id5-sync.com', _id5: { signature: 'sig' }, uids: [{ id: 'id5' }] }
             ]
           }
         },
@@ -906,7 +917,8 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       targetingHandleRtd(reqBidsConfigObj, targetingData, mergeFn);
       expect(mergeFn.firstCall.args[1].user.ext.eids).to.deep.equal([
         { source: 'uidapi.com', uids: [{ id: 'uid2' }] },
-        { source: 'optable.co', uids: [{ id: 'oid', ext: { stype: 'ppuid' } }] }
+        { source: 'optable.co', uids: [{ id: 'oid', ext: { stype: 'ppuid' } }] },
+        { source: 'id5-sync.com', uids: [{ id: 'id5' }] }
       ]);
       expect(targetingData.ortb2.user.eids[0].uids[0].ext.optable.ref).to.equal('r1');
     });
@@ -1213,6 +1225,32 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledTwice).to.be.true;
     });
 
+    it('uses the bundle cache instead of calling the DCN when the bundle is loading', async function () {
+      window.optable = { cmd: [] };
+      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: { user: { eids } } }));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+
+      expect(ajaxStub.called).to.be.false;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+      delete window.optable;
+    });
+
+    it('waits for the loading bundle when its cache is empty', async function () {
+      window.optable = { cmd: [] };
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
+
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+
+      expect(window.optable.cmd).to.have.length(1);
+      expect(ajaxStub.called).to.be.false;
+      expect(callback.called).to.be.false;
+      delete window.optable;
+    });
+
     it('reads and writes the cache under optableCacheTargeting', async function () {
       moduleConfig.params.optableCacheTargeting = 'my-key';
       storage.getDataFromLocalStorage.returns(null);
@@ -1407,7 +1445,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
         window.dispatchEvent(event);
       }, 10);
 
-      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       expect(callback.calledOnce).to.be.true;
     });
@@ -1432,7 +1470,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
         window.dispatchEvent(new CustomEvent('optable-targeting:change', { detail: { split_test_assignment: 'treatment' } }));
       }, 10);
 
-      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
       expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext.optable.splitTestAssignment).to.equal('treatment');
     });
 
@@ -1454,7 +1492,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
         window.dispatchEvent(new CustomEvent('optable-targeting:change', { detail: targetingData }));
       }, 10);
 
-      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal([{ source: 'optable.co', uids: [{ id: 'sdk-id' }] }]);
     });
