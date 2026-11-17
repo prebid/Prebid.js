@@ -52,6 +52,7 @@ Follow steps above for general review process. In addition, please verify the fo
 - Verify that bidder has submitted valid bid params and that bids are being received.
 - Verify filenames are correct, eg bidderCode must match {{biddermodule}}BidAdapter
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
+- Verify the adapter doesn't trade the publisher's page performance, data or settings for the bidder's benefit (see "Review guidelines" in [AGENTS.md](AGENTS.md)). In particular, timeout, win, error and other telemetry must stay off the critical path (`politeTriggerPixel` or `runBackgroundTask`, never one immediate request per bid), and changes that make such beacons more urgent should be turned down, however they're justified.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - Look for redundant validations, core already validates the types of mediaTypes.video for example.
@@ -86,6 +87,8 @@ Follow steps above for general review process. In addition, please verify the fo
 Documentation: https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 
 Make sure a disableAnalytics method is provided.
+
+Make sure events are sent off the critical path (batched, `sendBeacon`, or `politeTriggerPixel`/`runBackgroundTask`), not as an immediate request per bid or auction event, and that the adapter collects only what its reporting needs.
 
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
 
