@@ -40,7 +40,7 @@ const path = require('path');
 const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
-const {Transform} = require('node:stream');
+const {Transform, pipeline} = require('node:stream');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
 const {PUBLIC_MODULE_EXTENSIONS, getPublicModule, isOverridden} = require('./gulp.publicModules.js');
@@ -52,18 +52,24 @@ const {
   writePrecompilationKey
 } = require('./gulp.cache.js');
 
+let activePrecompilationKey = null;
 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
     const options = getDefaults({distUrlBase, disableFeatures, dev});
     const babelConfig = require('./babelConfig.js')(options);
     const key = precompilationKey({distUrlBase, disableFeatures, dev});
-    return function () {
+    return function precompileBabel() {
       const sourceRoot = path.resolve('.');
       const relativeSourceRoot = path.relative(helpers.getPrecompiledPath(), sourceRoot);
+      // All configurations share one output tree. A -> B -> A must restore every file,
+      // even though A still has a lastRun timestamp from before B overwrote its output.
+      const since = activePrecompilationKey === key ? gulp.lastRun(precompileBabel) : undefined;
+      // A failed pipeline may leave a mixture of configurations in the output tree.
+      activePrecompilationKey = null;
       const src = gulp.src(helpers.getSourcePatterns(), {
         base: '.',
-        since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
+        since,
         sourcemaps: true
       });
       // the source root is relative to the precompiled path, not to wherever the cache lives,
@@ -78,14 +84,20 @@ const babelPrecomp = _.memoize(
       const dest = gulp.dest(helpers.getPrecompiledPath(), {
         sourcemaps: '.'
       });
-      if (options.polyfills) {
-        // No cache for a polyfill report. `plugins/polyfills.js` accumulates across every file it
-        // visits and writes a summary of the lot, so it is not the pure per-file transform
-        // `cachedPipeline` requires: only misses would reach babel, and the summary would come out
-        // covering just those - or missing entirely, when every file hits.
-        return transform().reduce((stream, stage) => stream.pipe(stage), src).pipe(dest);
-      }
-      return cachedPipeline({namespace: 'precompile', key, src, transform, dest});
+      // No cache for a polyfill report. `plugins/polyfills.js` accumulates across every file it
+      // visits and writes a summary of the lot, so only passing cache misses would omit hits.
+      let failed = false;
+      const output = options.polyfills
+        ? pipeline(src, ...transform(), dest, err => {
+          if (err) failed = true;
+        })
+        : cachedPipeline({namespace: 'precompile', key, src, transform, dest});
+      output.once('error', () => {
+        failed = true;
+      });
+      return output.once('end', () => {
+        if (!failed) activePrecompilationKey = key;
+      });
     }
   },
   precompilationKey
@@ -105,9 +117,10 @@ const babelPrecomp = _.memoize(
  * and the tree never gets its `.json` files, metadata modules or public modules back.
  *
  * A variant switch does not need a wipe. Everything that depends on the configuration is rebuilt
- * regardless - `babelPrecomp` is memoized per configuration, so the new one has no `lastRun` and
- * re-emits every file, and `generateBuildOptions` and `generateGlobalDef` have no `since` filter -
- * while everything that does not depend on it is already correct on disk.
+ * regardless - `babelPrecomp` only uses `lastRun` while its configuration still owns the output,
+ * so switching back to a previously built configuration also re-emits every file.
+ * `generateBuildOptions` and `generateGlobalDef` have no `since` filter, while everything that does
+ * not depend on the configuration is already correct on disk.
  */
 let wiped = false;
 
