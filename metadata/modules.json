@@ -654,13 +654,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "kubient",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "lasso",
       "aliasOf": null,
       "gvlid": null,
