@@ -176,7 +176,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
       }
     }
     try {
-      submodule.callback(setId);
+      submodule.callback(setId, handle.view.get);
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
       handle.close();
@@ -754,6 +754,8 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
   // 3. neither: call getId on every page view
+  // a callback left by an earlier invocation is superseded, whether or not this one returns its own
+  submodule.callback = undefined;
   if (submodule.config.value && !submodule.config.storage) {
     submodule.idObj = submodule.config.value;
     return;
@@ -797,10 +799,8 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
       submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
     }
   }
-  if (callback) {
-    // Save async callback to be invoked after auction
-    submodule.callback = callback;
-  } else {
+  submodule.callback = callback;
+  if (!callback) {
     handle.close();
   }
 }

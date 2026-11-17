@@ -40,11 +40,14 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
   const storage = submodule.config.storage;
   const mgr = submodule.storageMgr;
 
-  mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
-  mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
   if (valueStr != null) {
     mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
   }
+  // an expiry with no value next to it would make the value read back as the string "null"
+  if (valueStr != null || mgr.getDataFromLocalStorage(storage.name) != null) {
+    mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+  }
+  mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
   if (typeof storage.refreshInSeconds === 'number') {
     mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
   }
@@ -138,7 +141,8 @@ function getValueFromLocalStorage(submodule, storedKey) {
   if (storedValueExp === '') {
     return mgr.getDataFromLocalStorage(storedKey);
   } else if (storedValueExp && ((new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-    return decodeURIComponent(mgr.getDataFromLocalStorage(storedKey));
+    const value = mgr.getDataFromLocalStorage(storedKey);
+    return value == null ? undefined : decodeURIComponent(value);
   }
 }
 

@@ -168,18 +168,30 @@ describe('SharedId System', function () {
         sinon.assert.notCalled(storage.touch);
       });
 
-      it('should complete without an id, and leave storage alone, when reading storage throws', function () {
-        sandbox.stub(utils, 'logError');
-        const storage = storageHolding(() => { throw new Error('storage unavailable'); });
-        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
+      it('should keep the id without following storage when no storage is configured', function () {
+        const storage = storageHolding(() => 'restored-by-server');
+        sharedIdSystemSubmodule.getId({ params: config.params }, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
-        clock.tick(0);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
         sinon.assert.calledWithExactly(callbackSpy);
-        sinon.assert.notCalled(storage.set);
+        sinon.assert.notCalled(storage.get);
         sinon.assert.notCalled(storage.touch);
         sinon.assert.notCalled(storage.remove);
-        sinon.assert.calledOnce(utils.logError);
+      });
+
+      it('should keep an id that is already stored without writing it again before the pixel', function () {
+        const storage = storageHolding(() => 'stored-id');
+        const result = sharedIdSystemSubmodule.getId(config, undefined, 'stored-id', storage);
+        expect(result.id).to.equal('stored-id');
+        sinon.assert.calledOnce(storage.touch);
+        sinon.assert.notCalled(storage.set);
+      });
+
+      it('should let the User ID module store a newly minted id before the pixel', function () {
+        const storage = storageHolding(() => undefined);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage);
+        sinon.assert.notCalled(storage.touch);
       });
     });
     it('should abort if coppa is set', function () {

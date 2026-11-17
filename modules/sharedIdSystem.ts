@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, logWarn, logError, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, logWarn, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
@@ -90,26 +90,24 @@ const PIXEL_RECHECK_MS = 50;
  * Fire the pixel, then make the ID follow what storage holds once the endpoint has had the chance to set or delete
  * the cookie.
  * @param pubcid the ID this page view already holds: the one getId minted or found, or extendId's stored ID
- * @param pixelUrl the pixel endpoint
+ * @param config the submodule configuration
  * @param handle the getId / extendId invocation's handle
  */
-function pixelSyncCallback(pubcid, pixelUrl, handle: IdHandle): ProviderResponse['callback'] {
+function pixelSyncCallback(pubcid, config, handle: IdHandle): ProviderResponse['callback'] {
   return function (setId) {
-    queuePixelCallback(pixelUrl, pubcid, () => {
+    queuePixelCallback(config.params.pixelUrl, pubcid, () => {
+      if (!config.storage) {
+        // nothing reads what the endpoint sets: keep the ID this page view holds
+        setId();
+        return;
+      }
       // Storage is read on the next task, not in the pixel's load handler: in some WebKit builds the response's
       // Set-Cookie is not yet visible in document.cookie at the load event (see #16158). If storage still holds
       // `pubcid` then, it is read once more after a short delay.
       // Whatever the endpoint left is only touched, never written again: that would turn its cookie into a
       // script-set one (capped at 7 days in Safari).
       const read = (recheck) => {
-        let storedId;
-        try {
-          storedId = handle.get();
-        } catch (e) {
-          logError('sharedId: could not read the stored id after the pixel', e);
-          setId();
-          return;
-        }
+        const storedId = handle.get();
         if (recheck && storedId && storedId === pubcid) {
           setTimeout(() => read(false), PIXEL_RECHECK_MS);
         } else if (storedId) {
@@ -126,8 +124,8 @@ function pixelSyncCallback(pubcid, pixelUrl, handle: IdHandle): ProviderResponse
   };
 }
 
-function getIdCallback(pubcid, pixelUrl, handle: IdHandle): ProviderResponse['callback'] {
-  return pixelUrl ? pixelSyncCallback(pubcid, pixelUrl, handle) : (setId) => setId(pubcid);
+function getIdCallback(pubcid, config, handle: IdHandle): ProviderResponse['callback'] {
+  return config.params?.pixelUrl ? pixelSyncCallback(pubcid, config, handle) : (setId) => setId(pubcid);
 }
 
 let warnedPixelStorage = false;
@@ -213,7 +211,11 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl, handle) };
+    if (pixelUrl && storedId && config.storage) {
+      // the endpoint may have set the stored ID: keep it in memory without writing it again from script
+      handle.touch();
+    }
+    return { id: newId, callback: getIdCallback(newId, config, handle) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -242,7 +244,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     if (extend) {
       if (pixelUrl) {
         checkPixelStorage(config, pixelUrl);
-        return { callback: pixelSyncCallback(storedId, pixelUrl, handle) };
+        return { callback: pixelSyncCallback(storedId, config, handle) };
       } else {
         return { id: storedId };
       }

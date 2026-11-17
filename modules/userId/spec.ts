@@ -90,7 +90,13 @@ export type ProviderResponse = {
   /**
    * If provided, will be invoked at a later point.
    */
-  callback?: (setId: (id?: SerializableId) => void) => void;
+  callback?: (
+    setId: (id?: SerializableId) => void,
+    /**
+     * @deprecated use the `handle` passed to getId / extendId
+     */
+    getStoredValue: () => SerializableId | undefined
+  ) => void;
 };
 
 /**

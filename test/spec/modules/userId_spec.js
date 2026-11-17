@@ -481,7 +481,27 @@ describe('User ID', function () {
       ]);
     }
 
-    it('Returning visit with pixelUrl: an ID the endpoint deleted is dropped', async function () {
+    function recordCookieWrites() {
+      let proto = Object.getPrototypeOf(document);
+      while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
+      const nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
+      const writes = [];
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get() { return nativeCookie.get.call(document); },
+        set(value) {
+          writes.push(value);
+          nativeCookie.set.call(document, value);
+        }
+      });
+      return {
+        writes,
+        setFromServer: (cookie) => nativeCookie.set.call(document, cookie),
+        restore: () => { delete document.cookie; }
+      };
+    }
+
+    it('Returning visit with pixelUrl and extend: an ID the endpoint deleted is dropped', async function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
       customConfig = addConfig(customConfig, 'params', { extend: true, pixelUrl: '/any/pubcid/url' });
       customConfig.userSync.auctionDelay = 10;
@@ -489,16 +509,53 @@ describe('User ID', function () {
         eraseCookie('pubcid_alt');
         setTimeout(done);
       });
+      const getId = sinon.spy(sharedIdSystemSubmodule, 'getId');
+      const extendId = sinon.spy(sharedIdSystemSubmodule, 'extendId');
+      try {
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        // a consent hash matching the current one, so that the stored ID is extended rather than fetched again
+        coreStorage.setCookie('pubcid_alt_cst', getConsentHash(), (new Date(Date.now() + 20000)).toUTCString());
+        config.setConfig(customConfig);
+        expect(await userIdsAfterCallbacks()).to.eql({});
+        sinon.assert.calledOnce(extendId);
+        sinon.assert.notCalled(getId);
+        sinon.assert.calledOnce(triggerPixel);
+        expect(await getGlobalEids() ?? []).to.eql([]);
+        expect(coreStorage.getCookie('pubcid_alt')).to.not.be.ok;
+        expect(coreStorage.getCookie('pubcid_alt_cst')).to.not.be.ok;
+      } finally {
+        triggerPixel.restore();
+        getId.restore();
+        extendId.restore();
+        eraseCookie('pubcid_alt_cst');
+      }
+    });
+
+    it('Returning visit with pixelUrl that runs getId again: the stored ID is not rewritten from script', async function () {
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', { pixelUrl: '/any/pubcid/url' });
+      customConfig.userSync.auctionDelay = 10;
+      // without a stored consent hash, getId runs rather than extendId
+      eraseCookie('pubcid_cst');
+      const cookies = recordCookieWrites();
+      cookies.setFromServer('pubcid=server-set-id; path=/');
+      const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => setTimeout(done));
+      const getId = sinon.spy(sharedIdSystemSubmodule, 'getId');
       try {
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(customConfig);
-        expect(await userIdsAfterCallbacks()).to.eql({});
+        expect(await userIdsAfterCallbacks()).to.eql({ pubcid: 'server-set-id' });
+        sinon.assert.calledOnce(getId);
         sinon.assert.calledOnce(triggerPixel);
-        expect(await getGlobalEids() ?? []).to.eql([]);
-        expect(coreStorage.getCookie('pubcid_alt')).to.not.be.ok;
+        expect(cookies.writes.filter(w => w.startsWith('pubcid='))).to.eql([]);
+        expect(cookies.writes.some(w => w.startsWith('pubcid_cst='))).to.be.true;
       } finally {
+        cookies.restore();
         triggerPixel.restore();
+        getId.restore();
+        eraseCookie('pubcid_cst');
       }
     });
 
@@ -506,23 +563,11 @@ describe('User ID', function () {
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', { pixelUrl: '/any/pubcid/url' });
       customConfig.userSync.auctionDelay = 10;
-
-      let proto = Object.getPrototypeOf(document);
-      while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
-      const nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
-      const scriptWrites = [];
+      const cookies = recordCookieWrites();
       let writesBeforePixel = null;
-      Object.defineProperty(document, 'cookie', {
-        configurable: true,
-        get() { return nativeCookie.get.call(document); },
-        set(value) {
-          scriptWrites.push(value);
-          nativeCookie.set.call(document, value);
-        }
-      });
       const triggerPixel = sinon.stub(utils, 'triggerPixel').callsFake((url, done) => {
-        writesBeforePixel = scriptWrites.length;
-        nativeCookie.set.call(document, 'pubcid=restored-by-server; path=/');
+        writesBeforePixel = cookies.writes.length;
+        cookies.setFromServer('pubcid=restored-by-server; path=/');
         setTimeout(done);
       });
       try {
@@ -530,12 +575,13 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(customConfig);
         expect(await userIdsAfterCallbacks()).to.eql({ pubcid: 'restored-by-server' });
-        expect(scriptWrites.slice(writesBeforePixel).filter(w => w.startsWith('pubcid='))).to.eql([]);
+        expect(cookies.writes.slice(writesBeforePixel).filter(w => w.startsWith('pubcid='))).to.eql([]);
         // the consent hash is still recorded, so the next page view doesn't run getId again
-        expect(scriptWrites.slice(writesBeforePixel).some(w => w.startsWith('pubcid_cst='))).to.be.true;
+        expect(cookies.writes.slice(writesBeforePixel).some(w => w.startsWith('pubcid_cst='))).to.be.true;
       } finally {
-        delete document.cookie;
+        cookies.restore();
         triggerPixel.restore();
+        eraseCookie('pubcid_cst');
       }
     });
 
@@ -1384,6 +1430,57 @@ describe('User ID', function () {
           await run((config, consent, storedId, h) => { handle = h; });
           expect(Object.keys(handle).sort()).to.eql(['get', 'remove', 'set', 'touch']);
         });
+      });
+
+      it('should still pass the stored value getter to the callback', async () => {
+        let getter;
+        await run(() => ({ callback: (setId, getStoredValue) => { getter = getStoredValue; setId(); } }), 'stored');
+        expect(getter()).to.equal('stored');
+      });
+
+      it('should not write an html5 expiry on touch() when nothing is stored', async () => {
+        const ids = await run(withCallback((setId, handle) => {
+          handle.touch();
+          setId();
+        }));
+        expect(ids).to.eql({});
+        expect(read('_exp')).to.not.exist;
+      });
+
+      it('should read a value-less html5 expiry as nothing stored', async () => {
+        coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', new Date(Date.now() + 60000).toUTCString());
+        let seen;
+        await run(withCallback((setId, handle) => {
+          seen = handle.get();
+          setId();
+        }));
+        expect(seen).to.be.undefined;
+      });
+
+      it('should not run a callback left by an invocation that a refresh replaced with one returning an ID', async () => {
+        const leftover = sinon.stub();
+        const getId = sinon.stub();
+        getId.onFirstCall().returns({ callback: leftover });
+        getId.returns({ id: 'fresh' });
+        init(config);
+        setSubmoduleRegistry([{ name: 'mockId', getId, decode: (value) => ({ mid: value }) }]);
+        config.setConfig({
+          userSync: {
+            // callbacks wait for the end of an auction, which never comes here
+            auctionDelay: 0,
+            userIds: [{ name: 'mockId', storage: { type: 'html5', name: TEST_KEY, expires: 1 } }]
+          }
+        });
+        for (let i = 0; i < 100 && !getId.called; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        sinon.assert.calledOnce(getId);
+        const ids = await Promise.race([
+          getGlobal().refreshUserIds(),
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('refreshUserIds did not resolve')), 1000))
+        ]);
+        expect(ids).to.eql({ mid: 'fresh' });
+        sinon.assert.notCalled(leftover);
       });
 
       it('should ignore an invocation superseded by a refresh', async () => {
