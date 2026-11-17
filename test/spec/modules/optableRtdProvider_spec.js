@@ -291,6 +291,55 @@ describe('Optable RTD Submodule', function () {
       expect(mergeFn.called).to.be.false;
     });
 
+    it('stops waiting for the bundle after auctionDelay, and does not run the handler when it loads later', async function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      const bundleHandleRtd = sinon.stub().resolves();
+
+      const pending = defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 20);
+      expect(window.optable.cmd.length).to.equal(1);
+      const outcome = await Promise.race([
+        pending.then(() => 'released'),
+        new Promise(resolve => setTimeout(() => resolve('still waiting'), 500)),
+      ]);
+      expect(outcome).to.equal('released');
+
+      // The bundle loads after the auction was released
+      window.optable.rtd = { handleRtd: bundleHandleRtd };
+      window.optable.cmd[0]();
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(bundleHandleRtd.called).to.be.false;
+      expect(mergeFn.called).to.be.false;
+    });
+
+    it('does not wait for the bundle when the auction is not delayed', async function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 0);
+
+      expect(window.optable.cmd.length).to.equal(0);
+      expect(mergeFn.called).to.be.false;
+    });
+
+    it('waits for the SDK event only for what is left of auctionDelay after the bundle loads', async function () {
+      sandbox.stub(storage, 'getDataFromLocalStorage').returns(null);
+      const clock = sandbox.useFakeTimers();
+
+      let released = false;
+      const pending = defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 100).then(() => { released = true; });
+      await clock.tickAsync(60);
+      // The bundle loads 60ms in, without targeting cached yet
+      window.optable.instance = {};
+      window.optable.cmd[0]();
+      await clock.tickAsync(39);
+      expect(released).to.be.false;
+      await clock.tickAsync(1);
+      expect(released).to.be.true;
+      await pending;
+
+      expect(mergeFn.called).to.be.false;
+    });
+
     it('ignores a cache entry without EIDs', function () {
       sandbox.stub(storage, 'getDataFromLocalStorage')
         .returns(JSON.stringify({ ortb2: { user: { eids: [] } } }));
@@ -962,17 +1011,16 @@ describe('Optable RTD Submodule - enableTargeting', function () {
     it('calls targeting API with correct parameters', async function () {
       storage.getDataFromLocalStorage.returns(null);
 
-      ajaxStub.callsFake((url, options) => {
-        expect(url).to.include('https://dcn.customer.com/v2/targeting');
-        expect(url).to.include('o=my-site');
-        expect(url).to.include('t=my-node');
-        expect(url).to.include('id=id1');
-        options.success('{"ortb2":{"user":{"eids":[]}}}');
-      });
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
       expect(ajaxStub.calledOnce).to.be.true;
+      const url = new URL(ajaxStub.firstCall.args[0]);
+      expect(`${url.origin}${url.pathname}`).to.equal('https://dcn.customer.com/v2/targeting');
+      expect(url.searchParams.get('o')).to.equal('my-site');
+      expect(url.searchParams.get('t')).to.equal('my-node');
+      expect(url.searchParams.getAll('id')).to.deep.equal(['id1']);
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({ method: 'GET', withCredentials: true, keepalive: true });
       expect(callback.calledOnce).to.be.true;
     });
@@ -997,21 +1045,25 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       };
       storage.getDataFromLocalStorage.returns(JSON.stringify(cachedData));
 
-      let apiCallMade = false;
+      // Hold the API response so the background refresh finishes inside this test
+      let respond;
       ajaxStub.callsFake((url, options) => {
-        apiCallMade = true;
-        // Simulate async API call
-        setTimeout(() => {
-          options.success('{"ortb2":{"user":{"eids":[{"source":"fresh.com"}]}}}');
-        }, 10);
+        respond = options.success;
       });
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
       // Callback should be called immediately with cached data
       expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(cachedData.ortb2.user.eids);
       // API call should still be made for background update
-      expect(apiCallMade).to.be.true;
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(storage.setDataInLocalStorage.called).to.be.false;
+
+      respond('{"ortb2":{"user":{"eids":[{"source":"fresh.com"}]}}}');
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY, sinon.match('fresh.com'))).to.be.true;
     });
 
     it('waits for API call when no cache available', async function () {
@@ -1054,16 +1106,16 @@ describe('Optable RTD Submodule - enableTargeting', function () {
         }
       };
 
-      ajaxStub.callsFake((url, options) => {
-        expect(url).to.include('gpp=DBABMA~test');
-        expect(url).to.include('gpp_sid=2,6');
-        expect(url).to.include('gdpr_consent=CPXxxx');
-        expect(url).to.include('gdpr=1');
-        options.success('{"ortb2":{"user":{"eids":[]}}}');
-      });
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, userConsent);
       expect(ajaxStub.calledOnce).to.be.true;
+      // Assert outside the ajax stub: an expect() thrown in there is swallowed by the module's error handling
+      const params = new URL(ajaxStub.firstCall.args[0]).searchParams;
+      expect(params.get('gpp')).to.equal('DBABMA~test');
+      expect(params.get('gpp_sid')).to.equal('2,6');
+      expect(params.get('gdpr_consent')).to.equal('CPXxxx');
+      expect(params.get('gdpr')).to.equal('1');
       expect(ajaxStub.firstCall.args[3].withCredentials).to.be.false;
     });
 
@@ -1090,42 +1142,93 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       storage.getDataFromLocalStorage.returns(null);
       moduleConfig.params.ids = [];
 
-      ajaxStub.callsFake((url, options) => {
-        expect(url).to.include('id=__passport__');
-        options.success('{"ortb2":{"user":{"eids":[]}}}');
-      });
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(ajaxStub.calledOnce).to.be.true;
+      expect(new URL(ajaxStub.firstCall.args[0]).searchParams.getAll('id')).to.deep.equal(['__passport__']);
     });
 
-    it('includes passport in cookieless mode', async function () {
+    it('includes passport in cookieless mode, without credentials', async function () {
       storage.getDataFromLocalStorage.returns(null);
       moduleConfig.params.cookies = false;
       storage.getDataFromLocalStorage.withArgs(sinon.match(/OPTABLE_PASSPORT/)).returns('test-passport');
 
-      ajaxStub.callsFake((url, options) => {
-        expect(url).to.include('cookies=no');
-        expect(url).to.include('passport=test-passport');
-        options.success('{"ortb2":{"user":{"eids":[]}}}');
-      });
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(ajaxStub.calledOnce).to.be.true;
+      const params = new URL(ajaxStub.firstCall.args[0]).searchParams;
+      expect(params.get('cookies')).to.equal('no');
+      expect(params.get('passport')).to.equal('test-passport');
+      expect(ajaxStub.firstCall.args[3].withCredentials).to.be.false;
     });
 
     it('includes cookies=yes in cookie mode', async function () {
       storage.getDataFromLocalStorage.returns(null);
       moduleConfig.params.cookies = true;
 
-      ajaxStub.callsFake((url, options) => {
-        expect(url).to.include('cookies=yes');
-        expect(url).to.not.include('passport=');
-        options.success('{"ortb2":{"user":{"eids":[]}}}');
-      });
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(ajaxStub.calledOnce).to.be.true;
+      const params = new URL(ajaxStub.firstCall.args[0]).searchParams;
+      expect(params.get('cookies')).to.equal('yes');
+      expect(params.has('passport')).to.be.false;
+      expect(ajaxStub.firstCall.args[3].withCredentials).to.be.true;
+    });
+
+    it('shares one API call between concurrent auctions with the same parameters', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      let respond;
+      ajaxStub.callsFake((url, options) => {
+        respond = options.success;
+      });
+
+      const first = getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      const second = getBidRequestData({ ortb2Fragments: { global: {} } }, callback, moduleConfig, {});
+      respond('{"ortb2":{"user":{"eids":[]}}}');
+      await Promise.all([first, second]);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(callback.calledTwice).to.be.true;
+    });
+
+    it('calls the API again when the identifiers change', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      moduleConfig.params.ids = ['e:logged-in'];
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(ajaxStub.calledTwice).to.be.true;
+      expect(new URL(ajaxStub.secondCall.args[0]).searchParams.getAll('id')).to.deep.equal(['e:logged-in']);
+    });
+
+    it('calls the API again when consent changes', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, { gdpr: { gdprApplies: true, consentString: 'before' } });
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, { gdpr: { gdprApplies: true, consentString: 'after' } });
+
+      expect(ajaxStub.calledTwice).to.be.true;
+      expect(new URL(ajaxStub.secondCall.args[0]).searchParams.get('gdpr_consent')).to.equal('after');
+    });
+
+    it('refreshes the cache in the background once for each set of parameters', async function () {
+      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [{ source: 'cached.com', uids: [{ id: 'x' }] }] } } }));
+      ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(ajaxStub.calledOnce).to.be.true;
+
+      moduleConfig.params.hids = ['h1'];
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      expect(ajaxStub.calledTwice).to.be.true;
     });
 
     it('updates passport from API response', async function () {
@@ -1560,6 +1663,30 @@ describe('Optable RTD Submodule - enableTargeting', function () {
 
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('releases the auction when the SDK does not load within auctionDelay, and ignores it loading later', async function () {
+      const moduleConfig = { params: { enableTargeting: true } };
+      const handleRtd = sinon.spy();
+      moduleConfig.params.handleRtd = handleRtd;
+
+      const pending = getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 20);
+      const outcome = await Promise.race([
+        pending.then(() => 'released'),
+        new Promise(resolve => setTimeout(() => resolve('still waiting'), 500)),
+      ]);
+      expect(outcome).to.equal('released');
+      expect(callback.calledOnce).to.be.true;
+
+      window.optable.instance = {
+        targeting: sinon.stub(),
+        targetingFromCache: sinon.stub().returns({ ortb2: { user: { eids: [{ source: 'optable.co', uids: [{ id: 'late' }] }] } } })
+      };
+      window.optable.cmd[0]();
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(handleRtd.called).to.be.false;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
     });
   });
 });
