@@ -11,8 +11,10 @@ import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 import type { IdProviderSpec } from "./userId/spec.ts";
+import type { AllConsentData } from '../src/consentHandler.ts';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 const COOKIE = 'cookie';
@@ -37,6 +39,12 @@ export type SharedIdParams = {
    * For publisher server support only. Where to call out to for a server cookie.
    */
   pixelUrl?: string;
+  /**
+   * If true, the `pixelUrl` request also carries the page's consent data, so the endpoint can decide on storage with
+   * it: `gdpr` (1 or 0, when GDPR applicability is known), `gdpr_consent`, `us_privacy`, `gpp` and `gpp_sid`
+   * (comma-separated section IDs), each only when available. Default is false.
+   */
+  pixelConsent?: boolean;
   /**
    * The value to use for `inserter` in EIDs.
    */
@@ -84,7 +92,7 @@ function readValue(name, type) {
 // this page view minted.
 const PIXEL_RECHECK_MS = 50;
 
-function getIdCallback(pubcid, pixelUrl) {
+function getIdCallback(pubcid, pixelUrl, pixelParams?) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
@@ -116,14 +124,30 @@ function getIdCallback(pubcid, pixelUrl) {
           }
         };
         setTimeout(() => read(true), 0);
-      })();
+      }, pixelParams)();
     } else {
       callback(pubcid);
     }
   };
 }
 
-function queuePixelCallback(pixelUrl, id = '', callback?) {
+/**
+ * The page's consent data as `pixelUrl` query params, URL-encoded, when `pixelConsent` is set. Empty values are left
+ * out.
+ */
+function pixelConsentParams(pixelConsent, consentData: Partial<AllConsentData> | undefined): Record<string, string> {
+  if (!pixelConsent) return {};
+  const params: Record<string, string> = {};
+  Object.entries(getUserSyncParams(consentData?.gdpr, consentData?.usp, consentData?.gpp))
+    .filter(([, value]) => value != null && value !== '')
+    .forEach(([key, value]) => {
+      // getUserSyncParams encodes us_privacy already
+      params[key] = key === 'us_privacy' ? String(value) : encodeURIComponent(String(value));
+    });
+  return params;
+}
+
+function queuePixelCallback(pixelUrl, id = '', callback?, params: Record<string, string> = {}) {
   if (!pixelUrl) {
     return;
   }
@@ -131,6 +155,7 @@ function queuePixelCallback(pixelUrl, id = '', callback?) {
   // Use pubcid as a cache buster
   const urlInfo = parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
+  Object.assign(urlInfo.search, params);
   const targetUrl = buildUrl(urlInfo);
 
   return function () {
@@ -174,7 +199,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const { params: { create = true, pixelUrl } = {} } = config;
+    const { params: { create = true, pixelUrl, pixelConsent } = {} } = config;
     let newId = storedId;
     if (!newId) {
       try {
@@ -188,7 +213,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl) };
+    return { id: newId, callback: getIdCallback(newId, pixelUrl, pixelConsentParams(pixelConsent, consentData)) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -212,7 +237,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const { params: { extend = false, pixelUrl } = {} } = config;
+    const { params: { extend = false, pixelUrl, pixelConsent } = {} } = config;
 
     if (extend) {
       if (pixelUrl) {
@@ -220,7 +245,8 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
         // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
         // would have the User ID module re-store it, overwriting the server-set cookie from script.
         return {
-          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined))()
+          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined),
+            pixelConsentParams(pixelConsent, consentData))()
         };
       } else {
         return { id: storedId };
