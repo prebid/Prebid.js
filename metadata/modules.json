@@ -3737,13 +3737,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "shinezRtb",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "tagoras",
       "aliasOf": null,
       "gvlid": null,
