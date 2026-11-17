@@ -20,9 +20,12 @@ describe('video.js', function () {
   });
 
   afterEach(() => {
-    utilsMock.restore();
-    config.resetConfig();
-    sandbox.restore();
+    try {
+      utilsMock.verify();
+    } finally {
+      config.resetConfig();
+      sandbox.restore();
+    }
   });
 
   describe('fillVideoDefaults', () => {
