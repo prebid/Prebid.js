@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
 import assert from 'node:assert/strict';
-import { PassThrough } from 'node:stream';
+import { Readable } from 'node:stream';
 import { finished } from 'node:stream/promises';
 import sinon from 'sinon';
 import fs from 'node:fs';
@@ -124,11 +124,12 @@ describe('babelPrecomp configuration switches', function () {
     });
 
     it('propagates source errors to the returned stream', async () => {
-      sourceReader.callsFake(() => {
-        const input = new PassThrough({ objectMode: true });
-        queueMicrotask(() => input.destroy(new Error('source error')));
-        return input;
-      });
+      sourceReader.callsFake(() => new Readable({
+        objectMode: true,
+        read() {
+          this.destroy(new Error('source error'));
+        }
+      }));
       await assert.rejects(runStream(enabled), /source error/);
     });
 
