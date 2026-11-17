@@ -1018,13 +1018,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "vlyby",
-      "aliasOf": null,
-      "gvlid": 1009,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "vrtcal",
       "aliasOf": null,
       "gvlid": 706,
