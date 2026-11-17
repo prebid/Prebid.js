@@ -122,9 +122,9 @@ Without a `storage` object the module is inactive: it logs an error, makes no re
 ID.
 
 When the Identity service refuses a request (it answers `sevio_id: null`, for example because of the
-privacy signals), any stored ID is revoked: Prebid replaces it in both stores with the marker
-`{"revoked":true}`, and no Sevio ID or EID is provided until the next request. A failed request (a
-network or HTTP error, or a malformed answer) keeps the stored ID.
+privacy signals), any stored ID is revoked: Prebid deletes it from both stores and provides no Sevio
+ID or EID. With nothing stored, the next page view asks the Identity service again. A failed request
+(a network or HTTP error, or a malformed answer) keeps the stored ID.
 
 Only a non-empty string that does not start with `{` is a valid ID: Prebid stores the ID as a bare
 string and reads any stored value starting with `{` back as JSON. An answer carrying anything else is
