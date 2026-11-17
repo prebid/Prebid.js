@@ -56,7 +56,7 @@ export const spec = {
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: getWinDimensions(window).document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions(window).innerWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
