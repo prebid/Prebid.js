@@ -357,6 +357,9 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
+      // Ensure requestsDone is resolved for empty auctions as well.
+      // Use the same resolver path used by addBidderRequestsCallback/run.
+      requestsDone.resolve();
       auctionDone();
     } else {
       addBidderRequests.call({
