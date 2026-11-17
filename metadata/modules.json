@@ -2397,13 +2397,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "bidfuse",
-      "aliasOf": null,
-      "gvlid": 1466,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "boldwin",
       "aliasOf": null,
       "gvlid": 1151,
