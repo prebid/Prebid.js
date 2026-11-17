@@ -1218,6 +1218,29 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(new URL(ajaxStub.secondCall.args[0]).searchParams.get('gdpr_consent')).to.equal('after');
     });
 
+    it('serves the targeting for the current identifiers when they change back (A, B, A)', async function () {
+      const store = {};
+      storage.getDataFromLocalStorage.callsFake((key) => store[key] ?? null);
+      storage.setDataInLocalStorage.callsFake((key, value) => { store[key] = value; });
+      ajaxStub.callsFake((url, options) => {
+        const id = new URL(url).searchParams.get('id');
+        options.success(JSON.stringify({ ortb2: { user: { eids: [{ source: `${id}.com`, uids: [{ id }] }] } } }));
+      });
+      const auction = async (id) => {
+        moduleConfig.params.ids = [id];
+        const request = { ortb2Fragments: { global: {} } };
+        await getBidRequestData(request, callback, moduleConfig, {});
+        return request.ortb2Fragments.global.user.ext.eids.map(eid => eid.source);
+      };
+
+      expect(await auction('a')).to.deep.equal(['a.com']);
+      // B is served A's cache while its own request refreshes it
+      expect(await auction('b')).to.deep.equal(['a.com']);
+      expect(await auction('a')).to.deep.equal(['a.com']);
+      expect(JSON.parse(store[OPTABLE_RESOLVED_KEY]).ortb2.user.eids[0].source).to.equal('a.com');
+      expect(ajaxStub.calledTwice).to.be.true;
+    });
+
     it('refreshes the cache in the background once for each set of parameters', async function () {
       storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [{ source: 'cached.com', uids: [{ id: 'x' }] }] } } }));
       ajaxStub.callsFake((url, options) => options.success('{"ortb2":{"user":{"eids":[]}}}'));

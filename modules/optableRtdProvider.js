@@ -366,7 +366,10 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 };
 
 let sessionID = null;
-/** Targeting requests by `targetingRequestKey`; failed ones are dropped so the next auction retries */
+/**
+ * Targeting requests by `targetingRequestKey`, as `{ request, data }` with `data` set once it succeeds;
+ * failed ones are dropped so the next auction retries
+ */
 let targetingRequests = new Map();
 
 /**
@@ -746,6 +749,16 @@ const targetingRequestKey = (apiParams) => {
 };
 
 /**
+ * Write a targeting response to both caches
+ * @param {Object} apiParams Targeting API parameters the response answers
+ * @param {Object} data Targeting response
+ */
+const storeTargeting = (apiParams, data) => {
+  setCachedTargeting(apiParams.cacheKey, data);
+  setSDKTargetingCache(apiParams.host, apiParams.node, data);
+};
+
+/**
  * Call the targeting API once per page load for each set of parameters (host, node,
  * site, identifiers, consent, cookie mode and cache key), and update both caches.
  * Concurrent auctions with the same parameters share the request; a failed call is
@@ -756,15 +769,16 @@ const targetingRequestKey = (apiParams) => {
 const fetchTargeting = (apiParams) => {
   const key = targetingRequestKey(apiParams);
   if (!targetingRequests.has(key)) {
+    const entry = { data: null };
     const forget = () => {
-      if (targetingRequests.get(key) === request) {
+      if (targetingRequests.get(key) === entry) {
         targetingRequests.delete(key);
       }
     };
-    const request = callTargetingAPI(apiParams).then(data => {
+    entry.request = callTargetingAPI(apiParams).then(data => {
       if (data) {
-        setCachedTargeting(apiParams.cacheKey, data);
-        setSDKTargetingCache(apiParams.host, apiParams.node, data);
+        entry.data = data;
+        storeTargeting(apiParams, data);
       } else {
         forget();
       }
@@ -774,9 +788,25 @@ const fetchTargeting = (apiParams) => {
       forget();
       return null;
     });
-    targetingRequests.set(key, request);
+    targetingRequests.set(key, entry);
   }
-  return targetingRequests.get(key);
+  return targetingRequests.get(key).request;
+};
+
+/**
+ * The response this page already got for these parameters, written back to both
+ * caches: the caches are shared, so a call with other parameters (say other `ids`)
+ * may have replaced it since
+ * @param {Object} apiParams Targeting API parameters
+ * @returns {Object|null} Targeting response, or null when there is none yet
+ */
+const reuseTargeting = (apiParams) => {
+  const data = targetingRequests.get(targetingRequestKey(apiParams))?.data;
+  if (!data) {
+    return null;
+  }
+  storeTargeting(apiParams, data);
+  return data;
 };
 
 export function resetTargetingRequest() {
@@ -900,8 +930,9 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
 
     logMessage(`Direct API mode: host=${host}, node=${node}, site=${site}, cookies=${cookies}, timeout=${effectiveTimeout}`);
 
-    // Serve the cache immediately and refresh it in the background, once per page load
-    const cachedData = getCachedTargeting(cacheKey);
+    // Serve the cache immediately and refresh it in the background, once per page load for these
+    // parameters; once that refresh has answered, serve its answer, as the shared cache may hold another's
+    const cachedData = reuseTargeting(apiParams) || getCachedTargeting(cacheKey);
     if (cachedData) {
       fetchTargeting(apiParams);
       await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
