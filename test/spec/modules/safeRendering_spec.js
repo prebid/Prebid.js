@@ -620,6 +620,7 @@ describe('safeRendering', () => {
         });
       });
     });
+
     describe('replies on an authenticated channel', () => {
       const bid = { adId: '123' };
       let port, processMessage;
@@ -669,6 +670,5 @@ describe('safeRendering', () => {
         sinon.assert.notCalled(replyPort.postMessage);
       });
     });
-
   });
 });

@@ -530,6 +530,7 @@ describe('cross-domain creative', () => {
         messages.forEach(({ payload }) => expect(payload).to.not.have.property('token'));
       });
     });
+
     [undefined, 'test'].forEach(token => {
       describe(`sendMessage callbacks ${token == null ? 'without' : 'with'} a token`, () => {
         let render;
@@ -617,6 +618,5 @@ describe('cross-domain creative', () => {
         });
       });
     });
-
   });
 });
