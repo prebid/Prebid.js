@@ -150,13 +150,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adnow",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adnuntius",
       "aliasOf": null,
       "gvlid": 855,
