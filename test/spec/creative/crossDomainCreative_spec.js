@@ -44,7 +44,7 @@ describe('cross-domain creative', () => {
           messages.push({ payload: JSON.parse(payload), targetOrigin, transfer });
           if (messages.length === 1) {
             transfer[0].onmessage = sinon.stub().callsFake((ev) => {
-              channelMessages.push({ payload: JSON.parse(ev.data) });
+              channelMessages.push({ payload: JSON.parse(ev.data), transfer: ev.ports });
             });
           }
         })
@@ -265,7 +265,9 @@ describe('cross-domain creative', () => {
         it('ignores messages that are not a prebid response message', () => {
           render({ adId: '123', pubUrl: ORIGIN });
           reply({ adId: '123', ad: 'markup' });
-          sinon.assert.notCalled(mkIframe);
+          return waitFor(() => true).then(() => {
+            sinon.assert.notCalled(mkIframe);
+          });
         });
 
         it('signals AD_RENDER_FAILED on exceptions', () => {
@@ -530,5 +532,93 @@ describe('cross-domain creative', () => {
         messages.forEach(({ payload }) => expect(payload).to.not.have.property('token'));
       });
     });
+    [undefined, 'test'].forEach(token => {
+      describe(`sendMessage callbacks ${token == null ? 'without' : 'with'} a token`, () => {
+        let render;
+
+        beforeEach(() => {
+          render = sinon.stub();
+          const frame = { setAttribute: sinon.stub(), contentWindow: { Promise, render } };
+          win.document.createElement.callsFake(() => frame);
+          win.document.body.appendChild.callsFake(() => frame.onload());
+        });
+
+        async function initialize() {
+          renderAd({ adId: '123', pubUrl: ORIGIN, token });
+          messages[0].transfer[0].postMessage(JSON.stringify({ message: MESSAGE_RESPONSE, adId: '123' }));
+          await waitFor(() => render.called);
+          return render.firstCall.args[1];
+        }
+
+        function requests() {
+          return (token == null ? messages : channelMessages).filter(({ payload }) => payload.message === 'test');
+        }
+
+        it('routes concurrent replies to their own callbacks, even out of order', async () => {
+          const { sendMessage } = await initialize();
+          const first = sinon.stub();
+          const second = sinon.stub();
+          const payload = Object.freeze({ foo: 'bar' });
+          sendMessage('test', payload, first);
+          sendMessage('test', payload, second);
+          await waitFor(() => requests().length === 2);
+          const [one, two] = requests();
+          expect(one.payload).to.eql({ message: 'test', adId: '123', foo: 'bar' });
+          expect(two.payload).to.eql(one.payload);
+          two.transfer[0].postMessage(JSON.stringify({ response: 'second' }));
+          await waitFor(() => second.called);
+          sinon.assert.notCalled(first);
+          one.transfer[0].postMessage('first response');
+          await waitFor(() => first.called);
+          sinon.assert.calledOnce(first);
+          sinon.assert.calledOnce(second);
+          expect(first.firstCall.args[0].data).to.equal('first response');
+          expect(second.firstCall.args[0].data).to.equal(JSON.stringify({ response: 'second' }));
+        });
+
+        it('delivers every reply on a callback port', async () => {
+          const { sendMessage } = await initialize();
+          const callback = sinon.stub();
+          sendMessage('test', {}, callback);
+          await waitFor(() => requests().length === 1);
+          requests()[0].transfer[0].postMessage('one');
+          requests()[0].transfer[0].postMessage('two');
+          await waitFor(() => callback.callCount === 2);
+          expect(callback.args.map(([event]) => event.data)).to.eql(['one', 'two']);
+        });
+
+        it('keeps callback replies separate from unsolicited messages', async () => {
+          const { sendMessage, onMessage } = await initialize();
+          const callback = sinon.stub();
+          const listener = sinon.stub();
+          onMessage(listener);
+          sendMessage('test', {}, callback);
+          await waitFor(() => requests().length === 1);
+          requests()[0].transfer[0].postMessage('response');
+          await waitFor(() => callback.called);
+          sinon.assert.notCalled(listener);
+          messages[0].transfer[0].postMessage(JSON.stringify({ message: 'push' }));
+          await waitFor(() => listener.called);
+          sinon.assert.calledOnceWithExactly(listener, { message: 'push' });
+        });
+
+        it('signals AD_RENDER_FAILED when a callback throws', async () => {
+          const { sendMessage } = await initialize();
+          sendMessage('test', {}, () => { throw new Error('reply error'); });
+          await waitFor(() => requests().length === 1);
+          requests()[0].transfer[0].postMessage('response');
+          const failure = () => (token == null ? messages : channelMessages)
+            .find(({ payload }) => payload.event === EVENT_AD_RENDER_FAILED);
+          await waitFor(failure);
+          expect(failure().payload).to.eql({
+            message: MESSAGE_EVENT,
+            adId: '123',
+            event: EVENT_AD_RENDER_FAILED,
+            info: { reason: ERROR_EXCEPTION, message: 'reply error' }
+          });
+        });
+      });
+    });
+
   });
 });

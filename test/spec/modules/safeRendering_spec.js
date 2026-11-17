@@ -620,5 +620,55 @@ describe('safeRendering', () => {
         });
       });
     });
+    describe('replies on an authenticated channel', () => {
+      const bid = { adId: '123' };
+      let port, processMessage;
+
+      beforeEach(() => {
+        port = { postMessage: sinon.stub() };
+        tokenIsValid.returns(true);
+        getBidForMessage.returns(bid);
+        processMessage = sandbox.stub(secureCreatives, 'processMessage');
+        hook(next, { ports: [port] }, { adId: bid.adId, token: 'right' });
+      });
+
+      function receive(ports, adId = bid.adId) {
+        port.onmessage({ data: JSON.stringify({ message: 'Prebid Request', adId }), ports });
+      }
+
+      it('uses a transferred reply port for each request', () => {
+        const first = { postMessage: sinon.stub() };
+        const second = { postMessage: sinon.stub() };
+        receive([first]);
+        receive([second]);
+        processMessage.secondCall.args[2]({ result: 'second' });
+        processMessage.firstCall.args[2]({ result: 'first' });
+        sinon.assert.calledOnceWithExactly(first.postMessage, JSON.stringify({ result: 'first' }));
+        sinon.assert.calledOnceWithExactly(second.postMessage, JSON.stringify({ result: 'second' }));
+        sinon.assert.notCalled(port.postMessage);
+      });
+
+      it('replies on the authenticated port when no reply port was transferred', () => {
+        receive([]);
+        processMessage.firstCall.args[2]({ result: 'response' });
+        sinon.assert.calledOnceWithExactly(port.postMessage, JSON.stringify({ result: 'response' }));
+      });
+
+      it('rejects a different adId even when a reply port is transferred', () => {
+        const replyPort = { postMessage: sinon.stub() };
+        receive([replyPort], 'other');
+        sinon.assert.notCalled(processMessage);
+        sinon.assert.notCalled(replyPort.postMessage);
+        sinon.assert.notCalled(port.postMessage);
+      });
+
+      it('ignores invalid messages with a reply port', () => {
+        const replyPort = { postMessage: sinon.stub() };
+        port.onmessage({ data: 'not JSON', ports: [replyPort] });
+        sinon.assert.notCalled(processMessage);
+        sinon.assert.notCalled(replyPort.postMessage);
+      });
+    });
+
   });
 });
