@@ -823,16 +823,13 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const options = { skipMergeIfUid2Exists };
 
     const sdkAvailable = isSDKAvailable(instance);
-    // Pages set up window.optable before loading the Optable bundle, which keeps its own merged cache under
-    // OPTABLE_RESOLVED; let it answer rather than overwrite that cache with a direct call
-    const bundleExpected = !sdkAvailable && !!window.optable;
-    if (!sdkAvailable && !bundleExpected && !hasDirectApiConfig && (host || node || site)) {
+    if (!sdkAvailable && !hasDirectApiConfig && (host || node || site)) {
       logError('host, node and site are all required for direct API calls, skipping Optable RTD');
       callback();
       return;
     }
 
-    if (sdkAvailable || bundleExpected || !hasDirectApiConfig) {
+    if (sdkAvailable || !hasDirectApiConfig) {
       logMessage('SDK mode: using the Optable Web SDK targeting');
       await withBundleOrCache(
         sdkAvailable,

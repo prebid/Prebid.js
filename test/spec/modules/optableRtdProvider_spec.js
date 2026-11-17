@@ -1225,29 +1225,18 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledTwice).to.be.true;
     });
 
-    it('uses the bundle cache instead of calling the DCN when the bundle is loading', async function () {
-      window.optable = { cmd: [] };
-      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
-      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: { user: { eids } } }));
+    it('calls the DCN directly when the page set up window.optable but the SDK has not loaded', async function () {
+      window.optable = { cmd: [], site: 'my-site' };
+      storage.getDataFromLocalStorage.returns(null);
+      const eids = [{ source: 'optable.co', uids: [{ id: 'direct-id' }] }];
+      ajaxStub.callsFake((url, options) => options.success(JSON.stringify({ ortb2: { user: { eids } } })));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
-      expect(ajaxStub.called).to.be.false;
-      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(window.optable.cmd).to.have.length(0);
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
-      delete window.optable;
-    });
-
-    it('waits for the loading bundle when its cache is empty', async function () {
-      window.optable = { cmd: [] };
-      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
-
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
-
-      expect(window.optable.cmd).to.have.length(1);
-      expect(ajaxStub.called).to.be.false;
-      expect(callback.called).to.be.false;
       delete window.optable;
     });
 
