@@ -6,6 +6,7 @@ import { Renderer } from 'src/Renderer.js';
 import { getCoreStorageManager } from '../../../src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as mockGpt from '../integration/faker/googletag.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
@@ -450,7 +451,7 @@ describe('RelaidoAdapter', function () {
     it('should get canonicalUrl (ogUrl:true)', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -464,8 +465,8 @@ describe('RelaidoAdapter', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
       const ogUrlElement = { content: 'http://localhost:9999/fb-test-fallback' };
-      if (window.top.document === document) {
-        // window.top.document.querySelector is called first, document.querySelector second
+      if (getWindowTop().document === document) {
+        // getWindowTop().document.querySelector is called first, document.querySelector second
         let calls = 0;
         sandbox.stub(document, 'querySelector').callsFake(() => {
           calls++;
@@ -475,7 +476,7 @@ describe('RelaidoAdapter', function () {
           return ogUrlElement;
         });
       } else {
-        sandbox.stub(window.top.document, 'querySelector').throws(new Error('cross-origin'));
+        sandbox.stub(getWindowTop().document, 'querySelector').throws(new Error('cross-origin'));
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:url"]').returns(ogUrlElement);
       }
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
@@ -487,7 +488,7 @@ describe('RelaidoAdapter', function () {
     it('should not get canonicalUrl when og:url meta is missing (ogUrl:true)', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
-      sandbox.stub(window.top.document, 'querySelector').returns(null);
+      sandbox.stub(getWindowTop().document, 'querySelector').returns(null);
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
@@ -497,8 +498,8 @@ describe('RelaidoAdapter', function () {
     it('should not get canonicalUrl when window.top is not accessible and og:url meta is missing (ogUrl:true)', function () {
       bidRequest.params.ogUrl = true;
       bidderRequest.refererInfo.canonicalUrl = null;
-      if (window.top.document === document) {
-        // window.top.document.querySelector is called first, document.querySelector second
+      if (getWindowTop().document === document) {
+        // getWindowTop().document.querySelector is called first, document.querySelector second
         let calls = 0;
         sandbox.stub(document, 'querySelector').callsFake(() => {
           calls++;
@@ -508,7 +509,7 @@ describe('RelaidoAdapter', function () {
           return null;
         });
       } else {
-        sandbox.stub(window.top.document, 'querySelector').throws(new Error('cross-origin'));
+        sandbox.stub(getWindowTop().document, 'querySelector').throws(new Error('cross-origin'));
         sandbox.stub(document, 'querySelector').returns(null);
       }
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
@@ -520,7 +521,7 @@ describe('RelaidoAdapter', function () {
     it('should not get canonicalUrl (ogUrl:false)', function () {
       bidRequest.params.ogUrl = false;
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });
@@ -532,7 +533,7 @@ describe('RelaidoAdapter', function () {
 
     it('should not get canonicalUrl (ogUrl:nothing)', function () {
       bidderRequest.refererInfo.canonicalUrl = null;
-      const documentStub = sandbox.stub(window.top.document, 'querySelector');
+      const documentStub = sandbox.stub(getWindowTop().document, 'querySelector');
       documentStub.withArgs('meta[property="og:url"]').returns({
         content: 'http://localhost:9999/fb-test'
       });

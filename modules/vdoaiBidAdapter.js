@@ -1,4 +1,4 @@
-import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject, sizesToSizeTuples } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques, isFn, isPlainObject, sizesToSizeTuples, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -76,7 +76,7 @@ export const spec = {
   buildRequests: (vdoValidBidRequests, bidderRequest) => {
     let winTop;
     try {
-      winTop = window.top;
+      winTop = getWindowTop();
       winTop.location.toString();
     } catch (e) {
       logMessage(e);

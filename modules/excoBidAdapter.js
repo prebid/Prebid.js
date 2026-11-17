@@ -13,6 +13,7 @@ import {
   logError,
   isStr,
   generateUUID,
+  getParentWindow,
 } from '../src/utils.js';
 
 export const SID = window.excoPid || generateUUID();
@@ -145,10 +146,10 @@ export class AdapterHelpers {
   }
 
   postToAllParentFrames = (message) => {
-    window.parent.postMessage(message, '*');
+    getParentWindow(window).postMessage(message, '*');
 
-    for (let i = 0; i < window.parent.frames.length; i++) {
-      window.parent.frames[i].postMessage(message, '*');
+    for (let i = 0; i < getParentWindow(window).frames.length; i++) {
+      getParentWindow(window).frames[i].postMessage(message, '*');
     }
   };
 

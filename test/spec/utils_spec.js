@@ -40,8 +40,76 @@ describe('Utils', function () {
     });
 
     it('should return false if window.top is not accessible', function () {
-      sandbox.stub(utils.internal, 'getWindowTop').returns(false);
+      sandbox.stub(utils, 'getWindowTop').returns(false);
       assert.equal(utils.canAccessWindowTop(), false);
+    });
+  });
+
+  describe('frame helpers', function () {
+    let sandbox, root;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      root = { parent: {}, frameElement: {} };
+      sandbox.stub(utils, 'getWindowTop').returns(root);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('getParentWindow returns the parent of a frame', function () {
+      expect(utils.getParentWindow({ parent: root })).to.equal(root);
+    });
+
+    it('getParentWindow returns the top window for the top window', function () {
+      expect(utils.getParentWindow(root)).to.equal(root);
+    });
+
+    it('getFrameElement returns the element embedding a frame', function () {
+      const frameElement = {};
+      expect(utils.getFrameElement({ frameElement })).to.equal(frameElement);
+    });
+
+    it('getFrameElement returns null for the top window', function () {
+      expect(utils.getFrameElement(root)).to.equal(null);
+    });
+  });
+
+  describe('frame helpers in a spec', function () {
+    let iframe;
+
+    beforeEach(function () {
+      iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+    });
+
+    afterEach(function () {
+      iframe.remove();
+    });
+
+    it('treat the spec window as the top of its frame tree', function () {
+      const child = iframe.contentWindow;
+      expect(utils.getWindowTop()).to.equal(window);
+      expect(utils.getWindowTop(child)).to.equal(window);
+      expect(utils.getParentWindow(child)).to.equal(window);
+      expect(utils.getParentWindow(window)).to.equal(window);
+      expect(utils.getFrameElement(window)).to.equal(null);
+    });
+
+    it('return the top of a window outside the real frame tree', function () {
+      const top = {};
+      expect(utils.getWindowTop({ top })).to.equal(top);
+    });
+
+    it('do not climb out of the spec window when getWindowTop is stubbed', function () {
+      const stub = sinon.stub(utils, 'getWindowTop').returns({});
+      try {
+        expect(utils.getParentWindow(window)).to.equal(window);
+        expect(utils.getFrameElement(window)).to.equal(null);
+      } finally {
+        stub.restore();
+      }
     });
   });
 
@@ -54,8 +122,16 @@ describe('Utils', function () {
       }
     };
 
+    let sandbox;
+
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'getWindowTop').returns({});
+    });
+
     afterEach(function() {
       delete window.$sf;
+      sandbox.restore();
     });
 
     it('should return true if window.$sf is accessible', function () {

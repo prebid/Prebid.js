@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions, getScreenOrientation, getWindowTop } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -53,7 +53,7 @@ export const spec = {
       if (gpid) { reqObj.gpid = gpid; }
       return reqObj;
     });
-    const topWindow = window.top;
+    const topWindow = getWindowTop();
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),

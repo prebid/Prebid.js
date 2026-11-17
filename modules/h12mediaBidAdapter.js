@@ -1,5 +1,5 @@
 import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
-import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
+import { inIframe, logError, deepAccess, getWinDimensions, getFrameElement, getParentWindow, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
@@ -163,7 +163,7 @@ export const spec = {
 
 function getContext(elem) {
   try {
-    return elem && window.document.body.contains(elem) ? window : (window.top.document.body.contains(elem) ? top : undefined);
+    return elem && window.document.body.contains(elem) ? window : (getWindowTop().document.body.contains(elem) ? getWindowTop() : undefined);
   } catch (e) {
     return undefined;
   }
@@ -237,13 +237,13 @@ function getFramePos() {
     m = m + 1;
     try {
       if (m > 1) {
-        t = t.parent;
+        t = getParentWindow(t);
       }
-      frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
-      frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
+      frmLeft = frmLeft + getBoundingClientRect(getFrameElement(t)).left;
+      frmTop = frmTop + getBoundingClientRect(getFrameElement(t)).top;
     } catch (o) { /* keep looping */
     }
-  } while ((m < 100) && (t.parent !== t.self));
+  } while ((m < 100) && (getParentWindow(t) !== t.self));
 
   return [frmLeft, frmTop];
 }

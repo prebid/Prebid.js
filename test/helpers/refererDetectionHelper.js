@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-window-top -- fake window trees */
 /**
  * Build a walkable linked list of window-like objects for testing.
  *

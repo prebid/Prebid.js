@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-window-top -- fake window trees */
 import { CMP_POLL_INTERVAL, cmpClient, MODE_CALLBACK, MODE_RETURN, pollForCmp } from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
@@ -74,6 +75,23 @@ describe('cmpClient', () => {
 
   it('should return undefined when there is no CMP', () => {
     expect(cmpClient({ apiName: 'missing' }, mockWindow())).to.not.exist;
+  });
+
+  it('should return undefined when there is no CMP above a child frame', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    try {
+      expect(cmpClient({ apiName: 'missing' }, iframe.contentWindow)).to.not.exist;
+    } finally {
+      iframe.remove();
+    }
+  });
+
+  it('should stop at a window that is its own parent even if it is not its top', () => {
+    const win = mockWindow();
+    win.parent = win;
+    win.top = {};
+    expect(cmpClient({ apiName: 'missing' }, win)).to.not.exist;
   });
 
   it('should return undefined when parent is inaccessible', () => {

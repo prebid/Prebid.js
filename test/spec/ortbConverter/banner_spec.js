@@ -65,7 +65,7 @@ describe('pbjs -> ortb banner conversion', () => {
       },
       imp: {
         banner: {
-          topframe: 0
+          topframe
         }
       }
     },

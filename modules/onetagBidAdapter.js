@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
-import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
+import { deepClone, logError, deepAccess, getWinDimensions, getFrameElement, getParentWindow } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
@@ -251,10 +251,10 @@ function createRenderer(bid, rendererOptions = {}) {
 function getFrameNesting() {
   let topmostFrame = window;
   try {
-    while (topmostFrame !== topmostFrame.parent) {
+    while (topmostFrame !== getParentWindow(topmostFrame)) {
       // eslint-disable-next-line no-unused-expressions
-      topmostFrame.parent.location.href;
-      topmostFrame = topmostFrame.parent;
+      getParentWindow(topmostFrame).location.href;
+      topmostFrame = getParentWindow(topmostFrame);
     }
   } catch (e) { }
   return topmostFrame;
@@ -379,13 +379,13 @@ function getSpaceCoords(bidRequest) {
     const { top, left, width, height } = getBoundingClientRect(space);
     let window = space.ownerDocument.defaultView;
     const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };
-    let frame = window.frameElement;
+    let frame = getFrameElement(window);
     while (frame != null) {
       const { top, left } = getBoundingClientRect(frame);
       coords.top += top + window.pageYOffset;
       coords.left += left + window.pageXOffset;
-      window = window.parent;
-      frame = window.frameElement;
+      window = getParentWindow(window);
+      frame = getFrameElement(window);
     }
     return coords;
   } catch (e) {

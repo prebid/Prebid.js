@@ -1,4 +1,4 @@
-import { canAccessWindowTop, internal as utilsInternals } from '../utils.js';
+import { canAccessWindowTop, getWindowSelf, getWindowTop } from '../utils.js';
 import { CachedApiWrapper } from './cachedApiWrapper.js';
 import { endLayoutEpoch, onLayoutEpochEnd, startLayoutEpoch } from './layoutEpoch.js';
 
@@ -54,7 +54,7 @@ function createDimensions(getWindow) {
   return dimensions;
 }
 
-const winDimensions = createDimensions(() => canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf());
+const winDimensions = createDimensions(() => canAccessWindowTop() ? getWindowTop() : getWindowSelf());
 
 export const internal = {
   winDimensions,
@@ -87,8 +87,8 @@ export function resetWinDimensions() {
 }
 
 export function getScreenOrientation(win) {
-  const fallbackWin = win ?? (canAccessWindowTop() ? utilsInternals.getWindowTop() : utilsInternals.getWindowSelf());
-  const screenData = fallbackWin?.screen ?? utilsInternals.getWindowSelf()?.screen ?? window?.screen;
+  const fallbackWin = win ?? (canAccessWindowTop() ? getWindowTop() : getWindowSelf());
+  const screenData = fallbackWin?.screen ?? getWindowSelf()?.screen ?? window?.screen;
   const width = Number(screenData?.width);
   const height = Number(screenData?.height);
 

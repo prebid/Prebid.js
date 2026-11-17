@@ -1,4 +1,4 @@
-import { isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions } from '../src/utils.js';
+import { isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions, getWindowTop } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -352,7 +352,7 @@ function getViewabilityData(bid) {
 
 function getCharset() {
   try {
-    return window.top.document.charset || window.top.document.characterSet;
+    return getWindowTop().document.charset || getWindowTop().document.characterSet;
   } catch (e) {
     return document.charset || document.characterSet;
   }

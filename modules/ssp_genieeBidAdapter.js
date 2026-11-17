@@ -1,5 +1,5 @@
 import * as utils from '../src/utils.js';
-import { isPlainObject } from '../src/utils.js';
+import { isPlainObject, getWindowTop, getParentWindow } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -211,7 +211,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo, sua) {
       ? encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.GENIEE_CT0])
       : '',
     referer: refererInfo?.ref || encodeURIComponentIncludeSingleQuotation(geparameter[GEPARAMS_KEY.REFERRER]) || '',
-    topframe: window.parent === window.self ? 1 : 0,
+    topframe: getParentWindow(window) === window.self ? 1 : 0,
     cur: currency,
     requestid: bid.bidId,
     ua: navigator.userAgent,
@@ -228,7 +228,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo, sua) {
   }
 
   try {
-    if (window.self.toString() !== '[object Window]' || window.parent.toString() !== '[object Window]') {
+    if (window.self.toString() !== '[object Window]' || getParentWindow(window).toString() !== '[object Window]') {
       data.err = '1';
     }
   } catch (e) {}
@@ -353,7 +353,7 @@ function makeCommonBidResponse(bid, width, height) {
 function makeBannerBidResponse(bid, request) {
   const bidResponse = makeCommonBidResponse(bid, bid.width, bid.height);
   const loc = encodeURIComponentIncludeSingleQuotation(
-    window.top === window.self ? location.href : window.top.document.referrer
+    getWindowTop() === window.self ? location.href : getWindowTop().document.referrer
   );
   const beacon = !bid.ib
     ? ''

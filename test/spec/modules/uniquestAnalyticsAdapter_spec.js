@@ -2,6 +2,7 @@ import uniquestAnalyticsAdapter from 'modules/uniquestAnalyticsAdapter.js';
 import { config } from 'src/config';
 import { EVENTS } from 'src/constants.js';
 import { server } from '../../mocks/xhr.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 const events = require('src/events');
 
@@ -416,7 +417,7 @@ describe('Uniquest Analytics Adapter', function () {
       // event_type
       expect(auctionEnd.event_type).to.eql(EVENTS.AUCTION_END);
       // URL
-      expect(auctionEnd.url).to.eql(window.top.location.href);
+      expect(auctionEnd.url).to.eql(getWindowTop().location.href);
       // bid
       expect(auctionEnd.bids).to.be.deep.equal([{
         auction_id: '75e394d9',
@@ -438,7 +439,7 @@ describe('Uniquest Analytics Adapter', function () {
       // event_type
       expect(auctionSucceeded.event_type).to.eql(EVENTS.AD_RENDER_SUCCEEDED);
       // URL
-      expect(auctionSucceeded.url).to.eql(window.top.location.href);
+      expect(auctionSucceeded.url).to.eql(getWindowTop().location.href);
       // bid
       expect(auctionSucceeded.bid).to.be.deep.equal({
         auction_id: '75e394d9',

@@ -317,7 +317,7 @@ describe('Taboola Adapter', function () {
         'imp': [{
           'id': res.data.imp[0].id,
           'banner': {
-            topframe: 0,
+            topframe: 1,
             format: [{
               w: displayBidRequestParams.mediaTypes.banner.sizes[0][0],
               h: displayBidRequestParams.mediaTypes.banner.sizes[0][1]

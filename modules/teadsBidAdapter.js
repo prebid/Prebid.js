@@ -1,4 +1,4 @@
-import { logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation } from '../src/utils.js';
+import { logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions, getScreenOrientation, getWindowTop } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -59,7 +59,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
-    const topWindow = window.top;
+    const topWindow = getWindowTop();
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -238,9 +238,9 @@ function getReferrerInfo(bidderRequest) {
 
 function getPageTitle() {
   try {
-    const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
+    const ogTitle = getWindowTop().document.querySelector('meta[property="og:title"]');
 
-    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+    return getWindowTop().document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
     const ogTitle = document.querySelector('meta[property="og:title"]');
 
@@ -252,8 +252,8 @@ function getPageDescription() {
   let element;
 
   try {
-    element = window.top.document.querySelector('meta[name="description"]') ||
-      window.top.document.querySelector('meta[property="og:description"]');
+    element = getWindowTop().document.querySelector('meta[name="description"]') ||
+      getWindowTop().document.querySelector('meta[property="og:description"]');
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
       document.querySelector('meta[property="og:description"]');

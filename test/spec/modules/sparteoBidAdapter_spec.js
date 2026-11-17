@@ -68,7 +68,7 @@ const VALID_REQUEST_BANNER = {
           'h': 1,
           'w': 1
         }],
-        'topframe': 0
+        'topframe': 1
       },
       'ext': {
         'sparteo': {
@@ -152,7 +152,7 @@ const VALID_REQUEST = {
           'h': 1,
           'w': 1
         }],
-        'topframe': 0
+        'topframe': 1
       },
       'ext': {
         'sparteo': {

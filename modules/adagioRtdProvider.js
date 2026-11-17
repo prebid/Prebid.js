@@ -25,7 +25,9 @@ import {
   isNumber,
   isSafeFrameWindow,
   isStr,
-  prefixLog
+  prefixLog,
+  getFrameElement,
+  getParentWindow,
 } from '../src/utils.js';
 import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
@@ -478,7 +480,7 @@ function getElementFromTopWindow(element, currentWindow) {
       }
       return element;
     } else {
-      const frame = currentWindow.frameElement;
+      const frame = getFrameElement(currentWindow);
       const frameClientRect = getBoundingClientRect(frame);
       const elementClientRect = getBoundingClientRect(element);
 
@@ -486,7 +488,7 @@ function getElementFromTopWindow(element, currentWindow) {
         return false;
       }
 
-      return getElementFromTopWindow(frame, currentWindow.parent);
+      return getElementFromTopWindow(frame, getParentWindow(currentWindow));
     }
   } catch (err) {
     logWarn(err);

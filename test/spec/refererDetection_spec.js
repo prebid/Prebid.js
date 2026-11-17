@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-window-top -- fake window trees */
 import { cacheWithLocation, detectReferer, ensureProtocol, parseDomain } from 'src/refererDetection.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';

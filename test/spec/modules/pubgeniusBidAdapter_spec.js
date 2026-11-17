@@ -181,7 +181,7 @@ describe('pubGENIUS adapter', () => {
               id: 'fakebidid',
               banner: {
                 format: [{ w: 300, h: 600 }, { w: 300, h: 250 }],
-                topframe: 0,
+                topframe: 1,
               },
               tagid: '1112',
             },
@@ -217,7 +217,7 @@ describe('pubGENIUS adapter', () => {
         id: 'fakebidid1',
         banner: {
           format: [{ w: 728, h: 90 }],
-          topframe: 0,
+          topframe: 1,
         },
         tagid: '1111',
       });

@@ -531,7 +531,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       expect(ortbRequest.imp[0].banner.format[0].w).to.equal(320);
       expect(ortbRequest.imp[0].banner.format[0].h).to.equal(250);
       expect(ortbRequest.imp[0].banner.pos).to.equal(1);
-      expect(ortbRequest.imp[0].banner.topframe).to.equal(0);
+      expect(ortbRequest.imp[0].banner.topframe).to.equal(1);
       expect(ortbRequest.imp[0].banner.api).to.deep.equal([1, 2, 3]);
       expect(ortbRequest.imp[0].banner.mimes).to.deep.equal(['image/jpg', 'image/gif']);
     });

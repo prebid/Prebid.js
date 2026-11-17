@@ -1,5 +1,5 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { createTrackPixelHtml } from '../src/utils.js';
+import { createTrackPixelHtml, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -27,7 +27,7 @@ function getPageUrl(bidRequest, bidderRequest) {
 
 function isInIframe() {
   try {
-    var isInIframe = (window.self !== window.top);
+    var isInIframe = (window.self !== getWindowTop());
   } catch (e) {
     isInIframe = true;
   }

@@ -1,4 +1,4 @@
-import { getBidIdParameter, parseSizesInput } from '../src/utils.js';
+import { getBidIdParameter, parseSizesInput, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
@@ -98,11 +98,11 @@ function getSyncUrl(gdprConsent, usPrivacy) {
 function getPublisherUrl() {
   var url = '';
   try {
-    if (window.top === window) {
+    if (getWindowTop() === window) {
       url = window.location.href;
     } else {
       try {
-        url = window.top.location.href;
+        url = getWindowTop().location.href;
       } catch (e) {
         url = document.referrer;
       }

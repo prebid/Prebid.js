@@ -6,6 +6,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
 import * as utils from '../../../src/utils.js';
 import { toOrtbNativeRequest } from '../../../src/native.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 const ORIGINAL_USER_AGENT_DATA = window.navigator.userAgentData;
 const ORIGINAL_USER_AGENT = window.navigator.userAgent;
@@ -518,7 +519,7 @@ describe('Mgid bid adapter', function () {
         }
       };
       const bidRequests = [bid];
-      const page = top.location.href;
+      const page = getWindowTop().location.href;
       const domain = utils.parseUrl(page).hostname;
       const bidderRequest = {
         ortb2: {
@@ -618,7 +619,7 @@ describe('Mgid bid adapter', function () {
       bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
-      const page = top.location.href;
+      const page = getWindowTop().location.href;
       const domain = utils.parseUrl(page).hostname;
       const bidderRequest = {
         ortb2: {
@@ -672,7 +673,7 @@ describe('Mgid bid adapter', function () {
       bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
-      const page = top.location.href;
+      const page = getWindowTop().location.href;
       const domain = utils.parseUrl(page).hostname;
       const bidderRequest = {
         ortb2: {
@@ -725,7 +726,7 @@ describe('Mgid bid adapter', function () {
       bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
-      const page = top.location.href;
+      const page = getWindowTop().location.href;
       const domain = utils.parseUrl(page).hostname;
       const bidderRequest = {
         ortb2: {
@@ -812,7 +813,7 @@ describe('Mgid bid adapter', function () {
         },
       };
       const bidRequests = [bid];
-      const page = top.location.href;
+      const page = getWindowTop().location.href;
       const domain = utils.parseUrl(page).hostname;
       const bidderRequest = {
         ortb2: {

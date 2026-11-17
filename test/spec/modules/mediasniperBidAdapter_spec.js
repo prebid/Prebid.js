@@ -218,7 +218,7 @@ describe('mediasniperBidAdapter', function () {
       expect(data.imp[0].banner.format[0].h).to.equal(250);
       expect(data.imp[0].banner.format[1].w).to.equal(300);
       expect(data.imp[0].banner.format[1].h).to.equal(600);
-      expect(data.imp[0].banner.topframe).to.equal(0);
+      expect(data.imp[0].banner.topframe).to.equal(1);
       expect(data.imp[0].banner.pos).to.equal(0);
     });
 

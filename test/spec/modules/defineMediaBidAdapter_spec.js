@@ -630,7 +630,7 @@ describe('interpretResponse', function () {
       {
         "id": "8566b4bbc519b58",
         "banner": {
-          "topframe": 0,
+          "topframe": 1,
           "format": [
             {
               "w": 1,

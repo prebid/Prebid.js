@@ -7,7 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import { getWinDimensions, logError, triggerPixel } from '../src/utils.js';
+import { getWinDimensions, logError, triggerPixel, getWindowTop, getParentWindow } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { OUTSTREAM } from '../src/video.js';
@@ -126,9 +126,9 @@ export const spec = {
 
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
-    var url = window.parent.location.href;
+    var url = getParentWindow(window).location.href;
 
-    if ((window.self === window.top) && (!url || (url.substr(0, 4) !== 'http') || isBaseUrl(url))) {
+    if ((window.self === getWindowTop()) && (!url || (url.substr(0, 4) !== 'http') || isBaseUrl(url))) {
       url = document.URL;
     }
 

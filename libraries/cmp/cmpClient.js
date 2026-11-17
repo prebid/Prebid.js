@@ -1,4 +1,5 @@
 import { PbPromise } from '../../src/utils/promise.js';
+import { getParentWindow } from '../../src/utils.js';
 
 /**
  * @typedef {function} CMPClient
@@ -127,8 +128,9 @@ export function cmpClient(
       } catch (e) {
       }
 
-      if (f === win.top) break;
-      f = f.parent;
+      const parent = getParentWindow(f);
+      if (parent === f) break;
+      f = parent;
     }
 
     return [

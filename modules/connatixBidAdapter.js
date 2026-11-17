@@ -16,7 +16,7 @@ import {
   isFn,
   isNumber,
   isStr,
-  logError
+  logError,
 } from '../src/utils.js';
 
 import {
@@ -122,7 +122,7 @@ function getDomElement(elementId) {
     return viewabilityContainer;
   }
 
-  const topDocument = window.top.document;
+  const topDocument = getWindowTop().document;
   if (document !== topDocument) {
     return getElementFromDoc(topDocument);
   }

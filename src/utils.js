@@ -20,26 +20,6 @@ export const logMessage = logging.logMessage;
 export const prefixLog = logging.prefixLog;
 export const debugTurnedOn = debug.debugTurnedOn;
 
-// this allows stubbing of utility functions that are used internally by other utility functions
-export const internal = {
-  checkCookieSupport,
-  getWindowSelf,
-  getWindowTop,
-  canAccessWindowTop,
-  getWindowLocation,
-  insertElement,
-  isFn,
-  triggerPixel,
-  logError,
-  logWarn,
-  logMessage,
-  logInfo,
-  parseQS,
-  formatQS,
-  deepEqual,
-  runBackgroundTask,
-};
-
 const prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
@@ -171,8 +151,28 @@ function isValidGPTSingleSize(singleSize) {
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
-export function getWindowTop() {
-  return window.top;
+/**
+ * The top window of `win`'s frame tree.
+ */
+export function getWindowTop(win = window) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win.top;
+}
+
+/**
+ * `win`'s parent window. Like `window.top.parent`, the parent of the top window is itself.
+ */
+export function getParentWindow(win) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win === getWindowTop(win) ? win : win.parent;
+}
+
+/**
+ * The element embedding `win`, or null for the top window.
+ */
+export function getFrameElement(win) {
+  // eslint-disable-next-line prebid/no-window-top
+  return win === getWindowTop(win) ? null : win.frameElement;
 }
 
 export function getWindowSelf() {
@@ -189,7 +189,7 @@ export function getDocument() {
 
 export function canAccessWindowTop() {
   try {
-    if (internal.getWindowTop().location.href) {
+    if (getWindowTop().location.href) {
       return true;
     }
   } catch (e) {
@@ -206,7 +206,7 @@ export function getFallbackWindow(win) {
   if (win) {
     return win;
   }
-  return canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+  return canAccessWindowTop() ? getWindowTop() : getWindowSelf();
 }
 
 export const createIframe = (() => {
@@ -390,7 +390,7 @@ export function politeTriggerPixel(url, credentials = 'include', immediate = fal
 
 export function triggerPixel(url, done, timeout) {
   const img = new Image();
-  if (done && internal.isFn(done)) {
+  if (done && isFn(done)) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
@@ -423,7 +423,7 @@ export function insertHtmlIntoIframe(htmlCode) {
     return;
   }
   const iframe = createInvisibleIframe();
-  internal.insertElement(iframe, document, 'body');
+  insertElement(iframe, document, 'body');
 
   ((doc) => {
     doc.open();
@@ -555,7 +555,7 @@ export function shuffle(array) {
 
 export function inIframe() {
   try {
-    return internal.getWindowSelf() !== internal.getWindowTop();
+    return getWindowSelf() !== getWindowTop();
   } catch (e) {
     return true;
   }
@@ -569,7 +569,7 @@ export function isSafeFrameWindow() {
     return false;
   }
 
-  const ws = internal.getWindowSelf();
+  const ws = getWindowSelf();
   return !!(ws.$sf && ws.$sf.ext);
 }
 
@@ -860,7 +860,7 @@ export function parseUrl(url, options) {
     hostname: parsed.hostname,
     port: +parsed.port,
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
-    search: (qsAsString) ? parsed.search : internal.parseQS(parsed.search || ''),
+    search: (qsAsString) ? parsed.search : parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
     host: parsed.host || window.location.host
   };
@@ -871,7 +871,7 @@ export function buildUrl(obj) {
     (obj.host ||
       obj.hostname + (obj.port ? `:${obj.port}` : '')) +
     (obj.pathname || '') +
-    (obj.search ? `?${internal.formatQS(obj.search || '')}` : '') +
+    (obj.search ? `?${formatQS(obj.search || '')}` : '') +
     (obj.hash ? `#${obj.hash}` : '');
 }
 

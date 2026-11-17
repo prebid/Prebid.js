@@ -1,4 +1,4 @@
-import { getWinDimensions, inIframe } from '../../src/utils.js';
+import { getWinDimensions, inIframe, getFrameElement, getParentWindow } from '../../src/utils.js';
 import { getBoundingClientRect } from '../boundingClientRect/boundingClientRect.js';
 import { PbPromise, urgentDelay } from '../../src/utils/promise.js';
 import { requestBids, startAuction } from '../../src/prebid.js';
@@ -26,11 +26,11 @@ export function getViewportOffset(win = window) {
   let x = 0;
   let y = 0;
   try {
-    while (win?.frameElement != null) {
-      const rect = getBoundingClientRect(win.frameElement);
+    while (win != null && getFrameElement(win) != null) {
+      const rect = getBoundingClientRect(getFrameElement(win));
       x += rect.left;
       y += rect.top;
-      win = win.parent;
+      win = getParentWindow(win);
     }
   } catch (e) {
     // offset cannot be calculated as some parents are cross-frame
@@ -185,7 +185,7 @@ function getClipRects(element) {
         node = node.parentElement;
       }
       // nothing can render outside the frame that contains it
-      const frame = win.frameElement;
+      const frame = getFrameElement(win);
       if (frame == null) break;
       win = frame.ownerDocument?.defaultView;
       const offset = getViewportOffset(win);

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import 'src/utils.js';
+import { getWindowTop } from 'src/utils.js';
 import { spec, acceptPostMessage, getStorageData, setStorageData } from 'modules/trionBidAdapter.js';
 
 import { getGlobal } from '../../../src/prebidGlobal.js';
@@ -49,11 +49,11 @@ const TRION_BID_RESPONSE = {
 const getPublisherUrl = function () {
   var url = null;
   try {
-    if (window.top === window) {
+    if (getWindowTop() === window) {
       url = window.location.href;
     } else {
       try {
-        url = window.top.location.href;
+        url = getWindowTop().location.href;
       } catch (e) {
         url = document.referrer;
       }

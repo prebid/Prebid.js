@@ -80,11 +80,6 @@ describe('Yandex adapter', function () {
           }
         }
       };
-
-      sandbox.stub(frameElement, 'getBoundingClientRect').returns({
-        left: 123,
-        top: 234,
-      });
     });
 
     afterEach(function () {
@@ -115,6 +110,8 @@ describe('Yandex adapter', function () {
     });
 
     it('should return banner coordinates', function () {
+      sandbox.stub(utils, 'inIframe').returns(true);
+      sandbox.stub(utils, 'getFrameElement').returns({ getBoundingClientRect: () => ({ left: 123, top: 234 }) });
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.imp[0].ext.coords.x).to.equal(123);
       expect(requests[0].data.imp[0].ext.coords.y).to.equal(234);
@@ -1036,12 +1033,6 @@ function createElement(id) {
   div.style.width = '50px';
   div.style.height = '50px';
   div.style.background = 'black';
-
-  // Adjust frame dimensions if running within an iframe
-  if (frameElement) {
-    frameElement.style.width = '100px';
-    frameElement.style.height = '100px';
-  }
 
   window.document.body.appendChild(div);
 

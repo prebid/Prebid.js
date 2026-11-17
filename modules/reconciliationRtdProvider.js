@@ -18,7 +18,7 @@
 
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { generateUUID, isGptPubadsDefined, logError, timestamp } from '../src/utils.js';
+import { generateUUID, isGptPubadsDefined, logError, timestamp, getParentWindow, getWindowTop } from '../src/utils.js';
 import { getSlotTargeting } from '../src/utils/gptTargeting.js';
 
 /**
@@ -60,7 +60,7 @@ function handleAdMessage(e) {
       // 1. Find the last iframed window before window.top where the tracker was injected
       // (the tracker could be injected in nested iframes)
       const adWin = getTopIFrameWin(e.source);
-      if (adWin && adWin !== window.top) {
+      if (adWin && adWin !== getWindowTop()) {
         // 2. Find the GPT slot for the iframed window
         const adSlot = getSlotByWin(adWin);
         // 3. Get AdUnit IDs for the selected slot
@@ -126,8 +126,8 @@ export function getTopIFrameWin(win, topWin) {
   }
 
   try {
-    while (win.parent !== topWin) {
-      win = win.parent;
+    while (getParentWindow(win) !== topWin) {
+      win = getParentWindow(win);
     }
     return win;
   } catch (e) {

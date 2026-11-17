@@ -23,6 +23,7 @@ import {
   getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -324,7 +325,7 @@ describe('KueezRtbBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           schain: VIDEO_BID.schain,
           iiqpcid: 'pcid',
           iiqpcidDate: 1000,
@@ -432,7 +433,7 @@ describe('KueezRtbBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           mediaTypes: [BANNER],
           ortb2Imp: BID.ortb2Imp,
           ortb2: ORTB2_OBJ,

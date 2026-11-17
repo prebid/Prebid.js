@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import * as utils from 'src/utils.js';
-import { internal, resetWinDimensions } from 'src/utils.js';
+import { resetWinDimensions } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
@@ -467,8 +467,6 @@ describe('33acrossBidAdapter:', function () {
     this.sandbox = sinon.sandbox.create();
     this.sandbox.stub(Date, 'now').returns(1);
     this.sandbox.stub(document, 'getElementById').returns(this.element);
-    this.sandbox.stub(internal, 'getWindowTop').returns(this.win);
-    this.sandbox.stub(internal, 'getWindowSelf').returns(this.win);
     this.sandbox.stub(utils, 'getWindowTop').returns(this.win);
     this.sandbox.stub(utils, 'getWindowSelf').returns(this.win);
 
@@ -952,6 +950,10 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when nested iframes', function() {
+      beforeEach(function() {
+        this.sandbox.stub(utils, 'getParentWindow').callsFake(fake => fake.parent);
+      });
+
       it('returns \'nm\'', function() {
         const serverRequest = this.buildServerRequest(
           new TtxRequestBuilder()

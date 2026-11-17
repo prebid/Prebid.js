@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput } from '../src/utils.js';
+import { parseSizesInput, getWindowTop } from '../src/utils.js';
 
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
@@ -191,7 +191,7 @@ function getUsersIds({ userIdAsEids }) {
 
 function getRr() {
   try {
-    var td = top.document;
+    var td = getWindowTop().document;
     var rr = td.referrer;
   } catch (err) { return false; }
 

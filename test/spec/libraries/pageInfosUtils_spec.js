@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-window-top -- fake window trees */
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { getConnectionDownLink, getPageDescription, getPageTitle, getReferrerInfo } from 'libraries/pageInfosUtils/pageInfosUtils.js';

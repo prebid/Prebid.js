@@ -7,7 +7,7 @@ import {
   viewportIntersections,
 } from '../../../libraries/percentInView/percentInView.js';
 import * as bbox from 'libraries/boundingClientRect/boundingClientRect';
-import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/percentInView.js';
+import { enable, disable } from 'test/mocks/percentInView.js';
 
 import { defer } from 'src/utils/promise.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -33,6 +33,7 @@ describe('percentInView', () => {
       let win, leaf, child;
       win = leaf = {};
       for (const [x, y] of offsets) {
+        // eslint-disable-next-line prebid/no-window-top -- a fake window
         win.frameElement = {
           getBoundingClientRect() {
             return { left: x, top: y };
@@ -465,30 +466,6 @@ describe('percentInView', () => {
       callback([{ target: el, time: 1, isIntersecting: true, intersectionRatio: 1 }]);
       await delay(0);
       sinon.assert.called(next);
-    });
-  });
-
-  describe('frame rect mock', () => {
-    // only applies when karma runs the tests in an iframe, which excludes the debug page
-    if (window.frameElement == null) return;
-
-    afterEach(() => {
-      enableFrameRect();
-    });
-
-    it('reports the top window viewport while enabled', () => {
-      const { left, top, width, height } = window.frameElement.getBoundingClientRect();
-      const doc = window.top.document.documentElement;
-      expect({ left, top, width, height }).to.eql({
-        left: 0, top: 0, width: doc.clientWidth, height: doc.clientHeight
-      });
-    });
-
-    it('reports the real frame rect once disabled', () => {
-      disableFrameRect();
-      // the frame element belongs to the containing document, so its rect comes from that realm
-      const { DOMRect } = window.frameElement.ownerDocument.defaultView;
-      expect(window.frameElement.getBoundingClientRect()).to.be.instanceOf(DOMRect);
     });
   });
 

@@ -1,4 +1,4 @@
-import { isStr, logError, isFn } from '../src/utils.js';
+import { isStr, logError, isFn, getParentWindow, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -45,13 +45,13 @@ export const spec = {
     let w;
     let docRef;
     do {
-      w = w ? w.parent : window;
+      w = w ? getParentWindow(w) : window;
       try {
         docRef = w.document.referrer;
       } catch (e) {
         break;
       }
-    } while (w !== window.top);
+    } while (w !== getWindowTop());
     const payload = {
       imps: [],
       ortb2: bidderRequest.ortb2,

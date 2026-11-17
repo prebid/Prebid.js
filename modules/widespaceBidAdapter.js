@@ -1,6 +1,6 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { deepClone, parseQueryStringParameters, parseSizesInput, getWindowTop } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
@@ -39,7 +39,7 @@ export const spec = {
 
     let isInHostileIframe = false;
     try {
-      window.top.location.toString();
+      getWindowTop().location.toString();
       isInHostileIframe = false;
     } catch (e) {
       isInHostileIframe = true;
@@ -50,7 +50,7 @@ export const spec = {
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
-        'referer': (isInHostileIframe ? window : window.top).location.href.split('#')[0],
+        'referer': (isInHostileIframe ? window : getWindowTop()).location.href.split('#')[0],
         'inFrame': 1,
         'sid': bid.params.sid,
         'lcuid': LC_UID,
@@ -92,7 +92,7 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        data.forceAdId = (((window.top.location.hash.split('&')) || []).find(
+        data.forceAdId = (((getWindowTop().location.hash.split('&')) || []).find(
           val => val.includes('WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
       }
@@ -196,7 +196,7 @@ function pixelSyncPossibility() {
 function visibleOnLoad(element) {
   if (element) {
     const topPos = getBoundingClientRect(element).top;
-    return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
+    return topPos < screen.height && topPos >= getWindowTop().pageYOffset ? 1 : 0;
   }
   return '';
 }
@@ -223,7 +223,7 @@ function getEngineUrl() {
 
 function getTopWindowReferrer() {
   try {
-    return window.top.document.referrer;
+    return getWindowTop().document.referrer;
   } catch (e) {
     return '';
   }

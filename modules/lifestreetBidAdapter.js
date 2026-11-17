@@ -1,4 +1,4 @@
-import { isInteger } from '../src/utils.js';
+import { isInteger, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -51,7 +51,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
     wn: boolToString(/fb_http/i.test(window.name)),
     sf: boolToString(window['sfAPI'] || window['$sf']),
     fif: boolToString(window['inDapIF'] === true),
-    if: boolToString(window !== window.top),
+    if: boolToString(window !== getWindowTop()),
     stamp: new Date().getTime(),
     hbver: ADAPTER_VERSION
   });

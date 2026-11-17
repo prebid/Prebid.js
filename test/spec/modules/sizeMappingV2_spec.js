@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { deepClone, internal as utilInternal } from '../../../src/utils.js';
+import { deepClone } from '../../../src/utils.js';
 import {
   checkAdUnitSetupHook,
   checkBidderSizeConfigFormat,
@@ -1173,7 +1173,7 @@ describe('sizeMappingV2', function () {
     beforeEach(function () {
       utils.resetWinDimensions();
       sinon
-        .stub(utilInternal, 'getWindowTop')
+        .stub(utils, 'getWindowTop')
         .returns({
           innerWidth: 1680,
           innerHeight: 269,
@@ -1184,7 +1184,7 @@ describe('sizeMappingV2', function () {
     });
     afterEach(function () {
       utils.resetWinDimensions();
-      utilInternal.getWindowTop.restore();
+      utils.getWindowTop.restore();
     });
     it('should return filteredMediaTypes object with all properties (transformedMediaTypes, activeViewport, sizeBucketToSizeMap) evaluated correctly', function () {
       const [adUnit] = utils.deepClone(AD_UNITS);

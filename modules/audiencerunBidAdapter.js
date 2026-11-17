@@ -11,6 +11,8 @@ import {
   isFn,
   logError,
   triggerPixel,
+  getParentWindow,
+  getWindowTop,
 } from '../src/utils.js';
 
 /**
@@ -62,13 +64,13 @@ function getBidFloor(bid) {
 function getPageReferer() {
   let t, e;
   do {
-    t = t ? t.parent : window;
+    t = t ? getParentWindow(t) : window;
     try {
       e = t.document.referrer;
     } catch (_) {
       break;
     }
-  } while (t !== window.top);
+  } while (t !== getWindowTop());
   return e;
 }
 

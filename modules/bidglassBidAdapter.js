@@ -1,4 +1,4 @@
-import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter } from '../src/utils.js';
+import { _each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter, getWindowTop, getParentWindow } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 /**
@@ -51,7 +51,7 @@ export const spec = {
 
     const imps = [];
     const getReferer = function() {
-      return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
+      return window === getWindowTop() ? window.location.href : getParentWindow(window) === getWindowTop() ? document.referrer : null;
     };
     const getOrigins = function() {
       var ori = [window.location.protocol + '//' + window.location.hostname];
@@ -60,13 +60,13 @@ export const spec = {
         for (var i = 0; i < window.location.ancestorOrigins.length; i++) {
           ori.push(window.location.ancestorOrigins[i]);
         }
-      } else if (window !== window.top) {
+      } else if (window !== getWindowTop()) {
         // Derive the parent origin
         var parts = document.referrer.split('/');
 
         ori.push(parts[0] + '//' + parts[2]);
 
-        if (window.parent !== window.top) {
+        if (getParentWindow(window) !== getWindowTop()) {
           // Additional unknown origins exist
           ori.push('null');
         }

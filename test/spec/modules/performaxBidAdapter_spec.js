@@ -202,7 +202,7 @@ describe('Performax adapter', function () {
       expect(imp[0]).to.be.an('object');
       const bid = imp[0];
       expect(bid.id).to.equal('2bc545c347dbbe');
-      expect(bid.banner).to.deep.equal({ topframe: 0, format: [{ w: 300, h: 300 }] });
+      expect(bid.banner).to.deep.equal({ topframe: 1, format: [{ w: 300, h: 300 }] });
     });
 
     it('should process multiple bids', function () {
@@ -212,9 +212,9 @@ describe('Performax adapter', function () {
       const { imp } = data;
       expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
       const bid1 = imp[0];
-      expect(bid1.banner).to.deep.equal({ topframe: 0, format: [{ w: 300, h: 300 }] });
+      expect(bid1.banner).to.deep.equal({ topframe: 1, format: [{ w: 300, h: 300 }] });
       const bid2 = imp[1];
-      expect(bid2.banner).to.deep.equal({ topframe: 0, format: [{ w: 300, h: 600 }] });
+      expect(bid2.banner).to.deep.equal({ topframe: 1, format: [{ w: 300, h: 600 }] });
     });
   });
 

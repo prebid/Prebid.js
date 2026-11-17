@@ -2,13 +2,9 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 describe('invibesBidAdapter:', function () {
-  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
-  after(() => {
-    delete window.top.invibes;
-  });
-
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
   const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
@@ -239,7 +235,7 @@ describe('invibesBidAdapter:', function () {
           }
         };
 
-        top.window.invibes.bidResponse = { prop: 'prop' };
+        getWindowTop().invibes.bidResponse = { prop: 'prop' };
         expect(spec.isBidRequestValid(validBid)).to.be.true;
       });
     });
@@ -286,7 +282,7 @@ describe('invibesBidAdapter:', function () {
 
     it('generates a visitId of length 32', function () {
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
-      expect(top.window.invibes.visitId.length).to.equal(32);
+      expect(getWindowTop().invibes.visitId.length).to.equal(32);
     });
 
     it('sends bid request to custom endpoint via GET', function () {
@@ -431,8 +427,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('has capped ids if local storage variable is correctly formatted', function () {
-      top.window.invibes.optIn = 1;
-      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      getWindowTop().invibes.optIn = 1;
+      getWindowTop().invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       const now = new Date().getTime();
       localStorage.ivvcap = JSON.stringify({
         9731: [1, now + (24 * 60 * 60 * 1000)]
@@ -532,14 +528,14 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends pushed cids if they exist', function () {
-      top.window.invibes.pushedCids = { 981: [] };
+      getWindowTop().invibes.pushedCids = { 981: [] };
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.pcids).to.contain(981);
     });
 
     it('sends lid when comes on cookie', function () {
-      top.window.invibes.optIn = 1;
-      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      getWindowTop().invibes.optIn = 1;
+      getWindowTop().invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       const bidderRequest = {
         gdprConsent: {
@@ -560,8 +556,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('does not send handIid when it doesnt exist in cookie', function () {
-      top.window.invibes.optIn = 1;
-      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      getWindowTop().invibes.optIn = 1;
+      getWindowTop().invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       sandbox.stub(storage, 'getCookie').returns(null);
       const bidderRequest = {
         gdprConsent: {
@@ -582,8 +578,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends handIid when comes on cookie', function () {
-      top.window.invibes.optIn = 1;
-      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      getWindowTop().invibes.optIn = 1;
+      getWindowTop().invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'handIid=abcdefghijkk';
       const bidderRequest = {
         gdprConsent: {
@@ -1466,7 +1462,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('returns an iframe with params if enabled', function () {
-      top.window.invibes.optIn = 1;
+      getWindowTop().invibes.optIn = 1;
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
 
       const response = spec.getUserSyncs({ iframeEnabled: true });
@@ -1476,7 +1472,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('returns an iframe with params including if enabled', function () {
-      top.window.invibes.optIn = 1;
+      getWindowTop().invibes.optIn = 1;
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
 
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
@@ -1491,7 +1487,7 @@ describe('invibesBidAdapter:', function () {
 
     it('returns an iframe with params including if enabled read from LocalStorage', function () {
       spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
-      top.window.invibes.optIn = 1;
+      getWindowTop().invibes.optIn = 1;
 
       localStorage.ivbsdid = 'dvdjkams6nkq';
       SetBidderAccess();
@@ -1519,15 +1515,15 @@ describe('invibesBidAdapter:', function () {
       };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(top.window.invibes.optIn).to.equal(2);
-      expect(top.window.invibes.GdprModuleInstalled).to.be.false;
-      expect(top.window.invibes.UspModuleInstalled).to.be.true;
+      expect(getWindowTop().invibes.optIn).to.equal(2);
+      expect(getWindowTop().invibes.GdprModuleInstalled).to.be.false;
+      expect(getWindowTop().invibes.UspModuleInstalled).to.be.true;
       var index;
-      for (index = 0; index < top.window.invibes.purposes.length; ++index) {
-        expect(top.window.invibes.purposes[index]).to.be.true;
+      for (index = 0; index < getWindowTop().invibes.purposes.length; ++index) {
+        expect(getWindowTop().invibes.purposes[index]).to.be.true;
       }
-      for (index = 0; index < top.window.invibes.legitimateInterests.length; ++index) {
-        expect(top.window.invibes.legitimateInterests[index]).to.be.true;
+      for (index = 0; index < getWindowTop().invibes.legitimateInterests.length; ++index) {
+        expect(getWindowTop().invibes.legitimateInterests[index]).to.be.true;
       }
       expect(request.data.tc).to.not.exist;
       expect(request.data.uspc).to.equal(bidderRequest.uspConsent);

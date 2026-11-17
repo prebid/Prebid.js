@@ -28,6 +28,7 @@ import {
   uspDataHandler,
   gdprDataHandler,
 } from "../../../src/consentHandler.js";
+import { getWindowTop } from '../../../src/utils.js';
 
 let getConfigStub;
 let userIdConfigForTest;
@@ -259,7 +260,7 @@ describe("IntentIQ tests all", function () {
       .stub(utils, "getWindowLocation")
       .returns({ href: "http://localhost:9876" });
     // the test runs in a frame, so vrref is the top page's URL (getCurrentUrl), not the stubbed location
-    const expectedVrref = window.top.location.origin;
+    const expectedVrref = getWindowTop().location.origin;
     events.emit(EVENTS.BID_WON, getWonRequest());
 
     expect(server.requests.length).to.be.above(0);
@@ -377,7 +378,7 @@ describe("IntentIQ tests all", function () {
       group: "B",
     };
 
-    const expectedVrref = encodeURIComponent(`${window.top.location.origin}/`);
+    const expectedVrref = encodeURIComponent(`${getWindowTop().location.origin}/`);
 
     events.emit(EVENTS.BID_WON, getWonRequest());
 
@@ -596,7 +597,7 @@ describe("IntentIQ tests all", function () {
     );
     expect(request.url).to.contain(`&jsver=${version}`);
     expect(request.url).to.contain(
-      `&vrref=${encodeURIComponent(`${window.top.location.origin}/`)}`
+      `&vrref=${encodeURIComponent(`${getWindowTop().location.origin}/`)}`
     );
     expect(request.url).to.contain("&payload=");
     expect(request.url).to.contain(

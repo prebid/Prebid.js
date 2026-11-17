@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/h12mediaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils.js';
 import { clearCache } from '../../../libraries/boundingClientRect/boundingClientRect.js';
 
 describe('H12 Media Adapter', function () {
@@ -115,10 +116,6 @@ describe('H12 Media Adapter', function () {
     div.id = id;
     div.style.width = '50px';
     div.style.height = '50px';
-    if (frameElement) {
-      frameElement.style.width = '100px';
-      frameElement.style.height = '100px';
-    }
     div.style.background = 'black';
     document.body.appendChild(div);
     return div;
@@ -154,10 +151,6 @@ describe('H12 Media Adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    sandbox.stub(frameElement, 'getBoundingClientRect').returns({
-      left: 10,
-      top: 10,
-    });
     clearCache();
   });
 
@@ -295,7 +288,21 @@ describe('H12 Media Adapter', function () {
       expect(requestsData).to.deep.include({ coords: { x: 10, y: 10 } });
     });
 
+    it('should return the frame position when in an iframe', function () {
+      const frame = (left, top) => ({ getBoundingClientRect: () => ({ left, top }) });
+      const outer = { frameElement: frame(5, 7) };
+      outer.self = outer.parent = outer;
+      sandbox.stub(utils, 'inIframe').returns(true);
+      sandbox.stub(utils, 'getParentWindow').callsFake(fake => fake === window ? outer : fake.parent);
+      sandbox.stub(utils, 'getFrameElement').callsFake(fake => fake === window ? frame(10, 20) : fake.frameElement);
+      createElementVisible(validBid.adUnitCode);
+      const requests = spec.buildRequests([validBid], bidderRequest);
+
+      expect(requests[0].data.bidrequest).to.deep.include({ coords: { x: 15, y: 27 } });
+    });
+
     it('should define iframe', function () {
+      sandbox.stub(utils, 'inIframe').returns(true);
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const requests = spec.buildRequests([validBid, validBid2], bidderRequest);

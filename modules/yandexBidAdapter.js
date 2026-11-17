@@ -3,7 +3,7 @@ import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.j
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo, getWinDimensions } from '../src/utils.js';
+import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo, getWinDimensions, getFrameElement, getParentWindow, getWindowTop } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
@@ -666,8 +666,8 @@ function getContext(elem) {
     if (elem) {
       if (window.document.body.contains(elem)) {
         return window; // Element is in current window
-      } else if (window.top.document.body.contains(elem)) {
-        return window.top; // Element exists in top window's DOM
+      } else if (getWindowTop().document.body.contains(elem)) {
+        return getWindowTop(); // Element exists in top window's DOM
       }
       return undefined; // Element not found in any accessible context}
     }
@@ -748,11 +748,11 @@ function getFramePosition() {
     try {
       // After first iteration, move to parent window
       if (iterationCount > 1) {
-        currentWindow = currentWindow.parent;
+        currentWindow = getParentWindow(currentWindow);
       }
 
       // Get the frame element containing current window and its position
-      const frameElement = currentWindow.frameElement;
+      const frameElement = getFrameElement(currentWindow);
       const rect = getBoundingClientRect(frameElement);
 
       // Accumulate frame element's position offsets
@@ -762,7 +762,7 @@ function getFramePosition() {
       // Continue processing if we can't access frame element (e.g., cross-origin restriction)
       // Error is ignored as we can't recover frame position information in this case
     }
-  } while (iterationCount < MAX_ITERATIONS && currentWindow.parent !== currentWindow.self);
+  } while (iterationCount < MAX_ITERATIONS && getParentWindow(currentWindow) !== currentWindow.self);
 
   return { x: totalLeft, y: totalTop };
 }

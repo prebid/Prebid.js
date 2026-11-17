@@ -25,6 +25,7 @@ import { useFakeTimers } from 'sinon';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getWindowTop } from '../../../src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -434,7 +435,7 @@ describe('VidazooBidAdapter', function () {
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           schain: VIDEO_BID.schain,
           sessionId: '',
           sizes: ['545x307'],
@@ -556,7 +557,7 @@ describe('VidazooBidAdapter', function () {
           schain: BID.schain,
           ptrace: '1000',
           vdzhum: '1000',
-          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
           mediaTypes: [BANNER],
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
@@ -652,7 +653,7 @@ describe('VidazooBidAdapter', function () {
         schain: BID.schain,
         ptrace: '1000',
         vdzhum: '1000',
-        res: `${window.top.screen.width}x${window.top.screen.height}`,
+        res: `${getWindowTop().screen.width}x${getWindowTop().screen.height}`,
         mediaTypes: [BANNER],
         uqs: getTopWindowQueryParams(),
         'ext.param1': 'loremipsum',

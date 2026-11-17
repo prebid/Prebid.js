@@ -1,4 +1,4 @@
-import { logInfo, logError, logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
+import { logInfo, logError, logWarn, isArray, isFn, deepAccess, getParentWindow, getWindowTop } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -801,9 +801,9 @@ function getTopMostWindow() {
   let res = window;
 
   try {
-    while (top !== res) {
-      if (res.parent.location.href.length) {
-        res = res.parent;
+    while (getWindowTop() !== res) {
+      if (getParentWindow(res).location.href.length) {
+        res = getParentWindow(res);
       }
     }
   } catch (e) {}

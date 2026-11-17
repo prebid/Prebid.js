@@ -27,15 +27,11 @@ globalThis.sinon = sinon;
 // Vitest on port 9876 when it's free, and this gives the test iframe karma's path. Its referrer is karma's parent page.
 if (globalThis.__VITEST_KARMA_URL__ !== false) {
   // Only when the URL isn't already karma's: Safari throws a SecurityError on more than 100 replaceState calls
-  // per page in 10 seconds, and the top page outlives every test file of the run.
+  // per page in 10 seconds.
   const karmaUrl = (win, url) => {
     if (win.location.pathname + win.location.search !== url) win.history.replaceState(win.history.state, '', url);
   };
   karmaUrl(window, '/context.html');
-  if (window.top !== window) {
-    // karma's top page is http://localhost:9876/?id=<browser id> (karma-chrome-launcher)
-    karmaUrl(window.top, '/?id=73195742');
-  }
   Object.defineProperty(document, 'referrer', { value: `${location.origin}/`, configurable: true });
 }
 

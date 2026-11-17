@@ -1,4 +1,4 @@
-import { logInfo } from '../../src/utils.js';
+import { logInfo, getParentWindow, getWindowTop } from '../../src/utils.js';
 
 /**
  * Search for Utiq service to be enabled on any other existing frame, then, if found,
@@ -21,10 +21,10 @@ export function findUtiqService(storage: any, refreshUserIds: () => void, logPre
         break;
       }
     } catch (ignore) { }
-    if (frame === window.top) {
+    if (frame === getWindowTop()) {
       break;
     }
-    frame = frame.parent as Window & typeof globalThis;
+    frame = getParentWindow(frame) as Window & typeof globalThis;
   }
 
   logInfo(`${logPrefix}: frame found: `, Boolean(utiqFrame));

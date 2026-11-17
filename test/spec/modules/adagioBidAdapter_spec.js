@@ -68,11 +68,6 @@ const BidderRequestBuilder = function BidderRequestBuilder(options) {
 };
 
 describe('Adagio bid adapter', () => {
-  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
-  after(() => {
-    delete window.top.ADAGIO;
-  });
-
   let utilsMock;
   let sandbox;
 

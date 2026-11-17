@@ -10,7 +10,8 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
-  uniques
+  uniques,
+  getParentWindow,
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
@@ -625,9 +626,9 @@ function getTopMostAccessibleWindow() {
   let mostAccessibleWindow = getWindowSelf();
 
   try {
-    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
-      mostAccessibleWindow.parent.document) {
-      mostAccessibleWindow = mostAccessibleWindow.parent;
+    while (getParentWindow(mostAccessibleWindow) !== mostAccessibleWindow &&
+      getParentWindow(mostAccessibleWindow).document) {
+      mostAccessibleWindow = getParentWindow(mostAccessibleWindow);
     }
   } catch (err) {
     // Do not throw an exception if we can't access the topmost frame.

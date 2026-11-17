@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js';
 import { VIDEO, BANNER } from 'src/mediaTypes.js';
 import { Renderer } from 'src/Renderer.js';
 import { adapter } from 'modules/unrulyBidAdapter.js';
+import { getParentWindow, getWindowTop } from '../../../src/utils.js';
 
 describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
@@ -118,7 +119,7 @@ describe('UnrulyAdapter', function () {
 
   afterEach(function () {
     sandbox.restore();
-    delete parent.window.unruly;
+    delete getParentWindow(window).unruly;
   });
 
   it('should expose Unruly Bidder code', function () {
@@ -821,9 +822,9 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledOnce(fakeRenderer.setRender);
       fakeRenderer.setRender.firstCall.args[0]();
 
-      expect(window.top).to.have.deep.nested.property('unruly.native.prebid.uq');
+      expect(getWindowTop()).to.have.deep.nested.property('unruly.native.prebid.uq');
 
-      const uq = window.top.unruly.native.prebid.uq;
+      const uq = getWindowTop().unruly.native.prebid.uq;
       const sentRendererConfig = uq[0][1];
 
       expect(uq[0][0]).to.equal('render');
@@ -836,11 +837,11 @@ describe('UnrulyAdapter', function () {
       const mockExchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video1', requestId: 'mockBidId' });
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 
-      expect('unruly' in window.parent).to.equal(false);
+      expect('unruly' in getParentWindow(window)).to.equal(false);
 
       adapter.interpretResponse(mockServerResponse);
 
-      const supplyMode = window.parent.unruly.native.supplyMode;
+      const supplyMode = getParentWindow(window).unruly.native.supplyMode;
 
       expect(supplyMode).to.equal('prebid');
     });

@@ -1,6 +1,6 @@
 'use strict';
 
-import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
+import { logWarn, deepAccess, isFn, isPlainObject, isBoolean, isNumber, isStr, isArray, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
@@ -281,7 +281,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
     try {
-      site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+      site.ref = bidderRequest?.refererInfo?.ref || getWindowTop().document.referrer || '';
     } catch (e) {
       site.ref = bidderRequest?.refererInfo?.ref || window.document.referrer || '';
     }

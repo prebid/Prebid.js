@@ -5,6 +5,7 @@ import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import { server } from '../../mocks/xhr.js';
 import { deepClone, resetWinDimensions } from '../../../src/utils.js';
+import * as utils from '../../../src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as adUnits from 'src/utils/adUnits';
 
@@ -527,12 +528,12 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -562,12 +563,12 @@ const VALID_PAYLOAD_INVALID_BIDFLOOR = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -630,12 +631,12 @@ const VALID_PAYLOAD_NATIVE = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -665,12 +666,12 @@ const VALID_PAYLOAD_NATIVE = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -734,12 +735,12 @@ const VALID_PAYLOAD = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -768,12 +769,12 @@ const VALID_PAYLOAD = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -840,12 +841,12 @@ const VALID_PAYLOAD_WITH_USERID = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -876,12 +877,12 @@ const VALID_PAYLOAD_WITH_USERID = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -946,12 +947,12 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -982,12 +983,12 @@ const VALID_PAYLOAD_WITH_USERIDASEIDS = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1065,12 +1066,12 @@ const VALID_PAYLOAD_WITH_CRID = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1101,12 +1102,12 @@ const VALID_PAYLOAD_WITH_CRID = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1515,12 +1516,12 @@ const VALID_PAYLOAD_FOR_GDPR = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1549,12 +1550,12 @@ const VALID_PAYLOAD_FOR_GDPR = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1634,12 +1635,12 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1668,12 +1669,12 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
       'viewability': 1,
       'coordinates': {
         'top_left': {
-          x: 50,
-          y: 50
+          x: 100,
+          y: 150
         },
         'bottom_right': {
-          x: 100,
-          y: 100
+          x: 150,
+          y: 200
         }
       },
       'display_count': 1,
@@ -1702,13 +1703,13 @@ const VALID_PAYLOAD_FOR_GPP_ORTB2 = {
   'tmax': config.getConfig('bidderTimeout')
 };
 describe('Media.net bid adapter', function () {
-  let sandbox;
+  let sandbox, scrollX, scrollY;
   beforeEach(function () {
     sandbox = sinon.createSandbox();
-    sandbox.stub(window.top, 'innerHeight').value(780);
-    sandbox.stub(window.top, 'innerWidth').value(440);
-    sandbox.stub(window.top, 'scrollY').value(100);
-    sandbox.stub(window.top, 'scrollX').value(50);
+    sandbox.stub(utils.getWindowTop(), 'innerHeight').value(780);
+    sandbox.stub(utils.getWindowTop(), 'innerWidth').value(440);
+    scrollY = sandbox.stub(utils.getWindowTop(), 'scrollY').value(100);
+    scrollX = sandbox.stub(utils.getWindowTop(), 'scrollX').value(50);
   });
 
   afterEach(function () {
@@ -1835,7 +1836,7 @@ describe('Media.net bid adapter', function () {
       });
 
       it('should pass canonical, twitter and fb parameters if available', () => {
-        const documentStub = sandbox.stub(window.top.document, 'querySelector');
+        const documentStub = sandbox.stub(utils.getWindowTop().document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'
         });
@@ -1854,6 +1855,8 @@ describe('Media.net bid adapter', function () {
   describe('slot visibility', function () {
     let elementStub;
     beforeEach(function () {
+      scrollX.value(0);
+      scrollY.value(0);
       const windowSizeStub = sandbox.stub(spec, 'getWindowSize');
       windowSizeStub.returns({
         w: 1000,

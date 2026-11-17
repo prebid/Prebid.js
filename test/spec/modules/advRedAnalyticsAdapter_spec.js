@@ -4,6 +4,7 @@ import { server } from 'test/mocks/xhr.js';
 import { expectEvents } from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
+import { getWindowTop } from '../../../src/utils.js';
 
 const events = require('src/events');
 
@@ -110,7 +111,7 @@ describe('AdvRed Analytics Adapter', function () {
       advRedAnalytics.sendEvents();
 
       const message = JSON.parse(server.requests[0].requestBody);
-      expect(message.pageUrl).to.equal(window.top.location.href);
+      expect(message.pageUrl).to.equal(getWindowTop().location.href);
     });
   });
 });

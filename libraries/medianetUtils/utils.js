@@ -1,4 +1,4 @@
-import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
+import { _map, deepAccess, isFn, isPlainObject, uniques, getWindowTop } from '../../src/utils.js';
 import { mnetGlobals } from './constants.js';
 import { getViewportSize } from '../viewport/viewport.js';
 
@@ -128,7 +128,7 @@ export const onHidden = (cb, once = true) => {
 export function getTopWindowReferrer(ref) {
   try {
     if (ref) return ref;
-    return window.top.document.referrer;
+    return getWindowTop().document.referrer;
   } catch (e) {
     return document.referrer;
   }

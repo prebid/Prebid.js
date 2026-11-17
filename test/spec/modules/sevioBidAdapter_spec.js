@@ -373,15 +373,15 @@ describe('sevioBidAdapter', function () {
     });
 
     it('getPageTitle prefers top.title; falls back to og:title (top document)', () => {
-      window.top.document.title = 'Doc Title';
+      utils.getWindowTop().document.title = 'Doc Title';
       let out = spec.buildRequests([mkBid()], baseBidderRequest);
       expect(out[0].data.context[0].text).to.equal('Doc Title');
 
-      window.top.document.title = '';
-      const meta = window.top.document.createElement('meta');
+      utils.getWindowTop().document.title = '';
+      const meta = utils.getWindowTop().document.createElement('meta');
       meta.setAttribute('property', 'og:title');
       meta.setAttribute('content', 'OG Title');
-      window.top.document.head.appendChild(meta);
+      utils.getWindowTop().document.head.appendChild(meta);
 
       out = spec.buildRequests([mkBid()], baseBidderRequest);
       expect(out[0].data.context[0].text).to.equal('OG Title');
@@ -414,9 +414,9 @@ describe('sevioBidAdapter', function () {
       }
     });
 
-    // window.top.performance is shared with every other spec on the page. `timing` and `getEntriesByType` are
-    // inherited from Performance.prototype, so an override is undone by deleting the own property it added:
-    // defining one with the saved value (or `undefined`) would leave it shadowing the real getter or method.
+    // `timing` and `getEntriesByType` are inherited from Performance.prototype, so an override is undone by deleting
+    // the own property it added: defining one with the saved value (or `undefined`) would leave it shadowing the
+    // real getter or method.
     function overridePerformance(perf, props) {
       const saved = Object.fromEntries(Object.keys(props).map(k => [k, Object.getOwnPropertyDescriptor(perf, k)]));
       Object.entries(props).forEach(([k, value]) => Object.defineProperty(perf, k, { configurable: true, writable: true, value }));
@@ -426,7 +426,7 @@ describe('sevioBidAdapter', function () {
     }
 
     it('computeTTFB via navigation entries (top.performance) and cached within call', () => {
-      const restore = overridePerformance(window.top.performance, {
+      const restore = overridePerformance(utils.getWindowTop().performance, {
         getEntriesByType: (type) => (type === 'navigation' ? [{ responseStart: 152, requestStart: 100 }] : [])
       });
       try {
@@ -440,7 +440,7 @@ describe('sevioBidAdapter', function () {
     });
 
     it('computeTTFB falls back to top.performance.timing when no navigation entries', () => {
-      const restore = overridePerformance(window.top.performance, {
+      const restore = overridePerformance(utils.getWindowTop().performance, {
         getEntriesByType: () => [],
         timing: { responseStart: 250, requestStart: 200 }
       });
@@ -453,7 +453,7 @@ describe('sevioBidAdapter', function () {
     });
 
     it('leaves top.performance as it found it', () => {
-      const perfTop = window.top.performance;
+      const perfTop = utils.getWindowTop().performance;
       expect(Object.getOwnPropertyDescriptor(perfTop, 'timing')).to.equal(undefined);
       expect(Object.getOwnPropertyDescriptor(perfTop, 'getEntriesByType')).to.equal(undefined);
       expect(perfTop.timing.navigationStart).to.be.a('number');

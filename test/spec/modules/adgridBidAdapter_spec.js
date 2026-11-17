@@ -252,7 +252,7 @@ describe('adgrid bid adapter tests', () => {
             {
               id: '44a2706ac3574',
               banner: {
-                topframe: 0,
+                topframe: 1,
                 format: [
                   { w: 300, h: 250 },
                   { w: 300, h: 600 },
@@ -273,7 +273,7 @@ describe('adgrid bid adapter tests', () => {
             {
               id: '5ba94555219a03',
               banner: {
-                topframe: 0,
+                topframe: 1,
                 format: [
                   { w: 728, h: 90 },
                   { w: 970, h: 250 },
