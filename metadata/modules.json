@@ -4906,34 +4906,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "grid",
-      "aliasOf": null,
-      "gvlid": 686,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "playwire",
-      "aliasOf": "grid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "adlivetech",
-      "aliasOf": "grid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "gridNM",
-      "aliasOf": "grid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "visx",
       "aliasOf": null,
       "gvlid": 154,
