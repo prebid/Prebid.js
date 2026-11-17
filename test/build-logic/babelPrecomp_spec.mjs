@@ -1,5 +1,8 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
+import assert from 'node:assert/strict';
+import { PassThrough } from 'node:stream';
+import { finished } from 'node:stream/promises';
 import sinon from 'sinon';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -15,7 +18,7 @@ describe('babelPrecomp configuration switches', function () {
   const relativeSource = path.join('test', 'build-logic', 'fixtures', `zzBabelPrecompSpec${process.pid}.js`);
   const source = path.resolve(relativeSource);
   const past = new Date('2000-01-01T00:00:00Z');
-  let root, sandbox, sourceSpy, enabled, disabled;
+  let root, sandbox, sourceReader, enabled, disabled;
 
   // Gulp also emits task failures; the task callback below propagates them to the test.
   function onTaskError() {}
@@ -35,12 +38,19 @@ describe('babelPrecomp configuration switches', function () {
     });
   }
 
+  function runStream(options) {
+    const stream = babelPrecomp(options)();
+    const completion = finished(stream);
+    stream.resume();
+    return completion;
+  }
+
   beforeEach(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'pbjs-precompilation-'));
     sandbox = sinon.createSandbox();
     sandbox.stub(helpers, 'getSourcePatterns').returns([source]);
     sandbox.stub(helpers, 'getPrecompiledPath').callsFake((...parts) => path.join(root, ...parts));
-    sourceSpy = sandbox.spy(gulp, 'src');
+    sourceReader = sandbox.stub(gulp, 'src').callThrough();
     // Unique keys prevent this fixture from seeing or replacing another build's cached output.
     enabled = { disableFeatures: [], distUrlBase: root };
     disabled = { ...enabled, disableFeatures: ['VIDEO'] };
@@ -71,13 +81,13 @@ describe('babelPrecomp configuration switches', function () {
 
     await run(enabled);
     expect(output()).to.equal(original);
-    expect(sourceSpy.lastCall.args[1].since).to.equal(undefined);
+    expect(sourceReader.lastCall.args[1].since).to.equal(undefined);
   });
 
   it('keeps incremental filtering within the active configuration and includes edited files', async () => {
     await run(enabled);
     await run(enabled);
-    expect(sourceSpy.lastCall.args[1].since).to.be.a('number');
+    expect(sourceReader.lastCall.args[1].since).to.be.a('number');
 
     write('export const video = FEATURES.VIDEO; export const edited = true;');
     const future = new Date(Date.now() + 1000);
@@ -99,8 +109,48 @@ describe('babelPrecomp configuration switches', function () {
 
     write('export const video = FEATURES.VIDEO; export const recovered = true;');
     await run(enabled);
-    expect(sourceSpy.lastCall.args[1].since).to.equal(undefined);
+    expect(sourceReader.lastCall.args[1].since).to.equal(undefined);
     expect(output()).to.contain('video = true');
     expect(output()).to.contain('recovered = true');
+  });
+
+  describe('polyfill builds', () => {
+    beforeEach(() => {
+      if (Object.hasOwn(helpers.argv, 'polyfills')) {
+        sandbox.stub(helpers.argv, 'polyfills').value(true);
+      } else {
+        sandbox.define(helpers.argv, 'polyfills', true);
+      }
+    });
+
+    it('propagates source errors to the returned stream', async () => {
+      sourceReader.callsFake(() => {
+        const input = new PassThrough({ objectMode: true });
+        queueMicrotask(() => input.destroy(new Error('source error')));
+        return input;
+      });
+      await assert.rejects(runStream(enabled), /source error/);
+    });
+
+    it('propagates Babel errors to the returned stream', async () => {
+      write('export const broken = ;');
+      await assert.rejects(runStream(enabled), /Unexpected token/);
+    });
+
+    it('rebuilds the earlier configuration after a failed polyfill build', async () => {
+      helpers.argv.polyfills = false;
+      await run(enabled);
+
+      helpers.argv.polyfills = true;
+      write('export const broken = ;');
+      await assert.rejects(run(disabled), /Unexpected token/);
+
+      helpers.argv.polyfills = false;
+      write('export const video = FEATURES.VIDEO; export const recovered = true;');
+      await run(enabled);
+      expect(sourceReader.lastCall.args[1].since).to.equal(undefined);
+      expect(output()).to.contain('video = true');
+      expect(output()).to.contain('recovered = true');
+    });
   });
 });

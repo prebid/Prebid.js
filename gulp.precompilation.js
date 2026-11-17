@@ -40,7 +40,7 @@ const path = require('path');
 const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
-const {Transform} = require('node:stream');
+const {Transform, pipeline} = require('node:stream');
 const {buildOptions} = require('./plugins/buildOptions.js');
 const { toModulePath }  = require('./plugins/utils.js');
 const {PUBLIC_MODULE_EXTENSIONS, getPublicModule, isOverridden} = require('./gulp.publicModules.js');
@@ -86,14 +86,16 @@ const babelPrecomp = _.memoize(
       });
       // No cache for a polyfill report. `plugins/polyfills.js` accumulates across every file it
       // visits and writes a summary of the lot, so only passing cache misses would omit hits.
-      const pipeline = options.polyfills
-        ? transform().reduce((stream, stage) => stream.pipe(stage), src).pipe(dest)
-        : cachedPipeline({namespace: 'precompile', key, src, transform, dest});
       let failed = false;
-      pipeline.once('error', () => {
+      const output = options.polyfills
+        ? pipeline(src, ...transform(), dest, err => {
+          if (err) failed = true;
+        })
+        : cachedPipeline({namespace: 'precompile', key, src, transform, dest});
+      output.once('error', () => {
         failed = true;
       });
-      return pipeline.once('end', () => {
+      return output.once('end', () => {
         if (!failed) activePrecompilationKey = key;
       });
     }
