@@ -74,7 +74,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
   value?: DecodedId<P>;
 }
 
-type SerializableId = string | Record<string, unknown>;
+export type SerializableId = string | Record<string, unknown>;
 
 /**
  * If your module can provide ID data synchronously it should set id directly; otherwise it should provide a callback that calls its first argument setId passing it ID data.
@@ -90,7 +90,34 @@ export type ProviderResponse = {
   /**
    * If provided, will be invoked at a later point.
    */
-  callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
+  callback?: (setId: (id?: SerializableId) => void, storage: StoredValue) => void;
+};
+
+/**
+ * Access to what the User ID module stores for a submodule, passed to its callback.
+ *
+ * By default the User ID module stores whatever the callback passes to `setId`, and an empty `setId()` keeps
+ * the current ID. A callback that calls `set`, `touch` or `remove` manages storage itself instead: `setId` then only
+ * updates the ID in memory, without storing it, and an empty `setId()` clears it.
+ */
+export type StoredValue = {
+  /**
+   * The stored ID data, if any.
+   */
+  get(): SerializableId | undefined;
+  /**
+   * Store ID data, as the User ID module does with a value passed to `setId`.
+   */
+  set(value: SerializableId): void;
+  /**
+   * Mark the stored ID data as current (for consent and refresh checks, and html5 expiry) without writing it,
+   * for example because something else, such as a server's Set-Cookie, wrote it.
+   */
+  touch(): void;
+  /**
+   * Delete the stored ID data.
+   */
+  remove(): void;
 };
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;

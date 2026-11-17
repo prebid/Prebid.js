@@ -50,6 +50,8 @@ import type {
   IdProviderSpec,
   ProviderParams,
   ProviderResponse,
+  SerializableId,
+  StoredValue,
   UserId,
   UserIdConfig,
   UserIdProvider
@@ -167,7 +169,9 @@ function setValueInCookie(submodule, valueStr, expiresStr) {
   const storage = submodule.config.storage;
   const setCookie = cookieSetter(submodule);
 
-  setCookie(null, valueStr, expiresStr);
+  if (valueStr != null) {
+    setCookie(null, valueStr, expiresStr);
+  }
   setCookie('_cst', getConsentHash(), expiresStr);
   if (typeof storage.refreshInSeconds === 'number') {
     setCookie('_last', new Date().toUTCString(), expiresStr);
@@ -180,18 +184,31 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
 
   mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
   mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
-  mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
+  if (valueStr != null) {
+    mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
+  }
   if (typeof storage.refreshInSeconds === 'number') {
     mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
   }
 }
 
 export function setStoredValue(submodule, value) {
+  writeStorage(submodule, isPlainObject(value) ? JSON.stringify(value) : value);
+}
+
+/**
+ * Renew the bookkeeping kept next to a stored value (consent hash, refresh timestamp, expiry),
+ * without writing the value itself.
+ */
+export function touchStoredValue(submodule) {
+  writeStorage(submodule);
+}
+
+function writeStorage(submodule, valueStr?: string) {
   const storage = submodule.config.storage;
 
   try {
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
-    const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
 
     submodule.enabledStorageTypes.forEach(storageType => {
       switch (storageType) {
@@ -308,12 +325,44 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
     const token = {};
     submodule.callbackToken = token;
     const isStale = () => submodule.callbackToken !== token || priorityMaps !== initializedSubmodules;
-    function callbackCompleted(idObj) {
+    let completed = false;
+    let managesStorage = false;
+    function storageWrite<A extends any[]>(name: string, write: (...args: A) => void) {
+      return (...args: A) => {
+        if (completed || isStale()) {
+          logWarn(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring storage.${name}() from a callback that has completed or was superseded`);
+          return;
+        }
+        managesStorage = true;
+        if (submodule.config.storage) {
+          write(...args);
+        }
+      };
+    }
+    const storage: StoredValue = {
+      get: () => submodule.config.storage ? getStoredValue(submodule) : undefined,
+      set: storageWrite('set', (value: SerializableId) => {
+        if (value == null) {
+          logError(`${MODULE_NAME}: ${submodule.submodule.name} - storage.set() needs a value; use storage.remove() to delete it`);
+        } else {
+          setStoredValue(submodule, value);
+        }
+      }),
+      touch: storageWrite('touch', () => touchStoredValue(submodule)),
+      remove: storageWrite('remove', () => deleteStoredValue(submodule)),
+    };
+    function callbackCompleted(idObj?: SerializableId) {
+      completed = true;
       // callbacks often complete asynchronously, out of reach of the catch below: never let an error here leave the
       // batch (and with it the auction delay) waiting
       try {
         if (isStale()) {
           logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring a callback superseded by a refresh`);
+        } else if (managesStorage) {
+          // the submodule has written storage itself: mirror idObj in memory, and treat an empty one as "no ID"
+          submodule.idObj = idObj ? submodule.submodule.decode(idObj, submodule.config) : undefined;
+          priorityMaps.refresh();
+          updatePPID(priorityMaps);
         } else if (idObj) {
           // if valid, id data should be saved to cookie/html storage
           if (submodule.config.storage) {
@@ -333,7 +382,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
       }
     }
     try {
-      submodule.callback(callbackCompleted, getStoredValue.bind(null, submodule));
+      submodule.callback(callbackCompleted, storage);
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
       moduleDone();
