@@ -1,4 +1,4 @@
-import { sharedIdSystemSubmodule } from 'modules/sharedIdSystem.js';
+import { sharedIdSystemSubmodule, resetPixelStorageWarning } from 'modules/sharedIdSystem.js';
 import { config } from 'src/config.js';
 
 import sinon from 'sinon';
@@ -75,8 +75,22 @@ describe('SharedId System', function () {
         expect(result.callback).to.be.a('function');
       });
 
+      function storageHolding(read) {
+        return { get: sinon.spy(read), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+      }
+
+      function expectAdopted(storage, id) {
+        sinon.assert.calledOnce(callbackSpy);
+        sinon.assert.calledWithExactly(callbackSpy, id);
+        sinon.assert.calledOnce(storage.touch);
+        // the handle only accepts storage calls until the invocation reports its ID
+        sinon.assert.callOrder(storage.touch, callbackSpy);
+        sinon.assert.notCalled(storage.set);
+        sinon.assert.notCalled(storage.remove);
+      }
+
       it('should fire the pixel with the new id and complete once it has loaded', function () {
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storageHolding(() => 'restored-by-server')).callback(callbackSpy);
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include(UUID);
@@ -88,34 +102,34 @@ describe('SharedId System', function () {
         sinon.assert.calledOnce(callbackSpy);
       });
 
-      it('should complete without an id when storage still holds the minted one after the re-check, so the server-set cookie is not rewritten', function () {
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => UUID);
+      it('should keep the minted id without writing it again when storage still holds it after the re-check', function () {
+        const storage = storageHolding(() => UUID);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         // storage still holds the minted id, so it is read again a little later
         sinon.assert.notCalled(callbackSpy);
         clock.tick(50);
-        sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        expectAdopted(storage, UUID);
       });
 
       it('should adopt the id the server generated when create is false and getId returned none', function () {
         const noCreate = { ...config, params: { ...config.params, create: false } };
-        const result = sharedIdSystemSubmodule.getId(noCreate, undefined);
+        const storage = storageHolding(() => 'server-generated-id');
+        const result = sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage);
         expect(result.id).to.be.undefined;
-        result.callback(callbackSpy, () => 'server-generated-id');
+        result.callback(callbackSpy);
         pixelDone();
         clock.tick(0);
-        sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('server-generated-id');
+        expectAdopted(storage, 'server-generated-id');
       });
 
-      it('should adopt a different id the server set, for example one it restored', function () {
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => 'restored-by-server');
+      it('should adopt a different id the server set, for example one it restored, without writing it again', function () {
+        const storage = storageHolding(() => 'restored-by-server');
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
-        sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+        expectAdopted(storage, 'restored-by-server');
       });
 
       it('should adopt an id that only becomes visible in storage after the pixel load event', function () {
@@ -123,43 +137,96 @@ describe('SharedId System', function () {
         // event, so storage still holds the minted id synchronously; it shows the restored id
         // by the next task (see #16158).
         let storedId = UUID;
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => storedId);
+        const storage = storageHolding(() => storedId);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         storedId = 'restored-by-server';
         clock.tick(0);
-        sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+        expectAdopted(storage, 'restored-by-server');
       });
 
       it('should adopt an id that only becomes visible in storage at the re-check', function () {
         let storedId = UUID;
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => storedId);
+        const storage = storageHolding(() => storedId);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         sinon.assert.notCalled(callbackSpy);
         storedId = 'restored-by-server';
         clock.tick(50);
-        sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.equal('restored-by-server');
+        expectAdopted(storage, 'restored-by-server');
       });
 
-      it('should complete without an id when the server removed the cookie, so script does not write it back', function () {
+      it('should drop the id when the server removed the cookie', function () {
         // e.g. the endpoint deleted it for Global Privacy Control or denied consent
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => undefined);
+        const storage = storageHolding(() => undefined);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
+        // nothing stored could be a cookie not visible yet, so it is read again a little later
+        sinon.assert.notCalled(callbackSpy);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        sinon.assert.calledWithExactly(callbackSpy);
+        sinon.assert.calledOnce(storage.remove);
+        sinon.assert.callOrder(storage.remove, callbackSpy);
+        sinon.assert.notCalled(storage.set);
+        sinon.assert.notCalled(storage.touch);
       });
 
-      it('should still complete, without an id, when reading storage throws', function () {
-        sandbox.stub(utils, 'logError');
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, () => { throw new Error('storage unavailable'); });
+      describe('with create: false', function () {
+        const noCreate = { ...config, params: { ...config.params, create: false } };
+
+        it('should adopt a server id that only becomes visible at the re-check', function () {
+          let storedId;
+          const storage = storageHolding(() => storedId);
+          sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage).callback(callbackSpy);
+          pixelDone();
+          clock.tick(0);
+          sinon.assert.notCalled(callbackSpy);
+          storedId = 'server-generated-id';
+          clock.tick(50);
+          expectAdopted(storage, 'server-generated-id');
+        });
+
+        it('should not delete anything when the server set no id', function () {
+          const storage = storageHolding(() => undefined);
+          sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage).callback(callbackSpy);
+          pixelDone();
+          clock.tick(50);
+          sinon.assert.calledOnce(callbackSpy);
+          sinon.assert.calledWithExactly(callbackSpy);
+          sinon.assert.notCalled(storage.remove);
+          sinon.assert.notCalled(storage.touch);
+        });
+      });
+
+      it('should keep the id without following storage when no storage is configured', function () {
+        const storage = storageHolding(() => 'restored-by-server');
+        sharedIdSystemSubmodule.getId({ params: config.params }, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
-        clock.tick(0);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
-        sinon.assert.calledOnce(utils.logError);
+        sinon.assert.calledWithExactly(callbackSpy);
+        sinon.assert.notCalled(storage.get);
+        sinon.assert.notCalled(storage.touch);
+        sinon.assert.notCalled(storage.remove);
+      });
+
+      it('should keep an id that is already stored without writing it again before the pixel', function () {
+        const storage = storageHolding(() => 'stored-id');
+        const result = sharedIdSystemSubmodule.getId(config, undefined, 'stored-id', storage);
+        expect(result.id).to.equal('stored-id');
+        sinon.assert.calledOnce(storage.manage);
+        sinon.assert.notCalled(storage.set);
+        sinon.assert.notCalled(storage.touch);
+      });
+
+      it('should let the User ID module store a newly minted id before the pixel', function () {
+        const storage = storageHolding(() => undefined);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage);
+        sinon.assert.notCalled(storage.manage);
+        sinon.assert.notCalled(storage.touch);
       });
     });
     it('should abort if coppa is set', function () {
@@ -205,12 +272,17 @@ describe('SharedId System', function () {
           expires: 10
         }
       };
-      let pixelDone;
+      let pixelDone, clock;
 
       beforeEach(function () {
         pixelDone = null;
+        clock = sandbox.useFakeTimers();
         sandbox.stub(utils, 'triggerPixel').callsFake((url, done) => { pixelDone = done; });
       });
+
+      function storageHolding(value) {
+        return { get: sinon.stub().returns(value), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+      }
 
       it('should return only a callback, not the id', function () {
         const result = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId');
@@ -219,24 +291,32 @@ describe('SharedId System', function () {
       });
 
       it('should fire the pixel with the stored id', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy);
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storageHolding('TestId')).callback(callbackSpy);
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include('TestId');
       });
 
-      it('should complete the callback once the pixel has loaded', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy);
+      it('should keep the id without writing it again once the pixel has loaded', function () {
+        const storage = storageHolding('TestId');
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storage).callback(callbackSpy);
         sinon.assert.notCalled(callbackSpy);
-        expect(pixelDone).to.be.a('function');
         pixelDone();
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
+        sinon.assert.calledWithExactly(callbackSpy, 'TestId');
+        sinon.assert.calledOnce(storage.touch);
+        sinon.assert.notCalled(storage.set);
       });
 
-      it('should complete the callback without an id, so the server-set cookie is not rewritten', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy);
+      it('should drop the stored id when the server removed the cookie', function () {
+        const storage = storageHolding(undefined);
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storage).callback(callbackSpy);
         pixelDone();
-        expect(callbackSpy.firstCall.args[0]).to.be.undefined;
+        clock.tick(50);
+        sinon.assert.calledOnce(callbackSpy);
+        sinon.assert.calledWithExactly(callbackSpy);
+        sinon.assert.calledOnce(storage.remove);
       });
     });
     it('should abort if coppa is set', function () {
@@ -244,6 +324,59 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
+  describe('pixelUrl with storage other than cookies', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+      sandbox.stub(utils, 'triggerPixel');
+      sandbox.stub(utils, 'logWarn');
+      resetPixelStorageWarning();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+      resetPixelStorageWarning();
+    });
+
+    function cfg(type, params = { pixelUrl: '/wp-json/pubcid/v1/extend/' }) {
+      return { params, storage: { type, name: '_pubcid', expires: 10 } };
+    }
+
+    ['html5', 'cookie&html5', 'html5 & cookie'].forEach(type => {
+      it(`should warn from getId with type '${type}'`, function () {
+        sharedIdSystemSubmodule.getId(cfg(type), undefined);
+        sinon.assert.calledOnce(utils.logWarn);
+        expect(utils.logWarn.firstCall.args[0]).to.include('pixelUrl').and.include(type);
+      });
+    });
+
+    it('should warn from extendId when it fires the pixel', function () {
+      sharedIdSystemSubmodule.extendId(cfg('cookie&html5', { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }), undefined, 'TestId');
+      sinon.assert.calledOnce(utils.logWarn);
+    });
+
+    it('should warn only once', function () {
+      sharedIdSystemSubmodule.getId(cfg('html5'), undefined);
+      sharedIdSystemSubmodule.getId(cfg('html5'), undefined);
+      sinon.assert.calledOnce(utils.logWarn);
+    });
+
+    ['cookie', ' cookie '].forEach(type => {
+      it(`should not warn with storage type '${type}'`, function () {
+        sharedIdSystemSubmodule.getId(cfg(type), undefined);
+        sharedIdSystemSubmodule.extendId(cfg(type, { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }), undefined, 'TestId');
+        sinon.assert.notCalled(utils.logWarn);
+      });
+    });
+
+    it('should not warn without pixelUrl', function () {
+      sharedIdSystemSubmodule.getId(cfg('html5', {}), undefined);
+      sinon.assert.notCalled(utils.logWarn);
+    });
+  });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(sharedIdSystemSubmodule);
