@@ -26,9 +26,12 @@ var RESPONSE_TTL = 300;
 var pubId = 0;
 var adunitId = 0;
 
+const GVLID = 1329;
+
 export var spec = {
 
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

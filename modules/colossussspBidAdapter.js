@@ -17,6 +17,7 @@ import {
  */
 
 const BIDDER_CODE = 'colossusssp';
+const ACP_ID = 28332; // Google Additional Consent provider ID
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
 const G_URL_SYNC = 'https://sync.colossusssp.com';
 
@@ -84,6 +85,7 @@ const placementProcessingFunction = buildPlacementProcessingFunction({
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.

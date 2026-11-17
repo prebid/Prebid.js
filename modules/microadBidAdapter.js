@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'microad';
+const ACP_ID = 576; // Google Additional Consent provider ID
 
 const ENDPOINT_URLS = {
   'production': 'https://s-rtb-pb.send.microad.jp/prebid',
@@ -52,6 +53,7 @@ function convertMediaTypes(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function(bid) {
     return !!(bid && bid.params && bid.params.spot && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native || bid.mediaTypes.video));

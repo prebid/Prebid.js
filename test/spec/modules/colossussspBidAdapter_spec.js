@@ -460,3 +460,10 @@ describe('ColossussspAdapter', function () {
     });
   });
 });
+
+describe('colossussspBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(28332);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

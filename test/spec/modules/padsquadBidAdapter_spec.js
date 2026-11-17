@@ -260,3 +260,10 @@ describe('Padsquad bid adapter', function () {
     });
   });
 });
+
+describe('padsquadBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(2322);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

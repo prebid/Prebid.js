@@ -14,6 +14,7 @@ import { getDNT } from '../libraries/dnt/index.js';
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
+const ACP_ID = 1626; // Google Additional Consent provider ID
 const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
@@ -23,6 +24,7 @@ const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**

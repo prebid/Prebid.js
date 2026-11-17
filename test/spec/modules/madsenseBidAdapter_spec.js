@@ -186,3 +186,9 @@ function validateBid(actualBid, expectedBid) {
   });
   expect(actualBid.meta).to.have.property('advertiserDomains');
 }
+
+describe('madsenseBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1659);
+  });
+});

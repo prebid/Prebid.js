@@ -373,3 +373,10 @@ describe('ucfunnel Adapter', function () {
     });
   });
 });
+
+describe('ucfunnelBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(1626);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

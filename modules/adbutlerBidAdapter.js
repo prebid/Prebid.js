@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adbutler';
+const GVLID = 977;
 
 function getTrackingPixelsMarkup(pixelURLs) {
   return pixelURLs
@@ -12,6 +13,7 @@ function getTrackingPixelsMarkup(pixelURLs) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   pageID: Math.floor(Math.random() * 10e6),
   aliases: ['divreach'],
   supportedMediaTypes: [BANNER],

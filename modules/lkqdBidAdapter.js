@@ -4,6 +4,7 @@ import { VIDEO } from '../src/mediaTypes.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'lkqd';
+const ACP_ID = 2411; // Google Additional Consent provider ID
 const BID_TTL_DEFAULT = 300;
 const MIMES_TYPES = ['application/x-mpegURL', 'video/mp4', 'video/H264'];
 const PROTOCOLS = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -24,6 +25,7 @@ function isSet(value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   aliases: [],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid: function(bid) {

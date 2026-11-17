@@ -2,10 +2,12 @@ import { parseSizesInput, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
+const ACP_ID = 255; // Google Additional Consent provider ID
 const ENDPOINT = 'https://as.innity.com/synd/';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.pub && bid.params.zone);
   },
