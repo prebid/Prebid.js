@@ -4,6 +4,7 @@ import { stubAuctionIndex } from '../helpers/indexStub.js';
 import * as utils from '../../src/utils.js';
 import { syncOrtb2, validateOrtbFields } from '../../src/prebid.js';
 import { config } from 'src/config.js';
+import 'modules/videoModule/index.js';
 
 describe('video.js', function () {
   let sandbox;
@@ -315,56 +316,134 @@ describe('video.js', function () {
       expect(valid).to.equal(true);
     });
 
-    it('validates valid outstream bids', function () {
-      const bid = {
-        adUnitId: 'au',
-        renderer: {
-          url: 'render.url',
+    [
+      {
+        desc: 'renderer (allowed)',
+        type: 'renderer',
+        rendererDef: {
           render: () => true,
-        }
-      };
-      const adUnits = [{
-        adUnitId: 'au',
-        mediaTypes: {
-          video: { context: 'outstream' }
-        }
-      }];
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
-      expect(valid).to.equal(true);
-    });
-
-    it('validates valid outstream bids with a publisher defined renderer', function () {
-      const bid = {
-        adUnitId: 'au',
-      };
-      const adUnits = [{
-        adUnitId: 'au',
-        mediaTypes: {
-          video: {
-            context: 'outstream',
-          }
         },
-        renderer: {
-          url: 'render.url',
-          render: () => true,
+        valid: true,
+        setup() {
+          config.setConfig({ allowTopWindowRenderers: true });
         }
-      }];
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
-      expect(valid).to.equal(true);
+      },
+      {
+        desc: 'renderer (disallowed)',
+        type: 'renderer',
+        rendererDef: {
+          render: () => true
+        },
+        valid: false,
+        setup() {
+          config.setConfig({ allowTopWindowRenderers: false });
+        }
+      },
+      {
+        type: 'safeRenderer',
+        rendererDef: {
+          url: 'render.url',
+        },
+        valid: true,
+        setup() {}
+      }
+    ].forEach(({ desc, type, rendererDef, valid, setup }) => {
+      describe(`using ${desc}`, () => {
+        let bid, adUnits, bidRequests;
+
+        beforeEach(() => {
+          bid = {
+            adUnitId: 'au',
+            requestId: 'rq'
+          };
+          bidRequests = [{
+            bidId: 'rq',
+            adUnitId: 'au',
+            mediaTypes: {
+              video: { context: 'outstream' }
+            }
+          }];
+          adUnits = [{
+            adUnitId: 'au',
+            mediaTypes: {
+              video: { context: 'outstream' }
+            },
+          }];
+          setup();
+        });
+
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        Object.entries({
+          'by bidder'() {
+            bid[type] = rendererDef;
+          },
+          'on adUnit'() {
+            adUnits[0][type] = rendererDef;
+          },
+          'on adUnit.bid'() {
+            bidRequests[0][type] = rendererDef;
+          },
+          'on adUnit.mediaType (missing request)'() {
+            delete bid.requestId;
+            adUnits[0].mediaTypes.video[type] = rendererDef;
+          },
+          'on adUnit.mediatype (through request)'() {
+            bidRequests[0].mediaTypes.video[type] = rendererDef;
+          },
+        }).forEach(([desc, setup]) => {
+          describe(`defined ${desc}`, () => {
+            beforeEach(setup);
+            it('validates outstream bid', () => {
+              expect(
+                isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits, bidRequests }) })
+              ).to.equal(valid);
+            });
+          });
+        });
+      });
     });
 
-    it('catches invalid outstream bids', function () {
-      const bid = {
-        adUnitId: 'au',
-      };
-      const adUnits = [{
-        adUnitId: 'au',
-        mediaTypes: {
-          video: { context: 'outstream' }
-        }
-      }];
-      const valid = isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) });
-      expect(valid).to.equal(false);
+    it('warns when rejecting an outstream bid because its renderer is disallowed', () => {
+      config.setConfig({ allowTopWindowRenderers: false });
+      const warn = sandbox.spy(utils, 'logWarn');
+      const bid = { adUnitId: 'au', bidderCode: 'b', renderer: { render: () => true } };
+      const adUnits = [{ adUnitId: 'au', mediaTypes: { video: { context: 'outstream' } } }];
+      expect(isValidVideoBid(bid, { index: stubAuctionIndex({ adUnits }) })).to.equal(false);
+      sinon.assert.calledWith(warn, sinon.match(/Ignoring bidder-provided renderer/));
+    });
+
+    describe('outstream bid with no renderer', () => {
+      let bid, adUnits, index;
+      beforeEach(() => {
+        bid = {
+          adUnitId: 'au',
+        };
+        adUnits = [{
+          adUnitId: 'au',
+          mediaTypes: {
+            video: { context: 'outstream' }
+          }
+        }];
+        index = stubAuctionIndex({ adUnits });
+      });
+
+      it('is invalid', () => {
+        expect(isValidVideoBid(bid, { index })).to.be.false;
+      });
+
+      it('is invalid if managed by the video module but has no VAST', () => {
+        adUnits[0].video = true;
+        expect(isValidVideoBid(bid, { index })).to.be.false;
+      });
+
+      it('is valid if managed by the video module and has VAST', () => {
+        adUnits[0].video = true;
+        bid.vastUrl = 'https://vast.example';
+        expect(isValidVideoBid(bid, { index })).to.be.true;
+      });
     });
   });
 
