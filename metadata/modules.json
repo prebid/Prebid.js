@@ -4521,20 +4521,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "dailyhunt",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "dh",
-      "aliasOf": "dailyhunt",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "nexverse",
       "aliasOf": null,
       "gvlid": null,
