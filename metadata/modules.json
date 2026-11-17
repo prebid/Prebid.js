@@ -4710,13 +4710,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "dexerto",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "dochase",
       "aliasOf": null,
       "gvlid": null,
