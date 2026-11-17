@@ -633,13 +633,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "interactiveOffers",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "invibes",
       "aliasOf": null,
       "gvlid": 436,
