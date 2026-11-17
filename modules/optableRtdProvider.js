@@ -26,7 +26,6 @@ export const dep = {
 };
 
 const RTD_MODULE_VARIANT = 'optable-rtd-1.0.0';
-const OPTABLE_CACHE_KEY = 'optable-cache:targeting';
 const PASSPORT_KEY_PREFIX = 'OPTABLE_PASSPORT_';
 const UID2_SOURCE = 'uidapi.com';
 
@@ -88,8 +87,14 @@ export const parseTargetingConfig = (moduleConfig) => {
   const site = deepAccess(moduleConfig, 'params.site', null);
   const adserverTargeting = deepAccess(moduleConfig, 'params.adserverTargeting', true);
   const instance = deepAccess(moduleConfig, 'params.instance', null);
+  const cacheKey = deepAccess(moduleConfig, 'params.optableCacheTargeting', OPTABLE_RESOLVED_KEY);
 
   const hasDirectApiConfig = !!(host && node && site);
+
+  if (typeof cacheKey !== 'string' || !cacheKey.trim()) {
+    logError('optableCacheTargeting parameter must be a non-empty string');
+    return null;
+  }
 
   if (host !== null && (typeof host !== 'string' || !host.trim())) {
     logError('host parameter must be a non-empty string');
@@ -137,7 +142,8 @@ export const parseTargetingConfig = (moduleConfig) => {
     adserverTargeting,
     instance,
     hasDirectApiConfig,
-    skipMergeIfUid2Exists
+    skipMergeIfUid2Exists,
+    cacheKey: cacheKey.trim()
   };
 };
 
@@ -145,30 +151,40 @@ export const parseTargetingConfig = (moduleConfig) => {
  * Wait for Optable SDK event to fire with targeting data
  * @param {string} eventName Name of the event to listen for
  * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
+ * @param {number|null} [timeout] Stop waiting after this many ms (the RTD auctionDelay)
  * @returns {Promise<Object|null>} Promise that resolves with targeting data or null
  */
-const waitForOptableEvent = (eventName, instance = null) => {
+const waitForOptableEvent = (eventName, instance = null, timeout = null) => {
   return new Promise((resolve) => {
     const optableBundle = /** @type {Object} */ (window.optable);
     const cachedData = optableBundle?.[instance || 'instance']?.targetingFromCache?.();
 
     // A split test holdout response carries the assignment without ortb2
-    if (cachedData) {
+    if (cachedData?.ortb2 || cachedData?.split_test_assignment) {
       logMessage('Optable SDK already has cached data');
       resolve(cachedData);
       return;
     }
 
+    let timer;
     const eventListener = (event) => {
       logMessage(`Received ${eventName} event`);
-      // Extract targeting data from event detail
-      const targetingData = event.detail;
+      clearTimeout(timer);
       window.removeEventListener(eventName, eventListener);
-      resolve(targetingData);
+      resolve(event.detail);
     };
 
     window.addEventListener(eventName, eventListener);
     logMessage(`Waiting for ${eventName} event`);
+
+    // The RTD framework stops waiting after auctionDelay; a later event would land in a released auction
+    if (timeout) {
+      timer = setTimeout(() => {
+        window.removeEventListener(eventName, eventListener);
+        logWarn(`No ${eventName} event within ${timeout}ms`);
+        resolve(null);
+      }, timeout);
+    }
   });
 };
 
@@ -238,19 +254,20 @@ export const readCachedTargeting = () => {
  * auctions that start first still get Optable data; with nothing cached, wait
  * for the bundle.
  * @param {boolean} bundleLoaded Whether the bundle has already loaded
+ * @param {function(): (Object|null)} readCache Reads the cache, null when there is nothing usable
  * @param {function(): *} withBundle Called once the bundle is available
- * @param {function(Object): *} withCache Called with the cached ORTB2 object (EIDs under `user.eids`)
+ * @param {function(Object): *} withCache Called with what `readCache` returned
  * @returns {Promise<*>} What the chosen callback returns
  */
-const withBundleOrCache = async (bundleLoaded, withBundle, withCache) => {
+const withBundleOrCache = async (bundleLoaded, readCache, withBundle, withCache) => {
   if (bundleLoaded) {
     return withBundle();
   }
 
-  const cachedOrtb2 = readResolvedCache();
-  if (cachedOrtb2) {
+  const cached = readCache();
+  if (cached) {
     logMessage('Optable bundle not loaded yet, using cached targeting data');
-    return withCache(cachedOrtb2);
+    return withCache(cached);
   }
 
   logMessage('Optable bundle not loaded yet and no cached data, waiting for the bundle');
@@ -264,7 +281,7 @@ const withBundleOrCache = async (bundleLoaded, withBundle, withCache) => {
  * handler if it exposes one, otherwise wait for its targeting data
  * @type {OptableHandleRtd}
  */
-const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null) => {
+const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null, timeout = null) => {
   const bundleHandleRtd = window.optable?.rtd?.handleRtd;
   if (typeof bundleHandleRtd === 'function') {
     logMessage('Using the Optable bundle handleRtd');
@@ -272,7 +289,7 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, 
   }
 
   // Wait for the Optable SDK to dispatch targeting data via event
-  const targetingData = await waitForOptableEvent('optable-targeting:change', instance);
+  const targetingData = await waitForOptableEvent('optable-targeting:change', instance, timeout);
 
   if (!targetingData || !targetingData.ortb2) {
     logWarn('No targeting data found');
@@ -290,11 +307,17 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, 
  * Default function to handle/enrich RTD data. Called without waiting for the
  * Optable bundle, so auctions that start before it loads can still use data
  * cached on a previous page.
- * @type {OptableHandleRtd}
+ * @param {Object} reqBidsConfigObj Bid request configuration object
+ * @param {OptableRtdConfig} optableExtraData Additional data to be used by the Optable SDK
+ * @param {OptableMergeFn} mergeFn Function to merge data
+ * @param {string|null} [instance] Property name of the SDK instance on `window.optable`
+ * @param {number|null} [timeout] Stop waiting for the SDK event after this many ms (the RTD auctionDelay)
+ * @returns {Promise<void>}
  */
-export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null) => withBundleOrCache(
+export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null, timeout = null) => withBundleOrCache(
   isBundleLoaded(instance),
-  () => handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance),
+  readResolvedCache,
+  () => handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance, timeout),
   (cachedOrtb2) => mergeFn(reqBidsConfigObj.ortb2Fragments.global, toExtEids(cachedOrtb2)),
 );
 
@@ -407,10 +430,11 @@ const setSDKTargetingCache = (host, node, targetingData) => {
 /**
  * Get cached targeting data from localStorage. Any cached response is served, empty
  * included, so the last successful answer never blocks the auction.
+ * @param {string} cacheKey localStorage key of the targeting cache
  * @returns {Object|null} Cached targeting data or null
  */
-const getCachedTargeting = () => {
-  const cacheData = storage.getDataFromLocalStorage(OPTABLE_CACHE_KEY);
+const getCachedTargeting = (cacheKey) => {
+  const cacheData = storage.getDataFromLocalStorage(cacheKey);
   if (cacheData) {
     try {
       const parsedData = JSON.parse(cacheData);
@@ -428,13 +452,14 @@ const getCachedTargeting = () => {
 
 /**
  * Set targeting data in localStorage
+ * @param {string} cacheKey localStorage key of the targeting cache
  * @param {Object} targetingData Targeting response
  */
-const setCachedTargeting = (targetingData) => {
+const setCachedTargeting = (cacheKey, targetingData) => {
   if (!isCacheable(targetingData)) {
     return;
   }
-  storage.setDataInLocalStorage(OPTABLE_CACHE_KEY, JSON.stringify(targetingData));
+  storage.setDataInLocalStorage(cacheKey, JSON.stringify(targetingData));
 };
 
 /**
@@ -518,10 +543,11 @@ const isSDKAvailable = (instance = null) => {
  * @param {OptableMergeFn} mergeFn Merge function
  * @param {Object} options Options passed through to handleRtdFn
  * @param {string|null} instance SDK instance name
+ * @param {number|null} timeout Stop waiting for the SDK event after this many ms (the RTD auctionDelay)
  * @returns {Promise<void>}
  */
-const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn, options, instance) => {
-  const targetingData = await waitForOptableEvent('optable-targeting:change', instance);
+const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn, options, instance, timeout) => {
+  const targetingData = await waitForOptableEvent('optable-targeting:change', instance, timeout);
 
   if (!targetingData) {
     logWarn('No targeting data from SDK event');
@@ -676,7 +702,7 @@ const fetchTargeting = (apiParams) => {
   if (!targetingRequest) {
     targetingRequest = callTargetingAPI(apiParams).then(data => {
       if (data) {
-        setCachedTargeting(data);
+        setCachedTargeting(apiParams.cacheKey, data);
         setSDKTargetingCache(apiParams.host, apiParams.node, data);
       } else {
         targetingRequest = null;
@@ -775,7 +801,7 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
       return;
     }
 
-    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig, skipMergeIfUid2Exists } = parsedConfig;
+    const { host, node, site, cookies, timeout: configTimeout, ids: configIds, hids: configHids, handleRtd, instance, hasDirectApiConfig, skipMergeIfUid2Exists, cacheKey } = parsedConfig;
     const handleRtdFn = handleRtd || targetingHandleRtd;
     const options = { skipMergeIfUid2Exists };
 
@@ -790,8 +816,9 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
       logMessage('SDK mode: using the Optable Web SDK targeting');
       await withBundleOrCache(
         sdkAvailable,
-        () => handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, options, instance),
-        (cachedOrtb2) => handleRtdFn(reqBidsConfigObj, { ortb2: cachedOrtb2 }, mergeDeep, options),
+        () => getCachedTargeting(cacheKey),
+        () => handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, options, instance, timeout),
+        (cachedData) => handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options),
       );
       callback();
       return;
@@ -803,12 +830,12 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const consent = extractConsent(userConsent);
     const { ids, hids } = extractIdentifiers(configIds, configHids);
     const passport = getPassport(host, node);
-    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout };
+    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout, cacheKey };
 
     logMessage(`Direct API mode: host=${host}, node=${node}, site=${site}, cookies=${cookies}, timeout=${effectiveTimeout}`);
 
     // Serve the cache immediately and refresh it in the background, once per page load
-    const cachedData = getCachedTargeting();
+    const cachedData = getCachedTargeting(cacheKey);
     if (cachedData) {
       fetchTargeting(apiParams);
       await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
@@ -855,7 +882,8 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
   try {
     // Extract the bundle URL from the module configuration
     const { bundleUrl, handleRtd, instance } = parseConfig(moduleConfig);
-    const handleRtdFn = handleRtd || defaultHandleRtd;
+    const handleRtdFn = handleRtd ||
+      ((req, extraData, mergeFn, inst) => defaultHandleRtd(req, extraData, mergeFn, inst, timeout));
     const optableExtraData = config.getConfig('optableRtdConfig') || {};
 
     if (bundleUrl) {

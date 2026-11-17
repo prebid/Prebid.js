@@ -148,6 +148,11 @@ export interface OptableRtdProviderParams {
    * carries one. `enableTargeting` only.
    */
   skipMergeIfUid2Exists?: boolean;
+  /**
+   * localStorage key of the targeting cache, shared with the Web SDK's
+   * `optableCacheTargeting`. Defaults to `'OPTABLE_RESOLVED'`. `enableTargeting` only.
+   */
+  optableCacheTargeting?: string;
 }
 
 export interface OptableRtdProviderConfig {

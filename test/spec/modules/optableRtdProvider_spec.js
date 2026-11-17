@@ -136,6 +136,16 @@ describe('Optable RTD Submodule', function () {
       expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
     });
 
+    it('stops waiting for the targeting event after the timeout', async function () {
+      window.optable.instance.targetingFromCache.returns(null);
+      const removeListener = sandbox.spy(window, 'removeEventListener');
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn, null, 10);
+
+      expect(mergeFn.called).to.be.false;
+      expect(removeListener.calledWith('optable-targeting:change')).to.be.true;
+    });
+
     it('calls targeting function if no data is found in cache', async function () {
       const targetingData = { ortb2: { user: { ext: { optable: 'testData' } } } };
       window.optable.instance.targetingFromCache.returns(null);
@@ -742,6 +752,12 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(parseTargetingConfig(moduleConfig)).to.be.null;
     });
 
+    it('defaults the cache key to OPTABLE_RESOLVED and accepts an override', function () {
+      expect(parseTargetingConfig({ params: {} }).cacheKey).to.equal(OPTABLE_RESOLVED_KEY);
+      expect(parseTargetingConfig({ params: { optableCacheTargeting: ' my-key ' } }).cacheKey).to.equal('my-key');
+      expect(parseTargetingConfig({ params: { optableCacheTargeting: '' } })).to.be.null;
+    });
+
     it('ignores bundleUrl', function () {
       const moduleConfig = {
         params: {
@@ -1168,7 +1184,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
 
       expect(handleRtd.called).to.be.false;
       expect(callback.calledOnce).to.be.true;
-      expect(storage.setDataInLocalStorage.calledWith('optable-cache:targeting')).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.true;
     });
 
     it('shares one API call across concurrent auctions', async function () {
@@ -1197,14 +1213,26 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledTwice).to.be.true;
     });
 
+    it('reads and writes the cache under optableCacheTargeting', async function () {
+      moduleConfig.params.optableCacheTargeting = 'my-key';
+      storage.getDataFromLocalStorage.returns(null);
+      ajaxStub.callsFake((url, options) => options.success('{}'));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(storage.getDataFromLocalStorage.calledWith('my-key')).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith('my-key')).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+    });
+
     it('caches and serves an empty response', async function () {
       storage.getDataFromLocalStorage.returns(null);
       ajaxStub.callsFake((url, options) => options.success('{}'));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
-      expect(storage.setDataInLocalStorage.calledWith('optable-cache:targeting', JSON.stringify({ refs: {} }))).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY, JSON.stringify({ refs: {} }))).to.be.true;
 
-      storage.getDataFromLocalStorage.withArgs('optable-cache:targeting').returns(JSON.stringify({ refs: {} }));
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(ajaxStub.calledOnce).to.be.true;
       expect(callback.calledTwice).to.be.true;
@@ -1343,7 +1371,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(sdkCacheCall).to.exist;
       expect(sdkCacheCall.args[0]).to.match(/^OPTABLE_TARGETING_.+$/);
 
-      expect(sdkCacheCall.args[0]).to.not.equal('optable-cache:targeting');
+      expect(sdkCacheCall.args[0]).to.not.equal(OPTABLE_RESOLVED_KEY);
     });
   });
 
@@ -1429,6 +1457,13 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal([{ source: 'optable.co', uids: [{ id: 'sdk-id' }] }]);
+    });
+
+    it('releases the auction when the SDK event does not arrive within auctionDelay', async function () {
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 10);
+
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user).to.be.undefined;
     });
 
     it('uses SDK cached data if available', async function () {
