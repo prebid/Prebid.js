@@ -4115,13 +4115,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "mediakeys",
-      "aliasOf": null,
-      "gvlid": 498,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "mile",
       "aliasOf": null,
       "gvlid": null,
