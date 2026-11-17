@@ -2502,13 +2502,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pubcircle",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "rocketlab",
       "aliasOf": null,
       "gvlid": null,
