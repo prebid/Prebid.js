@@ -89,8 +89,12 @@ const babelPrecomp = _.memoize(
       const pipeline = options.polyfills
         ? transform().reduce((stream, stage) => stream.pipe(stage), src).pipe(dest)
         : cachedPipeline({namespace: 'precompile', key, src, transform, dest});
-      return pipeline.on('end', () => {
-        activePrecompilationKey = key;
+      let failed = false;
+      pipeline.once('error', () => {
+        failed = true;
+      });
+      return pipeline.once('end', () => {
+        if (!failed) activePrecompilationKey = key;
       });
     }
   },
