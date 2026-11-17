@@ -107,6 +107,14 @@ describe('Sevio ID System', function () {
   });
 
   describe('getId', function () {
+    function mockHandle() {
+      return { get: sinon.spy(), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+    }
+
+    function getId(cfg, consent, storedId = undefined, handle = mockHandle()) {
+      return sevioIdSubmodule.getId(cfg, consent, storedId, handle);
+    }
+
     const consentData = {
       gdpr: { gdprApplies: true, consentString: 'CONSENT' },
       usp: '1YNN',
@@ -114,7 +122,7 @@ describe('Sevio ID System', function () {
     };
 
     it('returns nothing and makes no request under COPPA', function () {
-      const result = sevioIdSubmodule.getId(validConfig, { coppa: true });
+      const result = getId(validConfig, { coppa: true });
       expect(result).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
@@ -126,7 +134,7 @@ describe('Sevio ID System', function () {
       ['a non-string clientId', { clientId: 123 }]
     ].forEach(([desc, params]) => {
       it(`returns nothing, logs an error and makes no request with ${desc}`, function () {
-        const result = sevioIdSubmodule.getId({ ...validConfig, params }, {});
+        const result = getId({ ...validConfig, params }, {});
         expect(result).to.be.undefined;
         expect(server.requests.length).to.equal(0);
         sinon.assert.calledOnce(utils.logError);
@@ -134,33 +142,33 @@ describe('Sevio ID System', function () {
     });
 
     it('returns nothing, logs an error and makes no request without storage', function () {
-      const result = sevioIdSubmodule.getId({ name: 'sevioId', params: { clientId: CLIENT_ID } }, {});
+      const result = getId({ name: 'sevioId', params: { clientId: CLIENT_ID } }, {});
       expect(result).to.be.undefined;
       expect(server.requests.length).to.equal(0);
       sinon.assert.calledOnce(utils.logError);
     });
 
     it('does not warn for the cookie&html5 storage type', function () {
-      sevioIdSubmodule.getId(validConfig, {});
+      getId(validConfig, {});
       sinon.assert.notCalled(utils.logWarn);
     });
 
     ['cookie', 'html5', 'html5&cookie'].forEach(type => {
       it(`warns but still returns a callback for storage type '${type}'`, function () {
-        const result = sevioIdSubmodule.getId({ ...validConfig, storage: { ...validConfig.storage, type } }, {});
+        const result = getId({ ...validConfig, storage: { ...validConfig.storage, type } }, {});
         sinon.assert.calledOnce(utils.logWarn);
         expect(result.callback).to.be.a('function');
       });
     });
 
     it('makes no request until the callback runs', function () {
-      const result = sevioIdSubmodule.getId(validConfig, consentData);
+      const result = getId(validConfig, consentData);
       expect(result).to.have.all.keys('callback');
       expect(server.requests.length).to.equal(0);
     });
 
     it('posts JSON with credentials, the client ID and the privacy signals', function () {
-      sevioIdSubmodule.getId(validConfig, consentData).callback(sinon.spy());
+      getId(validConfig, consentData).callback(sinon.spy());
       expect(server.requests.length).to.equal(1);
       const request = server.requests[0];
       expect(request.method).to.equal('POST');
@@ -180,7 +188,7 @@ describe('Sevio ID System', function () {
     });
 
     it('sends gdpr 0 when GDPR does not apply', function () {
-      sevioIdSubmodule.getId(validConfig, { gdpr: { gdprApplies: false } }).callback(sinon.spy());
+      getId(validConfig, { gdpr: { gdprApplies: false } }).callback(sinon.spy());
       expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gdpr: 0 });
     });
 
@@ -189,57 +197,57 @@ describe('Sevio ID System', function () {
       ['gives no applicable sections', undefined]
     ].forEach(([desc, applicableSections]) => {
       it(`leaves out gpp_sid when the GPP CMP ${desc}`, function () {
-        sevioIdSubmodule.getId(validConfig, { gpp: { gppString: 'GPPSTRING', applicableSections } }).callback(sinon.spy());
+        getId(validConfig, { gpp: { gppString: 'GPPSTRING', applicableSections } }).callback(sinon.spy());
         expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gdpr: 0, gpp: 'GPPSTRING' });
       });
     });
 
     it('sends gdpr 0 when there is no consent data', function () {
-      sevioIdSubmodule.getId(validConfig, undefined).callback(sinon.spy());
+      getId(validConfig, undefined).callback(sinon.spy());
       expect(requestBody(server.requests[0])).to.deep.equal({ client_id: CLIENT_ID, privacy: { gdpr: 0 } });
     });
 
     it('sends gdpr 0 when the GDPR consent data has no gdprApplies', function () {
-      sevioIdSubmodule.getId(validConfig, { gdpr: { consentString: 'CONSENT' } }).callback(sinon.spy());
+      getId(validConfig, { gdpr: { consentString: 'CONSENT' } }).callback(sinon.spy());
       expect(requestBody(server.requests[0]).privacy).to.deep.equal({ gdpr: 0, gdpr_consent: 'CONSENT' });
     });
 
     it('presents the stored envelope in ids', function () {
-      sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(sinon.spy());
+      getId(validConfig, consentData, ENVELOPE).callback(sinon.spy());
       expect(requestBody(server.requests[0]).ids).to.deep.equal([`sevio:${ENVELOPE}`]);
     });
 
     it('presents a stored ID that is not 66 characters long', function () {
-      sevioIdSubmodule.getId(validConfig, consentData, 'stored-id').callback(sinon.spy());
+      getId(validConfig, consentData, 'stored-id').callback(sinon.spy());
       expect(requestBody(server.requests[0]).ids).to.deep.equal(['sevio:stored-id']);
     });
 
     ['', '   ', 123, '{"a":1}', { id: ENVELOPE }].forEach(storedId => {
       it(`does not present a stored ID that is not a non-empty string: ${JSON.stringify(storedId)}`, function () {
-        sevioIdSubmodule.getId(validConfig, consentData, storedId).callback(sinon.spy());
+        getId(validConfig, consentData, storedId).callback(sinon.spy());
         expect(requestBody(server.requests[0])).to.not.have.property('ids');
       });
     });
 
     it('presents the email hash in ids', function () {
-      sevioIdSubmodule.getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: EMAIL_HASH } }, consentData).callback(sinon.spy());
+      getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: EMAIL_HASH } }, consentData).callback(sinon.spy());
       expect(requestBody(server.requests[0]).ids).to.deep.equal([`email_sha256:${EMAIL_HASH}`]);
       sinon.assert.notCalled(utils.logWarn);
     });
 
     it('presents the stored envelope before the email hash', function () {
-      sevioIdSubmodule.getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: EMAIL_HASH } }, consentData, ENVELOPE).callback(sinon.spy());
+      getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: EMAIL_HASH } }, consentData, ENVELOPE).callback(sinon.spy());
       expect(requestBody(server.requests[0]).ids).to.deep.equal([`sevio:${ENVELOPE}`, `email_sha256:${EMAIL_HASH}`]);
     });
 
     it('lowercases and trims the email hash', function () {
-      sevioIdSubmodule.getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: ` ${EMAIL_HASH.toUpperCase()} ` } }, consentData).callback(sinon.spy());
+      getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash: ` ${EMAIL_HASH.toUpperCase()} ` } }, consentData).callback(sinon.spy());
       expect(requestBody(server.requests[0]).ids).to.deep.equal([`email_sha256:${EMAIL_HASH}`]);
     });
 
     ['', 'not-a-hash', EMAIL_HASH.slice(1), `${EMAIL_HASH}0`, 123].forEach(emailHash => {
       it(`warns and does not send an email hash of ${JSON.stringify(emailHash)}`, function () {
-        sevioIdSubmodule.getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash } }, consentData, ENVELOPE).callback(sinon.spy());
+        getId({ ...validConfig, params: { clientId: CLIENT_ID, emailHash } }, consentData, ENVELOPE).callback(sinon.spy());
         expect(requestBody(server.requests[0]).ids).to.deep.equal([`sevio:${ENVELOPE}`]);
         sinon.assert.calledOnce(utils.logWarn);
       });
@@ -247,7 +255,7 @@ describe('Sevio ID System', function () {
 
     it('passes the sevio_id from a successful response', function () {
       const callback = sinon.spy();
-      sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(callback);
+      getId(validConfig, consentData, ENVELOPE).callback(callback);
       respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: false });
       sinon.assert.calledOnceWithExactly(callback, NEW_ENVELOPE);
       sinon.assert.notCalled(utils.logError);
@@ -270,7 +278,7 @@ describe('Sevio ID System', function () {
       });
 
       function resolveWith(body) {
-        sevioIdSubmodule.getId(validConfig, consentData).callback(sinon.spy());
+        getId(validConfig, consentData).callback(sinon.spy());
         respondWith(server.requests[0], body);
       }
 
@@ -347,19 +355,23 @@ describe('Sevio ID System', function () {
       function startTwo() {
         const older = sinon.spy();
         const newer = sinon.spy();
-        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(older);
-        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(newer);
+        const olderHandle = mockHandle();
+        const newerHandle = mockHandle();
+        getId(validConfig, consentData, ENVELOPE, olderHandle).callback(older);
+        getId(validConfig, consentData, ENVELOPE, newerHandle).callback(newer);
         expect(server.requests.length).to.equal(2);
-        return { older, newer };
+        return { older, newer, olderHandle, newerHandle };
       }
 
       it('ignores an older answer that arrives after the newer one', function () {
-        const { older, newer } = startTwo();
+        const { older, newer, olderHandle, newerHandle } = startTwo();
         respondWith(server.requests[1], { sevio_id: null, changed: false });
         respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
 
-        sinon.assert.calledOnceWithExactly(newer, { revoked: true });
+        sinon.assert.calledOnce(newerHandle.remove);
+        sinon.assert.calledOnceWithExactly(newer);
         sinon.assert.calledOnceWithExactly(older);
+        sinon.assert.notCalled(olderHandle.remove);
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
@@ -374,8 +386,8 @@ describe('Sevio ID System', function () {
 
       it('ignores an in-flight answer once getId runs under COPPA', function () {
         const inFlight = sinon.spy();
-        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(inFlight);
-        expect(sevioIdSubmodule.getId(validConfig, { ...consentData, coppa: true }, ENVELOPE)).to.be.undefined;
+        getId(validConfig, consentData, ENVELOPE).callback(inFlight);
+        expect(getId(validConfig, { ...consentData, coppa: true }, ENVELOPE)).to.be.undefined;
         respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
 
         sinon.assert.calledOnceWithExactly(inFlight);
@@ -385,7 +397,7 @@ describe('Sevio ID System', function () {
 
       it('ignores an in-flight answer when COPPA is turned on before the refresh reaches getId', function () {
         const inFlight = sinon.spy();
-        sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(inFlight);
+        getId(validConfig, consentData, ENVELOPE).callback(inFlight);
         config.setConfig({ coppa: true });
         respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
 
@@ -404,12 +416,24 @@ describe('Sevio ID System', function () {
       });
     });
 
-    it('passes the revocation marker and logs no error when the Identity service answers a null sevio_id', function () {
+    it('leaves storage to the userId core when the Identity service answers an ID', function () {
       const callback = sinon.spy();
-      sevioIdSubmodule.getId(validConfig, consentData, ENVELOPE).callback(callback);
+      const handle = mockHandle();
+      getId(validConfig, consentData, ENVELOPE, handle).callback(callback);
+      respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, changed: true });
+      sinon.assert.calledOnceWithExactly(callback, NEW_ENVELOPE);
+      Object.values(handle).forEach(method => sinon.assert.notCalled(method));
+    });
+
+    it('removes the stored ID, passes nothing and logs no error when the Identity service answers a null sevio_id', function () {
+      const callback = sinon.spy();
+      const handle = mockHandle();
+      getId(validConfig, consentData, ENVELOPE, handle).callback(callback);
       respondWith(server.requests[0], { sevio_id: null, changed: false });
-      sinon.assert.calledOnceWithExactly(callback, { revoked: true });
-      expect(sevioIdSubmodule.decode(callback.firstCall.args[0])).to.be.undefined;
+      sinon.assert.calledOnce(handle.remove);
+      sinon.assert.calledOnceWithExactly(callback);
+      // the handle only accepts storage calls until the invocation reports its ID
+      sinon.assert.callOrder(handle.remove, callback);
       sinon.assert.notCalled(utils.logError);
       sinon.assert.calledOnce(utils.logInfo);
     });
@@ -424,20 +448,24 @@ describe('Sevio ID System', function () {
       ['an object sevio_id', { sevio_id: { id: ENVELOPE } }],
       ['invalid JSON', 'not json']
     ].forEach(([desc, body]) => {
-      it(`passes nothing and logs an error for ${desc}`, function () {
+      it(`passes nothing, keeps the stored ID and logs an error for ${desc}`, function () {
         const callback = sinon.spy();
-        sevioIdSubmodule.getId(validConfig, consentData).callback(callback);
+        const handle = mockHandle();
+        getId(validConfig, consentData, undefined, handle).callback(callback);
         respondWith(server.requests[0], body);
         sinon.assert.calledOnceWithExactly(callback);
+        sinon.assert.notCalled(handle.remove);
         sinon.assert.calledOnce(utils.logError);
       });
     });
 
-    it('passes nothing and logs an error on an HTTP error', function () {
+    it('passes nothing, keeps the stored ID and logs an error on an HTTP error', function () {
       const callback = sinon.spy();
-      sevioIdSubmodule.getId(validConfig, consentData).callback(callback);
+      const handle = mockHandle();
+      getId(validConfig, consentData, undefined, handle).callback(callback);
       server.requests[0].respond(500, {}, '');
       sinon.assert.calledOnceWithExactly(callback);
+      sinon.assert.notCalled(handle.remove);
       sinon.assert.calledOnce(utils.logError);
     });
   });
@@ -575,7 +603,7 @@ describe('Sevio ID System', function () {
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
     });
 
-    it('revokes the stored ID when a refresh is answered with a null sevio_id', async function () {
+    it('deletes the stored ID when a refresh is answered with a null sevio_id', async function () {
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
       const refreshingConfig = { ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } };
       seedCookie(ENVELOPE, twoDaysAgo);
@@ -589,14 +617,17 @@ describe('Sevio ID System', function () {
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
-      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
-      expect(decodeURIComponent(coreStorage.getDataFromLocalStorage(STORAGE_NAME))).to.equal('{"revoked":true}');
+      COOKIE_SUFFIXES.forEach(suffix => expect(coreStorage.getCookie(STORAGE_NAME + suffix)).to.not.be.ok);
+      HTML5_SUFFIXES.forEach(suffix => expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME + suffix)).to.not.be.ok);
+    });
 
-      // The next page view decodes the marker without calling the service again.
-      startUserId(refreshingConfig);
+    it('ignores a revocation marker stored by earlier versions', async function () {
+      seedCookie('{"revoked":true}', new Date().toUTCString());
+      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
       await getGlobal().getUserIdsAsync();
+
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
-      expect(server.requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(0);
     });
 
     it('provides no ID and makes no request for a stored value that is not a string until a refresh is due', async function () {
@@ -626,7 +657,7 @@ describe('Sevio ID System', function () {
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
     });
 
-    it('keeps the revocation when an older request answers after an overlapping refresh', async function () {
+    it('stores nothing when an older request answers after an overlapping refresh is answered with a null sevio_id', async function () {
       startUserId();
       const first = getGlobal().getUserIdsAsync();
       await waitForRequest();
@@ -643,7 +674,8 @@ describe('Sevio ID System', function () {
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
-      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.not.be.ok;
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.not.be.ok;
     });
 
     it('stores nothing when COPPA is turned on while a request is in flight', async function () {
