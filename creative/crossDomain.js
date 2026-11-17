@@ -31,23 +31,61 @@ function isPrebidWindow(win) {
 }
 
 export function renderer(win) {
-  let target = win.parent;
-  try {
-    while (target !== win.top && !isPrebidWindow(target)) {
-      target = target.parent;
+  /**
+   * Return the window to postMessage into. In order of precedence, this is:
+   *  - the `depth`-th ancestor, if provided;
+   *  - the first ancestor that has a frame named '__pb_locator__',
+   *  - the first ancestor whose `frames` are not readable,
+   *  - the immediate parent.
+   */
+  function locatePrebid(depth) {
+    let target = win.parent;
+    if (depth > 0) {
+      for (let i = 1; i < depth && target !== win.top; i++) {
+        target = target.parent;
+      }
+      return target;
     }
-    if (!isPrebidWindow(target)) target = win.parent;
-  } catch (e) {
+    try {
+      while (target !== win.top && !isPrebidWindow(target)) {
+        target = target.parent;
+      }
+      if (!isPrebidWindow(target)) target = win.parent;
+    } catch (e) {
+    }
+    return target;
   }
 
-  return function ({ adId, pubUrl, ...rest }) {
-    const pubDomain = new URL(pubUrl, window.location).origin;
+  return function ({ adId, pubUrl, allowNullOrigin, token, parent: depth, ...rest }) {
+    const targetOrigin = (() => {
+      let origin;
+      try {
+        origin = new URL(pubUrl).origin;
+      } catch (e) {
+        origin = 'null';
+      }
+      if (origin !== 'null') return origin;
+      if (allowNullOrigin) return '*';
+      return new URL(pubUrl, window.location).origin;
+    })();
 
-    function sendMessage(type, payload, responseListener) {
+    const makeMessage = (type, payload) => JSON.stringify(Object.assign({ message: type, adId }, payload));
+
+    const target = locatePrebid(depth);
+
+    function setupChannel(type, payload, onResponse) {
       const channel = new MessageChannel();
-      channel.port1.onmessage = guard(responseListener);
-      target.postMessage(JSON.stringify(Object.assign({ message: type, adId }, payload)), pubDomain, [channel.port2]);
+      if (typeof onResponse === 'function') {
+        channel.port1.onmessage = guard(onResponse);
+      }
+      target.postMessage(makeMessage(type, Object.assign({ token }, payload)), targetOrigin, [channel.port2]);
+      return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
     }
+
+    const handshakeChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);
+    const sendMessage = token != null
+      ? handshakeChannel
+      : setupChannel;
 
     function onError(e) {
       sendMessage(MESSAGE_EVENT, {
@@ -71,6 +109,9 @@ export function renderer(win) {
       };
     }
 
+    const forward = [];
+    let handshakeComplete;
+
     function onMessage(ev) {
       let data;
       try {
@@ -78,7 +119,8 @@ export function renderer(win) {
       } catch (e) {
         return;
       }
-      if (data.message === MESSAGE_RESPONSE && data.adId === adId) {
+      if (!handshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
+        handshakeComplete = true;
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
@@ -88,7 +130,7 @@ export function renderer(win) {
           const W = renderer.contentWindow;
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
-          W.Promise.resolve(W.render(data, { sendMessage, mkFrame }, win)).then(
+          W.Promise.resolve(W.render(data, { sendMessage, mkFrame, onMessage: (cb) => forward.push(guard(cb)) }, win)).then(
             () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
             onError
           );
@@ -97,12 +139,10 @@ export function renderer(win) {
         // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
         renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
+      } else if (handshakeComplete) {
+        forward.forEach(cb => cb(data));
       }
     }
-
-    sendMessage(MESSAGE_REQUEST, {
-      options: rest
-    }, onMessage);
   };
 }
 

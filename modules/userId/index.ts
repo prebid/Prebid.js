@@ -303,20 +303,34 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
   }, submodules.length);
   submodules.forEach(function (submodule) {
     const moduleDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
+    // A callback can complete after a refresh has started a newer one for the same submodule, or after the
+    // ID system was reinitialized; its result is stale then, so it must not overwrite storage or the decoded ID.
+    const token = {};
+    submodule.callbackToken = token;
+    const isStale = () => submodule.callbackToken !== token || priorityMaps !== initializedSubmodules;
     function callbackCompleted(idObj) {
-      // if valid, id data should be saved to cookie/html storage
-      if (idObj) {
-        if (submodule.config.storage) {
-          setStoredValue(submodule, idObj);
+      // callbacks often complete asynchronously, out of reach of the catch below: never let an error here leave the
+      // batch (and with it the auction delay) waiting
+      try {
+        if (isStale()) {
+          logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring a callback superseded by a refresh`);
+        } else if (idObj) {
+          // if valid, id data should be saved to cookie/html storage
+          if (submodule.config.storage) {
+            setStoredValue(submodule, idObj);
+          }
+          // cache decoded value (this is copied to every adUnit bid)
+          submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
+          priorityMaps.refresh();
+          updatePPID(priorityMaps);
+        } else {
+          logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
         }
-        // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
-        priorityMaps.refresh();
-        updatePPID(priorityMaps);
-      } else {
-        logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+      } catch (e) {
+        logError(`Error in userID module '${submodule.submodule.name}':`, e);
+      } finally {
+        moduleDone();
       }
-      moduleDone();
     }
     try {
       submodule.callback(callbackCompleted, getStoredValue.bind(null, submodule));
@@ -1198,6 +1212,8 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   enabledStorageTypes?: StorageType[];
   config: UserIdConfig<P>;
   callback?: ProviderResponse['callback'];
+  // identifies the latest callback started for this submodule, so an older one completing late is ignored
+  callbackToken?: object;
   idObj;
   storageMgr: StorageManager;
   // true if this module was reconfigured (latest config is different from previous config)

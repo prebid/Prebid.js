@@ -1368,6 +1368,53 @@ describe('User ID', function () {
         };
       });
 
+      it('should ignore a callback that completes after a refresh started a newer one', () => {
+        startInit();
+        const refreshedCallback = sinon.stub();
+        return clearStack().then(() => {
+          sinon.assert.calledOnce(mockIdCallback); // still pending
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedCallback }));
+          getGlobal().refreshUserIds();
+          return clearStack();
+        }).then(() => {
+          refreshedCallback.callArg(0, { MOCKID: 'fresh' });
+          // the first callback completes late, with an older id
+          mockIdCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          expect(coreStorage.getCookie('MOCKID')).to.include('fresh');
+        });
+      });
+
+      it('should ignore a callback that completes after the ID system was reinitialized', () => {
+        startInit();
+        return clearStack().then(() => {
+          const lateCallback = mockIdCallback;
+          mockIdCallback = sinon.stub();
+          startInit();
+          lateCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(coreStorage.getCookie('MOCKID')).to.not.be.ok;
+        });
+      });
+
+      it('should complete the batch when handling an asynchronous callback result throws', () => {
+        const logError = sinon.stub(utils, 'logError');
+        mockIdSystem.decode = () => { throw new Error('decode failed'); };
+        startInit();
+        let resolved = false;
+        return clearStack().then(() => {
+          getGlobal().getUserIdsAsync().then(() => { resolved = true; });
+          mockIdCallback.callArg(0, MOCK_ID);
+          return clearStack();
+        }).then(() => {
+          expect(resolved).to.be.true;
+          sinon.assert.called(logError);
+        }).finally(() => logError.restore());
+      });
+
       ['refreshUserIds', 'getUserIdsAsync'].forEach(method => {
         it(`should still resolve promises returned by ${method}`, () => {
           startInit();
