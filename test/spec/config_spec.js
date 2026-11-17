@@ -73,11 +73,15 @@ describe('config API', function () {
   it('readConfig subscribers can unsubscribe', function () {
     const listener = sinon.spy();
 
-    const unsubscribe = getConfig(listener);
+    const unsubscribe = readConfig(listener);
+
+    setConfig({ logging: true });
+    sinon.assert.calledOnceWithExactly(listener, { logging: true });
+    listener.resetHistory();
 
     unsubscribe();
 
-    readConfig({ logging: true });
+    setConfig({ logging: false });
 
     sinon.assert.notCalled(listener);
   });
