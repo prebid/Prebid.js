@@ -40,6 +40,23 @@ If the keys found below are not defined, their values will default to `false`.
     });
 ```
 
+## Bid params
+
+| Name | Scope | Description | Type |
+|------|-------|-------------|------|
+| `placementCode` | optional | Identifier of the placement. If absent, the ad unit code is used to identify the placement instead. | `string` |
+
+```javascript
+    pbjs.addAdUnits([{
+        code: 'div-prebid-banner',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [{
+            bidder: 'mediaConsortium',
+            params: { placementCode: 'banner-1' }
+        }]
+    }]);
+```
+
 ## Test Parameters
 
 ```javascript

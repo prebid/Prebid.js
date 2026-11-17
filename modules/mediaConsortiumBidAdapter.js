@@ -12,6 +12,12 @@ import { OUTSTREAM } from '../src/video.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./mediaConsortiumBidAdapter.d.ts').MediaConsortiumBidderParams} MediaConsortiumBidderParams
+ * @typedef {BidRequest & { params?: MediaConsortiumBidderParams }} MediaConsortiumBidRequest
+ */
+
 const BIDDER_CODE = 'mediaConsortium';
 
 const PROFILE_API_USAGE_CONFIG_KEY = 'useProfileApi';
@@ -54,9 +60,10 @@ export const spec = {
     const currentTimestamp = Date.now();
     const optimizations = getOptimizationsFromLocalStorage();
 
-    const impressions = bids.reduce((acc, bidRequest) => {
+    const impressions = bids.reduce((acc, /** @type {MediaConsortiumBidRequest} */ bidRequest) => {
       const { bidId, adUnitCode, mediaTypes } = bidRequest;
-      const optimization = optimizations[adUnitCode];
+      const placementCode = sanitizePlacementCode(bidRequest.params?.placementCode);
+      const optimization = optimizations[placementCode ?? adUnitCode];
 
       if (optimization) {
         const { expiresAt, isEnabled } = optimization;
@@ -78,7 +85,13 @@ export const spec = {
         }
       }
 
-      return acc.concat({ id: bidId, adUnitCode, mediaTypes: finalizedMediatypes });
+      const impression = { id: bidId, adUnitCode, mediaTypes: finalizedMediatypes };
+
+      if (placementCode) {
+        impression.placementCode = placementCode;
+      }
+
+      return acc.concat(impression);
     }, []);
 
     if (!impressions.length) {
@@ -118,6 +131,13 @@ export const spec = {
       ad_unit_codes: impressions.map(({ adUnitCode }) => adUnitCode).join(',')
     };
 
+    const placementCodes = impressions.map(({ placementCode }) => placementCode).filter(Boolean);
+    const uniquePlacementCodes = [...new Set(placementCodes)];
+
+    if (uniquePlacementCodes.length) {
+      syncData.placement_codes = uniquePlacementCodes.join(',');
+    }
+
     if (consentString) {
       syncData.gdpr_consent = consentString;
     }
@@ -146,10 +166,11 @@ export const spec = {
 
       const optimizationsToStore = optimizations.reduce((acc, optimization) => {
         const { adUnitCode, isEnabled, ttl } = optimization;
+        const placementCode = sanitizePlacementCode(optimization.placementCode);
 
         return {
           ...acc,
-          [adUnitCode]: { isEnabled, expiresAt: currentTimestamp + ttl }
+          [placementCode ?? adUnitCode]: { isEnabled, expiresAt: currentTimestamp + ttl }
         };
       }, getOptimizationsFromLocalStorage());
 
@@ -238,6 +259,20 @@ export function getOptimizationsFromLocalStorage() {
   } catch (err) {
     return {};
   }
+}
+
+function sanitizePlacementCode(placementCode) {
+  if (!isStr(placementCode)) {
+    return;
+  }
+
+  const trimmedPlacementCode = placementCode.trim();
+
+  if (!trimmedPlacementCode) {
+    return;
+  }
+
+  return trimmedPlacementCode;
 }
 
 function getFpIdFromLocalStorage() {
