@@ -17,9 +17,10 @@ export interface OptimeraRtdParams {
    */
   device?: string;
   /**
-   * Optimera scores API version to use. Currently only `v0` is supported. Defaults to `v0`.
+   * Optimera scores API version to use. Defaults to `v0`.
+   * @deprecated `v1` is no longer supported; using it logs a warning and falls back to `v0`.
    */
-  apiVersion?: 'v0';
+  apiVersion?: 'v0' | 'v1';
   /**
    * Whether ORTB2 targeting is injected before bid requests are sent.
    * Defaults to `allow`.

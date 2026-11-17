@@ -12,7 +12,7 @@
  * @typedef {import('./optimeraRtdProvider.d.ts').OptimeraRtdParams} ModuleParams
  */
 
-import { logInfo, logError, mergeDeep } from '../src/utils.js';
+import { logInfo, logError, logWarn, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { loadExternalScript } from '../src/adloader.js';
@@ -21,6 +21,11 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
+
+// Exposed so tests can stub the ajax dependency.
+export const dep = {
+  ajaxBuilder,
+};
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -78,7 +83,12 @@ export function init(moduleConfig) {
     if (_moduleParams.optimeraKeyName) optimeraKeyName = _moduleParams.optimeraKeyName;
     if (_moduleParams.device) device = _moduleParams.device;
     if (_moduleParams.apiVersion) {
-      apiVersion = (_moduleParams.apiVersion === 'v0') ? _moduleParams.apiVersion : 'v0';
+      if (_moduleParams.apiVersion === 'v1') {
+        logWarn('Optimera RTD apiVersion "v1" is no longer supported and has been removed. Falling back to "v0".');
+        apiVersion = 'v0';
+      } else {
+        apiVersion = (_moduleParams.apiVersion === 'v0') ? _moduleParams.apiVersion : 'v0';
+      }
     }
     if (_moduleParams.transmitWithBidRequests) {
       transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
@@ -155,7 +165,7 @@ export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
     return;
   }
   // Else, fetch the score file
-  const ajax = ajaxBuilder();
+  const ajax = dep.ajaxBuilder();
   ajax(scoresURL, {
     success: (res, req) => {
       if (req.status === 200) {
