@@ -741,6 +741,38 @@ describe('auctionmanager.js', function () {
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
+
+    describe('when a value function throws', () => {
+      function throwingVal() {
+        throw new Error('targeting value error');
+      }
+
+      it('does not set the key', function () {
+        getGlobal().bidderSettings = {
+          standard: {
+            adserverTargeting: [
+              { key: 'aKey', val: 'aValue' },
+              { key: 'aThrowingKey', val: throwingVal }
+            ]
+          }
+        };
+        const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+        assert.deepEqual(response, { aKey: 'aValue' });
+      });
+
+      it('keeps the standard value when a bidder override throws', function () {
+        getGlobal().bidderSettings = {
+          standard: {
+            adserverTargeting: [{ key: 'aKey', val: 'aValue' }]
+          },
+          [bid.bidderCode]: {
+            adserverTargeting: [{ key: 'aKey', val: throwingVal }]
+          }
+        };
+        const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+        assert.equal(response.aKey, 'aValue');
+      });
+    });
   });
 
   describe('adjustBids', function () {
@@ -2717,6 +2749,47 @@ describe('auctionmanager.js', function () {
         bidRequests = [mockBidRequest(bid)];
         cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
         sinon.assert.calledWith(auction.addBidReceived, sinon.match({ cpm: 1.23 }));
+      });
+
+      describe('with an index passed in', () => {
+        function indexWith(adUnitProps) {
+          return new AuctionIndex(() => [{
+            ...auction,
+            getAdUnits: () => auction.getAdUnits().map(au => ({ ...au, ...adUnitProps }))
+          }]);
+        }
+
+        beforeEach(() => {
+          // the global index finds nothing, so only the index passed in can supply the ad unit
+          indexAuctions = [];
+          auction.addBidReceived = sinon.spy();
+        });
+
+        it('uses it to prepare the bid', () => {
+          const bid = mockBid();
+          bidRequests = [mockBidRequest(bid)];
+          const cbs = auctionCallbacks(doneSpy, auction, { index: indexWith({ ttlBuffer: 7, ortb2Imp: { instl: 1 } }) });
+          cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
+          sinon.assert.calledWith(auction.addBidReceived, sinon.match({ ttlBuffer: 7, instl: true }));
+        });
+
+        if (FEATURES.VIDEO) {
+          it('uses it to look up the video media type', async () => {
+            config.setConfig({ cache: { url: 'https://test.cache.url/endpoint', ignoreBidderCacheKey: true } });
+            const vastUrl = 'https://bidder.example/cache?uuid=supplied-key';
+            const bid = { ...mockBid(), mediaType: 'video', vastUrl, videoCacheKey: 'supplied-key' };
+            bidRequests = [mockBidRequest(bid, {
+              mediaType: { video: { context: 'instream', cache: false } }
+            })];
+            const cbs = auctionCallbacks(doneSpy, auction, { index: indexWith({}) });
+            cbs.addBidResponse(ADUNIT_CODE, bid);
+            cbs.adapterDone.call(bidRequests[0]);
+            await ready;
+            // video.cache: false comes from the index passed in; without it, ignoreBidderCacheKey would send the bid to the cache
+            expect(server.requests).to.have.lengthOf(0);
+            sinon.assert.calledWith(auction.addBidReceived, sinon.match({ vastUrl }));
+          });
+        }
       });
 
       describe('when responsesReady defers', () => {

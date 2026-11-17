@@ -573,7 +573,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, { index = auction
 
   function handleBidResponse(adUnitCode: string, bid: Partial<Bid>, handler) {
     bidResponseMap[bid.requestId] = true;
-    addCommonResponseProperties(bid, adUnitCode);
+    addCommonResponseProperties(bid, adUnitCode, { index });
     outstandingBidsAdded++;
     return handler(afterBidAdded);
   }
