@@ -286,16 +286,17 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
     } else {
+      _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
       events.emit(EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
-      _timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
         if (_timedOutRequests.length) {
           events.emit(EVENTS.BID_TIMEOUT, _timedOutRequests);
         }
+      } else {
+        _timedOutRequests = [];
       }
 
       _auctionStatus = AUCTION_COMPLETED;
