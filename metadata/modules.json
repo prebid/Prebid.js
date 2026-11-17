@@ -1081,13 +1081,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "zmaticoo",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "a1media",
       "aliasOf": null,
       "gvlid": null,
