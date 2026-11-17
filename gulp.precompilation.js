@@ -52,6 +52,7 @@ const {
   writePrecompilationKey
 } = require('./gulp.cache.js');
 
+let activePrecompilationKey = null;
 
 const babelPrecomp = _.memoize(
   function ({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
@@ -61,11 +62,13 @@ const babelPrecomp = _.memoize(
     return function () {
       const sourceRoot = path.resolve('.');
       const relativeSourceRoot = path.relative(helpers.getPrecompiledPath(), sourceRoot);
+      const configurationChanged = activePrecompilationKey !== key;
       const src = gulp.src(helpers.getSourcePatterns(), {
         base: '.',
-        since: gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
+        since: configurationChanged ? undefined : gulp.lastRun(babelPrecomp({distUrlBase, disableFeatures, dev})),
         sourcemaps: true
       });
+      activePrecompilationKey = key;
       // the source root is relative to the precompiled path, not to wherever the cache lives,
       // so that it is the same whether a file was transpiled now or on a previous run
       const transform = () => [
