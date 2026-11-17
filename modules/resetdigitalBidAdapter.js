@@ -9,10 +9,12 @@ import { BANNER } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'resetdigital';
+const ACP_ID = 3163; // Google Additional Consent provider ID (added by the Codex bot).
 const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
