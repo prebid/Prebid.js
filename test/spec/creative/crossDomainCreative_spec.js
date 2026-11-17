@@ -262,11 +262,25 @@ describe('cross-domain creative', () => {
         return renderAd(Object.assign({ token }, args));
       }
       describe('listens and', () => {
-        it('ignores messages that are not a prebid response message', () => {
-          render({ adId: '123', pubUrl: ORIGIN });
-          reply({ adId: '123', ad: 'markup' });
-          return waitFor(() => true).then(() => {
-            sinon.assert.notCalled(mkIframe);
+        [
+          { desc: 'without a message type', data: { adId: '123' } },
+          { desc: 'with another message type', data: { message: 'other', adId: '123' } },
+          { desc: 'for another ad', data: { message: MESSAGE_RESPONSE, adId: 'other' } }
+        ].forEach(({ desc, data }) => {
+          it(`ignores a response ${desc}`, () => {
+            const channel = { port1: {}, port2: {} };
+            const messageChannel = sinon.stub(window, 'MessageChannel').returns(channel);
+            try {
+              render({ adId: '123', pubUrl: ORIGIN });
+              // Invoke the registered handler so the negative assertion follows message processing.
+              channel.port1.onmessage({ data: JSON.stringify({ ...data, ad: 'markup' }) });
+              sinon.assert.notCalled(mkIframe);
+              sinon.assert.notCalled(consoleErrorStub);
+              expect(messages).to.have.lengthOf(1);
+              expect(channelMessages).to.have.lengthOf(0);
+            } finally {
+              messageChannel.restore();
+            }
           });
         });
 
