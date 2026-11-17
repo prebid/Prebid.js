@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, isStr, logWarn, replaceAuctionPrice } from '../src/utils.js';
+import { deepSetValue, isStr, logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -252,13 +252,13 @@ function nativeResponse(adm) {
 }
 
 function isOutstream(bidRequest) {
-  return deepAccess(bidRequest, 'mediaTypes.video.context') === OUTSTREAM;
+  return bidRequest?.mediaTypes?.video?.context === OUTSTREAM;
 }
 
 // A renderer set by the publisher (ad unit or mediaTypes.video) is used instead of the default one,
 // unless it is a backup only.
 function hasOwnRenderer(bidRequest) {
-  return [bidRequest?.renderer, deepAccess(bidRequest, 'mediaTypes.video.renderer')]
+  return [bidRequest?.renderer, bidRequest?.mediaTypes?.video?.renderer]
     .some((renderer) => renderer && renderer.backupOnly !== true);
 }
 
