@@ -29,7 +29,19 @@ Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are
 They can be run with the following commands:
 
 - `gulp test` - run the test suite once (`npm test` is aliased to call `gulp test`)
+- `gulp test-only --file test/spec/modules/exampleBidAdapter_spec.js` - run a single spec file, without linting
+- `gulp test-only` - run the whole suite, without linting
 - `gulp serve-and-test` - run the tests, and re-run them whenever a file in the `src` or `test` directory is modified
+
+Run your adapter's spec and the whole suite before submitting. CI runs them in several browsers and devices, so tests
+should not assume a particular environment:
+
+- Don't hard-code the test page's address; it is not always `localhost`. Take it from `window.location` or
+  `getRefererInfo()`.
+- Don't assume a secure context: `crypto.subtle` may be missing and `Secure` cookies may not be kept. Define tests that
+  need one only if `window.isSecureContext`.
+- Don't rely on the screen size, user agent or device.
+- Restore anything you change on shared objects, such as `window.top`, `document.cookie` or stubs, after each test.
 
 Before a Pull Request will be considered for merge:
 

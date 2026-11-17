@@ -49,6 +49,17 @@ const allowedImports = {
   creative: [],
 }
 
+const restrictedLogFunctions = [
+  {
+    selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
+    message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+  },
+  {
+    selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
+    message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+  },
+];
+
 function noGlobals(names) {
   return {
     globals: Object.entries(names).map(([name, message]) => ({
@@ -152,17 +163,7 @@ module.exports = [
         includeTypes: true,
       }],
       'prebid/no-implicit-operand-conversion': 'error',
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
-        },
-        {
-          selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
-        },
-      ],
+      'no-restricted-syntax': ['error', ...restrictedLogFunctions],
       'no-restricted-imports': [
         'error', {
           patterns: [
@@ -355,6 +356,15 @@ module.exports = [
       // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
       // (e.g. after()) registered inside a test; see AGENTS.md.
       'mocha/no-nested-tests': 'error',
+      // overrides the source folders' list rather than extending it
+      'no-restricted-syntax': [
+        'error',
+        ...restrictedLogFunctions,
+        ...['Literal[value=/localhost:9876/]', 'TemplateElement[value.raw=/localhost:9876/]'].map(selector => ({
+          selector,
+          message: 'The test page is not always localhost:9876; take it from window.location or getRefererInfo(), or use another URL for fixtures.'
+        }))
+      ],
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
       'no-useless-escape': 'off',
