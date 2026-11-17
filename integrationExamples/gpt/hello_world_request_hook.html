@@ -1,6 +1,7 @@
 <!--
-  This page calls a single bidder for a single ad slot using GPT's `registerRequestHook` API so initial
-  display(), lazy loading, and slot refreshes automatically run a Prebid auction before each ad request.
+  This page calls a single bidder for a single ad slot using GPT's experimental `registerRequestHook`
+  API so initial display(), lazy loading, and slot refreshes automatically run a Prebid auction before
+  each ad request.
   Simply set your server's Bid Params object in the bids array inside the adUnits, and it will use your
   adapter to load an ad.
   NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
@@ -20,10 +21,9 @@
             code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]],
+                    sizes: [[300, 250]]
                 }
             },
-
             // Replace this object to test a new Adapter!
             bids: [{
                 bidder: 'appnexus',
@@ -31,7 +31,6 @@
                     placementId: 13144370
                 }
             }]
-
         }];
 
         window.pbjs = window.pbjs || {};
@@ -48,24 +47,19 @@
             googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0')
                 .addService(googletag.pubads());
 
-            // Configure single-request mode and a failsafe hook timeout slightly above PREBID_TIMEOUT.
+            // Enable single-request mode with a failsafe hook timeout slightly above PREBID_TIMEOUT.
             googletag.setConfig({
                 singleRequest: true,
                 requestHookTimeoutMs: REQUEST_HOOK_TIMEOUT
             });
 
-            // Register a request hook so GPT awaits the Prebid auction and applies
-            // targeting before every outgoing ad request (initial display, lazy load, or refresh).
-            googletag.pubads().registerRequestHook(async function ({ slots }) {
-                await new Promise(function (resolve) {
-                    pbjs.que.push(resolve);
-                });
-                // Map each requested GPT slot to its matching Prebid adUnit.code.
-                // Here adUnit.code is the slot's div ID; use slot.getAdUnitPath() (or a
-                // custom matcher) if your adUnits are keyed by GPT ad unit path instead.
-                const adUnitCodes = slots.map(function (slot) {
-                    return slot.getSlotElementId();
-                });
+            // Run a Prebid auction and apply targeting before every outgoing GPT ad request
+            // (initial display, lazy load, or refresh).
+            googletag.pubads().registerRequestHook(async ({ slots }) => {
+                await new Promise(resolve => pbjs.que.push(resolve));
+                // Map requested GPT slots to Prebid adUnit.code values (div IDs here; use
+                // slot.getAdUnitPath() or a custom matcher if keyed by GPT ad unit path).
+                const adUnitCodes = slots.map(slot => slot.getSlotElementId());
                 await pbjs.requestBids({
                     adUnitCodes,
                     timeout: PREBID_TIMEOUT
