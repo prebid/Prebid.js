@@ -1053,13 +1053,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "vibrantmedia",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "videobyte",
       "aliasOf": null,
       "gvlid": null,
