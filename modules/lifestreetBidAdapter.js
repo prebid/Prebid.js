@@ -7,7 +7,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'lifestreet';
-const GVLID = 67;
 const ADAPTER_VERSION = '$prebid.version$';
 
 const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`;
@@ -87,8 +86,7 @@ function isResponseValid(response) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
-  aliases: [{ code: 'lsm', gvlid: GVLID }],
+  aliases: ['lsm'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {

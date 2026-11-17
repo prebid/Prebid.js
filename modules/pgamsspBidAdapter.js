@@ -3,13 +3,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'pgamssp';
-const GVLID = 1353;
 const AD_URL = 'https://us-east.pgammedia.com/pbjs';
 const SYNC_URL = 'https://cs.pgammedia.com';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),

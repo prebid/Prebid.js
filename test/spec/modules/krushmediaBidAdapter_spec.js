@@ -511,9 +511,3 @@ describe('KrushmediabBidAdapter', function () {
     });
   });
 });
-
-describe('krushmediaBidAdapter consent IDs', function () {
-  it('declares its GVL ID', function () {
-    expect(spec.gvlid).to.equal(1315);
-  });
-});

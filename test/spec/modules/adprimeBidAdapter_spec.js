@@ -467,9 +467,3 @@ describe('AdprimeBidAdapter', function () {
     });
   });
 });
-
-describe('adprimeBidAdapter consent IDs', function () {
-  it('declares its GVL ID', function () {
-    expect(spec.gvlid).to.equal(623);
-  });
-});

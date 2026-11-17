@@ -3,7 +3,6 @@ import { registerBidder, type AdapterRequest, type BidderSpec, type ServerRespon
 import { buildRequests as xeBuildRequests, getUserSyncs, interpretResponse as xeInterpretResponse, isBidRequestValid } from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'anzuDSP';
-const GVLID = 733;
 const ENDPOINT = 'https://pbjs.anzu-rtb.live';
 
 export type AnzuDSPBidParams = {
@@ -20,7 +19,6 @@ declare module '../src/adUnits' {
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: bid => isBidRequestValid(bid),
   buildRequests: (validBidRequests, bidderRequest) => xeBuildRequests(validBidRequests, bidderRequest, ENDPOINT) as AdapterRequest,

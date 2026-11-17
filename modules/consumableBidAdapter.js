@@ -9,7 +9,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'consumable';
-const GVLID = 591;
 
 const BASE_URI = 'https://e.serverbid.com/api/v2';
 
@@ -18,7 +17,6 @@ let bidder = 'consumable';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

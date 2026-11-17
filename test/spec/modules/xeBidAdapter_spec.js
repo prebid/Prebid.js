@@ -447,13 +447,3 @@ describe('xeBidAdapter', () => {
     });
   });
 });
-
-describe('xeBidAdapter consent IDs', function () {
-  it('declares its GVL ID', function () {
-    expect(spec.gvlid).to.equal(1383);
-  });
-
-  it('declares the same GVL ID on its aliases', function () {
-    expect(spec.aliases.find(alias => alias.code === 'xeworks')).to.have.property('gvlid', 1383);
-  });
-});

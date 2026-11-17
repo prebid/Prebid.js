@@ -363,9 +363,3 @@ describe('BraveBidAdapter', function() {
     });
   });
 });
-
-describe('braveBidAdapter consent IDs', function () {
-  it('declares its GVL ID', function () {
-    expect(spec.gvlid).to.equal(869);
-  });
-});

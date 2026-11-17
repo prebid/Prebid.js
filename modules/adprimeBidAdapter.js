@@ -10,7 +10,6 @@ import {
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'adprime';
-const GVLID = 623;
 const AD_URL = 'https://delta.adprime.com/pbjs';
 const SYNC_URL = 'https://sync.adprime.com';
 
@@ -36,7 +35,6 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(['placementId']),

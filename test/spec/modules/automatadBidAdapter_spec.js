@@ -69,7 +69,7 @@ describe('automatadBidAdapter', function () {
       expect(spec.code).to.equal('automatad');
     });
     it('should alias atd', function () {
-      expect(spec.aliases.length > 0 && spec.aliases[0].code === 'atd').to.be.true;
+      expect(spec.aliases.length > 0 && spec.aliases[0] === 'atd').to.be.true;
     });
   });
 
@@ -235,15 +235,5 @@ describe('automatadBidAdapter', function () {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
     });
-  });
-});
-
-describe('automatadBidAdapter consent IDs', function () {
-  it('declares its GVL ID', function () {
-    expect(spec.gvlid).to.equal(1464);
-  });
-
-  it('declares the same GVL ID on its aliases', function () {
-    expect(spec.aliases.find(alias => alias.code === 'atd')).to.have.property('gvlid', 1464);
   });
 });

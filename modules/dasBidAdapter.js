@@ -5,7 +5,6 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { deepAccess, safeJSONParse } from '../src/utils.js';
 
 const BIDDER_CODE = 'das';
-const GVLID = 1021;
 const GDE_SCRIPT_URL = 'https://ocdn.eu/adp/static/embedgde/latest/bundle.min.js';
 const GDE_PARAM_PREFIX = 'gde_';
 const REQUIRED_GDE_PARAMS = [
@@ -316,8 +315,7 @@ function interpretResponse(serverResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
-  aliases: [{ code: 'ringieraxelspringer', gvlid: GVLID }],
+  aliases: ['ringieraxelspringer'],
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {

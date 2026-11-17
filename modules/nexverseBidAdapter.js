@@ -12,7 +12,6 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 import { getDNT } from '../libraries/dnt/index.js';
 
 const BIDDER_CODE = 'nexverse';
-const GVLID = 1665;
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 const DEFAULT_CURRENCY = 'USD';
@@ -23,7 +22,6 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid,
   /**

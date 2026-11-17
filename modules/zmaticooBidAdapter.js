@@ -11,7 +11,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'zmaticoo';
-const GVLID = 803;
 const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
@@ -41,7 +40,6 @@ const VIDEO_CUSTOM_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

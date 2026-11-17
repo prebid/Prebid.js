@@ -10,12 +10,10 @@ import { logError, logWarn, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'epom_dsp';
-const GVLID = 849;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
-  aliases: [{ code: 'epomdsp', gvlid: GVLID }],
+  aliases: ['epomdsp'],
 
   isBidRequestValid(bid) {
     const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};

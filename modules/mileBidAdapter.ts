@@ -13,7 +13,6 @@ import { getDNT } from '../libraries/dnt/index.js';
  */
 
 const BIDDER_CODE = 'mile';
-const GVLID = 1464;
 
 const MILE_BIDDER_HOST = 'https://pbs.atmtd.com';
 const ENDPOINT_URL = `${MILE_BIDDER_HOST}/mile/v1/request`;
@@ -70,7 +69,6 @@ export function getLowestFloorPrice(bid) {
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     const params = bid.params;

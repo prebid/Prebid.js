@@ -5,7 +5,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { getUserSyncs } from '../libraries/vizionikUtils/vizionikUtils.js';
 
 const BIDDER_CODE = 'vistars';
-const GVLID = 1433;
 const DEFAULT_ENDPOINT = 'ex-asr.vistarsagency.com';
 const SYNC_ENDPOINT = 'sync.vistarsagency.com';
 const ADOMAIN = 'vistarsagency.com';
@@ -34,7 +33,6 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     const valid = bid.params.source;

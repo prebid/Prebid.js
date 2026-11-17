@@ -9,7 +9,6 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
-const GVLID = 1618;
 const BID_TTL = 300;
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
@@ -17,7 +16,6 @@ const US_KEY = '_dio_us';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.placementId && bid.params.siteId &&

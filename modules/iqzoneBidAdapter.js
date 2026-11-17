@@ -3,13 +3,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'iqzone';
-const GVLID = 1577;
 const AD_URL = 'https://smartssp-us-east.iqzone.com/pbjs';
 const SYNC_URL = 'https://cs.iqzone.com';
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),
