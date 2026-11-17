@@ -211,6 +211,7 @@ export type InvocationHandle = {
   store(value: SerializableId): void;
   /**
    * Set the in-memory ID (empty clears it) and finish the invocation. Does not store it.
+   * Later calls still update the ID, but finish nothing: the invocation counts as done once.
    */
   setId(id?: SerializableId): void;
   /**
@@ -273,15 +274,13 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
         managed: false,
         closed: false,
         store(value) {
-          if (isOpen() && hasStorage()) setStoredValue(submodule, value);
+          if (!isStale() && hasStorage()) setStoredValue(submodule, value);
         },
         setId(id?) {
           // callbacks often complete asynchronously: never let an error here leave the batch (and with it the
           // auction delay) waiting
           try {
-            if (handle.closed) {
-              logInfo(`${MODULE_NAME}: ${name()} - ignoring an ID reported after its getId / extendId completed`);
-            } else if (isStale()) {
+            if (isStale()) {
               logInfo(`${MODULE_NAME}: ${name()} - ignoring a callback superseded by a refresh`);
             } else {
               submodule.idObj = id ? submodule.submodule.decode(id, submodule.config) : undefined;

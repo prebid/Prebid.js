@@ -1348,6 +1348,12 @@ describe('User ID', function () {
         return getGlobal().getUserIdsAsync();
       }
 
+      async function waitFor(condition) {
+        for (let i = 0; i < 100 && !condition(); i++) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+      }
+
       const withCallback = (fn) => (config, consent, storedId, handle) => ({
         callback: (setId) => fn(setId, handle)
       });
@@ -1389,15 +1395,53 @@ describe('User ID', function () {
           expect(read()).to.equal('newValue');
         });
 
-        it('should ignore storage calls and IDs reported after setId', async () => {
+        it('should ignore storage calls made after setId, but apply later IDs', async () => {
           const ids = await run(withCallback((setId, handle) => {
             setId('fresh');
             handle.remove();
             setId('late');
           }), 'stored');
-          expect(ids).to.eql({ mid: 'fresh' });
-          expect(read()).to.equal('fresh');
+          expect(ids).to.eql({ mid: 'late' });
+          expect(read()).to.equal('late');
           sinon.assert.calledWith(utils.logWarn, sinon.match('ignoring storage remove()'));
+        });
+
+        it('should count a submodule that calls setId twice as done once', async () => {
+          const OTHER_KEY = TEST_KEY + 'Other';
+          let otherSetId;
+          try {
+            init(config);
+            setSubmoduleRegistry([
+              {
+                name: 'mockId',
+                getId: () => ({ callback: (setId) => { setId('first'); setId('second'); } }),
+                decode: (value) => ({ mid: value })
+              },
+              {
+                name: 'otherId',
+                getId: () => ({ callback: (setId) => { otherSetId = setId; } }),
+                decode: (value) => ({ oid: value })
+              }
+            ]);
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [
+                  { name: 'mockId', storage: { type: 'html5', name: TEST_KEY, expires: 1 } },
+                  { name: 'otherId', storage: { type: 'html5', name: OTHER_KEY, expires: 1 } }
+                ]
+              }
+            });
+            let resolved = false;
+            const ids = getGlobal().getUserIdsAsync().then((ids) => { resolved = true; return ids; });
+            await waitFor(() => otherSetId != null);
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(resolved).to.be.false;
+            otherSetId('other');
+            expect(await ids).to.eql({ mid: 'second', oid: 'other' });
+          } finally {
+            ['', '_exp', '_cst', '_last'].forEach(suffix => coreStorage.removeDataFromLocalStorage(OTHER_KEY + suffix));
+          }
         });
       });
 
@@ -1471,9 +1515,7 @@ describe('User ID', function () {
             userIds: [{ name: 'mockId', storage: { type: 'html5', name: TEST_KEY, expires: 1 } }]
           }
         });
-        for (let i = 0; i < 100 && !getId.called; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 5));
-        }
+        await waitFor(() => getId.called);
         sinon.assert.calledOnce(getId);
         const ids = await Promise.race([
           getGlobal().refreshUserIds(),
@@ -1489,9 +1531,7 @@ describe('User ID', function () {
           invocations.push({ setId, handle });
           if (invocations.length > 1) setId('current');
         }), 'stored');
-        for (let i = 0; i < 100 && !invocations.length; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 5));
-        }
+        await waitFor(() => invocations.length > 0);
         expect(invocations).to.have.length(1);
         expect(await getGlobal().refreshUserIds()).to.eql({ mid: 'current' });
         const [stale] = invocations;

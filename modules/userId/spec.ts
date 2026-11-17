@@ -88,7 +88,8 @@ export type ProviderResponse = {
    */
   id?: SerializableId;
   /**
-   * If provided, will be invoked at a later point.
+   * If provided, will be invoked at a later point. Its first `setId` call completes it; later calls still update
+   * the ID.
    */
   callback?: (
     setId: (id?: SerializableId) => void,
@@ -101,7 +102,7 @@ export type ProviderResponse = {
 
 /**
  * Storage access passed to getId / extendId, usable until the invocation completes: when getId / extendId returns
- * without a callback, or when its callback calls `setId`.
+ * without a callback, or when its callback first calls `setId`.
  *
  * By default the User ID module stores the ID data a submodule reports (as `id`, or through the callback's
  * `setId`), and reporting none keeps the current ID. A submodule that calls `set`, `touch` or `remove` manages
