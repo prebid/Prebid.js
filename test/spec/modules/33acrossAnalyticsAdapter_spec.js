@@ -869,18 +869,13 @@ function createReportWithThreeBidWonEvents() {
         }]
       }],
       auctionId: 'auction-000',
-      userIds: ['33acrossId']
+      userIds: []
     }],
   };
 }
 
 function getMockEvents() {
   const auctionId = 'auction-000';
-  const userId = {
-    '33acrossId': {
-      envelope: 'v1.0014',
-    },
-  };
 
   return {
     gam: {
@@ -950,7 +945,6 @@ function getMockEvents() {
             bids: [
               {
                 bidder: 'bidder0',
-                userId,
               },
             ],
             sizes: [
@@ -977,7 +971,6 @@ function getMockEvents() {
             bids: [
               {
                 bidder: 'bidder0',
-                userId,
               },
             ],
             sizes: [
@@ -1001,11 +994,9 @@ function getMockEvents() {
             bids: [
               {
                 bidder: '33across',
-                userId,
               },
               {
                 bidder: 'bidder0',
-                userId,
               },
             ],
             sizes: [[300, 250]],
@@ -1020,7 +1011,7 @@ function getMockEvents() {
         bidderRequests: [
           {
             bids: [
-              { userId },
+              {},
             ],
           }
         ],

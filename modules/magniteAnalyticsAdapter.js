@@ -26,9 +26,11 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import { getHook } from '../src/hook.js';
+import { analyticsAuctionOrtb2, eidsSources } from '../libraries/eidUtils/eidUtils.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
+const ANALYTICS_CODE = 'magnite';
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: ANALYTICS_CODE });
 const COOKIE_NAME = 'mgniSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -839,9 +841,9 @@ magniteAdapter.track = ({ eventType, args }) => {
         ]);
       }
 
-      // User ID Data included in auction
-      const userIds = Object.keys(deepAccess(args, 'bidderRequests.0.bids.0.userId', {})).map(id => {
-        return { provider: id, hasId: true };
+      // User ID data included in auction: the sources of the auction's EIDs
+      const userIds = eidsSources(analyticsAuctionOrtb2(args.auctionId, ANALYTICS_CODE)).map(source => {
+        return { provider: source, hasId: true };
       });
       if (userIds.length) {
         auctionData.user = { ids: userIds };
@@ -1113,7 +1115,7 @@ const statusMap = {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: magniteAdapter,
-  code: 'magnite',
+  code: ANALYTICS_CODE,
   gvlid: RUBICON_GVL_ID
 });
 
