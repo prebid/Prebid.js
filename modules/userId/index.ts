@@ -438,8 +438,12 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       // a later refresh replaces this batch's work for `names` (all of it if null)
       supersede(names: string[] | null) {
         if (names == null) {
-          superseded = true;
-        } else if (superseded !== true) {
+          // nothing left to wait for, and nothing it may register later: drop it from the registry,
+          // since the chain that would otherwise settle it may never finish
+          batch.settleAll();
+          return;
+        }
+        if (superseded !== true) {
           names.forEach((name) => (superseded as Set<string>).add(name));
         }
         work.forEach((item, name) => {
