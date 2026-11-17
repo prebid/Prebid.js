@@ -3667,13 +3667,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "redtram",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "nativery",
       "aliasOf": null,
       "gvlid": 1133,
