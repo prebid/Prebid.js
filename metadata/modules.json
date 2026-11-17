@@ -948,13 +948,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "suim",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "talkads",
       "aliasOf": null,
       "gvlid": null,
