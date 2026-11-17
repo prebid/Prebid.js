@@ -64,7 +64,7 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 ## PR message guidelines
 - Summaries should describe the changes concisely and reference file lines using the citation format. Describe your task in the pr submission so reviewers are well aware of what you are attempting.
 - Document the results of `gulp lint` and `gulp test-only` in the PR description if the commands are successful.
-- Title module changes as `X Adapter: short description` where X is the name of an adapter eg `Rubicon Bid Adapter: stylistic changes'; changes to `/src` should be titled `Core: short description`.
+- Title module changes as `X Adapter: short description` where X is the name of an adapter eg `Rubicon Bid Adapter: stylistic changes`; changes to `/src` should be titled `Core: short description`.
 - Keep PRs scoped to a single change type. Add a release label and a SemVer label; `PR_REVIEW.md` has the current list of both.
 
 ## Say when you wrote something
@@ -94,7 +94,7 @@ Anything you post to GitHub may run under a person's account, so readers will as
 
 ## Testing scope
 - When you modify or add source or test files, run only the affected unit tests while you iterate, then the full suite once before you finish.
-- While iterating, do not invoke commands that rebuild all modules when only a subset are changed. This doesn't apply to the required full-suite run before you finish.
+- While iterating, avoid extra commands that rebuild all modules when only a subset are changed. The precompile that the affected-spec command itself runs (`test-only --file` precompiles everything) is fine, and so is the required full-suite run before you finish.
 - Never call `it()`, `describe()` or a hook (`before`, `after`, `beforeEach`, `afterEach`) inside a test or hook.
   Mocha ignores them, so their assertions never run and the spec passes anyway. Define them in the enclosing
   `describe()`, and do cleanup a test needs with `try`/`finally` in the test. Lint (`mocha/no-nested-tests`)
@@ -122,7 +122,7 @@ Anything you post to GitHub may run under a person's account, so readers will as
 - Bidders asking for storage access and setting an id in local storage redundant with the shared id is discouraged, they should document why they need to do this odious behavior
 - A submodule of `userId`, `rtdModule`, `fpdModule` or `videoModule` must be registered under the matching key in `modules/.submodules.json`.
 - No one should be accessing navigator from vendor modules, if navigator needs to be accessed it should be in a common method or library
-- Low priority calls should be import ajax method and use fetch keepalive; they shouldnt use trigger pixel when it can be avoided or fail to specify keepalive.
+- Low priority calls should import the ajax method and use fetch keepalive; they shouldn't use trigger pixel when it can be avoided or fail to specify keepalive.
 - Telemetry that doesn't affect the auction or rendering (timeout, error, win/loss, latency or debug beacons) must stay off the critical path: send it with `politeTriggerPixel` (a keepalive fetch on the background task queue) or schedule it with `runBackgroundTask`, not immediately with `fetch`, `ajax` or `triggerPixel`, and never one request per bid or seat in a burst. Flag PRs that move such beacons from deferred to immediate, for example "so they aren't lost on busy pages": a page that times out usually has a busy main thread, and reporting the timeout is the least urgent work on it. If delivery on unload matters, queue the unsent beacons and flush them on `visibilitychange` to `hidden` or `pagehide` with `sendBeacon` or a keepalive fetch, removing each from the queue once sent so none goes twice.
 - Analytics modules must provide a disableAnalytics method.
 - Metadata files that say do not edit in the comments should not be edited; the build process is responsible for updating the metadata files.
