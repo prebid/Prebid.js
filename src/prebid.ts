@@ -47,7 +47,8 @@ import {
   markBidAsRendered,
   markWinningBid,
   renderAdDirect,
-  renderIfDeferred
+  renderIfDeferred,
+  getBidToRender
 } from './adRendering.js';
 import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
@@ -1333,12 +1334,20 @@ function triggerBilling({ adId, adUnitCode }: {
   adId?: string;
   adUnitCode?: AdUnitCode
 }) {
-  auctionManager.getAllWinningBids()
-    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
-    .forEach((bid) => {
-      adapterManager.triggerBilling(bid);
-      renderIfDeferred(bid);
-    });
+  function bill(adId) {
+    auctionManager.getAllWinningBids()
+      .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+      .forEach((bid) => {
+        adapterManager.triggerBilling(bid);
+        renderIfDeferred(bid);
+      });
+  }
+  if (adId == null) {
+    bill(adId);
+  } else {
+    // the publisher knows only the ad ID of an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
+    getBidToRender(adId, false).then((bid) => bill(bid?.adId ?? adId));
+  }
 }
 addApiMethod('triggerBilling', triggerBilling);
 

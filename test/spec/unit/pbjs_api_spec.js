@@ -26,6 +26,7 @@ import { enrichFPD } from '../../../src/fpd/enrichment.js';
 import { mockFpdEnrichments } from '../../helpers/fpd.js';
 import { deepAccess, deepSetValue, generateUUID } from '../../../src/utils.js';
 import { getCreativeRenderer } from '../../../src/creativeRenderers.js';
+import { getBidToRender } from '../../../src/adRendering.js';
 import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } from 'src/constants.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -4187,6 +4188,24 @@ describe('Unit: Prebid Module', function () {
     }).forEach(([t, val]) => {
       it(`should trigger billing when invoked with ${t}`, () => {
         pbjs.triggerBilling(val());
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      });
+    });
+
+    describe('when invoked with the adId of an expired bid that was replaced', () => {
+      beforeEach(() => {
+        const expired = { adId: 'expired', responseTimestamp: Date.now() - 10000, ttl: 1 };
+        Object.assign(bid, { responseTimestamp: Date.now(), ttl: 300 });
+        sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
+        configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => bid } });
+        getBidToRender('expired');
+      });
+      afterEach(() => {
+        configObj.resetConfig();
+      });
+
+      it('should trigger billing for the replacement', () => {
+        pbjs.triggerBilling({ adId: 'expired' });
         sinon.assert.calledWith(adapterManager.triggerBilling, bid);
       });
     });

@@ -9,6 +9,7 @@ import {
   getParameterByName,
   isArray,
   isBoolean,
+  isFn,
   isPlainObject,
   isStr,
   logError,
@@ -67,8 +68,9 @@ function attachProperties(config, useDefaultValues = true) {
   const validateauctionOptions = (() => {
     const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes', 'yield'];
     const arrKeys = ['secondaryBidders'];
+    const fnKeys = ['replaceExpiredBid'];
     const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
-    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(Object.keys(enumKeys));
+    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(fnKeys).concat(Object.keys(enumKeys));
 
     return function validateauctionOptions(val) {
       if (!isPlainObject(val)) {
@@ -92,6 +94,11 @@ function attachProperties(config, useDefaultValues = true) {
         } else if (boolKeys.includes(k)) {
           if (!isBoolean(val[k])) {
             logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        } else if (fnKeys.includes(k)) {
+          if (!isFn(val[k])) {
+            logWarn(`Auction Options ${k} must be a function`);
             return false;
           }
         } else if (enumKeys.hasOwnProperty(k)) {
