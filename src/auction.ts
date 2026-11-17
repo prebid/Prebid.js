@@ -580,10 +580,10 @@ export function auctionCallbacks(auctionDone, auctionInstance, { index = auction
 
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
-      const bidResponse = getPreparedBidForAuction(bid);
+      const bidResponse = getPreparedBidForAuction(bid, { index });
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
-        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done, { index });
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
