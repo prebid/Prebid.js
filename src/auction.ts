@@ -1124,6 +1124,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
         value = value(custBidObj, bidReq);
       } catch (e) {
         logError('bidmanager', 'ERROR', e);
+        return;
       }
     }
 
