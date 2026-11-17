@@ -75,11 +75,37 @@ export function renderer(win) {
 
     function setupChannel(type, payload, onResponse) {
       const channel = new MessageChannel();
-      if (typeof onResponse === 'function') {
-        channel.port1.onmessage = guard(onResponse);
-      }
+      let nextMsgId = 0;
+      const pendingResponses = new Map();
+      channel.port1.onmessage = guard((event) => {
+        let data = event?.data;
+        if (typeof data === 'string') {
+          try {
+            data = JSON.parse(data);
+          } catch (e) {
+          }
+        }
+        const responsePayload = data && typeof data === 'object' ? data : {};
+        const correlationId = responsePayload.replyTo ?? responsePayload.msgId;
+        if (correlationId != null && pendingResponses.has(correlationId)) {
+          const cb = pendingResponses.get(correlationId);
+          pendingResponses.delete(correlationId);
+          return cb(event);
+        }
+        if (typeof onResponse === 'function') {
+          return onResponse(event);
+        }
+      });
       target.postMessage(makeMessage(type, Object.assign({ token }, payload)), targetOrigin, [channel.port2]);
-      return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
+      return (type, payload, onResponse) => {
+        const body = Object.assign({}, payload);
+        if (typeof onResponse === 'function') {
+          const msgId = ++nextMsgId;
+          body.msgId = msgId;
+          pendingResponses.set(msgId, guard(onResponse));
+        }
+        return channel.port1.postMessage(makeMessage(type, body));
+      };
     }
 
     const handshakeChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);
