@@ -6,6 +6,10 @@
     Module Type: RTD Provider
     Maintainer: prebid@optable.co
 
+## Minimal Prebid.js Versions
+
+Prebid.js minimum version: 9.53.2+, or 10.2+
+
 ## Description
 
 Optable RTD submodule enriches the OpenRTB request by populating `user.ext.eids` and `user.data` using an identity graph and audience segmentation service hosted by Optable on behalf of the publisher. This RTD submodule primarily relies on the Optable bundle loaded on the page, which leverages the Optable-specific Visitor ID and other PPIDs to interact with the identity graph, enriching the bid request with additional user IDs and audience data.
@@ -30,25 +34,20 @@ In order to use the module you first need to register with Optable and obtain a 
 <script async src="<bundleURL>"></script>
 ```
 
-In this case bundleUrl parameter is not needed and the script will await bundle loading before delegating to it.
-
 ### Configuration
 
-This module is configured as part of the `realTimeData.dataProviders`. We recommend setting `auctionDelay` to 1000 ms and make sure `waitForIt` is set to `true` for the `Optable` RTD provider.
+This module is configured as part of the `realTimeData.dataProviders`.
 
 ```javascript
 pbjs.setConfig({
   debug: true, // we recommend turning this on for testing as it adds more logging
   realTimeData: {
-    auctionDelay: 1000,
     dataProviders: [
       {
         name: 'optable',
-        waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
         params: {
-          bundleUrl: '<optional, your bundle url>',
           adserverTargeting: true, // optional, true by default, set to true to also set GAM targeting keywords to ad slots
-          instance: window.optable.rtd.instance, // optional, defaults to window.optable.rtd.instance if not specified
+          instance: 'instance', // optional, name of the SDK instance on window.optable, defaults to 'instance' (window.optable.instance)
         },
       },
     ],
@@ -56,57 +55,48 @@ pbjs.setConfig({
 });
 ```
 
-### Additional input to the module
-
-Optable bundle may use PPIDs (publisher provided IDs) from the `user.ext.eids` as input.
-
-In addition, other arbitrary keys can be used as input, f.e. the following:
-
-- `optableRtdConfig.email` - a SHA256-hashed user email
-- `optableRtdConfig.phone` - a SHA256-hashed [E.164 normalized phone](https://unifiedid.com/docs/getting-started/gs-normalization-encoding#phone-number-normalization) (meaning a phone number consisting of digits and leading plus sign without spaces or any additional characters, f.e. a US number would be: `+12345678999`)
-- `optableRtdConfig.postal_code` - a ZIP postal code string
-
-Each of these identifiers is completely optional and can be provided through `pbjs.mergeConfig(...)` like so:
-
-```javascript
-pbjs.mergeConfig({
-  optableRtdConfig: {
-    email: await sha256("test@example.com"),
-    phone: await sha256("12345678999"),
-    postal_code: "61054"
-  }
-})
-```
-
-Where `sha256` function can be defined as:
-
-```javascript
-async function sha256(input) {
-  return [...new Uint8Array(
-    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input))
-  )].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-```
-
-To handle PPIDs and the above input - a custom `handleRtd` function may need to be provided.
-
 ### Parameters
 
-| Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default          | Notes    |
-|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------|
-| name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable` |          |
-| waitForIt                | Boolean  | Should be set `true` together with `auctionDelay: 1000`                                                                                                                                                                                                         | `false`          |          |
-| params                   | Object   |                                                                                                                                                                                                                                                                 |                  |          |
-| params.bundleUrl         | String   | Optable bundle URL                                                                                                                                                                                                                                              | `null`           | Optional |
-| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`           | Optional |
-| params.instance          | Object   | Optable SDK instance to use for targeting data.                                                                                                                                                                                                                 | `window.optable.rtd.instance`  | Optional |
-| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module will do a default call to Optable bundle. The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn) => {}` | `null`           | Optional |
+| Name                     | Type     | Description                                                                                                                                                                                                                                                     | Default                    | Notes    |
+|--------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|----------|
+| name                     | String   | Real time data module name                                                                                                                                                                                                                                      | Always `optable`           |          |
+| params                   | Object   |                                                                                                                                                                                                                                                                 |                            |          |
+| params.adserverTargeting | Boolean  | If set to `true`, targeting keywords will be passed to the ad server upon auction completion                                                                                                                                                                    | `true`                     | Optional |
+| params.instance          | String   | Name of the Optable SDK instance on `window.optable`. The module uses `window.optable[instance]` to tell whether the bundle has loaded and to read targeting data. Set it when the page names its SDK instance something other than `instance`.                 | `'instance'`               | Optional |
+| params.handleRtd         | Function | An optional function that uses Optable data to enrich `reqBidsConfigObj` with the real-time data. If not provided, the module uses its default handler (see [Default handler](#default-handler)). A custom function is called as soon as the auction starts, whether or not the Optable bundle has loaded (see [Publisher Customized RTD Handler Function](#publisher-customized-rtd-handler-function)). The function signature is `[async] (reqBidsConfigObj, optableExtraData, mergeFn, instance) => {}`, where `instance` is `params.instance` (or `null` when not set) | `null`                     | Optional |
+
+## Default handler
+
+When `handleRtd` is not provided, the module enriches each auction as soon as it starts:
+
+1. If the Optable bundle has loaded and exposes `window.optable.rtd.handleRtd`, the module calls it. Bundles can
+   override that function to change how data is merged. The bundle counts as loaded when it exposes that function or
+   when the SDK instance named by `params.instance` exists on `window.optable`.
+2. If the bundle has not loaded yet, the module merges the targeting data the bundle cached on a previous page
+   (`localStorage` key `OPTABLE_RESOLVED`, read through Prebid's storage manager), without waiting. Cached EIDs are
+   added to `user.ext.eids`.
+3. If nothing is cached, the module waits for the bundle to load (up to `auctionDelay` when `waitForIt` is `true`),
+   then continues as in step 1.
+
+Most publishers should not need a custom `handleRtd`.
 
 ## Publisher Customized RTD Handler Function
 
 When there is more pre-processing or post-processing needed prior/post calling Optable bundle - a custom `handleRtd`
 function can be supplied to do that.
 This function will also be responsible for the `reqBidsConfigObj` enrichment.
+The module calls it as soon as the auction starts, so the Optable bundle may not have loaded yet. A handler that needs
+the bundle should wait for it first:
+
+```javascript
+await new Promise((resolve) => {
+  window.optable = window.optable || { cmd: [] };
+  window.optable.cmd.push(resolve);
+});
+```
+
+The module waits for the handler to finish: if it returns a promise (for example an `async` function), the auction
+waits for that promise to settle, within the RTD `auctionDelay`.
 It will also receive the `optableExtraData` object, which can contain the extra data required for the enrichment and
 shouldn't be shared with other RTD providers/bidders.
 `mergeFn` parameter taken by `handleRtd` is a standard Prebid.js utility function that take an object to be enriched and
@@ -121,6 +111,80 @@ mergeFn(
 ```
 
 A `handleRtd` function implementation has access to its surrounding context including capturing a `pbjs` object, calling `pbjs.getConfig()` and f.e. reading off the `consentManagement` config to make the appropriate decision based on it.
+
+## Targeting Mode (`enableTargeting`)
+
+With `params.enableTargeting: true` the module fetches targeting itself instead of handing off to the Optable bundle:
+
+1. If the Optable Web SDK instance (`window.optable[instance]`) is on the page, it waits for the SDK's `optable-targeting:change` event (up to `auctionDelay`), or uses the SDK's cached targeting.
+2. If `window.optable` exists but the SDK has not loaded yet, the page is loading an Optable bundle: like the [default handler](#default-handler), the module uses the targeting cached under `OPTABLE_RESOLVED` (EIDs or a split test assignment), or waits for the SDK when nothing usable is cached, then continues as in step 1. It does not call the DCN itself, so the bundle's merged cache is left alone.
+3. Otherwise, if `host`, `node` and `site` are set, it calls the DCN targeting API (`https://<host>/v2/targeting`) directly. This is for pages without the Optable bundle.
+4. Otherwise, when none of `host`, `node` and `site` is set, it relies on the Web SDK loading later, as in step 2.
+
+When the auction is not delayed (`auctionDelay` unset or 0), the module does not wait for the SDK's event.
+
+`bundleUrl` and `optableRtdConfig` are ignored in this mode.
+
+```javascript
+pbjs.setConfig({
+  realTimeData: {
+    auctionDelay: 200,
+    dataProviders: [
+      {
+        name: 'optable',
+        waitForIt: true,
+        params: {
+          enableTargeting: true,
+          host: 'dcn.customer.com',
+          node: 'prod-us',
+          site: 'my-site',
+          ids: ['e:<sha256>', 'c:<ppid>'], // optional
+          cookies: true,                   // optional
+          skipMergeIfUid2Exists: false,    // optional
+        },
+      },
+    ],
+  },
+});
+```
+
+### Parameters
+
+| Name                         | Type     | Description                                                                                                       | Default            |
+|------------------------------|----------|-------------------------------------------------------------------------------------------------------------------|--------------------|
+| params.enableTargeting       | Boolean  | Enables targeting mode                                                                                            | `false`            |
+| params.host                  | String   | DCN hostname. Required for direct API calls                                                                       | None               |
+| params.node                  | String   | DCN node identifier. Required for direct API calls                                                                | None               |
+| params.site                  | String   | Site slug configured on the DCN. Required for direct API calls                                                    | None               |
+| params.cookies               | Boolean  | When `false`, the visitor passport is sent as a query parameter instead of relying on cookies                     | `true`             |
+| params.timeout               | String/Number | Targeting API timeout as a duration, e.g. `"500ms"`, or a number of milliseconds. Defaults to `auctionDelay` minus 100ms when the auction is delayed | `null`  |
+| params.ids                   | Array    | Optable identifiers, e.g. `"e:<sha256>"`, `"c:<ppid>"`. Prebid userId EIDs are not used                           | `["__passport__"]` |
+| params.hids                  | Array    | Hint identifiers                                                                                                  | `[]`               |
+| params.skipMergeIfUid2Exists | Boolean  | Skip Optable's UID2 EIDs when `ortb2Fragments.global.user.ext.eids` already has one                               | `false`            |
+| params.instance              | String   | Web SDK instance name on `window.optable`                                                                         | `'instance'`       |
+| params.optableCacheTargeting | String   | localStorage key of the targeting cache, the Web SDK's `optableCacheTargeting`                                    | `'OPTABLE_RESOLVED'` |
+| params.handleRtd             | Function | Custom handler: `[async] (reqBidsConfigObj, targetingData, mergeFn, options) => {}`. `options` carries `skipMergeIfUid2Exists`. `targetingData` may have no `ortb2`, e.g. a split test assignment only | `null` |
+
+### Behaviour
+
+- **Enrichment:** EIDs are merged into `ortb2Fragments.global.user.ext.eids`, subject to Prebid's `enrichEids` activity controls. Each ad unit gets `ortb2Imp.ext.optable.variant`, and `ortb2Imp.ext.optable.splitTestAssignment` when the DCN returns `split_test_assignment`.
+- **Caching:** Direct API responses are cached in localStorage under `OPTABLE_RESOLVED` (or `optableCacheTargeting`), the key Optable bundles and the Web SDK's Prebid helper use, which the module reads back, and under the Web SDK's `OPTABLE_TARGETING_*` key so the SDK's `targetingFromCache()` can use them. A cached response is used immediately and refreshed in the background once per page load; concurrent auctions share one API call. A successful response replaces the cache, even when empty; a failed call leaves it untouched. Without a cache, the auction waits for the API call, and a response arriving after `auctionDelay` is cached for the next auction instead of merged.
+- **UID2 refresh data:** `ext.optable.ref` pointers are stripped from EIDs before they reach bid requests, and `refs` are stored keyed by EID source, matching the Web SDK cache format.
+- **Passport:** Stored under the Web SDK's `OPTABLE_PASSPORT_*` key, and removed from the response before merging.
+- **Split tests:** `splitTestAssignment` comes from the DCN's `split_test_assignment` (`test` or `production`). The DCN enforces its holdout by returning no EIDs to `test` visitors, so direct mode uses the DCN split; the Web SDK's client-side `setupAB` (`OPTABLE_SPLIT_TEST`) is not read.
+- **Consent:** GPP and TCF strings come from Prebid's consent modules. When GDPR applies, credentials are only sent when TCF Purpose 1 is granted. The module has no GVL ID, so when the `tcfControl` module enforces GDPR, Prebid blocks its storage, credentials and EID enrichment unless `optable` is listed in the `softVendorExceptions` of the `storage` rule. Purpose 1 consent is still required:
+
+  ```javascript
+  pbjs.setConfig({
+    consentManagement: {
+      gdpr: {
+        rules: [{ purpose: 'storage', enforcePurpose: true, enforceVendor: true, softVendorExceptions: ['optable'] }],
+      },
+    },
+  });
+  ```
+
+- **Ad server targeting:** `adserverTargeting` still requires the Web SDK on the page.
 
 ## Example
 
