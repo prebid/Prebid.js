@@ -1,0 +1,28 @@
+{
+  "disclosures": [
+    {
+      "identifier": "OPTABLE_TARGETING_*",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1, 3, 4]
+    },
+    {
+      "identifier": "OPTABLE_RESOLVED",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1, 3, 4]
+    },
+    {
+      "identifier": "OPTABLE_PASSPORT_*",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "The module reads the targeting data cached under OPTABLE_RESOLVED by the Optable Web SDK, to enrich auctions that start before the SDK loads. With enableTargeting, it also caches Optable targeting responses under OPTABLE_RESOLVED and the Optable Web SDK's OPTABLE_TARGETING_* key, and stores the visitor passport returned by the DCN under OPTABLE_PASSPORT_*."
+    }
+  ]
+}
