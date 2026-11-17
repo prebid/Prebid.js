@@ -120,8 +120,6 @@ export const utiqMtpIdSubmodule = {
       // Measure elapsed time, not the number of polling callbacks: browsers can throttle timers.
       const delayStep = 50;
       const result = (callback) => {
-        // userId passes storage access as the second callback argument.
-        // Keep the start time private so that argument cannot override the deadline.
         const startedAt = Date.now();
         const poll = () => {
           // Check the deadline before storage: an ID arriving after maxDelayTime must not be used.

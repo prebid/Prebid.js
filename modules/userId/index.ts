@@ -50,8 +50,8 @@ import type {
   IdProviderSpec,
   ProviderParams,
   ProviderResponse,
+  IdHandle,
   SerializableId,
-  StoredValue,
   UserId,
   UserIdConfig,
   UserIdProvider
@@ -312,6 +312,114 @@ function getStoredValue(submodule, key = undefined) {
   return storedValue;
 }
 
+type IdStore = {
+  /**
+   * Read the stored ID data, or one of its bookkeeping values (e.g. 'cst', 'last').
+   */
+  read(key?: string): any;
+  remove(): void;
+  /**
+   * Start a getId / extendId invocation. The new handle supersedes any earlier one for the same submodule.
+   */
+  handle(priorityMaps): InvocationHandle;
+};
+
+type InvocationHandle = IdHandle & {
+  /**
+   * True once the submodule has used set, touch or remove: from then on the ID it reports is not stored by the
+   * User ID module, and an empty one means "no ID".
+   */
+  managed: boolean;
+  closed: boolean;
+  /**
+   * Store ID data on the submodule's behalf, without it counting as the submodule managing storage.
+   */
+  store(value: SerializableId): void;
+  /**
+   * Finish the invocation, leaving the ID as it is.
+   */
+  close(): void;
+  /**
+   * Set once the invocation outlives getId / extendId: from then on, ID changes refresh the priority maps and PPID,
+   * and closing reports the callback as done.
+   */
+  onClose?: () => void;
+};
+
+function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdStore {
+  const name = () => submodule.submodule.name;
+  const hasStorage = () => submodule.config.storage != null;
+  const read = (key?: string) => hasStorage() ? getStoredValue(submodule, key) : undefined;
+  return {
+    read,
+    remove() {
+      if (hasStorage()) deleteStoredValue(submodule);
+    },
+    handle(priorityMaps) {
+      // An invocation's callback can complete after a refresh has started a newer one, or after the ID system was
+      // reinitialized; its result is stale then, so it must not overwrite storage or the decoded ID.
+      const isStale = () => submodule.handle !== handle || priorityMaps !== initializedSubmodules;
+      const isOpen = () => !handle.closed && !isStale();
+      function write<A extends any[]>(op: string, fn: (...args: A) => void) {
+        return (...args: A) => {
+          if (!isOpen()) {
+            logWarn(`${MODULE_NAME}: ${name()} - ignoring storage ${op}() after its getId / extendId completed or was superseded`);
+            return;
+          }
+          handle.managed = true;
+          if (hasStorage()) fn(...args);
+        };
+      }
+      const handle: InvocationHandle = {
+        managed: false,
+        closed: false,
+        get: () => read(),
+        set: write('set', (value: SerializableId) => {
+          if (value == null) {
+            logError(`${MODULE_NAME}: ${name()} - set() needs a value; use remove() to delete it`);
+          } else {
+            setStoredValue(submodule, value);
+          }
+        }),
+        touch: write('touch', () => touchStoredValue(submodule)),
+        remove: write('remove', () => deleteStoredValue(submodule)),
+        store(value) {
+          if (isOpen() && hasStorage()) setStoredValue(submodule, value);
+        },
+        setId(id?) {
+          // callbacks often complete asynchronously: never let an error here leave the batch (and with it the
+          // auction delay) waiting
+          try {
+            if (handle.closed) {
+              logInfo(`${MODULE_NAME}: ${name()} - ignoring an ID reported after its getId / extendId completed`);
+            } else if (isStale()) {
+              logInfo(`${MODULE_NAME}: ${name()} - ignoring a callback superseded by a refresh`);
+            } else {
+              submodule.idObj = id ? submodule.submodule.decode(id, submodule.config) : undefined;
+              if (handle.onClose) {
+                priorityMaps.refresh();
+                updatePPID(priorityMaps);
+              }
+            }
+          } catch (e) {
+            logError(`Error in userID module '${name()}':`, e);
+          } finally {
+            handle.close();
+          }
+        },
+        close() {
+          if (!handle.closed) {
+            handle.closed = true;
+            handle.onClose?.();
+          }
+        }
+      };
+      submodule.handle = handle;
+      return handle;
+    }
+  };
+}
+
 function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
@@ -319,73 +427,24 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
     cb();
   }, submodules.length);
   submodules.forEach(function (submodule) {
-    const moduleDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
-    // A callback can complete after a refresh has started a newer one for the same submodule, or after the
-    // ID system was reinitialized; its result is stale then, so it must not overwrite storage or the decoded ID.
-    const token = {};
-    submodule.callbackToken = token;
-    const isStale = () => submodule.callbackToken !== token || priorityMaps !== initializedSubmodules;
-    let completed = false;
-    let managesStorage = false;
-    function storageWrite<A extends any[]>(name: string, write: (...args: A) => void) {
-      return (...args: A) => {
-        if (completed || isStale()) {
-          logWarn(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring storage.${name}() from a callback that has completed or was superseded`);
-          return;
-        }
-        managesStorage = true;
-        if (submodule.config.storage) {
-          write(...args);
-        }
-      };
-    }
-    const storage: StoredValue = {
-      get: () => submodule.config.storage ? getStoredValue(submodule) : undefined,
-      set: storageWrite('set', (value: SerializableId) => {
-        if (value == null) {
-          logError(`${MODULE_NAME}: ${submodule.submodule.name} - storage.set() needs a value; use storage.remove() to delete it`);
-        } else {
-          setStoredValue(submodule, value);
-        }
-      }),
-      touch: storageWrite('touch', () => touchStoredValue(submodule)),
-      remove: storageWrite('remove', () => deleteStoredValue(submodule)),
-    };
-    function callbackCompleted(idObj?: SerializableId) {
-      completed = true;
-      // callbacks often complete asynchronously, out of reach of the catch below: never let an error here leave the
-      // batch (and with it the auction delay) waiting
-      try {
-        if (isStale()) {
-          logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring a callback superseded by a refresh`);
-        } else if (managesStorage) {
-          // the submodule has written storage itself: mirror idObj in memory, and treat an empty one as "no ID"
-          submodule.idObj = idObj ? submodule.submodule.decode(idObj, submodule.config) : undefined;
-          priorityMaps.refresh();
-          updatePPID(priorityMaps);
-        } else if (idObj) {
-          // if valid, id data should be saved to cookie/html storage
-          if (submodule.config.storage) {
-            setStoredValue(submodule, idObj);
-          }
-          // cache decoded value (this is copied to every adUnit bid)
-          submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
-          priorityMaps.refresh();
-          updatePPID(priorityMaps);
-        } else {
-          logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
-        }
-      } catch (e) {
-        logError(`Error in userID module '${submodule.submodule.name}':`, e);
-      } finally {
-        moduleDone();
+    const handle: InvocationHandle = submodule.handle;
+    handle.onClose = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
+    function setId(id?: SerializableId) {
+      if (handle.managed) {
+        handle.setId(id);
+      } else if (id) {
+        handle.store(id);
+        handle.setId(id);
+      } else {
+        logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+        handle.close();
       }
     }
     try {
-      submodule.callback(callbackCompleted, storage);
+      submodule.callback(setId);
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
-      moduleDone();
+      handle.close();
     }
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
@@ -965,23 +1024,30 @@ export function getConsentHash() {
 }
 
 function consentChanged(submodule) {
-  const storedConsent = getStoredValue(submodule, 'cst');
+  const storedConsent = submodule.store.read('cst');
   return !storedConsent || storedConsent !== getConsentHash();
 }
 
-function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, forceRefresh) {
+function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, priorityMaps, forceRefresh) {
   const consentData = allConsent.getConsentData();
 
-  // There are two submodule configuration types to handle: storage or value
+  // There are three submodule configuration types to handle:
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
+  // 3. neither: call getId on every page view
+  if (submodule.config.value && !submodule.config.storage) {
+    submodule.idObj = submodule.config.value;
+    return;
+  }
+  const handle = submodule.store.handle(priorityMaps);
+  let storedId;
+  let response;
   if (submodule.config.storage) {
-    let storedId = getStoredValue(submodule);
-    let response;
+    storedId = submodule.store.read();
 
     let refreshNeeded = false;
     if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-      const lastUpdated = new Date(getStoredValue(submodule, 'last')).getTime();
+      const lastUpdated = new Date(submodule.store.read('last')).getTime();
       // if we have no record of when this ID was last refreshed (e.g. it predates `refreshInSeconds`
       // being configured), treat it the same as an overdue refresh rather than silently skipping it forever
       refreshNeeded = isNaN(lastUpdated) || (Date.now() - lastUpdated > submodule.config.storage.refreshInSeconds * 1000);
@@ -991,38 +1057,41 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, forc
       const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
 
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(extendedConfig, consentData, storedId);
+      response = submodule.submodule.getId(extendedConfig, consentData, storedId, handle);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId, handle);
     }
+  } else {
+    response = submodule.submodule.getId(submodule.config, consentData, undefined, handle);
+  }
 
-    if (isPlainObject(response)) {
-      if (response.id) {
-        // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-        setStoredValue(submodule, response.id);
-        storedId = response.id;
-      }
-
-      if (typeof response.callback === 'function') {
-        // Save async callback to be invoked after auction
-        submodule.callback = response.callback as any;
-      }
+  const id = isPlainObject(response) ? response.id : undefined;
+  const callback = isPlainObject(response) && typeof response.callback === 'function' ? response.callback : undefined;
+  if (handle.closed) {
+    if (callback) {
+      logWarn(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring the callback of a getId / extendId that already reported its ID`);
     }
-
+    return;
+  }
+  if (handle.managed) {
+    submodule.idObj = id ? submodule.submodule.decode(id, submodule.config) : undefined;
+  } else {
+    if (id) {
+      // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
+      handle.store(id);
+      storedId = id;
+    }
     if (storedId) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
     }
-  } else if (submodule.config.value) {
-    // cache decoded value (this is copied to every adUnit bid)
-    submodule.idObj = submodule.config.value;
+  }
+  if (callback) {
+    // Save async callback to be invoked after auction
+    submodule.callback = callback;
   } else {
-    const response = submodule.submodule.getId(submodule.config, consentData);
-    if (isPlainObject(response)) {
-      if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-      if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
-    }
+    handle.close();
   }
 }
 
@@ -1084,7 +1153,7 @@ function initSubmodules(priorityMaps, submodules, forceRefresh = false, forceNew
     const initialized = submodules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
-          populateSubmoduleId(submodule, submodule.new ? forceNewModuleRefresh : forceRefresh);
+          populateSubmoduleId(submodule, priorityMaps, submodule.new ? forceNewModuleRefresh : forceRefresh);
           carry.push(submodule);
         } catch (e) {
           logError(`Error in userID module '${submodule.submodule.name}':`, e);
@@ -1248,9 +1317,11 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
           // turn off storageControl checks
           advertiseKeys: false,
         }),
+        store: undefined,
         dirty: previousSubmodule == null || !deepEqual(newConfig, previousSubmodule.config),
         new: previousSubmodule == null
       };
+      newSubmoduleContainer.store = newIdStore(newSubmoduleContainer);
 
       return [...acc, newSubmoduleContainer];
     }, []);
@@ -1261,10 +1332,11 @@ type SubmoduleContainer<P extends UserIdProvider> = {
   enabledStorageTypes?: StorageType[];
   config: UserIdConfig<P>;
   callback?: ProviderResponse['callback'];
-  // identifies the latest callback started for this submodule, so an older one completing late is ignored
-  callbackToken?: object;
   idObj;
   storageMgr: StorageManager;
+  store: IdStore;
+  // the latest getId / extendId invocation; an older one completing late is ignored
+  handle?: InvocationHandle;
   // true if this module was reconfigured (latest config is different from previous config)
   dirty: boolean;
   // true if this module was added (had no previous config)
@@ -1324,7 +1396,7 @@ export function requestDataDeletion(next, ...args) {
         logError(`Error calling onDataDeletionRequest for ID submodule ${submodule.submodule.name}`, e);
       }
     }
-    deleteStoredValue(submodule);
+    submodule.store.remove();
   });
   next.apply(this, args);
 }

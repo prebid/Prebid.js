@@ -90,23 +90,23 @@ export type ProviderResponse = {
   /**
    * If provided, will be invoked at a later point.
    */
-  callback?: (setId: (id?: SerializableId) => void, storage: StoredValue) => void;
+  callback?: (setId: (id?: SerializableId) => void) => void;
 };
 
 /**
- * Access to what the User ID module stores for a submodule, passed to its callback.
+ * Passed to getId / extendId for the duration of that invocation, including any callback it returns.
  *
- * By default the User ID module stores whatever the callback passes to `setId`, and an empty `setId()` keeps
- * the current ID. A callback that calls `set`, `touch` or `remove` manages storage itself instead: `setId` then only
- * updates the ID in memory, without storing it, and an empty `setId()` clears it.
+ * By default the User ID module stores the ID data a submodule reports (as `id`, or through the callback's
+ * `setId`), and reporting none keeps the current ID. A submodule that calls `set`, `touch` or `remove` manages
+ * storage itself instead: the ID data it reports then only updates the ID in memory, and reporting none clears it.
  */
-export type StoredValue = {
+export type IdHandle = {
   /**
    * The stored ID data, if any.
    */
   get(): SerializableId | undefined;
   /**
-   * Store ID data, as the User ID module does with a value passed to `setId`.
+   * Store ID data, as the User ID module does with the ID data a submodule reports.
    */
   set(value: SerializableId): void;
   /**
@@ -118,6 +118,11 @@ export type StoredValue = {
    * Delete the stored ID data.
    */
   remove(): void;
+  /**
+   * Report the ID data and finish the invocation; nothing reported through this handle afterwards has any effect.
+   * This only updates the ID in memory: use `set` to store it.
+   */
+  setId(id?: SerializableId): void;
 };
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
@@ -184,8 +189,9 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
    * @param config Configuration for your module as provided by the publisher
    * @param consentData available consent data (when the relevant modules are present)
    * @param storedId Your previously stored ID data, if any, as was returned by getId or extendId
+   * @param handle Storage and ID access for this invocation
    */
-  getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId?: SerializableId) => ProviderResponse;
+  getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId: SerializableId | undefined, handle: IdHandle) => ProviderResponse;
   /**
    * If provided, it’s invoked when getId is not; namely:
    *

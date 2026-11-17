@@ -88,7 +88,7 @@ describe('SharedId System', function () {
       }
 
       it('should fire the pixel with the new id and complete once it has loaded', function () {
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storageHolding(() => 'restored-by-server'));
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storageHolding(() => 'restored-by-server')).callback(callbackSpy);
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include(UUID);
@@ -102,7 +102,7 @@ describe('SharedId System', function () {
 
       it('should keep the minted id without writing it again when storage still holds it after the re-check', function () {
         const storage = storageHolding(() => UUID);
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         // storage still holds the minted id, so it is read again a little later
@@ -113,10 +113,10 @@ describe('SharedId System', function () {
 
       it('should adopt the id the server generated when create is false and getId returned none', function () {
         const noCreate = { ...config, params: { ...config.params, create: false } };
-        const result = sharedIdSystemSubmodule.getId(noCreate, undefined);
-        expect(result.id).to.be.undefined;
         const storage = storageHolding(() => 'server-generated-id');
-        result.callback(callbackSpy, storage);
+        const result = sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage);
+        expect(result.id).to.be.undefined;
+        result.callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         expectAdopted(storage, 'server-generated-id');
@@ -124,7 +124,7 @@ describe('SharedId System', function () {
 
       it('should adopt a different id the server set, for example one it restored, without writing it again', function () {
         const storage = storageHolding(() => 'restored-by-server');
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         expectAdopted(storage, 'restored-by-server');
@@ -136,7 +136,7 @@ describe('SharedId System', function () {
         // by the next task (see #16158).
         let storedId = UUID;
         const storage = storageHolding(() => storedId);
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         storedId = 'restored-by-server';
         clock.tick(0);
@@ -146,7 +146,7 @@ describe('SharedId System', function () {
       it('should adopt an id that only becomes visible in storage at the re-check', function () {
         let storedId = UUID;
         const storage = storageHolding(() => storedId);
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         sinon.assert.notCalled(callbackSpy);
@@ -158,7 +158,7 @@ describe('SharedId System', function () {
       it('should drop the id when the server removed the cookie', function () {
         // e.g. the endpoint deleted it for Global Privacy Control or denied consent
         const storage = storageHolding(() => undefined);
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
@@ -171,7 +171,7 @@ describe('SharedId System', function () {
       it('should complete without an id, and leave storage alone, when reading storage throws', function () {
         sandbox.stub(utils, 'logError');
         const storage = storageHolding(() => { throw new Error('storage unavailable'); });
-        sharedIdSystemSubmodule.getId(config, undefined).callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);
@@ -244,7 +244,7 @@ describe('SharedId System', function () {
       });
 
       it('should fire the pixel with the stored id', function () {
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, storageHolding('TestId'));
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storageHolding('TestId')).callback(callbackSpy);
         sinon.assert.calledOnce(utils.triggerPixel);
         expect(utils.triggerPixel.firstCall.args[0]).to.include('/wp-json/pubcid/v1/extend/');
         expect(utils.triggerPixel.firstCall.args[0]).to.include('TestId');
@@ -252,7 +252,7 @@ describe('SharedId System', function () {
 
       it('should keep the id without writing it again once the pixel has loaded', function () {
         const storage = storageHolding('TestId');
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storage).callback(callbackSpy);
         sinon.assert.notCalled(callbackSpy);
         pixelDone();
         clock.tick(50);
@@ -264,7 +264,7 @@ describe('SharedId System', function () {
 
       it('should drop the stored id when the server removed the cookie', function () {
         const storage = storageHolding(undefined);
-        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').callback(callbackSpy, storage);
+        sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
         sinon.assert.calledOnce(callbackSpy);

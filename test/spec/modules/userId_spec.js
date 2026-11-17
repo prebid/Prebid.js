@@ -1240,12 +1240,12 @@ describe('User ID', function () {
         init(config);
         setSubmoduleRegistry([{
           name: 'mockId',
-          getId: function (_1, _2, storedId) {
+          getId: function (_1, _2, storedId, handle) {
             expect(storedId).to.not.exist;
             setVal('laterValue');
             return {
-              callback(_, storage) {
-                expect(storage.get()).to.eql('laterValue');
+              callback() {
+                expect(handle.get()).to.eql('laterValue');
                 done();
               }
             };
@@ -1271,7 +1271,7 @@ describe('User ID', function () {
       });
     });
 
-    describe('submodule callback storage access', () => {
+    describe('getId / extendId handle', () => {
       const TEST_KEY = 'testStorageKey';
       const read = (suffix = '') => coreStorage.getDataFromLocalStorage(TEST_KEY + suffix);
 
@@ -1282,7 +1282,7 @@ describe('User ID', function () {
       beforeEach(reset);
       afterEach(reset);
 
-      function runCallback(callback, stored) {
+      function run(getId, stored) {
         if (stored) {
           coreStorage.setDataInLocalStorage(TEST_KEY, stored);
           coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
@@ -1290,7 +1290,7 @@ describe('User ID', function () {
         init(config);
         setSubmoduleRegistry([{
           name: 'mockId',
-          getId: () => ({ callback }),
+          getId,
           decode: (value) => ({ mid: value })
         }]);
         config.setConfig({
@@ -1302,50 +1302,117 @@ describe('User ID', function () {
         return getGlobal().getUserIdsAsync();
       }
 
-      it('should keep the current ID when setId is empty and storage was not used', async () => {
-        const ids = await runCallback((setId) => setId(), 'stored');
-        expect(ids).to.eql({ mid: 'stored' });
-        expect(read()).to.equal('stored');
+      const withCallback = (fn) => (config, consent, storedId, handle) => ({
+        callback: (setId) => fn(setId, handle)
       });
 
-      it('should drop the ID from memory and storage on remove() and an empty setId', async () => {
-        const ids = await runCallback((setId, storage) => {
-          storage.remove();
-          setId();
-        }, 'stored');
-        expect(ids).to.eql({});
-        expect(read()).to.not.exist;
-      });
-
-      it('should not store the value given to setId after touch(), but renew the bookkeeping', async () => {
-        const ids = await runCallback((setId, storage) => {
-          expect(storage.get()).to.equal('stored');
-          storage.touch();
-          setId('other');
-        }, 'stored');
-        expect(ids).to.eql({ mid: 'other' });
-        expect(read()).to.equal('stored');
-        expect(read('_cst')).to.exist;
-        expect(new Date(read('_exp')).getTime()).to.be.greaterThan(Date.now());
-      });
-
-      it('should store the value given to set()', async () => {
-        const ids = await runCallback((setId, storage) => {
-          storage.set('newValue');
-          setId('newValue');
+      describe('from the callback', () => {
+        it('should keep the current ID when setId is empty and storage was not used', async () => {
+          const ids = await run(withCallback((setId) => setId()), 'stored');
+          expect(ids).to.eql({ mid: 'stored' });
+          expect(read()).to.equal('stored');
         });
-        expect(ids).to.eql({ mid: 'newValue' });
-        expect(read()).to.equal('newValue');
+
+        it('should drop the ID from memory and storage on remove() and an empty setId', async () => {
+          const ids = await run(withCallback((setId, handle) => {
+            handle.remove();
+            setId();
+          }), 'stored');
+          expect(ids).to.eql({});
+          expect(read()).to.not.exist;
+        });
+
+        it('should not store the reported ID after touch(), but renew the bookkeeping', async () => {
+          const ids = await run(withCallback((setId, handle) => {
+            expect(handle.get()).to.equal('stored');
+            handle.touch();
+            setId('other');
+          }), 'stored');
+          expect(ids).to.eql({ mid: 'other' });
+          expect(read()).to.equal('stored');
+          expect(read('_cst')).to.exist;
+          expect(new Date(read('_exp')).getTime()).to.be.greaterThan(Date.now());
+        });
+
+        it('should store the value given to set()', async () => {
+          const ids = await run(withCallback((setId, handle) => {
+            handle.set('newValue');
+            setId('newValue');
+          }));
+          expect(ids).to.eql({ mid: 'newValue' });
+          expect(read()).to.equal('newValue');
+        });
+
+        it('should accept the handle\'s own setId, which does not store', async () => {
+          const ids = await run(withCallback((setId, handle) => handle.setId('memoryOnly')), 'stored');
+          expect(ids).to.eql({ mid: 'memoryOnly' });
+          expect(read()).to.equal('stored');
+        });
+
+        it('should ignore storage calls and IDs reported after setId', async () => {
+          const ids = await run(withCallback((setId, handle) => {
+            setId('fresh');
+            handle.remove();
+            setId('late');
+          }), 'stored');
+          expect(ids).to.eql({ mid: 'fresh' });
+          expect(read()).to.equal('fresh');
+          sinon.assert.calledWith(utils.logWarn, sinon.match('ignoring storage remove()'));
+        });
       });
 
-      it('should ignore storage calls made after setId', async () => {
-        const ids = await runCallback((setId, storage) => {
-          setId('fresh');
-          storage.remove();
-        }, 'stored');
-        expect(ids).to.eql({ mid: 'fresh' });
-        expect(read()).to.equal('fresh');
-        sinon.assert.calledWith(utils.logWarn, sinon.match('ignoring storage.remove()'));
+      describe('from getId itself', () => {
+        it('should keep decoding the stored ID when getId returns nothing and storage was not used', async () => {
+          const ids = await run(() => undefined, 'stored');
+          expect(ids).to.eql({ mid: 'stored' });
+        });
+
+        it('should drop the stored ID on remove() and an empty response', async () => {
+          const ids = await run((config, consent, storedId, handle) => {
+            expect(storedId).to.equal('stored');
+            handle.remove();
+          }, 'stored');
+          expect(ids).to.eql({});
+          expect(read()).to.not.exist;
+        });
+
+        it('should not store the returned ID after touch()', async () => {
+          const ids = await run((config, consent, storedId, handle) => {
+            handle.touch();
+            return { id: 'other' };
+          }, 'stored');
+          expect(ids).to.eql({ mid: 'other' });
+          expect(read()).to.equal('stored');
+        });
+
+        it('should ignore the callback of a getId that already called setId', async () => {
+          const callback = sinon.stub();
+          const ids = await run((config, consent, storedId, handle) => {
+            handle.setId('sync');
+            return { callback };
+          });
+          expect(ids).to.eql({ mid: 'sync' });
+          sinon.assert.notCalled(callback);
+          sinon.assert.calledWith(utils.logWarn, sinon.match('ignoring the callback'));
+        });
+      });
+
+      it('should ignore an invocation superseded by a refresh', async () => {
+        const invocations = [];
+        run(withCallback((setId, handle) => {
+          invocations.push({ setId, handle });
+          if (invocations.length > 1) setId('current');
+        }), 'stored');
+        for (let i = 0; i < 100 && !invocations.length; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        expect(invocations).to.have.length(1);
+        expect(await getGlobal().refreshUserIds()).to.eql({ mid: 'current' });
+        const [stale] = invocations;
+        stale.handle.remove();
+        stale.setId('stale');
+        expect(read()).to.equal('current');
+        expect(getGlobal().getUserIds()).to.eql({ mid: 'current' });
       });
     });
 

@@ -12,7 +12,7 @@ import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
-import type { IdProviderSpec, ProviderResponse } from "./userId/spec.ts";
+import type { IdHandle, IdProviderSpec, ProviderResponse } from "./userId/spec.ts";
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 const COOKIE = 'cookie';
@@ -91,9 +91,10 @@ const PIXEL_RECHECK_MS = 50;
  * the cookie.
  * @param pubcid the ID this page view already holds: the one getId minted or found, or extendId's stored ID
  * @param pixelUrl the pixel endpoint
+ * @param handle the getId / extendId invocation's handle
  */
-function pixelSyncCallback(pubcid, pixelUrl): ProviderResponse['callback'] {
-  return function (setId, storage) {
+function pixelSyncCallback(pubcid, pixelUrl, handle: IdHandle): ProviderResponse['callback'] {
+  return function (setId) {
     queuePixelCallback(pixelUrl, pubcid, () => {
       // Storage is read on the next task, not in the pixel's load handler: in some WebKit builds the response's
       // Set-Cookie is not yet visible in document.cookie at the load event (see #16158). If storage still holds
@@ -103,7 +104,7 @@ function pixelSyncCallback(pubcid, pixelUrl): ProviderResponse['callback'] {
       const read = (recheck) => {
         let storedId;
         try {
-          storedId = storage.get();
+          storedId = handle.get();
         } catch (e) {
           logError('sharedId: could not read the stored id after the pixel', e);
           setId();
@@ -112,11 +113,11 @@ function pixelSyncCallback(pubcid, pixelUrl): ProviderResponse['callback'] {
         if (recheck && storedId && storedId === pubcid) {
           setTimeout(() => read(false), PIXEL_RECHECK_MS);
         } else if (storedId) {
-          storage.touch();
+          handle.touch();
           setId(storedId);
         } else {
           // the endpoint deleted the cookie, for example for Global Privacy Control or denied consent
-          storage.remove();
+          handle.remove();
           setId();
         }
       };
@@ -125,8 +126,8 @@ function pixelSyncCallback(pubcid, pixelUrl): ProviderResponse['callback'] {
   };
 }
 
-function getIdCallback(pubcid, pixelUrl): ProviderResponse['callback'] {
-  return pixelUrl ? pixelSyncCallback(pubcid, pixelUrl) : (setId) => setId(pubcid);
+function getIdCallback(pubcid, pixelUrl, handle: IdHandle): ProviderResponse['callback'] {
+  return pixelUrl ? pixelSyncCallback(pubcid, pixelUrl, handle) : (setId) => setId(pubcid);
 }
 
 let warnedPixelStorage = false;
@@ -188,7 +189,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     const idObj = { 'pubcid': value as string };
     return idObj;
   },
-  getId: function (config = {} as any, consentData, storedId) {
+  getId: function (config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return;
@@ -212,7 +213,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl) };
+    return { id: newId, callback: getIdCallback(newId, pixelUrl, handle) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -227,7 +228,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
    * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
    * its expiration time is updated.
    */
-  extendId: function(config = {} as any, consentData, storedId) {
+  extendId: function(config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return { id: undefined };
@@ -241,7 +242,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     if (extend) {
       if (pixelUrl) {
         checkPixelStorage(config, pixelUrl);
-        return { callback: pixelSyncCallback(storedId, pixelUrl) };
+        return { callback: pixelSyncCallback(storedId, pixelUrl, handle) };
       } else {
         return { id: storedId };
       }
