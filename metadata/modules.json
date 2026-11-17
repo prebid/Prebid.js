@@ -2320,13 +2320,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "axis",
-      "aliasOf": null,
-      "gvlid": 1197,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "boldwin",
       "aliasOf": null,
       "gvlid": 1151,
