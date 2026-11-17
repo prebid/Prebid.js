@@ -1361,13 +1361,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "blasto",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "blockthrough",
       "aliasOf": null,
       "gvlid": 815,
