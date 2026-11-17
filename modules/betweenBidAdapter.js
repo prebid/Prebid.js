@@ -10,16 +10,15 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./betweenBidAdapter.d.ts').BetweenBidParams} BetweenBidParams
  */
 
 const BIDDER_CODE = 'between';
-const GVLID = 724;
 const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   aliases: ['btw'],
   supportedMediaTypes: ['banner', 'video'],
   /**

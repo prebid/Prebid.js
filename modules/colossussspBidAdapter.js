@@ -13,6 +13,7 @@ import {
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./colossussspBidAdapter.d.ts').ColossussspBidParams} ColossussspBidParams
  */
 
 const BIDDER_CODE = 'colossusssp';

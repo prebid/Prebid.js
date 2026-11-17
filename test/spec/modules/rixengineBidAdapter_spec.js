@@ -130,12 +130,11 @@ describe('rixengine bid adapter', function () {
     });
 
     it('handles empty response', function () {
-      it('No bid response', function() {
-        var noBidResponse = spec.interpretResponse({
-          body: '',
-        });
-        expect(noBidResponse.length).to.equal(0);
-      });
+      const request = spec.buildRequests(REQUEST, {})[0];
+      var noBidResponse = spec.interpretResponse({
+        body: '',
+      }, request);
+      expect(noBidResponse.length).to.equal(0);
     });
   });
 });

@@ -40,7 +40,7 @@ describe('VOX Adapter', function() {
   describe('isBidRequestValid method', function() {
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and banner placement has the correct value', function() {
+        it('and banner placement has the correct value', function() {
           const slotConfig = getSlotConfigs(
             { banner: {} },
             {
@@ -51,7 +51,7 @@ describe('VOX Adapter', function() {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(true);
         });
-        describe('and In-Image placement has the correct value', function() {
+        it('and In-Image placement has the correct value', function() {
           const slotConfig = getSlotConfigs(
             {
               banner: {

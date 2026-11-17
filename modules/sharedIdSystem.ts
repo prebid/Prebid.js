@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, logError, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
@@ -80,11 +80,42 @@ function readValue(name, type) {
   }
 }
 
+// How long to wait before reading storage a second time, when the first read after the pixel still shows the id
+// this page view minted.
+const PIXEL_RECHECK_MS = 50;
+
 function getIdCallback(pubcid, pixelUrl) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
-        callback(getStoredId() || pubcid);
+        // By now the User ID module has stored `pubcid` (getId's `id`, when there is one), and the pixel endpoint has
+        // had the chance to set the cookie from the server. Storage is read on the next task, not synchronously in the
+        // pixel's load handler: in some WebKit builds the response's Set-Cookie is not yet visible in document.cookie
+        // at the load event, so a synchronous read can miss an id the endpoint set, for example one it restored
+        // (see #16158). If storage still holds the minted id then, it is read once more after a short delay.
+        // - A different id: the server generated or restored it (for example with `create: false`, where getId
+        //   returned no id), so adopt it.
+        // - The same id: complete without one; passing it would have the User ID module write it again from script,
+        //   turning the server-set cookie back into a script-set one.
+        // - No id: the endpoint removed the cookie (for example for Global Privacy Control or denied consent);
+        //   complete without one, so script doesn't write back what the server deleted.
+        const complete = (storedId) => callback(storedId && storedId !== pubcid ? storedId : undefined);
+        const read = (recheck) => {
+          let storedId;
+          try {
+            storedId = getStoredId();
+          } catch (e) {
+            logError('sharedId: could not read the stored id after the pixel', e);
+            complete(undefined);
+            return;
+          }
+          if (recheck && storedId && storedId === pubcid) {
+            setTimeout(() => read(false), PIXEL_RECHECK_MS);
+          } else {
+            complete(storedId);
+          }
+        };
+        setTimeout(() => read(true), 0);
       })();
     } else {
       callback(pubcid);
@@ -185,8 +216,12 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
 
     if (extend) {
       if (pixelUrl) {
-        const callback = queuePixelCallback(pixelUrl, storedId as string);
-        return { callback: callback };
+        // Complete the callback once the pixel settles so the User ID module's batch (and
+        // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
+        // would have the User ID module re-store it, overwriting the server-set cookie from script.
+        return {
+          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined))()
+        };
       } else {
         return { id: storedId };
       }

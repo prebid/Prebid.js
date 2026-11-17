@@ -319,6 +319,145 @@ describe('pubstackBidAdapter', function () {
 
       expect(extractBids(spec.interpretResponse(serverResponse, request))).to.deep.equal([]);
     });
+
+    it('converts burl and ext.prebid.events.win into event trackers, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-trackers' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: 'bid-trackers',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-trackers',
+              burl: 'https://node.pbstck.com/billing',
+              ext: { prebid: { events: { win: 'https://node.pbstck.com/event?t=win' } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].eventtrackers).to.deep.equal([
+        { method: 1, event: 1, url: 'https://node.pbstck.com/billing' },
+        { method: 1, event: 500, url: 'https://node.pbstck.com/event?t=win' }
+      ]);
+    });
+
+    it('adds no event trackers when the bid has neither burl nor win url', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-no-trackers' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-no-trackers',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-no-trackers'
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].eventtrackers).to.deep.equal([]);
+    });
+
+    it('reads the video cache of an instream bid, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({
+        bidId: 'bid-instream',
+        mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } }
+      });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-instream',
+              mtype: 2,
+              price: 1.5,
+              w: 640,
+              h: 480,
+              adm: '<VAST version="3.0"></VAST>',
+              crid: 'creative-instream',
+              ext: { prebid: { cache: { vastXml: { cacheId: 'cache-uuid', url: 'https://cache.pbstck.com/cache?uuid=cache-uuid' } } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      if (FEATURES.VIDEO) {
+        expect(bids[0].videoCacheKey).to.equal('cache-uuid');
+        expect(bids[0].vastUrl).to.equal('https://cache.pbstck.com/cache?uuid=cache-uuid');
+      }
+    });
+
+    it('reads the media type of a multi-format bid without mtype from ext.prebid.type, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({
+        bidId: 'bid-multiformat',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'outstream', playerSize: [[640, 480]], mimes: ['video/mp4'] }
+        }
+      });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-multiformat',
+              price: 1.5,
+              w: 640,
+              h: 480,
+              adm: '<VAST version="3.0"></VAST>',
+              crid: 'creative-multiformat',
+              ext: { prebid: { type: 'video' } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('video');
+      if (FEATURES.VIDEO) {
+        expect(bids[0].vastXml).to.equal('<VAST version="3.0"></VAST>');
+      }
+    });
+
+    it('reads ext.prebid.targeting, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-targeting' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-targeting',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-targeting',
+              ext: { prebid: { targeting: { hb_cache_id: 'cache-uuid' } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].adserverTargeting).to.deep.equal({ hb_cache_id: 'cache-uuid' });
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -348,6 +487,19 @@ describe('pubstackBidAdapter', function () {
         gpp: 'gpp-string',
         gpp_sid: [7, 8]
       });
+    });
+
+    it('url-encodes the consent payload so a + in its base64 survives', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-gpp-plus' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      spec.buildRequests([bidRequest], bidderRequest);
+      const gppConsent = { gppString: 'DBABMA~~~CP', applicableSections: [7] };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], null, null, gppConsent);
+
+      const siteSync = findSyncForSite(syncs, 'site-123');
+      expect(siteSync.url).to.include('%2B');
+      expect(getDecodedSyncPayload(siteSync)).to.deep.equal({ uspConsent: null, gpp: 'DBABMA~~~CP', gpp_sid: [7] });
     });
 
     it('returns image sync when iframe sync is disabled', function () {

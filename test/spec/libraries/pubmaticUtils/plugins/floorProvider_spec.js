@@ -46,18 +46,15 @@ describe('FloorProvider', () => {
       country: "IN"
     };
 
-    before(() => {
-      sinon.stub(priceFloors, 'continueAuction').callsFake(() => true);
-    });
+    const continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => true);
+    try {
+      const result = await floorProvider.init(pluginName, configJsonManager);
 
-    const result = await floorProvider.init(pluginName, configJsonManager);
-
-    expect(result).to.be.true;
-    expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
-
-    after(() => {
-      sinon.restore();
-    });
+      expect(result).to.be.true;
+      expect(floorProvider.getFloorConfig()).to.deep.equal(floorsobj);
+    } finally {
+      continueAuctionStub.restore();
+    }
   });
 
   it('should return input unchanged if floor config is missing or disabled', async () => {
@@ -81,22 +78,19 @@ describe('FloorProvider', () => {
   });
 
   it('should handle errors in continueAuction gracefully', async () => {
-    before(() => {
-      sinon.stub(priceFloors, 'continueAuction').callsFake(() => { throw new Error('fail!'); });
-    });
+    const continueAuctionStub = sinon.stub(priceFloors, 'continueAuction').callsFake(() => { throw new Error('fail!'); });
+    try {
+      floorProvider.init('dynamicFloors', {
+        getConfigByName: () => floorsobj
+      });
 
-    floorProvider.init('dynamicFloors', {
-      getConfigByName: () => floorsobj
-    });
+      const req = { err: 4 };
+      const result = await floorProvider.processBidRequest(req);
 
-    const req = { err: 4 };
-    const result = await floorProvider.processBidRequest(req);
-
-    expect(result).to.equal(req);
-
-    after(() => {
-      sinon.restore();
-    });
+      expect(result).to.equal(req);
+    } finally {
+      continueAuctionStub.restore();
+    }
   });
 
   it('getTargeting should return undefined or do nothing', () => {

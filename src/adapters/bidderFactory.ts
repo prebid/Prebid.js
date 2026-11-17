@@ -571,7 +571,8 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         );
         break;
       case 'POST':
-        const enableGZipCompression = request.options?.endpointCompression;
+        const enableGZipCompression = request.options?.endpointCompression &&
+          !bidderSettings.get(bidderRequest.bidderCode, 'disableGzipCompression');
         const callAjax = ({ url, payload }) => {
           doAjax(
             url,
