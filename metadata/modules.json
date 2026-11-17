@@ -1389,13 +1389,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "clydo",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "condorx",
       "aliasOf": null,
       "gvlid": null,
