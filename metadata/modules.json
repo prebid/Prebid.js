@@ -66,13 +66,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adhash",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "adhese",
       "aliasOf": null,
       "gvlid": 553,
