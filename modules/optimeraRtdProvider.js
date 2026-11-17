@@ -32,7 +32,6 @@ export let optimeraKeyName = 'hb_deal_optimera';
 /** @type {Object<string, string>} */
 export const scoresBaseURL = {
   v0: 'https://dyv1bugovvq1g.cloudfront.net/',
-  v1: 'https://v1.oapi26b.com/',
 };
 
 /** @type {string} */
@@ -79,7 +78,7 @@ export function init(moduleConfig) {
     if (_moduleParams.optimeraKeyName) optimeraKeyName = _moduleParams.optimeraKeyName;
     if (_moduleParams.device) device = _moduleParams.device;
     if (_moduleParams.apiVersion) {
-      apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0';
+      apiVersion = (_moduleParams.apiVersion === 'v0') ? _moduleParams.apiVersion : 'v0';
     }
     if (_moduleParams.transmitWithBidRequests) {
       transmitWithBidRequests = _moduleParams.transmitWithBidRequests;
@@ -129,15 +128,10 @@ export function setScoresURL() {
   const optimeraPathName = window.location.pathname;
   const baseUrl = scoresBaseURL[apiVersion] || scoresBaseURL.v0;
 
-  let newScoresURL;
-  if (apiVersion === 'v1') {
-    newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
-  } else {
-    const encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
-      .replaceAll('%2F', '/')
-      .replaceAll('%20', '+');
-    newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
-  }
+  const encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
+    .replaceAll('%2F', '/')
+    .replaceAll('%20', '+');
+  const newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
 
   if (scoresURL !== newScoresURL) {
     scoresURL = newScoresURL;
