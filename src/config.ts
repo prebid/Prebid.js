@@ -543,7 +543,10 @@ export function newConfig() {
 
     // save and call this function to remove the listener
     return function unsubscribe() {
-      listeners.splice(listeners.indexOf(nl), 1);
+      const idx = listeners.indexOf(nl);
+      if (idx !== -1) {
+        listeners.splice(idx, 1);
+      }
     };
   }
 
