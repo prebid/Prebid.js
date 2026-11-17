@@ -575,6 +575,24 @@ describe('PubWiseAdapter', function () {
     });
   });
 
+  describe('Floors module', function () {
+    it('asks for floors in the impression currency and uses one returned in it', function () {
+      const bid = utils.deepClone(sampleValidBannerBidRequest);
+      const getFloor = sinon.stub().returns({ currency: 'USD', floor: 1.5 });
+      bid.getFloor = getFloor;
+      const request = spec.buildRequests([bid]);
+      sinon.assert.calledWith(getFloor, sinon.match({ currency: 'USD', mediaType: 'banner', size: '*' }));
+      expect(request.data.imp[0].bidfloor).to.equal(1.5);
+    });
+
+    it('ignores a floor returned in another currency', function () {
+      const bid = utils.deepClone(sampleValidBannerBidRequest);
+      bid.getFloor = () => ({ currency: 'EUR', floor: 1.5 });
+      const request = spec.buildRequests([bid]);
+      expect(request.data.imp[0].bidfloor).to.not.equal(1.5);
+    });
+  });
+
   describe('Identifies Media Types', function () {
     it('identifies native adm type', function() {
       const adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
