@@ -76,13 +76,15 @@ describe('SharedId System', function () {
       });
 
       function storageHolding(read) {
-        return { get: sinon.spy(read), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+        return { get: sinon.spy(read), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
       }
 
       function expectAdopted(storage, id) {
         sinon.assert.calledOnce(callbackSpy);
         sinon.assert.calledWithExactly(callbackSpy, id);
         sinon.assert.calledOnce(storage.touch);
+        // the handle only accepts storage calls until the invocation reports its ID
+        sinon.assert.callOrder(storage.touch, callbackSpy);
         sinon.assert.notCalled(storage.set);
         sinon.assert.notCalled(storage.remove);
       }
@@ -161,11 +163,42 @@ describe('SharedId System', function () {
         sharedIdSystemSubmodule.getId(config, undefined, undefined, storage).callback(callbackSpy);
         pixelDone();
         clock.tick(0);
+        // nothing stored could be a cookie not visible yet, so it is read again a little later
+        sinon.assert.notCalled(callbackSpy);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
         sinon.assert.calledWithExactly(callbackSpy);
         sinon.assert.calledOnce(storage.remove);
+        sinon.assert.callOrder(storage.remove, callbackSpy);
         sinon.assert.notCalled(storage.set);
         sinon.assert.notCalled(storage.touch);
+      });
+
+      describe('with create: false', function () {
+        const noCreate = { ...config, params: { ...config.params, create: false } };
+
+        it('should adopt a server id that only becomes visible at the re-check', function () {
+          let storedId;
+          const storage = storageHolding(() => storedId);
+          sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage).callback(callbackSpy);
+          pixelDone();
+          clock.tick(0);
+          sinon.assert.notCalled(callbackSpy);
+          storedId = 'server-generated-id';
+          clock.tick(50);
+          expectAdopted(storage, 'server-generated-id');
+        });
+
+        it('should not delete anything when the server set no id', function () {
+          const storage = storageHolding(() => undefined);
+          sharedIdSystemSubmodule.getId(noCreate, undefined, undefined, storage).callback(callbackSpy);
+          pixelDone();
+          clock.tick(50);
+          sinon.assert.calledOnce(callbackSpy);
+          sinon.assert.calledWithExactly(callbackSpy);
+          sinon.assert.notCalled(storage.remove);
+          sinon.assert.notCalled(storage.touch);
+        });
       });
 
       it('should keep the id without following storage when no storage is configured', function () {
@@ -184,13 +217,15 @@ describe('SharedId System', function () {
         const storage = storageHolding(() => 'stored-id');
         const result = sharedIdSystemSubmodule.getId(config, undefined, 'stored-id', storage);
         expect(result.id).to.equal('stored-id');
-        sinon.assert.calledOnce(storage.touch);
+        sinon.assert.calledOnce(storage.manage);
         sinon.assert.notCalled(storage.set);
+        sinon.assert.notCalled(storage.touch);
       });
 
       it('should let the User ID module store a newly minted id before the pixel', function () {
         const storage = storageHolding(() => undefined);
         sharedIdSystemSubmodule.getId(config, undefined, undefined, storage);
+        sinon.assert.notCalled(storage.manage);
         sinon.assert.notCalled(storage.touch);
       });
     });
@@ -246,7 +281,7 @@ describe('SharedId System', function () {
       });
 
       function storageHolding(value) {
-        return { get: sinon.stub().returns(value), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+        return { get: sinon.stub().returns(value), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
       }
 
       it('should return only a callback, not the id', function () {
@@ -278,7 +313,7 @@ describe('SharedId System', function () {
         const storage = storageHolding(undefined);
         sharedIdSystemSubmodule.extendId(config, undefined, 'TestId', storage).callback(callbackSpy);
         pixelDone();
-        clock.tick(0);
+        clock.tick(50);
         sinon.assert.calledOnce(callbackSpy);
         sinon.assert.calledWithExactly(callbackSpy);
         sinon.assert.calledOnce(storage.remove);

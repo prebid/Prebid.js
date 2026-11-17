@@ -30,7 +30,7 @@ export type SharedIdParams = {
   create?: boolean;
   /**
    * If true, the the expiration time is automatically extended whenever the script is executed even if the id exists already.
-   * Default is true. If false, then the id expires from the time it was initially created.
+   * Default is false: the id expires from the time it was initially created.
    */
   extend?: boolean;
   /**
@@ -82,16 +82,12 @@ function readValue(name, type) {
   }
 }
 
-// How long to wait before reading storage a second time, when the first read after the pixel still shows the id
-// this page view minted.
+// How long to wait before reading storage a second time, when the first read after the pixel shows no change yet.
 const PIXEL_RECHECK_MS = 50;
 
 /**
- * Fire the pixel, then make the ID follow what storage holds once the endpoint has had the chance to set or delete
- * the cookie.
- * @param pubcid the ID this page view already holds: the one getId minted or found, or extendId's stored ID
- * @param config the submodule configuration
- * @param handle the getId / extendId invocation's handle
+ * Fire the pixel, then make the ID follow what the endpoint left in storage.
+ * @param pubcid the ID this page view already holds
  */
 function pixelSyncCallback(pubcid, config, handle: IdHandle): ProviderResponse['callback'] {
   return function (setId) {
@@ -101,21 +97,21 @@ function pixelSyncCallback(pubcid, config, handle: IdHandle): ProviderResponse['
         setId();
         return;
       }
-      // Storage is read on the next task, not in the pixel's load handler: in some WebKit builds the response's
-      // Set-Cookie is not yet visible in document.cookie at the load event (see #16158). If storage still holds
-      // `pubcid` then, it is read once more after a short delay.
-      // Whatever the endpoint left is only touched, never written again: that would turn its cookie into a
-      // script-set one (capped at 7 days in Safari).
+      // In some WebKit builds the response's Set-Cookie is not yet visible in document.cookie at the load event
+      // (see #16158): read on the next task, and once more a little later if nothing seems to have changed.
+      // What the endpoint left is never written again from script: that would make its cookie a script-set one.
       const read = (recheck) => {
         const storedId = handle.get();
-        if (recheck && storedId && storedId === pubcid) {
+        if (recheck && (!storedId || storedId === pubcid)) {
           setTimeout(() => read(false), PIXEL_RECHECK_MS);
         } else if (storedId) {
           handle.touch();
           setId(storedId);
-        } else {
+        } else if (pubcid) {
           // the endpoint deleted the cookie, for example for Global Privacy Control or denied consent
           handle.remove();
+          setId();
+        } else {
           setId();
         }
       };
@@ -212,8 +208,8 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     }
 
     if (pixelUrl && storedId && config.storage) {
-      // the endpoint may have set the stored ID: keep it in memory without writing it again from script
-      handle.touch();
+      // the endpoint may have set the stored ID: don't have it written again from script
+      handle.manage();
     }
     return { id: newId, callback: getIdCallback(newId, config, handle) };
   },

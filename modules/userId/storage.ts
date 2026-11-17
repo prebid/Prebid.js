@@ -43,7 +43,6 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
   if (valueStr != null) {
     mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
   }
-  // an expiry with no value next to it would make the value read back as the string "null"
   if (valueStr != null || mgr.getDataFromLocalStorage(storage.name) != null) {
     mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
   }
@@ -247,20 +246,22 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
       // An invocation's callback can complete after a refresh has started a newer one, or after the ID system was
       // reinitialized; its result is stale then, so it must not overwrite storage or the decoded ID.
       const isStale = () => submodule.handle !== handle || !isCurrent();
-      const isOpen = () => !handle.closed && !isStale();
       function write<A extends any[]>(op: string, fn: (...args: A) => void) {
         return (...args: A) => {
-          if (!isOpen()) {
-            logWarn(`${MODULE_NAME}: ${name()} - ignoring storage ${op}() after its getId / extendId completed or was superseded`);
-            return;
+          if (isStale()) {
+            logInfo(`${MODULE_NAME}: ${name()} - ignoring storage ${op}() from an invocation superseded by a refresh`);
+          } else if (handle.closed) {
+            logWarn(`${MODULE_NAME}: ${name()} - ignoring storage ${op}() after its getId / extendId completed`);
+          } else {
+            handle.managed = true;
+            if (hasStorage()) fn(...args);
           }
-          handle.managed = true;
-          if (hasStorage()) fn(...args);
         };
       }
       const handle: InvocationHandle = {
         view: {
           get: () => read(),
+          manage: write('manage', () => undefined),
           set: write('set', (value: SerializableId) => {
             if (value == null) {
               logError(`${MODULE_NAME}: ${name()} - set() needs a value; use remove() to delete it`);

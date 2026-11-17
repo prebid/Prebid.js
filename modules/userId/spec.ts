@@ -96,7 +96,7 @@ export type ProviderResponse = {
     /**
      * @deprecated use the `handle` passed to getId / extendId
      */
-    getStoredValue: () => SerializableId | undefined
+    getStoredValue: (key?: string) => SerializableId | undefined
   ) => void;
 };
 
@@ -105,14 +105,19 @@ export type ProviderResponse = {
  * without a callback, or when its callback first calls `setId`.
  *
  * By default the User ID module stores the ID data a submodule reports (as `id`, or through the callback's
- * `setId`), and reporting none keeps the current ID. A submodule that calls `set`, `touch` or `remove` manages
- * storage itself instead: the ID data it reports then only updates the ID in memory, and reporting none clears it.
+ * `setId`), and reporting none keeps the current ID. A submodule that calls `manage`, `set`, `touch` or `remove`
+ * manages storage itself instead: the ID data it reports then only updates the ID in memory, and reporting none
+ * clears it.
  */
 export type IdHandle = {
   /**
    * The stored ID data, if any.
    */
   get(): SerializableId | undefined;
+  /**
+   * Manage storage for this invocation without writing anything (yet).
+   */
+  manage(): void;
   /**
    * Store ID data, as the User ID module does with the ID data a submodule reports.
    */
@@ -191,8 +196,8 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
    *  - the publisher explicitly asked for a refresh using refreshUserIds.
    * @param config Configuration for your module as provided by the publisher
    * @param consentData available consent data (when the relevant modules are present)
-   * @param storedId Your previously stored ID data, if any, as was returned by getId or extendId
-   * @param handle Storage and ID access for this invocation
+   * @param storedId Your previously stored ID data, if any
+   * @param handle Storage access for this invocation
    */
   getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId: SerializableId | undefined, handle: IdHandle) => ProviderResponse;
   /**

@@ -68,7 +68,7 @@ import {
 
 // export so that consumers can `import {type UserIdConfig} from 'prebid.js/modules/userId'`
 export { type UserIdConfig } from './spec.ts';
-export { COOKIE_SUFFIXES, coreStorage, getConsentHash, HTML5_SUFFIXES, setStoredValue } from './storage.ts';
+export { COOKIE_SUFFIXES, coreStorage, deleteStoredValue, getConsentHash, HTML5_SUFFIXES, setStoredValue } from './storage.ts';
 
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const dep = {
@@ -155,7 +155,7 @@ export function setSubmoduleRegistry(submodules) {
   updateEIDConfig(submodules);
 }
 
-function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
+function processSubmoduleCallbacks(submodules, cb) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
@@ -176,7 +176,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
       }
     }
     try {
-      submodule.callback(setId, handle.view.get);
+      submodule.callback(setId, (key?: string) => submodule.store.read(key));
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
       handle.close();
@@ -436,7 +436,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     .then(checkRefs(() => {
       const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
       if (modWithCb.length) {
-        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
+        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
       }
     }));
 
@@ -488,7 +488,7 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
             return sm.callback != null;
           });
           if (cbModules.length) {
-            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
+            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
           }
         }));
       chain.then(settleRefresh, settleRefresh);
