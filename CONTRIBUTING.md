@@ -22,14 +22,14 @@ If you have a documentation issue or pull request, please open a ticket or PR in
 ## Writing Tests
 
 Prebid uses [Mocha](http://mochajs.org/) and [Chai](http://chaijs.com/) for unit tests. [Sinon](http://sinonjs.org/)
-provides mocks, stubs, and spies. [Karma](https://karma-runner.github.io/1.0/index.html) runs the tests and generates
-code coverage reports at `build/coverage/lcov/lcov-report/index.html`.
+provides mocks, stubs, and spies. [Vitest](https://vitest.dev/guide/browser/) runs the tests in real browsers and
+generates code coverage reports (lcov) under `build/coverage/chunks`.
 
 Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are located in [test/spec/modules](test/spec/modules).
 They can be run with the following commands:
 
 - `gulp test` - run the test suite once (`npm test` is aliased to call `gulp test`)
-- `gulp serve` - run the test suite once, but re-run it whenever a file in the `src` or `test` directory is modified
+- `gulp serve-and-test` - run the tests, and re-run them whenever a file in the `src` or `test` directory is modified
 
 Before a Pull Request will be considered for merge:
 

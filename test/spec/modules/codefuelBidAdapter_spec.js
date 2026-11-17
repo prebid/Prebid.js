@@ -149,6 +149,11 @@ describe('Codefuel Adapter', function () {
         refererInfo: {
           page: 'https://example.com/',
           domain: 'example.com'
+        },
+        ortb2: {
+          device: {
+            ua: USER_AGENT
+          }
         }
       };
 
@@ -268,12 +273,17 @@ describe('Codefuel Adapter', function () {
             ad: '<div>ad</div>',
             width: 300,
             height: 250,
-            meta: { 'advertiserDomains': [] }
+            meta: { 'advertiserDomains': ['example.com'] }
           }
         ];
 
         const res = spec.interpretResponse(serverResponse, request);
         expect(res).to.deep.equal(expectedRes);
+      });
+
+      it('should return empty array for a no-bid response without seatbid', function () {
+        const request = { bids: [{ ...commonBidRequest, ...displayBidRequestParams }] };
+        expect(spec.interpretResponse({ body: { id: 'abc', cur: 'USD' } }, request)).to.deep.equal([]);
       });
     });
   });

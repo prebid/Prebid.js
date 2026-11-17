@@ -489,8 +489,8 @@ describe('yieldlabBidAdapter (ORTB)', () => {
     });
   });
 
-  describe('interpretResponse (native)', () => {
-    if (FEATURES.NATIVE) {
+  if (FEATURES.NATIVE) {
+    describe('interpretResponse (native)', () => {
       it('sends the native request and keeps the assets and trackers it gets back', () => {
         const bid = NATIVE_REQUEST();
         const req = spec.buildRequests([bid], { auctionId: 'a' });
@@ -530,11 +530,11 @@ describe('yieldlabBidAdapter (ORTB)', () => {
         expect(nativeResponse.link?.url).to.equal('https://www.yieldlab.de');
         expect(isNativeOpenRTBBidValid(nativeResponse, bid.nativeOrtbRequest)).to.equal(true);
       });
-    }
-  });
+    });
+  }
 
-  describe('native asset-id contract with the adserver', () => {
-    if (FEATURES.NATIVE) {
+  if (FEATURES.NATIVE) {
+    describe('native asset-id contract with the adserver', () => {
       // The endpoint answers in the asset ids the request sent and the adapter passes
       // them through. Prebid validates and renders by id, so a mismatch drops every native bid.
       const nativeBid = (nativeCfg) => {
@@ -594,8 +594,8 @@ describe('yieldlabBidAdapter (ORTB)', () => {
         expect(bidResponse.mediaType).to.equal('native');
         expect(isNativeOpenRTBBidValid(bidResponse.native.ortb, bid.nativeOrtbRequest)).to.equal(true);
       });
-    }
-  });
+    });
+  }
 
   describe('getUserSyncs', () => {
     const syncOptions = { iframeEnabled: true, pixelEnabled: false };

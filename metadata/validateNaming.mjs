@@ -39,8 +39,12 @@ function conflictDetector(metadata) {
   };
 }
 
+// prebidServer registers as a bidder, but it is the s2sConfig adapter; its name is part of the public
+// config (`s2sConfig.adapter: 'prebidServer'`) and can't change
+const NAMING_EXCEPTIONS = new Set(['prebidServer']);
+
 function checkName({ componentType, componentName }) {
-  if (componentType === 'bidder' && !/^[a-z0-9_]+$/.test(componentName)) {
+  if (componentType === 'bidder' && !NAMING_EXCEPTIONS.has(componentName) && !/^[a-z0-9_]+$/.test(componentName)) {
     return 'contains uppercase or non-alphanumeric characters';
   }
 }

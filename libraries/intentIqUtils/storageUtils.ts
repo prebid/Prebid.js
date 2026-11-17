@@ -34,6 +34,18 @@ export function isPartnerDataKey(key: string): boolean {
 }
 
 /**
+ * Detects first-party keys: `_iiq_fdata`, or `_iiq_fdata_p_<partnerId>` when siloEnabled.
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function isFirstPartyKey(key: string): boolean {
+  if (key === FIRST_PARTY_KEY) return true;
+  if (typeof key !== 'string' || !key.startsWith(`${FIRST_PARTY_KEY}_p_`)) return false;
+  const partnerId = key.slice(`${FIRST_PARTY_KEY}_p_`.length);
+  return !!partnerId && !Number.isNaN(Number(partnerId));
+}
+
+/**
  * Read data from local storage or cookie based on allowed storage types.
  * @param {string} key - The key to read data from.
  * @param {Array} allowedStorage - Array of allowed storage types ('html5' or 'cookie').
@@ -73,10 +85,10 @@ export function storeData(
   try {
     if (firstPartyData?.isOptedOut) {
       // Limit what reaches device storage when the user is opted out.
-      // - FIRST_PARTY_KEY: drop identifiers (pcid, pcidDate, pid, abTestUuid). Keep gdprString/isOptedOut/sCal etc.
+      // - FIRST_PARTY_KEY (incl. siloed _iiq_fdata_p_<partnerId>): drop identifiers (pcid, pcidDate, pid, abTestUuid). Keep gdprString/isOptedOut/sCal etc.
       // - Partner data (_iiq_fdata_<partnerId>): persist only terminationCause.
       // - Anything else: do not persist.
-      if (key === FIRST_PARTY_KEY) {
+      if (isFirstPartyKey(key)) {
         const parsed =
           typeof value === 'string'
             ? tryParse<FirstPartyData>(value)

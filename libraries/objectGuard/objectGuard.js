@@ -9,6 +9,36 @@ import { deepEqual, logWarn } from '../../src/utils.js';
  * @property {function(): void} verify a function that checks for and rolls back disallowed changes to the guarded object
  */
 
+const TARGET = Symbol('TARGET');
+
+/**
+ * The object behind a guard, or undefined if `value` is not one.
+ */
+export function targetOf(value) {
+  return value?.[TARGET];
+}
+
+/**
+ * Plain copy of what a guarded view exposes.
+ */
+function copyView(view, copies = new Map()) {
+  if (view == null || typeof view !== 'object') return view;
+  if (copies.has(view)) return copies.get(view);
+  const isArray = Array.isArray(view);
+  const copy = isArray ? [] : {};
+  copies.set(view, copy);
+  Object.entries(view).forEach(([k, v]) => {
+    if (!isArray && v === undefined) return;
+    if (k === '__proto__') {
+      // assigning it would replace the copy's prototype
+      Object.defineProperty(copy, k, { value: copyView(v, copies), writable: true, enumerable: true, configurable: true });
+    } else {
+      copy[k] = copyView(v, copies);
+    }
+  });
+  return copy;
+}
+
 /**
  * Create a factory function for object guards using the given rules.
  *
@@ -139,8 +169,6 @@ export function objectGuard(rules) {
     return true;
   }
 
-  const TARGET = Symbol('TARGET');
-
   function mkGuard(obj, tree, final, applies, cache = new WeakMap()) {
     // If this object is already proxied, return the cached proxy
     if (cache.has(obj)) {
@@ -157,7 +185,10 @@ export function objectGuard(rules) {
      * where the `set` proxy trap would get an already proxied object as argument.
      */
     function deref(obj, visited = new Set()) {
-      if (cache.has(obj?.[TARGET])) return obj[TARGET];
+      const target = targetOf(obj);
+      if (cache.has(target)) return target;
+      // another guard's view: its target may hold data this guard should not see, and is shared with its other users
+      if (target != null) return copyView(obj);
       if (obj == null || typeof obj !== 'object') return obj;
       if (visited.has(obj)) return obj;
       visited.add(obj);

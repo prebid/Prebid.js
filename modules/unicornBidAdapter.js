@@ -1,3 +1,4 @@
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
 import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -12,7 +13,7 @@ import { getBoundingBox, getViewportOffset, getViewability } from '../libraries/
  */
 
 const BIDDER_CODE = 'unicorn';
-const UNICORN_ENDPOINT = 'https://rtbf.uncn.jp/pb/0/bid.json';
+const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const ACP_ID = 2416; // Google Additional Consent provider ID
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
@@ -68,7 +69,7 @@ function fixedOrSticky(el) {
   let fixed = false;
   let sticky = false;
   while (node && node.nodeType === 1) {
-    const position = win.getComputedStyle(node).position;
+    const position = getElementStyle(node, win).position;
     if (position === 'fixed') fixed = true;
     else if (position === 'sticky') sticky = true;
     node = node.parentElement;

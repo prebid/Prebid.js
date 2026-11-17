@@ -22,13 +22,15 @@ describe('delayIfPrerendering', () => {
   });
 
   describe('when page is prerendering', () => {
+    let addedPrerendering = false;
     before(() => {
       if (!('prerendering' in document)) {
         document.prerendering = null;
-        after(() => {
-          delete document.prerendering;
-        });
+        addedPrerendering = true;
       }
+    });
+    after(() => {
+      if (addedPrerendering) delete document.prerendering;
     });
     beforeEach(() => {
       sandbox.stub(document, 'prerendering').get(() => true);

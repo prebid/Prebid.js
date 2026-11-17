@@ -2375,14 +2375,16 @@ describe('targeting tests', function () {
     let sandbox,
       apnTagStub;
 
+    let restoreApntag;
     before(() => {
       if (window.apntag?.setKeywords == null) {
         const orig = window.apntag;
         window.apntag = { setKeywords: () => {} };
-        after(() => {
-          window.apntag = orig;
-        });
+        restoreApntag = () => { window.apntag = orig; };
       }
+    });
+    after(() => {
+      restoreApntag?.();
     });
 
     beforeEach(function() {
