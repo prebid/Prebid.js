@@ -5032,13 +5032,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "shinez",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "onebidtech",
       "aliasOf": null,
       "gvlid": 149,
