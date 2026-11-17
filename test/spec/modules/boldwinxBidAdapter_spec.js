@@ -333,6 +333,8 @@ describe('boldwinx bid adapter', function () {
             [{ adm: '<?xml version="1.0"?><VAST version="3.0"></VAST>' }, VIDEO],
             [{ adm: '<!-- served by x --><VAST version="3.0"></VAST>' }, VIDEO],
             [{ adm: '<!-- served by x --><div>ad</div>', w: 300, h: 250 }, BANNER],
+            [{ adm: '<!-- a --> <!-- b -->\n<VAST version="3.0"></VAST>' }, VIDEO],
+            [{ adm: '<!-- never closed <VAST version="3.0"></VAST>', w: 300, h: 250 }, BANNER],
             [{ nurl: 'https://cdn.example.com/vast.xml' }, VIDEO],
             [{ adm: NATIVE_ADM }, NATIVE],
             [{ adm: '<div>ad</div>', w: 300, h: 250 }, BANNER],

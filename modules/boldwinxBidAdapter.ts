@@ -39,13 +39,23 @@ function isValidEpid(epid: unknown): boolean {
   return (typeof epid === 'string' && epid.length > 0) || (typeof epid === 'number' && Number.isFinite(epid));
 }
 
+function skipLeadingXmlComments(markup: string): string {
+  let rest = markup;
+  while (rest.startsWith('<!--')) {
+    const end = rest.indexOf('-->', 4);
+    if (end === -1) return rest;
+    rest = rest.slice(end + 3).trimStart();
+  }
+  return rest;
+}
+
 // Fallback for responses without ORTB 2.6 `mtype`: the converter throws away such bids unless
 // the media type is known, so take it from the impression and, for multi-format ones, the markup.
 function guessMediaType(bid, imp) {
   const offered = SUPPORTED_MEDIA_TYPES.filter((mediaType) => imp?.[mediaType] != null);
   if (offered.length === 1) return offered[0];
   const adm = isStr(bid.adm) ? bid.adm.trim() : '';
-  if (offered.includes(VIDEO) && (/^<\?xml|^(?:<!--[\s\S]*?-->\s*)*<VAST/i.test(adm) || (adm === '' && isStr(bid.nurl)))) return VIDEO;
+  if (offered.includes(VIDEO) && (/^<\?xml|^<VAST/i.test(skipLeadingXmlComments(adm)) || (adm === '' && isStr(bid.nurl)))) return VIDEO;
   if (offered.includes(NATIVE) && (adm.startsWith('{') || isPlainObject(bid.adm))) return NATIVE;
   if (offered.includes(BANNER)) return BANNER;
   return offered[0];
