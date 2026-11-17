@@ -641,6 +641,17 @@ describe('secureCreatives', () => {
         });
       });
 
+      it('should wait for a replacement returned as a promise before replying', () => {
+        configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => new Promise((resolve) => setTimeout(() => resolve(replacement))) } });
+        return sendMessage({ message: 'Prebid Request' }).then((ev) => {
+          sinon.assert.calledOnce(ev.source.postMessage);
+          sinon.assert.match(JSON.parse(ev.source.postMessage.args[0][0]), {
+            adId: bidId,
+            ad: 'replacement-ad'
+          });
+        });
+      });
+
       it('should attribute later events from the creative to the replacement', () => {
         return sendMessage({ message: 'Prebid Request' }).then(() => sendMessage({
           message: 'Prebid Event',

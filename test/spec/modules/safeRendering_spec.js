@@ -96,8 +96,8 @@ describe('safeRendering', () => {
 
       sandbox.spy(events, 'emit');
 
-      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
-        if (msg?.adId === bid.adId) {
+      sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => {
+        if (adId === bid.adId) {
           return bid;
         }
       });
@@ -160,6 +160,32 @@ describe('safeRendering', () => {
       } finally {
         document.body.removeChild(iframe);
       }
+    });
+
+    describe('when the bid has expired and auctionOptions.replaceExpiredBid is set', () => {
+      let replacement;
+      beforeEach(() => {
+        Object.assign(bid, { mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
+        replacement = { adId: 'replacement-adid', mediaType: 'banner', element: bid.element, responseTimestamp: Date.now(), ttl: 300 };
+        auctionManager.findBidByAdId.callsFake((adId) => [bid, replacement].find((b) => b.adId === adId));
+      });
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      Object.entries({
+        'synchronously': () => replacement,
+        'as a promise': () => Promise.resolve(replacement),
+      }).forEach(([t, replaceExpiredBid]) => {
+        it(`renders the replacement returned ${t}, and authorizes its frame`, async () => {
+          config.setConfig({ auctionOptions: { replaceExpiredBid } });
+          renderBid(bidHandle);
+          await new Promise((resolve) => setTimeout(resolve));
+          const { adId, token } = getRenderArgs(bid.element);
+          expect(adId).to.eql(replacement.adId);
+          expect(validateToken(replacement, token)).to.be.true;
+        });
+      });
     });
 
     describe('when the element is not in a descendant of Prebid\'s window', () => {
@@ -290,7 +316,7 @@ describe('safeRendering', () => {
       }
     }).forEach(([description, bid]) => {
       it(`refuses a bid with ${description}`, () => {
-        secureCreatives.getBidForMessage.callsFake((req) => req?.adId === bid?.adId && bid);
+        auctionManager.findBidByAdId.callsFake((adId) => adId === bid?.adId ? bid : undefined);
         sandbox.spy(utils, 'logError');
         sandbox.spy(document, 'createElement');
         renderBid(bid);
@@ -411,8 +437,7 @@ describe('safeRendering', () => {
         Object.assign(bid, { ad: '<div></div>', responseTimestamp: Date.now(), ttl: 300 });
         otherBid = { adId: 'other-adid', status: BID_STATUS.RENDERED };
         const findBid = (adId) => [bid, otherBid].find(b => b.adId === adId);
-        sandbox.stub(auctionManager, 'findBidByAdId').callsFake(findBid);
-        secureCreatives.getBidForMessage.callsFake((msg) => findBid(msg?.adId));
+        auctionManager.findBidByAdId.callsFake(findBid);
       });
 
       function waitForEvent(event, bid) {

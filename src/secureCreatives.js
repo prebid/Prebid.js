@@ -91,7 +91,7 @@ export function processMessage(data, bid, replier) {
 export function receiveMessage(ev, cb) {
   const data = parseMessage(ev);
   if (data && isMessageAllowed(ev, data)) {
-    getBidToRender(data.adId, isRenderRequest(data)).then((bid) => {
+    getBidToRender(data.adId, isRenderRequest(data), (bid) => {
       processMessage(data, bid, getReplier(ev));
       cb && cb();
     });

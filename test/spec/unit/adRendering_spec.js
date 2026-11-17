@@ -304,10 +304,14 @@ describe('adRendering', () => {
       const settled = () => new Promise((resolve) => setTimeout(resolve));
       let expired, replacement, replaceExpiredBid;
 
-      function getBid(...args) {
+      function getBid(adId, forRender = true) {
         let result;
-        getBidToRender(...args).then((bid) => { result = bid; });
+        getBidToRender(adId, forRender, (bid) => { result = bid; });
         return result;
+      }
+
+      function getBidAsync(adId, forRender = true) {
+        return new Promise((resolve) => getBidToRender(adId, forRender, resolve));
       }
 
       beforeEach(() => {
@@ -356,10 +360,24 @@ describe('adRendering', () => {
         });
 
         it('should wait for a replacement returned as a promise', async () => {
-          replaceExpiredBid.callsFake(() => new Promise((resolve) => setTimeout(() => resolve(replacement))));
-          const bid = getBidToRender('expired');
+          let resolveReplacement;
+          replaceExpiredBid.callsFake(() => new Promise((resolve) => { resolveReplacement = resolve; }));
+          const callback = sinon.stub();
+          getBidToRender('expired', true, callback);
           await settled();
-          expect(await bid).to.equal(replacement);
+          sinon.assert.notCalled(callback);
+          resolveReplacement(replacement);
+          await settled();
+          sinon.assert.calledOnceWithExactly(callback, replacement);
+        });
+
+        it('should still run the other waiting callbacks if one throws', async () => {
+          replaceExpiredBid.callsFake(() => new Promise((resolve) => setTimeout(() => resolve(replacement))));
+          const callback = sinon.stub();
+          getBidToRender('expired', true, () => { throw new Error(); });
+          getBidToRender('expired', true, callback);
+          await settled();
+          sinon.assert.calledWith(callback, replacement);
         });
 
         it('should emit EXPIRED_RENDER for the expired bid', () => {
@@ -376,7 +394,7 @@ describe('adRendering', () => {
 
         it('should ask for it only once while a replacement is pending', async () => {
           replaceExpiredBid.callsFake(() => new Promise((resolve) => setTimeout(() => resolve(replacement))));
-          const bids = await Promise.all([getBidToRender('expired'), getBidToRender('expired', false)]);
+          const bids = await Promise.all([getBidAsync('expired'), getBidAsync('expired', false)]);
           expect(bids).to.eql([replacement, replacement]);
           sinon.assert.calledOnce(replaceExpiredBid);
         });
@@ -396,17 +414,17 @@ describe('adRendering', () => {
             beforeEach(setup);
 
             it('should return the expired bid', async () => {
-              expect(await getBidToRender('expired')).to.equal(expired);
+              expect(await getBidAsync('expired')).to.equal(expired);
             });
 
             it('should leave EXPIRED_RENDER to the usual rendering logic', async () => {
-              await getBidToRender('expired');
+              await getBidAsync('expired');
               sinon.assert.neverCalledWith(events.emit, EVENTS.EXPIRED_RENDER);
             });
 
             it('should not ask again', async () => {
-              await getBidToRender('expired');
-              await getBidToRender('expired');
+              await getBidAsync('expired');
+              await getBidAsync('expired');
               sinon.assert.calledOnce(replaceExpiredBid);
             });
           });

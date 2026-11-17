@@ -4194,11 +4194,12 @@ describe('Unit: Prebid Module', function () {
 
     describe('when invoked with the adId of an expired bid that was replaced', () => {
       beforeEach(() => {
-        const expired = { adId: 'expired', responseTimestamp: Date.now() - 10000, ttl: 1 };
-        Object.assign(bid, { responseTimestamp: Date.now(), ttl: 300 });
+        const expired = { adId: 'expired' };
+        // isBidNotExpired is stubbed to always return true for this whole spec
+        bidExpiryStub.callsFake((b) => b !== expired);
         sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
         configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => bid } });
-        getBidToRender('expired');
+        getBidToRender('expired', true, () => {});
       });
       afterEach(() => {
         configObj.resetConfig();

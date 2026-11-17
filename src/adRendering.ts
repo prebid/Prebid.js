@@ -26,7 +26,6 @@ import type { Bid } from "./bidfactory.ts";
 import type { SafeRendererConfig } from "./adUnits.ts";
 import { yieldsIf } from "./utils/yield.ts";
 import { PbPromise } from "./utils/promise.ts";
-import { GreedyPromise } from "../libraries/greedy/greedyPromise.js";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
@@ -61,27 +60,44 @@ declare module './events' {
   }
 }
 
-/**
- * Maps an expired bid to (a promise for) the bid that is rendered in its place - itself, if it was not replaced.
- * See `auctionOptions.replaceExpiredBid`.
- */
-const REPLACEMENTS = new WeakMap<Bid, Promise<Bid>>();
+type Replacement = {
+  /**
+   * The bid that is rendered in place of the expired one - itself, if it was not replaced. Set once the replacement is known.
+   */
+  bid?: Bid;
+  /**
+   * Callbacks waiting on the replacement; cleared once it is known.
+   */
+  waiting?: ((bid: Bid) => void)[];
+}
 
 /**
- * Look up the bid that should handle a request about `adId`, coming from a creative or `renderAd`.
+ * Tracks expired bids that have been passed to `auctionOptions.replaceExpiredBid`.
+ */
+const REPLACEMENTS = new WeakMap<Bid, Replacement>();
+
+/**
+ * Look up the bid that should handle a request about `adId`, coming from a creative, `renderAd` or `renderBid`,
+ * and pass it to `callback`.
  *
  * This may not be the bid identified by `adId`: if that has expired, and `auctionOptions.replaceExpiredBid` is set,
  * the first request that starts rendering (`forRender = true`) asks for a replacement, and all requests about that `adId`
  * resolve to it from then on - the creative only knows about the ad ID it was given by the ad server.
  *
- * The returned promise resolves synchronously when possible; `legacyRender` relies on that to use `document.write`.
+ * `callback` runs synchronously unless it has to wait for a replacement that is not available yet;
+ * `legacyRender` relies on that to use `document.write`.
  */
-export const getBidToRender = hook('sync', function (adId: string, forRender = true): Promise<Bid | undefined> {
+export const getBidToRender = hook('sync', function (adId: string, forRender: boolean, callback: (bid: Bid | undefined) => void) {
   const bid = auctionManager.findBidByAdId(adId);
-  if (bid != null && !REPLACEMENTS.has(bid) && forRender && canReplaceExpiredBid(bid)) {
-    REPLACEMENTS.set(bid, replaceExpiredBid(bid));
+  if (bid != null && forRender && !REPLACEMENTS.has(bid) && canReplaceExpiredBid(bid)) {
+    replaceExpiredBid(bid);
   }
-  return REPLACEMENTS.get(bid) ?? GreedyPromise.resolve(bid);
+  const replacement = REPLACEMENTS.get(bid);
+  if (replacement?.waiting != null) {
+    replacement.waiting.push(callback);
+  } else {
+    callback(replacement?.bid ?? bid);
+  }
 });
 
 function canReplaceExpiredBid(bid: Bid) {
@@ -104,24 +120,52 @@ function isValidReplacement(expiredBid: Bid, replacement: Bid) {
     bidFilters.isUnusedBid(replacement);
 }
 
-function replaceExpiredBid(expiredBid: Bid): Promise<Bid> {
+function replaceExpiredBid(expiredBid: Bid) {
   const { adId } = expiredBid;
-  return new GreedyPromise((resolve) => resolve(config.getConfig('auctionOptions').replaceExpiredBid(expiredBid)))
-    .catch((e) => {
-      logError(`Could not replace expired ad id ${adId}`, e);
-    })
-    .then((replacement) => {
-      if (isValidReplacement(expiredBid, replacement)) {
-        logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
-        events.emit(EXPIRED_RENDER, expiredBid);
-        return replacement;
-      }
+  const state: Replacement = { waiting: [] };
+  REPLACEMENTS.set(expiredBid, state);
+
+  function fail(e) {
+    logError(`Could not replace expired ad id ${adId}`, e);
+    resolve(null);
+  }
+
+  function resolve(replacement) {
+    if (state.waiting == null) return;
+    if (isValidReplacement(expiredBid, replacement)) {
+      logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
+      events.emit(EXPIRED_RENDER, expiredBid);
+      state.bid = replacement;
+    } else {
       if (replacement != null) {
         logWarn(`Replacement for expired ad id ${adId} is not usable, ignoring it`);
       }
       // the expired bid is rendered as usual, which emits EXPIRED_RENDER and honors `suppressExpiredRender`
-      return expiredBid;
-    }) as Promise<Bid>;
+      state.bid = expiredBid;
+    }
+    const { waiting } = state;
+    delete state.waiting;
+    waiting.forEach((callback) => {
+      try {
+        callback(state.bid);
+      } catch (e) {
+        logError(e);
+      }
+    });
+  }
+
+  let result;
+  try {
+    result = config.getConfig('auctionOptions').replaceExpiredBid(expiredBid);
+  } catch (e) {
+    fail(e);
+    return;
+  }
+  if (isFn(result?.then)) {
+    result.then(resolve, fail);
+  } else {
+    resolve(result);
+  }
 }
 
 export const markWinningBid = hook('sync', function (bid) {
@@ -624,10 +668,14 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId).then((bidResponse) => {
+      getBidToRender(adId, true, (bidResponse) => {
         bid = bidResponse;
-        handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
-      }).catch((e) => fail(EXCEPTION, e?.message));
+        try {
+          handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+        } catch (e) {
+          fail(EXCEPTION, e.message);
+        }
+      });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);

@@ -156,7 +156,7 @@ export interface AuctionOptionsConfig {
    * Returning a promise delays rendering until it resolves; with `legacyRender`, which writes the creative using
    * `document.write`, return the replacement synchronously instead.
    */
-  replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | Promise<Bid | null | undefined>;
+  replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | PromiseLike<Bid | null | undefined>;
 
   /**
    * If true, use legacy rendering logic.

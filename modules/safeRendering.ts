@@ -8,7 +8,7 @@ import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
 import { getBidForMessage, isMessageAllowed, parseMessage, processMessage } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
-import { emitAdRenderFail, isRenderSuppressed, usesLegacyRenderer } from "../src/adRendering.ts";
+import { emitAdRenderFail, getBidToRender, isRenderSuppressed, usesLegacyRenderer } from "../src/adRendering.ts";
 import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
 
 declare module '../src/prebidGlobal.ts' {
@@ -89,67 +89,70 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, 'missing adId');
     return;
   }
-  actualBid = getBidForMessage(bid);
-  if (actualBid?.adId == null) {
-    fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`);
-    return;
-  }
-  if (usesLegacyRenderer(actualBid)) {
-    fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, 'bid has a renderer that would run outside of the ad frame');
-    return;
-  }
-  const element = getAdUnitElement(actualBid);
-  if (
-    typeof element?.appendChild !== 'function' ||
-    typeof element.ownerDocument?.createElement !== 'function'
-  ) {
-    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid has invalid .element');
-    return;
-  }
-  if (element.ownerDocument.defaultView == null) {
-    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element is not attached to any window');
-    return;
-  }
-  const doc = element.ownerDocument;
-  const parent = findDepth(doc.defaultView);
-  if (parent == null) {
-    fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element must be in a descendant of prebid\'s window');
-    return;
-  }
-  const { suppress, logReasons } = isRenderSuppressed(actualBid);
-  if (suppress) {
-    // stop early so that the element's current contents are not disturbed
-    logReasons();
-    return;
-  }
-  element.innerHTML = '';
-  try {
-    const { clickThrough: clickUrl, ...rest } = options ?? {};
-    const token = generateUUID();
-    const renderArgs = JSON.stringify({
-      ...rest,
-      adId: actualBid.adId,
-      pubUrl: window.location.origin,
-      clickUrl,
-      allowNullOrigin: true,
-      token,
-      parent,
-    }).replace(/</g, '\\u003c'); // handle HTML strings
-    const frame = createIframe(doc, {
-      // GPT's sandbox attr
-      sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
-      // data URLs set an opaque origin regardless of sandbox, keeping the frame isolated but allowing nested iframes
-      // to use a real origin (as long as allow-same-origin)
-      src: 'data:text/html;charset=utf-8,' + getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`)
-    });
-    element.appendChild(frame);
-    if (!TOKENS.has(actualBid)) {
-      TOKENS.set(actualBid, new Set());
+  // the bid may be replaced if it has expired, see `auctionOptions.replaceExpiredBid`
+  getBidToRender(bid.adId, true, (bidToRender) => {
+    actualBid = bidToRender;
+    if (actualBid?.adId == null) {
+      fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`);
+      return;
     }
-    TOKENS.get(actualBid).add(token);
-  } catch (e) {
-    fail(AD_RENDER_FAILED_REASON.EXCEPTION, e.message);
-  }
+    if (usesLegacyRenderer(actualBid)) {
+      fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, 'bid has a renderer that would run outside of the ad frame');
+      return;
+    }
+    const element = getAdUnitElement(actualBid);
+    if (
+      typeof element?.appendChild !== 'function' ||
+      typeof element.ownerDocument?.createElement !== 'function'
+    ) {
+      fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid has invalid .element');
+      return;
+    }
+    if (element.ownerDocument.defaultView == null) {
+      fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element is not attached to any window');
+      return;
+    }
+    const doc = element.ownerDocument;
+    const parent = findDepth(doc.defaultView);
+    if (parent == null) {
+      fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element must be in a descendant of prebid\'s window');
+      return;
+    }
+    const { suppress, logReasons } = isRenderSuppressed(actualBid);
+    if (suppress) {
+      // stop early so that the element's current contents are not disturbed
+      logReasons();
+      return;
+    }
+    element.innerHTML = '';
+    try {
+      const { clickThrough: clickUrl, ...rest } = options ?? {};
+      const token = generateUUID();
+      const renderArgs = JSON.stringify({
+        ...rest,
+        adId: actualBid.adId,
+        pubUrl: window.location.origin,
+        clickUrl,
+        allowNullOrigin: true,
+        token,
+        parent,
+      }).replace(/</g, '\\u003c'); // handle HTML strings
+      const frame = createIframe(doc, {
+        // GPT's sandbox attr
+        sandbox: 'allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation',
+        // data URLs set an opaque origin regardless of sandbox, keeping the frame isolated but allowing nested iframes
+        // to use a real origin (as long as allow-same-origin)
+        src: 'data:text/html;charset=utf-8,' + getCreativeTag() + encodeURIComponent(`<script>window.pbRender(${renderArgs});</script>`)
+      });
+      element.appendChild(frame);
+      if (!TOKENS.has(actualBid)) {
+        TOKENS.set(actualBid, new Set());
+      }
+      TOKENS.get(actualBid).add(token);
+    } catch (e) {
+      fail(AD_RENDER_FAILED_REASON.EXCEPTION, e.message);
+    }
+  });
 }
 
 addApiMethod('renderBid', renderBid);
