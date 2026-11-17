@@ -277,6 +277,34 @@ describe('The video cache', function () {
     });
 
     if (FEATURES.VIDEO) {
+      it('dispatches zero-timeout batches synchronously', () => {
+        const mockTimeout = sinon.stub();
+        const stubCache = sinon.stub();
+        const afterBidAdded = sinon.stub();
+
+        config.setConfig({
+          cache: {
+            url: 'https://test.cache.url/endpoint',
+            batchSize: 1,
+            batchTimeout: 0
+          }
+        });
+
+        const batchAndStore = batchingCache(mockTimeout, stubCache);
+        const auctionInstance = {};
+        const bidResponse = {};
+        batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+
+        // batches.forEach(cache) also passes the index and array.
+        sinon.assert.calledOnce(stubCache);
+        sinon.assert.calledWith(stubCache, [{
+          auctionInstance,
+          bidResponse,
+          afterBidAdded
+        }]);
+        sinon.assert.notCalled(mockTimeout);
+      });
+
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
         const mockAfterBidAdded = function() {};
         let callback = null;
@@ -390,7 +418,7 @@ describe('The video cache', function () {
     it('should set bids\' videoCacheKey, vastUrl, and cacheUrl', () => {
       config.setConfig({
         cache: {
-          url: 'mock-cache'
+          url: 'https://mock-cache/'
         }
       });
       const el = { auctionInstance: { addBidReceived: sinon.stub() }, bidResponse: {}, afterBidAdded: sinon.stub() };
@@ -398,8 +426,8 @@ describe('The video cache', function () {
       storeBatch([el]);
       sinon.assert.match(el.bidResponse, {
         videoCacheKey: 'mock-id',
-        vastUrl: 'mock-cache?uuid=mock-id',
-        cacheUrl: 'mock-cache',
+        vastUrl: 'https://mock-cache/?uuid=mock-id',
+        cacheUrl: 'https://mock-cache/',
       });
     });
   });
@@ -418,6 +446,41 @@ describe('The video cache', function () {
       expect(bidResponse.vastXml).to.eql('mock');
     });
 
+    it('should insert trackers into the bid\'s own vastXml', () => {
+      bidResponse.vastXml = '<VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://bidder.example/own]]></Impression></InLine></Ad></VAST>';
+      bidResponse.vastTrackers = { impression: ['https://imptracker.com'] };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://bidder.example/own]]></Impression><Impression><![CDATA[https://imptracker.com]]></Impression></InLine></Ad></VAST>');
+    });
+
+    it('should insert trackers for audio bids', () => {
+      bidResponse.mediaType = 'audio';
+      bidResponse.vastTrackers = { impression: ['https://imptracker.com'] };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert vastImpUrl', () => {
+      bidResponse.vastImpUrl = 'https://imptracker.com';
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
+    });
+
+    it('should insert protocol-relative trackers', () => {
+      bidResponse.vastTrackers = { impression: ['//imptracker.com/i'] };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[//imptracker.com/i]]></Impression><Creatives/></Wrapper></Ad></VAST>');
+    });
+
+    it('should skip trackers that are not http(s) or protocol-relative urls', () => {
+      bidResponse.vastTrackers = {
+        impression: ['imptracker.com', 'javascript:alert(1)'],
+        trackingEvents: [{ event: 'start', url: 'tracker.com/start' }]
+      };
+      updateVast(bidResponse);
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>');
+    });
+
     it('should set vastXml with a wrapper around vastUrl', () => {
       updateVast(bidResponse);
       expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Creatives></Creatives></Wrapper></Ad></VAST>');
@@ -425,18 +488,18 @@ describe('The video cache', function () {
 
     it('should insert impression trackers', () => {
       bidResponse.vastTrackers = {
-        impression: ['imptracker.com']
+        impression: ['https://imptracker.com']
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
     });
 
     it('should insert multiple impression trackers', () => {
       bidResponse.vastTrackers = {
-        impression: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com']
+        impression: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'https://imptracker.com']
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression><Creatives></Creatives></Wrapper></Ad></VAST>');
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[https://imptracker.com]]></Impression><Creatives/></Wrapper></Ad></VAST>');
     });
 
     it('should include error trackers', () => {
@@ -444,16 +507,16 @@ describe('The video cache', function () {
         error: ['https://error.mydomain.com/error']
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives/></Wrapper></Ad></VAST>');
     });
 
     it('should include both impression and error trackers', () => {
       bidResponse.vastTrackers = {
-        impression: ['imptracker.com'],
+        impression: ['https://imptracker.com'],
         error: ['https://error.mydomain.com/error']
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives></Creatives></Wrapper></Ad></VAST>');
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives/></Wrapper></Ad></VAST>');
     });
 
     it('should include tracking events', () => {
@@ -469,18 +532,16 @@ describe('The video cache', function () {
 
     it('should include all tracker types together', () => {
       bidResponse.vastTrackers = {
-        impression: ['imptracker.com'],
+        impression: ['https://imptracker.com'],
         error: ['https://error.mydomain.com/error'],
         trackingEvents: [
           { event: 'start', url: 'https://tracking.mydomain.com/start' }
         ]
       };
       updateVast(bidResponse);
-      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
+      expect(bidResponse.vastXml).to.eql('<VAST version="3.0"><Ad><Wrapper><AdSystem>prebid.org wrapper</AdSystem><VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI><Impression><![CDATA[https://imptracker.com]]></Impression><Error><![CDATA[https://error.mydomain.com/error]]></Error><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[https://tracking.mydomain.com/start]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>');
     });
 
-    // The wrapper is built by string interpolation, so tracker values that contain XML syntax must
-    // not be able to close the element they are placed in.
     describe('tracker values containing XML syntax', () => {
       // ']]>' closes a CDATA section; the text after it would otherwise be parsed as markup.
       const BREAKOUT = 'https://tracker.example/a]]></Impression><Impression><![CDATA[https://evil.example/pwn';
@@ -492,25 +553,12 @@ describe('The video cache', function () {
         return doc;
       }
 
-      it('keeps an impression tracker in a single Impression element', () => {
-        bidResponse.vastTrackers = { impression: [BREAKOUT] };
-        const impressions = parsed().getElementsByTagName('Impression');
-        expect(impressions).to.have.lengthOf(1);
-        expect(impressions[0].textContent).to.equal(BREAKOUT);
-      });
-
-      it('keeps an error tracker in a single Error element', () => {
-        bidResponse.vastTrackers = { error: [BREAKOUT] };
-        const errors = parsed().getElementsByTagName('Error');
-        expect(errors).to.have.lengthOf(1);
-        expect(errors[0].textContent).to.equal(BREAKOUT);
-      });
-
-      it('keeps a tracking event url in a single Tracking element', () => {
-        bidResponse.vastTrackers = { trackingEvents: [{ event: 'start', url: BREAKOUT }] };
-        const tracking = parsed().getElementsByTagName('Tracking');
-        expect(tracking).to.have.lengthOf(1);
-        expect(tracking[0].textContent).to.equal(BREAKOUT);
+      it('does not let a tracker url add an element', () => {
+        bidResponse.vastTrackers = { impression: [BREAKOUT], error: [BREAKOUT], trackingEvents: [{ event: 'start', url: BREAKOUT }] };
+        const doc = parsed();
+        ['Impression', 'Error', 'Tracking'].forEach(tagName => {
+          expect(doc.getElementsByTagName(tagName)).to.have.lengthOf(0);
+        });
       });
 
       it('does not let a tracking event name add attributes to Tracking', () => {
@@ -950,5 +998,36 @@ describe('The getCache function', function () {
     const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
     const url = getCacheUrl(CACHE_URL, uuid);
     url.should.equal(`https://test.cache.url/endpoint?uuid=${uuid}`);
+  });
+
+  it('preserves existing query parameters and replaces an existing uuid', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1&uuid=old', 'new-id')).to.equal(
+      CACHE_URL + '?keep=1&uuid=new-id'
+    );
+  });
+
+  it('does not re-encode existing query parameters', function () {
+    expect(getCacheUrl(CACHE_URL + '?a=b%20c&flag&x=1;y=2', 'id')).to.equal(
+      CACHE_URL + '?a=b%20c&flag&x=1;y=2&uuid=id'
+    );
+  });
+
+  it('encodes cache IDs and keeps fragments after the query', function () {
+    expect(getCacheUrl(CACHE_URL + '?keep=1#fragment', 'id with&special')).to.equal(
+      CACHE_URL + '?keep=1&uuid=id%20with%26special#fragment'
+    );
+  });
+
+  it('resolves relative and protocol-relative URLs against the document', function () {
+    expect(getCacheUrl('/cache?keep=1#fragment', 'new-id')).to.equal(
+      new URL('/cache?keep=1&uuid=new-id#fragment', document.baseURI).toString()
+    );
+    expect(getCacheUrl('//cache.example/path?uuid=old', 'new-id')).to.equal(
+      new URL('//cache.example/path?uuid=new-id', document.baseURI).toString()
+    );
+  });
+
+  it('falls back to appending the uuid when the URL cannot be parsed', function () {
+    expect(getCacheUrl('http://[invalid', 'id')).to.equal('http://[invalid?uuid=id');
   });
 });

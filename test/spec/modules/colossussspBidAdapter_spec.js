@@ -390,10 +390,10 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.mediaType).to.be.a('string');
         expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
+    });
+    it('Returns an empty array if invalid response is passed', function () {
+      serverResponses = spec.interpretResponse({ body: 'invalid_response' });
+      expect(serverResponses).to.be.an('array').that.is.empty;
     });
 
     const videoResObject = {
@@ -433,10 +433,10 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.mediaType).to.be.a('string');
         expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        videoServerResponses = spec.interpretResponse('invalid_response');
-        expect(videoServerResponses).to.be.an('array').that.is.empty;
-      });
+    });
+    it('Returns an empty array if invalid video response is passed', function () {
+      videoServerResponses = spec.interpretResponse({ body: 'invalid_response' });
+      expect(videoServerResponses).to.be.an('array').that.is.empty;
     });
   });
 

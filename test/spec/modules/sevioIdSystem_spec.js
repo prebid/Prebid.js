@@ -76,17 +76,21 @@ describe('Sevio ID System', function () {
       expect(sevioIdSubmodule.decode(ENVELOPE)).to.deep.equal({ sevioId: ENVELOPE });
     });
 
+    ['abc', ENVELOPE.slice(0, 40), `${ENVELOPE}=`, `${ENVELOPE}${ENVELOPE}`].forEach(value => {
+      it(`returns the ID for a string of any length or alphabet: ${value}`, function () {
+        expect(sevioIdSubmodule.decode(value)).to.deep.equal({ sevioId: value });
+      });
+    });
+
     it('returns undefined for anything else', function () {
       expect(sevioIdSubmodule.decode(undefined)).to.be.undefined;
       expect(sevioIdSubmodule.decode('')).to.be.undefined;
+      expect(sevioIdSubmodule.decode('   ')).to.be.undefined;
+      expect(sevioIdSubmodule.decode('{"revoked":true}')).to.be.undefined;
+      expect(sevioIdSubmodule.decode(' {not json')).to.be.undefined;
+      expect(sevioIdSubmodule.decode(123)).to.be.undefined;
       expect(sevioIdSubmodule.decode({})).to.be.undefined;
       expect(sevioIdSubmodule.decode({ revoked: true })).to.be.undefined;
-    });
-
-    ['abc', ENVELOPE.slice(0, 40), `${ENVELOPE}=`, `${ENVELOPE.slice(1)}+`].forEach(value => {
-      it(`returns undefined for a string that is not an envelope: ${value}`, function () {
-        expect(sevioIdSubmodule.decode(value)).to.be.undefined;
-      });
     });
 
     it('returns undefined under COPPA', function () {
@@ -205,8 +209,13 @@ describe('Sevio ID System', function () {
       expect(requestBody(server.requests[0]).ids).to.deep.equal([`sevio:${ENVELOPE}`]);
     });
 
-    ['stored-id', `${ENVELOPE}=`, { id: ENVELOPE }].forEach(storedId => {
-      it(`does not present a stored ID that is not an envelope: ${JSON.stringify(storedId)}`, function () {
+    it('presents a stored ID that is not 66 characters long', function () {
+      sevioIdSubmodule.getId(validConfig, consentData, 'stored-id').callback(sinon.spy());
+      expect(requestBody(server.requests[0]).ids).to.deep.equal(['sevio:stored-id']);
+    });
+
+    ['', '   ', 123, '{"a":1}', { id: ENVELOPE }].forEach(storedId => {
+      it(`does not present a stored ID that is not a non-empty string: ${JSON.stringify(storedId)}`, function () {
         sevioIdSubmodule.getId(validConfig, consentData, storedId).callback(sinon.spy());
         expect(requestBody(server.requests[0])).to.not.have.property('ids');
       });
@@ -303,8 +312,13 @@ describe('Sevio ID System', function () {
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
-      it('fires no sync when the sevio_id is not an envelope', function () {
-        resolveWith({ sevio_id: 'not-an-envelope', syncs: [{ url: SYNC_URL }] });
+      it('fires no sync when the sevio_id starts with {', function () {
+        resolveWith({ sevio_id: '{"a":1}', syncs: [{ url: SYNC_URL }] });
+        sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('fires no sync when the sevio_id is not a string', function () {
+        resolveWith({ sevio_id: 123, syncs: [{ url: SYNC_URL }] });
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
@@ -404,7 +418,10 @@ describe('Sevio ID System', function () {
       ['a missing sevio_id', {}],
       ['an empty sevio_id', { sevio_id: '' }],
       ['a non-string sevio_id', { sevio_id: 123 }],
-      ['a sevio_id that is not an envelope', { sevio_id: 'not-an-envelope' }],
+      ['a blank sevio_id', { sevio_id: '   ' }],
+      ['a sevio_id that is JSON object text', { sevio_id: '{"revoked":true}' }],
+      ['a sevio_id that starts with {', { sevio_id: ' {not json' }],
+      ['an object sevio_id', { sevio_id: { id: ENVELOPE } }],
       ['invalid JSON', 'not json']
     ].forEach(([desc, body]) => {
       it(`passes nothing and logs an error for ${desc}`, function () {
@@ -499,6 +516,22 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(0);
     });
 
+    it('stores nothing and keeps the stored ID when the sevio_id starts with {', async function () {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
+      seedCookie(ENVELOPE, twoDaysAgo);
+      seedLocalStorage(ENVELOPE, twoDaysAgo);
+      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
+      const ids = getGlobal().getUserIdsAsync();
+      await waitForRequest();
+
+      respondWith(server.requests[0], { sevio_id: '{"revoked":true}', changed: true });
+      await ids;
+
+      expect(getGlobal().getUserIds().sevioId).to.equal(ENVELOPE);
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal(ENVELOPE);
+      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(ENVELOPE);
+    });
+
     it('uses the localStorage ID when the cookie is missing, without a request or a cookie write', async function () {
       seedLocalStorage(NEW_ENVELOPE);
       startUserId();
@@ -566,8 +599,8 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(1);
     });
 
-    it('provides no ID and makes no request for a stored value that is not an envelope until a refresh is due', async function () {
-      seedCookie(ENVELOPE.slice(0, 40), new Date().toUTCString());
+    it('provides no ID and makes no request for a stored value that is not a string until a refresh is due', async function () {
+      seedCookie(JSON.stringify({ id: ENVELOPE }), new Date().toUTCString());
       startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
       await getGlobal().getUserIdsAsync();
 
@@ -576,9 +609,9 @@ describe('Sevio ID System', function () {
       expect(server.requests.length).to.equal(0);
     });
 
-    it('replaces a stored value that is not an envelope once a refresh is due', async function () {
+    it('replaces a stored value that is not a string once a refresh is due', async function () {
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
-      seedCookie(ENVELOPE.slice(0, 40), twoDaysAgo);
+      seedCookie(JSON.stringify({ id: ENVELOPE }), twoDaysAgo);
       startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
       const ids = getGlobal().getUserIdsAsync();
       await waitForRequest();

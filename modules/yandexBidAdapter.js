@@ -1,8 +1,9 @@
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
+import { inIframe, _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { ajax } from '../src/ajax.js';
 import { config as pbjsConfig } from '../src/config.js';
@@ -241,8 +242,8 @@ export const spec = {
       deepSetValue(data, 'ext.isiframe', isIframe);
 
       if (windowContext) {
-        deepSetValue(data, 'device.ext.scroll.top', windowContext.scrollY);
-        deepSetValue(data, 'device.ext.scroll.left', windowContext.scrollX);
+        deepSetValue(data, 'device.ext.scroll.top', getWinDimensions(windowContext).scrollY);
+        deepSetValue(data, 'device.ext.scroll.left', getWinDimensions(windowContext).scrollX);
       }
 
       const queryParamsString = formatQS(queryParams);
@@ -705,7 +706,7 @@ function isVisible(elem) {
 
     try {
       // Get computed styles for the current element
-      const computedStyle = context.getComputedStyle(currentElement);
+      const computedStyle = getElementStyle(currentElement, context);
 
       // Check for hiding styles: display: none or visibility: hidden
       const isHidden = computedStyle.display === 'none' ||

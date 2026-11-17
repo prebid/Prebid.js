@@ -8,6 +8,7 @@ const os = require('os');
 const path = require('path');
 const {execFile} = require('child_process');
 const helpers = require('./gulpHelpers.js');
+const {globalVarName, defineGlobal} = require('./package.json');
 
 // keep in sync with the "TypeScript configuration" table in README.md
 const COMPILER_SETTINGS = [
@@ -28,11 +29,14 @@ pbjs.processQueue();
 pbjs.getUserIds();
 pbjs.requestBids({adUnits: [{code: 'div', mediaTypes: {banner: {sizes: [[300, 250]]}}, bids: [{bidder: 'appnexus', params: {placementId: 1}}]}]});
 `,
-  'global.ts': `
+  // global.d.ts declares the global configured in package.json, and nothing if there is none
+  ...(defineGlobal && {
+    'global.ts': `
 import 'prebid.js/types.d.ts';
 import 'prebid.js/global.d.ts';
-pbjs.que.push(() => pbjs.processQueue());
+${globalVarName}.que.push(() => ${globalVarName}.processQueue());
 `,
+  }),
   'customGlobal.ts': `
 import type {PrebidJS} from 'prebid.js/types.d.ts';
 declare global {

@@ -261,6 +261,9 @@ function prepareAuction(auction) {
   return isolatedAuction;
 }
 
+// far beyond real WebCrypto latency (hundreds of ms on a loaded runner); deadline tests use fake timers instead
+const REAL_TIMER_BUDGET = 10000;
+
 function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare = true) {
   if (prepare) auction = prepareAuction(auction);
   let callbackCount = 0;
@@ -268,7 +271,7 @@ function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare
     encypherSubmodule.getBidRequestData(auction, () => {
       callbackCount += 1;
       resolve();
-    }, { params: Object.assign({ timeout: 300 }, params) }, userConsent);
+    }, { params: Object.assign({ timeout: REAL_TIMER_BUDGET }, params) }, userConsent);
   });
   return {
     auction,
@@ -386,7 +389,14 @@ function utf8Chunks(text, chunkSizes = []) {
   return chunks;
 }
 
-describe('encypherRtdProvider decision-network v1', () => {
+// The provider hashes with crypto.subtle, which browsers only expose in a secure context. A BrowserStack iPhone
+// loads the tests from http://bs-local.com (iOS can't reach localhost through the tunnel), which isn't one, so the suite
+// is only defined in a secure context; the suite at the end runs everywhere, so the file is never empty.
+function describeSecureContext(name, fn) {
+  if (window.isSecureContext) describe(name, fn);
+}
+
+describeSecureContext('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
   let digestStub;
@@ -901,7 +911,7 @@ describe('encypherRtdProvider decision-network v1', () => {
         callbackCount += 1;
         abortedAtCallback = lookup.fetch.request.signal.aborted;
         resolve();
-      }, { params: { timeout: 300 } });
+      }, { params: { timeout: REAL_TIMER_BUDGET } });
     });
     lookup = pendingLookup();
     lookup.respond(503, HEADERS, 'unavailable');
@@ -1260,8 +1270,10 @@ describe('encypherRtdProvider decision-network v1', () => {
     ));
     requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
     requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
-    for (let attempt = 0; attempt < 20; attempt += 1) await nextTask();
-    assert.ok(resolveLow && resolveHigh, 'both signature verifications must be pending');
+    // stop as soon as both verifications have started (verify calls 1 and 2): each task can take tens of ms
+    // (e.g. WebKit), so a fixed number of tasks could outlast the module timeout before they are resolved
+    for (let attempt = 0; attempt < 20 && verify.callCount < 3; attempt += 1) await nextTask();
+    assert.strictEqual(verify.callCount, 3, 'both signature verifications must be pending');
 
     resolveHigh(true);
     await high.completion;
@@ -1590,10 +1602,10 @@ describe('encypherRtdProvider decision-network v1', () => {
     startAuction.before(captureActualAuction, 18);
     try {
       configureActualRtd({
-        auctionDelay: 300,
+        auctionDelay: REAL_TIMER_BUDGET,
         dataProviders: [
           { name: before.name, waitForIt: true },
-          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300 } },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: REAL_TIMER_BUDGET } },
           { name: after.name, waitForIt: true },
         ],
       });
@@ -1988,5 +2000,22 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(run.auction);
     assert.deepStrictEqual(decodeClaims(PAGE_ATT).record_revision, 7);
     assert.strictEqual(server.requests.some(request => request.url.includes('/.well-known/jwks.json')), false);
+  });
+});
+
+describe('encypherRtdProvider without crypto.subtle', () => {
+  it('calls back without requesting a decision', async () => {
+    const subtle = window.crypto.subtle && sinon.stub(window.crypto, 'subtle').get(() => undefined);
+    try {
+      resetProviderState();
+      encypherSubmodule.init({ params: {} });
+      const requests = server.requests.length;
+      const { completion, callbackCount } = beginAuction();
+      await completion;
+      assert.strictEqual(callbackCount(), 1);
+      assert.strictEqual(server.requests.length, requests);
+    } finally {
+      if (subtle) subtle.restore();
+    }
   });
 });

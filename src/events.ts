@@ -201,7 +201,11 @@ const _public = (function () {
   };
 }());
 
-_setEventEmitter(_public.emit.bind(_public));
+export function setLogEventEmitter() {
+  _setEventEmitter(_public.emit.bind(_public));
+}
+
+setLogEventEmitter();
 
 export const { on, off, get, getEvents, emit, addEvents, has, listen } = _public;
 

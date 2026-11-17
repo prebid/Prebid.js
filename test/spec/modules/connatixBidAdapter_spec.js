@@ -93,7 +93,9 @@ describe('connatixBidAdapter', function () {
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
-      element = document.createElement('div');
+      // An element of the top document, which the tests treat as the page (inIframe() is false): one of the test
+      // frame's document would be offset and clipped by that frame, which on a phone isn't at the top left.
+      element = window.top.document.createElement('div');
       getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {

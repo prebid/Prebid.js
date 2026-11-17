@@ -12,6 +12,11 @@ import { getGlobalVarName } from '../../../src/buildOptions.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Adagio Rtd Provider', function () {
+  // the provider keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.ADAGIO;
+  });
+
   const SUBMODULE_NAME = 'adagio';
 
   function getElementByIdMock(width, height, x, y) {

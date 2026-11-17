@@ -12,6 +12,7 @@ import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
+import { Renderer } from 'src/Renderer.js';
 import { _internal as store, updateVast, vastLocalCache } from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
 import { server } from 'test/mocks/xhr.js';
@@ -107,7 +108,7 @@ function mockBidRequest(bid, opts) {
     },
     video: {
       context: 'outstream',
-      renderer: {}
+      renderer: { render() {} }
     }
   };
   const mediaType = (opts && opts.mediaType) ? opts.mediaType : defaultMediaType;
@@ -1524,6 +1525,14 @@ describe('auctionmanager.js', function () {
             delete renderer.url;
             expect(getBid().renderer.renderNow).to.be.true;
           });
+
+          it(`renders through the publisher's render function ${t}`, () => {
+            delete renderer.url;
+            renderer.render = sinon.stub();
+            const bid = getBid();
+            bid.renderer.render(bid);
+            sinon.assert.calledWith(renderer.render, bid);
+          });
         });
 
         // Regression: a bid can be accepted when its ad unit is no longer
@@ -1548,6 +1557,106 @@ describe('auctionmanager.js', function () {
           }).to.not.throw();
           expect(prepared.renderer).to.not.exist;
         });
+
+        describe('bid-level configuration', () => {
+          function makeBidRequest(adUnitProps, bidProps) {
+            const adUnit = {
+              code: 'precedence',
+              mediaTypes: { banner: { sizes: [[300, 250]] } },
+              bids: [{ bidder: BIDDER_CODE, params: {}, ...bidProps }],
+              ...adUnitProps,
+            };
+            const [bidderRequest] = adapterManager.makeBidRequests.wrappedMethod([adUnit], 'precedence-auction', Date.now(), 1000);
+            return { bidderRequest, adUnit };
+          }
+
+          function prepareResponse({ adUnit, bidderRequest }) {
+            const index = {
+              getAdUnit: () => adUnit,
+              getBidRequest: () => bidderRequest.bids[0],
+              getMediaTypes: () => bidderRequest.bids[0].mediaTypes,
+            };
+            return auctionModule.getPreparedBidForAuction({ cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner' }, { index });
+          }
+
+          ['renderer', 'safeRenderer'].forEach(prop => {
+            describe(`for ${prop}`, () => {
+              Object.entries({
+                'defined only on adUnit': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                },
+                'defined on adUnit bid': {
+                  adUnitProps: {
+                    [prop]: {
+                      url: 'noise.js',
+                      render() {}
+                    }
+                  },
+                  bidProps: {
+                    [prop]: {
+                      url: 'target.js',
+                      render() {}
+                    }
+                  }
+                }
+              }).forEach(([desc, { adUnitProps, bidProps }]) => {
+                describe(desc, () => {
+                  let adUnit, bidderRequest, bidResponse;
+                  beforeEach(() => {
+                    ({ adUnit, bidderRequest } = makeBidRequest(adUnitProps, bidProps));
+                    bidResponse = prepareResponse({ adUnit, bidderRequest });
+                  });
+                  it('should be set on the request', () => {
+                    expect(bidderRequest.bids[0][prop].url).to.eql('target.js');
+                  });
+                  it('should be set on the response', () => {
+                    expect(bidResponse[prop].url).to.eql('target.js');
+                  });
+                });
+              });
+            });
+          });
+
+          describe('allowTopWindowRenderers', () => {
+            afterEach(() => {
+              config.resetConfig();
+            });
+
+            function prepareOutsideBidderContext() {
+              const { adUnit, bidderRequest } = makeBidRequest();
+              const index = {
+                getAdUnit: () => adUnit,
+                getBidRequest: () => bidderRequest.bids[0],
+                getMediaTypes: () => bidderRequest.bids[0].mediaTypes,
+              };
+              const bidderRenderer = Renderer.install({ renderNow: true });
+              const bidResponse = config.runWithBidder(null, () => auctionModule.getPreparedBidForAuction({
+                cpm: 1, bidderCode: BIDDER_CODE, mediaType: 'banner', renderer: bidderRenderer
+              }, { index }));
+              return { support: bidderRequest.bids[0].rendererSupport.banner, bidResponse, bidderRenderer };
+            }
+
+            it('keeps bidder renderers when allowed only by bidder config', () => {
+              config.setConfig({ allowTopWindowRenderers: false });
+              config.setBidderConfig({ bidders: [BIDDER_CODE], config: { allowTopWindowRenderers: true } });
+              const { support, bidResponse, bidderRenderer } = prepareOutsideBidderContext();
+              expect(support.renderer).to.be.true;
+              expect(bidResponse.renderer).to.equal(bidderRenderer);
+            });
+
+            it('drops bidder renderers when disallowed only by bidder config', () => {
+              config.setBidderConfig({ bidders: [BIDDER_CODE], config: { allowTopWindowRenderers: false } });
+              const { support, bidResponse } = prepareOutsideBidderContext();
+              expect(support.renderer).to.be.false;
+              expect(bidResponse.renderer).to.be.null;
+            });
+          });
+        });
       });
 
       it('installs publisher-defined backup renderers on bids', function () {
@@ -1557,6 +1666,7 @@ describe('auctionmanager.js', function () {
           render: (bid) => bid
         };
         Object.assign(adUnits[0], { renderer });
+        delete bidderRequests[0].bids[0].mediaTypes.video.renderer;
 
         const bids1 = Object.assign({},
           bids[0],
@@ -1814,6 +1924,9 @@ describe('auctionmanager.js', function () {
           assert.equal(auctionProps.adUnits, adUnits);
           assert.equal(auctionProps.timeout, 20);
           assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED);
+          assert.equal(auctionProps.timedOutRequests.length, 1);
+          assert.equal(auctionProps.timedOutRequests[0].bidder, BIDDER_CODE1);
+          assert.equal(auctionProps.timedOutRequests[0].bidId, timedOutBids[0].bidId);
         });
         respondToRequest(0);
         return pm;
@@ -1875,28 +1988,21 @@ describe('auctionmanager.js', function () {
           }]
         });
         adUnits[0].bids.push({ bidder: 'mock-s2s-1' }, { bidder: 'mock-s2s-2' });
-        const s2sAdUnits = deepClone(adUnits);
-        bids.unshift(
-          mockBid({ bidderCode: 'mock-s2s-1', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '1' }),
-          mockBid({ bidderCode: 'mock-s2s-2', src: S2S.SRC, adUnits: s2sAdUnits, uniquePbsTid: '2' })
-        );
-        Object.assign(s2sAdUnits[0], {
+        const s2sBids = ['1', '2'].map(pbsTid => mockBid({
+          bidderCode: `mock-s2s-${pbsTid}`,
+          src: S2S.SRC,
+          adUnits: deepClone(adUnits),
+          uniquePbsTid: pbsTid
+        }));
+        s2sBids.forEach(bid => Object.assign(bid._ctx.adUnits[0], {
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [300, 600]]
             }
           },
-          bids: [
-            {
-              bidder: 'mock-s2s-1',
-              bid_id: bids[0].requestId
-            },
-            {
-              bidder: 'mock-s2s-2',
-              bid_id: bids[1].requestId
-            }
-          ]
-        });
+          bids: [{ bidder: bid.bidderCode, bid_id: bid.requestId }]
+        }));
+        bids.unshift(...s2sBids);
 
         const pm = runAuction().then(() => {
           const toBids = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).getCalls()[0].args[1];

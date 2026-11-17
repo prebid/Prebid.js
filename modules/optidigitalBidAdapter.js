@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { deepAccess, getWinDimensions, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,13 +11,14 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./optidigitalBidAdapter.d.ts').OptidigitalBidParams} OptidigitalBidParams
  */
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
 const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
-let CUR = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 let isSynced = false;
 
 export const spec = {
@@ -49,15 +51,12 @@ export const spec = {
       return [];
     }
 
-    const ortb2 = bidderRequest.ortb2 || {
-      bcat: [],
-      badv: []
-    };
+    const ortb2 = bidderRequest.ortb2 || {};
 
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions(window).document.documentElement.clientWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
@@ -217,8 +216,9 @@ function buildImp(bidRequest, ortb2) {
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth;
-      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight;
+      const rect = getElementDimensions(getAdContainer(bidRequest.params.divId));
+      imp.adContainerWidth = rect.width;
+      imp.adContainerHeight = rect.height;
     }
   }
 
@@ -227,11 +227,9 @@ function buildImp(bidRequest, ortb2) {
     floorSizes = getAdUnitSizes(bidRequest);
   }
 
-  if (bidRequest.params.currency && bidRequest.params.currency !== '') {
-    CUR = bidRequest.params.currency;
-  }
+  const currency = (bidRequest.params.currency && bidRequest.params.currency !== '') ? bidRequest.params.currency : DEFAULT_CURRENCY;
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, currency);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
@@ -265,7 +263,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}

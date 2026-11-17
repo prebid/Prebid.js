@@ -237,7 +237,10 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
       },
       set(target, prop, value, receiver) {
         if (prop === fpdKey) {
-          mergeDeep(fpdGuard, value);
+          // the same as assigning `global` and `bidder` individually
+          ['global', 'bidder'].forEach(key => {
+            if (value != null && Object.prototype.hasOwnProperty.call(value, key)) fpdGuard[key] = value[key];
+          });
           return true;
         }
         return Reflect.set(target, prop, value, receiver);
