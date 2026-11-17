@@ -626,20 +626,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "growads",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "growadvertising",
-      "aliasOf": "growads",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "hyperbrainz",
       "aliasOf": null,
       "gvlid": null,
