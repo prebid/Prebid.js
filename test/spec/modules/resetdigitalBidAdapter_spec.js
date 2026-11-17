@@ -78,6 +78,10 @@ describe('resetdigitalBidAdapter', function () {
     });
   });
 
+  it('should declare the Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3163);
+  });
+
   describe('buildRequests', function () {
     const req = spec.buildRequests([bannerRequest], { refererInfo: { } });
     let rdata;

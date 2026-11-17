@@ -11,6 +11,7 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'resetdigital';
 const ACP_ID = 3163; // Google Additional Consent provider ID (added by the Codex bot).
 const CURRENCY = 'USD';
+const ACP_ID = 3163; // Google Additional Consent provider ID (Reset Digital Europe Ltd)
 
 export const spec = {
   code: BIDDER_CODE,
