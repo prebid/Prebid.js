@@ -1186,20 +1186,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adxcg",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "mediaopti",
-      "aliasOf": "adxcg",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "aidem",
       "aliasOf": null,
       "gvlid": null,
