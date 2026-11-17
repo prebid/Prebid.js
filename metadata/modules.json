@@ -1025,13 +1025,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "themoneytizer",
-      "aliasOf": "themoneytizer",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "tne_catalyst",
       "aliasOf": null,
       "gvlid": null,
