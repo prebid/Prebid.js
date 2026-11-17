@@ -73,13 +73,22 @@ export function renderer(win) {
 
     const target = locatePrebid(depth);
 
-    function setupChannel(type, payload, onResponse) {
+    function createChannel(onResponse) {
       const channel = new MessageChannel();
       if (typeof onResponse === 'function') {
         channel.port1.onmessage = guard(onResponse);
       }
+      return channel;
+    }
+
+    function setupChannel(type, payload, onResponse) {
+      const channel = createChannel(onResponse);
       target.postMessage(makeMessage(type, Object.assign({ token }, payload)), targetOrigin, [channel.port2]);
-      return (type, payload) => channel.port1.postMessage(makeMessage(type, payload));
+      return (type, payload, onResponse) => {
+        // A separate reply port keeps callbacks independent of unsolicited channel messages.
+        const transfer = typeof onResponse === 'function' ? [createChannel(onResponse).port2] : [];
+        channel.port1.postMessage(makeMessage(type, payload), transfer);
+      };
     }
 
     const handshakeChannel = setupChannel(MESSAGE_REQUEST, { options: rest }, onMessage);

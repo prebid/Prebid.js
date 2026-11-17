@@ -169,7 +169,8 @@ function attach(port, bid) {
       if (data.adId !== bid.adId) {
         logRejection('for the wrong adId', event, bid, data);
       } else {
-        processMessage(data, bid, (message) => port.postMessage(JSON.stringify(message)));
+        const replyPort = event.ports[0] ?? port;
+        processMessage(data, bid, (message) => replyPort.postMessage(JSON.stringify(message)));
       }
     }
   };
