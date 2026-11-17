@@ -353,13 +353,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "astraone",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "bidglass",
       "aliasOf": null,
       "gvlid": null,
