@@ -265,7 +265,9 @@ describe('cross-domain creative', () => {
         it('ignores messages that are not a prebid response message', () => {
           render({ adId: '123', pubUrl: ORIGIN });
           reply({ adId: '123', ad: 'markup' });
-          sinon.assert.notCalled(mkIframe);
+          return waitFor(() => true).then(() => {
+            sinon.assert.notCalled(mkIframe);
+          });
         });
 
         it('signals AD_RENDER_FAILED on exceptions', () => {
