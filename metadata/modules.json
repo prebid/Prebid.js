@@ -1088,13 +1088,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "viqeo",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "vlyby",
       "aliasOf": null,
       "gvlid": 1009,
