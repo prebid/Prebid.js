@@ -1284,3 +1284,10 @@ describe('ImpactifyAdapter', function () {
     });
   });
 });
+
+describe('Impactify alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(606);
+    expect(spec.aliases).to.deep.include({ code: 'imp', gvlid: 606 });
+  });
+});

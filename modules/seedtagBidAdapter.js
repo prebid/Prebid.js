@@ -272,7 +272,7 @@ export function getTimeoutUrl(data) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [SEEDTAG_ALIAS],
+  aliases: [{ code: SEEDTAG_ALIAS, gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.

@@ -1154,3 +1154,10 @@ describe('bridgeuppBidAdapter_spec', function () {
     });
   });
 });
+
+describe('Sonarads alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(1300);
+    expect(spec.aliases).to.deep.include({ code: 'bridgeupp', gvlid: 1300 });
+  });
+});

@@ -2024,3 +2024,10 @@ describe('ttdBidAdapter', function () {
     });
   });
 });
+
+describe('The Trade Desk alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(21);
+    expect(spec.aliases).to.deep.include({ code: 'thetradedesk', gvlid: 21 });
+  });
+});

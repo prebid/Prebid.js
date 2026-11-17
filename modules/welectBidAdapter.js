@@ -9,12 +9,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'welect';
+const GVLID = 282;
 const WELECT_DOMAIN = 'www.welect.de';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['wlt'],
-  gvlid: 282,
+  aliases: [{ code: 'wlt', gvlid: GVLID }],
+  gvlid: GVLID,
   supportedMediaTypes: ['video'],
 
   // short code

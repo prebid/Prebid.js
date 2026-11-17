@@ -123,7 +123,7 @@ const validParameter = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['ntv'], // short code
+  aliases: [{ code: 'ntv', gvlid: GVLID }], // short code
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**

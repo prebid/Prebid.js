@@ -596,8 +596,8 @@ describe('smilewantedBidAdapterTests', function () {
 
   it('SmileWanted - Verify bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(2);
-    expect(spec.aliases[0]).to.equal('smile');
-    expect(spec.aliases[1]).to.equal('sw');
+    expect(spec.aliases[0]).to.deep.equal({ code: 'smile', gvlid: 639 });
+    expect(spec.aliases[1]).to.deep.equal({ code: 'sw', gvlid: 639 });
   });
 
   it('SmileWanted - Verify if bid request valid', function () {

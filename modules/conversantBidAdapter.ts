@@ -148,7 +148,7 @@ const converter = ortbConverter({
 export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
   code: ENV.BIDDER_CODE,
   gvlid: ENV.GVLID,
-  aliases: ['cnvr', 'epsilon'], // short code
+  aliases: [{ code: 'cnvr', gvlid: ENV.GVLID }, { code: 'epsilon', gvlid: ENV.GVLID }], // short code
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**

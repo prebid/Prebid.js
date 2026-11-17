@@ -269,3 +269,10 @@ describe('Digital Matter BidAdapter', function () {
     });
   });
 });
+
+describe('Digital Matter alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(1345);
+    expect(spec.aliases).to.deep.include({ code: 'digitalmatter', gvlid: 1345 });
+  });
+});

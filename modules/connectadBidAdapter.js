@@ -14,6 +14,7 @@ import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js'
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
+const GVLID = 138;
 const ENDPOINT_URL = 'https://i.connectad.io/api/v3';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE, AUDIO];
 const REQUEST_MEDIATYPE_PRIORITY = [BANNER, VIDEO, AUDIO, NATIVE];
@@ -122,8 +123,8 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 138,
-  aliases: [BIDDER_CODE_ALIAS],
+  gvlid: GVLID,
+  aliases: [{ code: BIDDER_CODE_ALIAS, gvlid: GVLID }],
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {

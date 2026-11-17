@@ -528,3 +528,10 @@ describe('Missena Adapter', function () {
     });
   });
 });
+
+describe('Missena alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(687);
+    expect(spec.aliases).to.deep.include({ code: 'msna', gvlid: 687 });
+  });
+});

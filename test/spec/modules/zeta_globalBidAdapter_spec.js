@@ -82,3 +82,10 @@ describe('Zeta Bid Adapter', function() {
     expect(bid.requestId).to.equal(receivedBid.impid);
   });
 });
+
+describe('Zeta Global alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(469);
+    expect(spec.aliases).to.deep.include({ code: 'zeta', gvlid: 469 });
+  });
+});

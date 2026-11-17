@@ -21,6 +21,7 @@ import { withDomainFailover } from '../libraries/ttdUtils/ajaxFailover.js';
 const BIDADAPTERVERSION = 'TTD-PREBID-2025.07.15';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
+const GVLID = 21;
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
 const USER_SYNC_ENDPOINT = 'https://match.adsrvr.org';
 const DEFAULT_FAILOVER_DOMAIN = 'bid-openpath.ttdcdn.org';
@@ -332,9 +333,9 @@ function enableFailover(bidderCodes) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 21,
+  gvlid: GVLID,
   alwaysHasCapacity: true,
-  aliases: [BIDDER_CODE_LONG],
+  aliases: [{ code: BIDDER_CODE_LONG, gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

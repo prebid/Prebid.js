@@ -16,6 +16,7 @@ import { convertCurrency } from '../libraries/currencyUtils/currency.js';
  */
 
 const BIDDER_CODE = 'improvedigital';
+const GVLID = 253;
 const CREATIVE_TTL = 300;
 
 const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
@@ -31,8 +32,8 @@ const VIDEO_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 253,
-  aliases: ['id'],
+  gvlid: GVLID,
+  aliases: [{ code: 'id', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   syncStore: { extendMode: false, placementId: null },
 

@@ -1138,3 +1138,10 @@ describe('ConnectAd Adapter', function () {
     });
   });
 });
+
+describe('ConnectAd alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(138);
+    expect(spec.aliases).to.deep.include({ code: 'connectadrealtime', gvlid: 138 });
+  });
+});

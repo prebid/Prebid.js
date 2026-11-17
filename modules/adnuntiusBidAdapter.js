@@ -302,7 +302,7 @@ const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: BIDDER_CODE_DEAL_ALIASES,
+  aliases: BIDDER_CODE_DEAL_ALIASES.map(code => ({ code, gvlid: GVLID })),
   gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function (bid) {

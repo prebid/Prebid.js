@@ -715,3 +715,10 @@ describe('marsmedia adapter tests', function () {
     });
   });
 });
+
+describe('Marsmedia alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(776);
+    expect(spec.aliases).to.deep.include({ code: 'mars', gvlid: 776 });
+  });
+});

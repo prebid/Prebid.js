@@ -668,3 +668,10 @@ describe('GamoshiAdapter', () => {
     });
   });
 });
+
+describe('Gamoshi alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(644);
+    expect(spec.aliases).to.deep.include({ code: 'gambid', gvlid: 644 });
+  });
+});

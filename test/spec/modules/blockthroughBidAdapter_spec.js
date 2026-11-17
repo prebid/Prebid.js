@@ -205,3 +205,10 @@ describe('BT Bid Adapter', () => {
     });
   });
 });
+
+describe('Blockthrough alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(815);
+    expect(spec.aliases).to.deep.include({ code: 'bt', gvlid: 815 });
+  });
+});

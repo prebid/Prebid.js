@@ -1680,3 +1680,10 @@ describe('fwsspBidAdapter', () => {
     });
   });
 });
+
+describe('fwssp alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(285);
+    expect(spec.aliases).to.deep.include({ code: 'freewheel-mrm', gvlid: 285 });
+  });
+});

@@ -1696,3 +1696,10 @@ describe('TheMediaGrid Adapter', function () {
     });
   });
 });
+
+describe('TheMediaGrid alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(686);
+    expect(spec.aliases).to.deep.include({ code: 'gridNM', gvlid: 686 });
+  });
+});
