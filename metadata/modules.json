@@ -2397,13 +2397,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "beyondmedia",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "bidfuse",
       "aliasOf": null,
       "gvlid": 1466,
