@@ -423,7 +423,66 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
       expect(bids[0].mediaType).to.equal(BANNER);
     });
 
+    it('does not interpret URL-valued banner markup as VAST', function () {
+      const req = spec.buildRequests([makeBannerBid()], makeBidderRequest());
+      const url = 'https://example.com/banner';
+      const body = bannerOrtbResponse(req.data.imp[0].id);
+      body.seatbid[0].bid[0].adm = url;
+
+      const bids = spec.interpretResponse({ body }, req);
+
+      expect(bids[0].mediaType).to.equal(BANNER);
+      expect(bids[0].ad).to.equal(url);
+      expect(bids[0]).not.to.have.property('vastUrl');
+      expect(bids[0]).not.to.have.property('vastXml');
+    });
+
     if (FEATURES.VIDEO) {
+      ['http', 'https'].forEach(scheme => {
+        it(`maps ${scheme} VAST markup to vastUrl instead of the win notice URL`, function () {
+          const req = spec.buildRequests([makeVideoBid()], makeBidderRequest());
+          const url = `${scheme}://example.com/vast?id=123&source=cwire`;
+          const body = videoOrtbResponse(req.data.imp[0].id, url);
+          const originalBid = body.seatbid[0].bid[0];
+          originalBid.nurl = 'https://example.com/auction-win/123';
+
+          const bids = spec.interpretResponse({ body }, req);
+
+          expect(bids).to.have.lengthOf(1);
+          expect(bids[0].mediaType).to.equal(VIDEO);
+          expect(bids[0].vastUrl).to.equal(url);
+          expect(bids[0]).not.to.have.property('vastXml');
+          expect(originalBid.adm).to.equal(url);
+          expect(originalBid.nurl).to.equal('https://example.com/auction-win/123');
+        });
+      });
+
+      it('maps VAST URLs when video type is inferred from the request', function () {
+        const req = spec.buildRequests([makeVideoBid()], makeBidderRequest());
+        const url = 'https://example.com/vast';
+        const body = videoOrtbResponse(req.data.imp[0].id, url);
+        delete body.seatbid[0].bid[0].mtype;
+
+        const bids = spec.interpretResponse({ body }, req);
+
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].vastUrl).to.equal(url);
+        expect(bids[0]).not.to.have.property('vastXml');
+      });
+
+      it('maps a video URL winner on a mixed banner/video impression', function () {
+        const bid = makeVideoBid();
+        bid.mediaTypes.banner = { sizes: [[640, 480]] };
+        const req = spec.buildRequests([bid], makeBidderRequest());
+        const url = 'https://example.com/vast';
+
+        const bids = spec.interpretResponse({ body: videoOrtbResponse(req.data.imp[0].id, url) }, req);
+
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].vastUrl).to.equal(url);
+        expect(bids[0]).not.to.have.property('vastXml');
+      });
+
       it('maps a video ORTB response (mtype=2) to a video bid with vastXml', function () {
         const bid = makeVideoBid();
         const req = spec.buildRequests([bid], makeBidderRequest());
@@ -526,6 +585,21 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
   });
 
   describe('getUserSyncs', function () {
+    [undefined, null].forEach(gdprConsent => {
+      it(`returns no syncs when GDPR consent is ${gdprConsent}`, function () {
+        expect(spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent)).to.be.empty;
+      });
+    });
+
+    it('returns no syncs when GDPR applies and purpose-1 consent is denied', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'abc123',
+        vendorData: { purpose: { consents: { 1: false } } },
+      };
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, gdprConsent)).to.be.empty;
+    });
+
     it('returns no syncs when GDPR purpose-1 consent is missing', function () {
       expect(spec.getUserSyncs({}, {}, {}, {})).to.be.empty;
     });
@@ -553,7 +627,7 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
       );
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal(
-        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString'
+        'https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString'
       );
     });
 
@@ -566,7 +640,7 @@ describe('C-WIRE bid adapter (ORTB2)', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, gdprConsent, {});
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.equal(
-        'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123'
+        'https://ib.adnxs.com/getuid?https://prebid2.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123'
       );
     });
   });

@@ -1,50 +1,109 @@
 {
-  "bs_edge_latest_windows_11": {
-    "base": "BrowserStack",
-    "os_version": "11",
-    "browser": "edge",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
+  "chrome": {
+    "name": "Chrome",
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "wdio": "chrome"
+    },
+    "browserstack": {
+      "browserName": "chrome",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
+    }
   },
-  "bs_chrome_latest_windows_11": {
-    "base": "BrowserStack",
-    "os_version": "11",
-    "browser": "chrome",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
+  "firefox": {
+    "name": "Firefox",
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "wdio": "firefox",
+      "vitest": {
+        "browser": "firefox",
+        "playwright": "firefox",
+        "shards": 2
+      }
+    },
+    "browserstack": {
+      "browserName": "firefox",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
+    }
   },
-  "bs_chrome_113_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "chrome",
-    "browser_version": "113.0",
-    "device": null,
-    "os": "Windows"
+  "safari": {
+    "name": "Safari",
+    "runner": {
+      "runsOn": "macos-latest",
+      "wdio": "safari",
+      "vitest": {
+        "browser": "safari",
+        "safari": true,
+        "shards": 2
+      }
+    },
+    "browserstack": {
+      "browserName": "safari",
+      "browserVersion": "latest",
+      "os": "OS X",
+      "osVersion": "Tahoe"
+    }
   },
-  "bs_firefox_latest_windows_11": {
-    "base": "BrowserStack",
-    "os_version": "11",
-    "browser": "firefox",
-    "browser_version": "latest",
-    "device": null,
-    "os": "Windows"
+  "edge": {
+    "name": "Edge",
+    "runner": {
+      "runsOn": "windows-latest",
+      "wdio": "msedge",
+      "vitest": {
+        "channel": "msedge",
+        "shards": 1
+      }
+    },
+    "browserstack": {
+      "browserName": "edge",
+      "browserVersion": "latest",
+      "os": "Windows",
+      "osVersion": "11"
+    }
   },
-  "bs_safari_latest_mac": {
-    "base": "BrowserStack",
-    "os_version": "Tahoe",
-    "browser": "safari",
-    "browser_version": "latest",
-    "device": null,
-    "os": "OS X"
+  "chrome_113": {
+    "name": "Chrome 113",
+    "runner": {
+      "runsOn": "ubuntu-latest",
+      "vitest": {
+        "chromeVersion": "113.0.5672.0",
+        "shards": 1
+      }
+    },
+    "browserstack": {
+      "browserName": "chrome",
+      "browserVersion": "113.0",
+      "os": "Windows",
+      "osVersion": "10"
+    }
   },
-  "bs_safari_15_catalina": {
-    "base": "BrowserStack",
-    "os_version": "Monterey",
-    "browser": "safari",
-    "browser_version": "15.6",
-    "device": null,
-    "os": "OS X"
+  "safari_16": {
+    "name": "Safari 16",
+    "browserstack": {
+      "browserName": "safari",
+      "browserVersion": "16.5",
+      "os": "OS X",
+      "osVersion": "Ventura",
+      "vitest": {
+        "specsMatching": "isSecureContext|\\bsubtle\\b",
+        "specsLabel": "secure-context specs"
+      }
+    }
+  },
+  "iphone_14": {
+    "name": "iPhone 14 iOS 16",
+    "browserstack": {
+      "browserName": "safari",
+      "deviceName": "iPhone 14",
+      "osVersion": "16",
+      "vitest": {
+        "shards": 6,
+        "maxParallel": 2
+      }
+    }
   }
 }

@@ -693,7 +693,7 @@ function flushAuctionEvents(auctionId: string): void {
 
 // --- Adapter ---
 
-export const nexx360AnalyticsAdapter = Object.assign(adapter({ analyticsType }), {
+export const nexx360AnalyticsAdapter = Object.assign(adapter({ analyticsType, flushOnPageHide: true }), {
   track({ eventType, args }: { eventType: string; args: TrackArgs }) {
     if (!analyticsOptions.publisherId) {
       return;

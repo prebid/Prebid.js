@@ -253,6 +253,11 @@ describe('LiveIntentMinimalId', function() {
     expect(result).to.eql({ 'lipb': { 'segments': ['tak'] } });
   });
 
+  it('should decode values with the m', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'nonId', m: 'metadata' }, { params: defaultConfigParams });
+    expect(result).to.eql({ 'lipb': { 'lipbid': 'nonId', 'm': 'metadata', 'nonId': 'nonId' } });
+  });
+
   it('should decode a uid2 to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' });
     expect(result).to.eql({ 'lipb': { 'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar' }, 'uid2': { 'id': 'bar', 'ext': { 'provider': 'liveintent.com' } } });

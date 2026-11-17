@@ -239,17 +239,31 @@ describe('ExcoBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     const serverResponses = [BID_SERVER_RESPONSE];
+    const isExcoSync = (sync) => sync.type === 'iframe' && sync.url.startsWith('https://cdn.ex.co/sync/');
 
-    it('should return empty if no server responses', function () {
+    it('should return only the exco sync if no server responses', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
+      expect(syncs).to.have.length(1);
+      expect(isExcoSync(syncs[0])).to.be.true;
+    });
+
+    it('should return empty if no server responses and iframes are disabled', function () {
+      const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
     it('should return iframe only user syncs', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses);
-      expect(syncs).to.deep.equal([
-        { type: 'iframe', url: 'https://example.com/sync.html' },
-      ]);
+      expect(syncs).to.have.length(2);
+      expect(isExcoSync(syncs[0])).to.be.true;
+      expect(syncs[1]).to.deep.equal({ type: 'iframe', url: 'https://example.com/sync.html' });
+    });
+
+    it('should include gdpr consent in the exco sync url', function () {
+      const [sync] = adapter.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'abc' });
+      const params = new URL(sync.url).searchParams;
+      expect(params.get('gdpr')).to.equal('1');
+      expect(params.get('gdpr_consent')).to.equal('abc');
     });
 
     it('should return pixels only user syncs', function () {

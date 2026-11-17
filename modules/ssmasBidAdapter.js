@@ -1,14 +1,29 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { userSync } from '../src/userSync.js';
 import { triggerPixel, deepSetValue } from '../src/utils.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 export const SSMAS_CODE = 'ssmas';
-const SSMAS_SERVER = 'ads.ssmas.com';
-export const SSMAS_ENDPOINT = `https://${SSMAS_SERVER}/ortb`;
-const SYNC_URL = `https://sync.ssmas.com/user_sync`;
+export const SSMAS_ENDPOINT = 'https://ads.ssmas.com/ortb';
 export const SSMAS_REQUEST_METHOD = 'POST';
+
 const GDPR_VENDOR_ID = 1183;
+
+function allowedSyncs() {
+  if (config.getConfig('userSync.syncEnabled') === false) {
+    return;
+  }
+
+  const iframe = userSync.canBidderRegisterSync('iframe', SSMAS_CODE);
+  const image = userSync.canBidderRegisterSync('image', SSMAS_CODE);
+
+  if (iframe || image) {
+    return { iframe: iframe ? 1 : 0, image: image ? 1 : 0 };
+  }
+}
 
 export const ssmasOrtbConverter = ortbConverter({
   context: {
@@ -16,9 +31,13 @@ export const ssmasOrtbConverter = ortbConverter({
     ttl: 300,
     mediaType: BANNER,
   },
+
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+
     deepSetValue(imp, 'ext.placementId', bidRequest.params.placementId);
+    imp.tagid = String(bidRequest.params.placementId);
+
     return imp;
   },
 });
@@ -29,36 +48,22 @@ export const spec = {
   gvlid: GDPR_VENDOR_ID,
 
   isBidRequestValid: (bid) => {
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === SSMAS_CODE;
+    return !!bid.params?.placementId && !!bid.bidId && bid.bidder === SSMAS_CODE;
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
     const data = ssmasOrtbConverter.toORTB({ bidRequests, bidderRequest });
+    const deviceAccess = hasPurpose1Consent(bidderRequest.gdprConsent);
 
     const options = {
       contentType: 'application/json',
-      withCredentials: false,
+      withCredentials: deviceAccess,
     };
 
-    data.imp && data.imp.forEach(imp => {
-      if (imp.ext && imp.ext.placementId) {
-        imp.tagId = imp.ext.placementId;
-      }
-    });
+    const syncs = deviceAccess && allowedSyncs();
 
-    data.regs = data.regs || {};
-    data.regs.ext = data.regs.ext || {};
-
-    if (bidderRequest.gdprConsent) {
-      data.regs.ext.consent = bidderRequest.gdprConsent.consentString;
-      data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    }
-    if (bidderRequest.uspConsent) {
-      data.regs.ext.consent = bidderRequest.uspConsent.consentString;
-      data.regs.ext.ccpa = 1;
-    }
-    if (bidderRequest.ortb2?.regs?.coppa === 1) {
-      data.regs.coppa = 1;
+    if (syncs) {
+      deepSetValue(data, 'ext.ssmas.usersync', syncs);
     }
 
     return [
@@ -92,39 +97,29 @@ export const spec = {
     syncOptions,
     serverResponses,
     gdprConsent,
-    uspConsent
+    uspConsent,
+    gppConsent,
+    coppa
   ) => {
+    if (coppa) {
+      return [];
+    }
+
+    const allowed = { iframe: syncOptions.iframeEnabled, image: syncOptions.pixelEnabled };
     const syncs = [];
+    const synced = new Set();
 
-    const params = ['pbjs=1'];
+    (serverResponses || []).forEach((response) => {
+      (response?.body?.ext?.usersync || []).forEach((sync) => {
+        if (!sync?.url || !allowed[sync.type] || synced.has(sync.bidder)) {
+          return;
+        }
 
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params.push(`gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
-          gdprConsent.consentString
-        }`);
-      } else {
-        params.push(`gdpr_consent=${gdprConsent.consentString}`);
-      }
-    }
-
-    if (uspConsent && uspConsent.consentString) {
-      params.push(`ccpa_consent=${uspConsent.consentString}`);
-    }
-
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'iframe',
-        url: `${SYNC_URL}/iframe?${params.join('&')}`
+        syncs.push({ type: sync.type, url: sync.url });
+        synced.add(sync.bidder);
       });
-    }
+    });
 
-    // if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-    //   syncs.push({
-    //     type: 'image',
-    //     url: `${SYNC_URL}/image?${params.join('&')}`
-    //   });
-    // }
     return syncs;
   },
 };

@@ -12,7 +12,13 @@ declare global {
   namespace googletag {
     // empty on purpose: this is the target the real definitions merge into
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    interface Slot {}
+    interface Slot {
+    }
+    namespace events {
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      interface EventTypeMap {
+      }
+    }
   }
 }
 

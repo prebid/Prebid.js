@@ -10,7 +10,7 @@ import {
 import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils.js');
-const { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync.js');
+const { newUserSync, USERSYNC_DEFAULT_CONFIG, internal } = require('../../src/userSync.js');
 
 describe('user sync', function () {
   let triggerPixelStub;
@@ -55,12 +55,12 @@ describe('user sync', function () {
     logWarnStub = sinon.stub(utils, 'logWarn');
     shuffleStub = sinon.stub(utils, 'shuffle').callsFake((array) => array.reverse());
     getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => idPrefix + (lastId += 1));
-    insertUserSyncIframeStub = sinon.stub(utils, 'insertUserSyncIframe');
+    insertUserSyncIframeStub = sinon.stub(internal, 'insertUserSyncIframe');
     politeTriggerPixelStub = sinon.stub(utils, 'politeTriggerPixel').callsFake((url) => {
       utils.triggerPixel(url);
     });
-    politeInsertUserSyncIframeStub = sinon.stub(utils, 'politeInsertUserSyncIframe').callsFake((...args) => {
-      utils.insertUserSyncIframe(...args);
+    politeInsertUserSyncIframeStub = sinon.stub(internal, 'politeInsertUserSyncIframe').callsFake((...args) => {
+      internal.insertUserSyncIframe(...args);
     });
   });
 
@@ -124,7 +124,7 @@ describe('user sync', function () {
     };
 
     it('should remove the sync iframes and return how many were removed', function () {
-      const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(2);
+      const removeStub = sinon.stub(internal, 'removeUserSyncIframes').returns(2);
       try {
         const userSync = newTestUserSync(iframeConfig);
         expect(userSync.removeUserSyncs()).to.equal(2);
@@ -134,9 +134,20 @@ describe('user sync', function () {
       }
     });
 
+    it('should pass the withChildFrames option through', function () {
+      const removeStub = sinon.stub(internal, 'removeUserSyncIframes').returns(1);
+      try {
+        const userSync = newTestUserSync(iframeConfig);
+        expect(userSync.removeUserSyncs({ withChildFrames: true })).to.equal(1);
+        sinon.assert.calledWith(removeStub, { withChildFrames: true });
+      } finally {
+        removeStub.restore();
+      }
+    });
+
     it('should not prevent later syncs from inserting new iframes', function () {
       const userSync = newTestUserSync(iframeConfig);
-      const removeStub = sinon.stub(utils, 'removeUserSyncIframes').returns(1);
+      const removeStub = sinon.stub(internal, 'removeUserSyncIframes').returns(1);
       try {
         userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
         userSync.syncUsers();
@@ -731,6 +742,250 @@ describe('user sync', function () {
           });
         });
       });
+    });
+  });
+});
+
+describe('user sync iframes', () => {
+  const { insertUserSyncIframe, politeInsertUserSyncIframe, removeUserSyncIframes } = require('../../src/userSync.js');
+  let preexisting;
+  const newIframes = () => Array.from(document.querySelectorAll('iframe')).filter(f => !preexisting.has(f));
+
+  function addChildFrame(iframe) {
+    const doc = iframe.contentDocument;
+    (doc.body ?? doc.documentElement).appendChild(doc.createElement('iframe'));
+  }
+
+  beforeEach(() => {
+    removeUserSyncIframes();
+    preexisting = new Set(document.querySelectorAll('iframe'));
+  });
+  afterEach(() => removeUserSyncIframes());
+
+  it('inserts the iframe into the document', () => {
+    insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  it('uses background scheduling for politeInsertUserSyncIframe', () => {
+    const originalScheduler = window.scheduler;
+    window.scheduler = {
+      postTask: sinon.stub().callsFake((task) => {
+        task();
+        return Promise.resolve();
+      })
+    };
+    try {
+      politeInsertUserSyncIframe('about:blank');
+      expect(window.scheduler.postTask.calledOnce).to.equal(true);
+      expect(newIframes().length).to.equal(1);
+    } finally {
+      window.scheduler = originalScheduler;
+    }
+  });
+
+  it('removes every sync iframe of this instance and returns how many were removed', () => {
+    [1, 2, 3].forEach(() => insertUserSyncIframe('about:blank'));
+    const iframes = newIframes();
+    expect(iframes.length).to.equal(3);
+    expect(removeUserSyncIframes()).to.equal(3);
+    iframes.forEach(iframe => expect(iframe.parentNode).to.equal(null));
+    expect(newIframes().length).to.equal(0);
+  });
+
+  it('notifies a sync iframe consumer before removing its iframe', () => {
+    let wasAttachedDuringCleanup;
+    let iframe;
+    const onCleanup = sinon.spy(() => {
+      wasAttachedDuringCleanup = iframe.parentNode != null;
+    });
+    insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+    iframe = newIframes()[0];
+
+    expect(removeUserSyncIframes()).to.equal(1);
+
+    expect(onCleanup.calledOnce).to.equal(true);
+    expect(wasAttachedDuringCleanup).to.equal(true);
+    expect(iframe.parentNode).to.equal(null);
+  });
+
+  it('leaves iframes it did not insert alone', () => {
+    const foreign = document.createElement('iframe');
+    document.body.appendChild(foreign);
+    try {
+      insertUserSyncIframe('about:blank');
+      expect(newIframes().length).to.equal(2);
+      expect(removeUserSyncIframes()).to.equal(1);
+      expect(foreign.parentNode).to.equal(document.body);
+      expect(newIframes()).to.eql([foreign]);
+    } finally {
+      foreign.parentNode.removeChild(foreign);
+    }
+  });
+
+  it('calls done once when the iframe is removed, even if it loads too', async () => {
+    const done = sinon.spy();
+    insertUserSyncIframe('about:blank', done);
+    removeUserSyncIframes();
+    sinon.assert.calledOnce(done);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    sinon.assert.calledOnce(done);
+  });
+
+  it('does nothing when there is no sync iframe', () => {
+    expect(removeUserSyncIframes()).to.equal(0);
+  });
+
+  it('does not stop later syncs from inserting new iframes', () => {
+    insertUserSyncIframe('about:blank');
+    removeUserSyncIframes();
+    insertUserSyncIframe('about:blank');
+    expect(newIframes().length).to.equal(1);
+    expect(newIframes()[0].parentNode).to.equal(document.documentElement);
+  });
+
+  describe('withChildFrames', () => {
+    it('removes only the sync iframes that have created frames of their own', () => {
+      [1, 2, 3].forEach(() => insertUserSyncIframe('about:blank'));
+      const [fanOut, simple, otherFanOut] = newIframes();
+      addChildFrame(fanOut);
+      addChildFrame(otherFanOut);
+
+      expect(removeUserSyncIframes({ withChildFrames: true })).to.equal(2);
+
+      expect(fanOut.parentNode).to.equal(null);
+      expect(otherFanOut.parentNode).to.equal(null);
+      expect(newIframes()).to.eql([simple]);
+    });
+
+    it('notifies the consumer of a removed sync iframe', () => {
+      const onCleanup = sinon.spy();
+      insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+      addChildFrame(newIframes()[0]);
+      removeUserSyncIframes({ withChildFrames: true });
+      expect(onCleanup.calledOnce).to.equal(true);
+    });
+
+    it('leaves sync iframes without child frames, so a later call can still remove them', () => {
+      insertUserSyncIframe('about:blank');
+      expect(removeUserSyncIframes({ withChildFrames: true })).to.equal(0);
+      expect(newIframes().length).to.equal(1);
+      expect(removeUserSyncIframes()).to.equal(1);
+    });
+  });
+
+  describe('automatic removal', () => {
+    let clock, logWarnStub;
+
+    function insert(onCleanup) {
+      insertUserSyncIframe('about:blank', undefined, undefined, onCleanup);
+      return newIframes().pop();
+    }
+
+    function setRemoval(removeIframes) {
+      config.setConfig({ userSync: { removeIframes } });
+    }
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      logWarnStub = sinon.stub(utils, 'logWarn');
+    });
+
+    afterEach(() => {
+      removeUserSyncIframes();
+      clock.restore();
+      logWarnStub.restore();
+      config.resetConfig();
+    });
+
+    it('is on by default, removing every sync iframe 15s after it is inserted', () => {
+      const onCleanup = sinon.spy();
+      const iframe = insert(onCleanup);
+      clock.tick(14999);
+      expect(iframe.parentNode).to.not.equal(null);
+      clock.tick(1);
+      expect(iframe.parentNode).to.equal(null);
+      expect(onCleanup.calledOnce).to.equal(true);
+      sinon.assert.notCalled(logWarnStub);
+    });
+
+    it('warns when it removes a sync iframe that created frames', () => {
+      const iframe = insert();
+      addChildFrame(iframe);
+      clock.tick(15000);
+      expect(iframe.parentNode).to.equal(null);
+      sinon.assert.calledWith(logWarnStub, sinon.match('created 1 frame(s)'));
+    });
+
+    it('removes sync iframes with child frames earlier when withChildFrames < all', () => {
+      setRemoval({ withChildFrames: 1000, all: 5000 });
+      const fanOut = insert();
+      const simple = insert();
+      addChildFrame(fanOut);
+      clock.tick(1000);
+      expect(fanOut.parentNode).to.equal(null);
+      expect(simple.parentNode).to.not.equal(null);
+      clock.tick(3999);
+      expect(simple.parentNode).to.not.equal(null);
+      clock.tick(1);
+      expect(simple.parentNode).to.equal(null);
+    });
+
+    it('can skip a step', () => {
+      setRemoval({ withChildFrames: false, all: 1000 });
+      const iframe = insert();
+      addChildFrame(iframe);
+      clock.tick(999);
+      expect(iframe.parentNode).to.not.equal(null);
+      clock.tick(1);
+      expect(iframe.parentNode).to.equal(null);
+    });
+
+    it('can be turned off', () => {
+      setRemoval(false);
+      const iframe = insert();
+      addChildFrame(iframe);
+      clock.tick(60000);
+      expect(iframe.parentNode).to.not.equal(null);
+    });
+
+    it('follows the current config', () => {
+      setRemoval(false);
+      setRemoval({ all: 1000 });
+      const iframe = insert();
+      clock.tick(1000);
+      expect(iframe.parentNode).to.equal(null);
+    });
+
+    it('goes back to the defaults after resetConfig', () => {
+      setRemoval(false);
+      config.resetConfig();
+      const iframe = insert();
+      clock.tick(15000);
+      expect(iframe.parentNode).to.equal(null);
+    });
+
+    [['5000'], [-1], [Infinity], [NaN]].forEach(([delay]) => {
+      it(`warns and uses the default for an invalid delay: ${delay}`, () => {
+        setRemoval({ all: delay });
+        const iframe = insert();
+        sinon.assert.calledWith(logWarnStub, sinon.match('userSync.removeIframes.all'));
+        logWarnStub.resetHistory();
+        insert();
+        sinon.assert.notCalled(logWarnStub);
+        clock.tick(14999);
+        expect(iframe.parentNode).to.not.equal(null);
+        clock.tick(1);
+        expect(iframe.parentNode).to.equal(null);
+      });
+    });
+
+    it('cancels its timer when the iframe is removed manually', () => {
+      insert();
+      expect(clock.countTimers()).to.equal(1);
+      removeUserSyncIframes();
+      expect(clock.countTimers()).to.equal(0);
     });
   });
 });

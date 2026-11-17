@@ -1,11 +1,12 @@
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { AUDIO, BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { ORTB_MTYPES } from '../../ortbConverter/processors/mediaType.js';
 
 export const SUPPORTED_MEDIA_TYPES = {
   // map from pbjs mediaType to its corresponding imp property
   [BANNER]: 'banner',
   [NATIVE]: 'native',
-  [VIDEO]: 'video'
+  [VIDEO]: 'video',
+  [AUDIO]: 'audio',
 };
 
 /**

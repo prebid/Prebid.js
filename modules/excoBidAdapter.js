@@ -10,7 +10,6 @@ import {
   deepSetValue,
   logInfo,
   logWarn,
-  insertUserSyncIframe,
   logError,
   isStr,
   generateUUID,
@@ -24,10 +23,6 @@ export const BIDDER_CODE = 'exco';
 const VERSION = '0.0.3';
 const CURRENCY = 'USD';
 
-const SYNC = {
-  done: false,
-};
-
 const EVENTS = {
   TYPE: 'exco-adapter',
   PING: 'exco-adapter-ping',
@@ -36,12 +31,6 @@ const EVENTS = {
 };
 
 export class AdapterHelpers {
-  doSync(gdprConsent = { consentString: '', gdprApplies: false }, accountId) {
-    insertUserSyncIframe(
-      this.createSyncUrl(gdprConsent, accountId)
-    );
-  }
-
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
       const url = new URL(SYNC_URL);
@@ -418,6 +407,13 @@ export const spec = {
   ) {
     const result = [];
 
+    if (syncOptions.iframeEnabled) {
+      const url = helpers.createSyncUrl(gdprConsent || {});
+      if (url) {
+        result.push({ type: 'iframe', url });
+      }
+    }
+
     const collectSyncs = (syncs) => {
       if (syncs) {
         syncs.forEach(sync => {
@@ -444,11 +440,6 @@ export const spec = {
         });
       }
     });
-
-    if (syncOptions.iframeEnabled && !SYNC.done) {
-      helpers.doSync(gdprConsent);
-      SYNC.done = true;
-    }
 
     return result;
   },

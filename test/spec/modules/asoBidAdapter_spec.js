@@ -4,6 +4,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { parseUrl } from '../../../src/utils.js';
+import { getWinDimensions } from '../../../src/utils/winDimensions.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -190,6 +191,31 @@ describe('Adserver.Online bidding adapter', function () {
       expect(query.zid).to.equal('1');
     });
 
+    it('groups bids of the same zone into one multi-imp request', function () {
+      const secondBanner = { ...bannerRequest, adUnitCode: 'adunit-banner-2', bidId: 'bid-banner-2' };
+      const otherZone = { ...bannerRequest, params: { zone: 5 }, adUnitCode: 'adunit-banner-3', bidId: 'bid-banner-3' };
+
+      const requests = spec.buildRequests([bannerRequest, otherZone, secondBanner], bidderRequest);
+      expect(requests).to.have.lengthOf(2);
+
+      expect(parseUrl(requests[0].url).search.zid).to.equal('1');
+      expect(requests[0].data.imp.map(imp => imp.id)).to.deep.equal(['bid-banner', 'bid-banner-2']);
+      expect(requests[0].data.imp.map(imp => imp.tagid)).to.deep.equal(['adunit-banner', 'adunit-banner-2']);
+
+      expect(parseUrl(requests[1].url).search.zid).to.equal('5');
+      expect(requests[1].data.imp.map(imp => imp.id)).to.deep.equal(['bid-banner-3']);
+    });
+
+    it('sends the same zone on different servers as separate requests', function () {
+      const customServer = { ...bannerRequest, params: { zone: 1, server: 'https://custom.example.com' }, bidId: 'bid-banner-2' };
+
+      const requests = spec.buildRequests([bannerRequest, customServer], bidderRequest);
+      expect(requests).to.have.lengthOf(2);
+      expect(parseUrl(requests[0].url).hostname).to.equal('srv.aso1.net');
+      expect(parseUrl(requests[1].url).hostname).to.equal('custom.example.com');
+      requests.forEach(request => expect(request.data.imp).to.have.lengthOf(1));
+    });
+
     it('creates a valid banner request', function () {
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       expect(requests).to.have.lengthOf(1);
@@ -204,12 +230,13 @@ describe('Adserver.Online bidding adapter', function () {
       expect(payload.site.page).to.equal('https://example.com/page.html');
 
       expect(payload.device).to.exist;
-      expect(payload.device.w).to.equal(window.screen.width);
-      expect(payload.device.h).to.equal(window.screen.height);
+      expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+      expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
       expect(payload.imp).to.have.lengthOf(1);
 
       expect(payload.imp[0].tagid).to.equal('adunit-banner');
+      expect(payload.imp[0].secure).to.equal(1);
       expect(payload.imp[0].banner).to.not.null;
       expect(payload.imp[0].banner.format).to.have.lengthOf(2);
       expect(payload.imp[0].banner.format[0].w).to.equal(300);
@@ -233,8 +260,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.screen.width);
-        expect(payload.device.h).to.equal(window.screen.height);
+        expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+        expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 
@@ -262,8 +289,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.screen.width);
-        expect(payload.device.h).to.equal(window.screen.height);
+        expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+        expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 
@@ -460,6 +487,28 @@ describe('Adserver.Online bidding adapter', function () {
         expect(bids[0].native.ortb.assets).to.have.lengthOf(2);
       });
     }
+
+    it('handles multi-imp responses', function () {
+      const secondBanner = { ...bannerRequest, adUnitCode: 'adunit-banner-2', bidId: 'bid-banner-2' };
+      const requests = spec.buildRequests([bannerRequest, secondBanner], bidderRequest);
+      expect(requests).to.have.lengthOf(1);
+
+      const response = {
+        body: {
+          seatbid: [{
+            bid: [
+              { ...bannerResponse.body.seatbid[0].bid[0], impid: 'bid-banner-2', price: 0.4 },
+              bannerResponse.body.seatbid[0].bid[0]
+            ]
+          }],
+          cur: 'USD'
+        }
+      };
+
+      const bids = spec.interpretResponse(response, requests[0]);
+      expect(bids).to.have.lengthOf(2);
+      expect(bids.map(bid => [bid.requestId, bid.cpm])).to.deep.equal([['bid-banner-2', 0.4], ['bid-banner', 0.3]]);
+    });
 
     it('handles empty responses', function () {
       const response = [];

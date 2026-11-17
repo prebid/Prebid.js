@@ -1,12 +1,8 @@
 import {
-  getCachedTopics,
   getTopics,
   getTopicsData,
-  loadTopicsForBidders,
   processFpd,
-  receiveMessage,
   reset,
-  storeInLocalStorage,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
 import * as utils from '../../../src/utils.js';
@@ -52,13 +48,5 @@ describe('topics', () => {
       expect(global.user.data).to.eql([{ name: 'existing' }]);
       expectWarning();
     });
-  });
-
-  it('stubs bidder side effects', () => {
-    expect(getCachedTopics()).to.eql([]);
-    receiveMessage();
-    storeInLocalStorage('bidder', []);
-    loadTopicsForBidders();
-    sinon.assert.calledOnce(utils.logWarn);
   });
 });

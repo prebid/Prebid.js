@@ -41,10 +41,10 @@ export const pairIdSubmodule = {
    */
   name: MODULE_NAME,
   /**
-   * used to specify vendor id
-   * @type {number}
+   * used to specify vendor ids: Google Advertising Products, and LiveRamp, whose PAIR ID this module can read
+   * @type {number[]}
    */
-  gvlid: 755,
+  gvlid: [755, 97],
   /**
    * decode the stored id value for passing to bid requests
    * @function

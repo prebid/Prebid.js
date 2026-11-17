@@ -299,7 +299,21 @@ export const viewportIntersections = intersections((callback) => new Intersectio
   threshold: Array.from({ length: 101 }, (e, i) => i / 100)
 }));
 
-export function mkIntersectionHook(intersections = viewportIntersections) {
+// according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
+// https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+// However, browsers appear to run it even when the element is outside the DOM
+// just to be sure, cap the amount of time we wait for intersections.
+//
+// the cap only holds as an upper bound with high priority scheduling: an ordinary timer is
+// queued behind all other ready work, so on a busy page it comes due well past its deadline -
+// which is when bounding the wait matters most.
+//
+// the first observation for an element arrives as a queued task, rather than with the
+// rendering lifecycle that carries later updates, so it needs well under a millisecond of free
+// main thread; 20ms leaves margin for a moderately busy one. Much less would be
+// counterproductive: a user-blocking task outruns the observer, so the wait would end before
+// any entry had arrived.
+export function mkIntersectionHook(intersections = viewportIntersections, cap = () => urgentDelay(20)) {
   return function (next, request) {
     if (!observerAllowed()) {
       // measurements will not consult the observer, so there is nothing to wait for
@@ -310,21 +324,7 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
         intersections.observe(getAdUnitElement(adUnit))
       )),
-      // according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
-      // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
-      // However, browsers appear to run it even when the element is outside the DOM
-      // just to be sure, cap the amount of time we wait for intersections.
-      //
-      // the cap only holds as an upper bound with high priority scheduling: an ordinary timer is
-      // queued behind all other ready work, so on a busy page it comes due well past its deadline -
-      // which is when bounding the wait matters most.
-      //
-      // the first observation for an element arrives as a queued task, rather than with the
-      // rendering lifecycle that carries later updates, so it needs well under a millisecond of free
-      // main thread; 20ms leaves margin for a moderately busy one. Much less would be
-      // counterproductive: a user-blocking task outruns the observer, so the wait would end before
-      // any entry had arrived.
-      urgentDelay(20)
+      cap()
     ]).then(() => next.call(this, request));
   };
 }

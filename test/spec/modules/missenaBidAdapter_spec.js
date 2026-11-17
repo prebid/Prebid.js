@@ -4,10 +4,10 @@ import { BANNER } from '../../../src/mediaTypes.js';
 import { config } from 'src/config.js';
 import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
 import { getWinDimensions } from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const REFERRER = 'https://referer';
-const REFERRER2 = 'https://referer2';
 
 const CONSENT_STRING = 'AAAAAAAAA==';
 const API_KEY = 'PA-XXXXXX';
@@ -107,13 +107,13 @@ describe('Missena Adapter', function () {
 
     it('should return false if the apiKey is missing', function () {
       expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: {} })),
+        spec.isBidRequestValid({ ...bid, params: {} }),
       ).to.equal(false);
     });
 
     it('should return false if the apiKey is an empty string', function () {
       expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: { apiKey: '' } })),
+        spec.isBidRequestValid({ ...bid, params: { ...bid.params, apiKey: '' } }),
       ).to.equal(false);
     });
   });
@@ -208,63 +208,120 @@ describe('Missena Adapter', function () {
       expect(payloadNoFloor.sizes[0].height).to.equal(1);
     });
 
+    it('should not send local when the storage is empty', function () {
+      expect(payload).to.not.have.property('local');
+    });
+
     getDataFromLocalStorageStub.restore();
-    getDataFromLocalStorageStub = sinon.stub(
-      storage,
-      'getDataFromLocalStorage',
-    );
-    const localStorageData = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-        }),
-    };
-    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
-    const cappedRequests = spec.buildRequests(bids, bidderRequest);
 
-    it('should not participate if capped', function () {
-      expect(cappedRequests.length).to.equal(0);
-    });
+    describe('capping', function () {
+      let now;
+      let stub;
 
-    const localStorageDataSamePage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER,
-        }),
-    };
+      beforeEach(function () {
+        now = Date.now();
+        stub = sinon.stub(storage, 'getDataFromLocalStorage');
+      });
+      afterEach(function () {
+        stub.restore();
+      });
 
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataSamePage[key],
-    );
-    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
+      function buildWithLocal(local) {
+        stub
+          .withArgs(`msna-local.${API_KEY}`)
+          .returns(typeof local === 'string' ? local : JSON.stringify(local));
+        return spec.buildRequests([bidWithoutFloor], bidderRequest);
+      }
 
-    it('should not participate if capped on same page', function () {
-      expect(cappedRequestsSamePage.length).to.equal(0);
-    });
+      it('should not send local when the storage content is not JSON', function () {
+        const payload = JSON.parse(buildWithLocal('not json')[0].data);
+        expect(payload).to.not.have.property('local');
+      });
 
-    const localStorageDataOtherPage = {
-      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
-        JSON.stringify({
-          expiry: new Date().getTime() + 600_000, // 10 min into the future
-          referer: REFERRER2,
-        }),
-    };
+      it('should send the providers whose capping has not expired', function () {
+        const payload = JSON.parse(
+          buildWithLocal({
+            capping: {
+              providers: {
+                'pubmatic-banner': { value: 1, expiry: now + 60000 },
+                'other-banner': { value: 1, expiry: now - 1 },
+                broken: { value: 1 },
+              },
+            },
+          })[0].data,
+        );
+        expect(payload.local).to.deep.equal({
+          capping: { providers: ['pubmatic-banner'] },
+        });
+      });
 
-    getDataFromLocalStorageStub.callsFake(
-      (key) => localStorageDataOtherPage[key],
-    );
-    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
+      it('should not send local when every provider capping has expired', function () {
+        const payload = JSON.parse(
+          buildWithLocal({
+            capping: { providers: { 'pubmatic-banner': { value: 1, expiry: now - 1 } } },
+          })[0].data,
+        );
+        expect(payload).to.not.have.property('local');
+      });
 
-    it('should participate if capped on a different page', function () {
-      expect(cappedRequestsOtherPage.length).to.equal(2);
+      it('should not request when the user closed the ad recently', function () {
+        const requests = buildWithLocal({
+          capping: { counters: { 'remove-bubble': { value: 1, expiry: now + 60000 } } },
+        });
+        expect(requests).to.deep.equal([]);
+      });
+
+      it('should not request when the ad was closed on the same page', function () {
+        const requests = buildWithLocal({
+          capping: {
+            counters: {
+              'remove-bubble': { value: 1, expiry: now + 60000, referer: REFERRER },
+            },
+          },
+        });
+        expect(requests).to.deep.equal([]);
+      });
+
+      it('should request when the ad was closed on another page', function () {
+        const requests = buildWithLocal({
+          capping: {
+            counters: {
+              'remove-bubble': {
+                value: 1,
+                expiry: now + 60000,
+                referer: 'https://other',
+              },
+            },
+          },
+        });
+        expect(requests.length).to.equal(1);
+      });
+
+      it('should request when the close capping has expired', function () {
+        const requests = buildWithLocal({
+          capping: { counters: { 'remove-bubble': { value: 1, expiry: now - 1 } } },
+        });
+        expect(requests.length).to.equal(1);
+      });
+
+      it('should apply the close capping per api key', function () {
+        const otherBid = {
+          ...bidWithoutFloor,
+          params: { ...bidWithoutFloor.params, apiKey: 'PA-OTHER' },
+        };
+        stub.withArgs('msna-local.PA-OTHER').returns(
+          JSON.stringify({
+            capping: { counters: { 'remove-bubble': { value: 1, expiry: now + 60000 } } },
+          }),
+        );
+        const requests = spec.buildRequests([otherBid, bidWithoutFloor], bidderRequest);
+        expect(requests.length).to.equal(1);
+        expect(JSON.parse(requests[0].data).params.apiKey).to.equal(API_KEY);
+      });
     });
 
     it('should send the prebid version', function () {
       expect(payload.version).to.equal('prebid.js@$prebid.version$');
-    });
-
-    it('should send cookie deprecation', function () {
     });
   });
 
@@ -425,6 +482,49 @@ describe('Missena Adapter', function () {
       expect(syncUrl.searchParams.get('us_privacy')).to.equal('1YNN');
       expect(syncUrl.searchParams.get('gpp')).to.equal(gppConsent.gppString);
       expect(syncUrl.searchParams.get('gpp_sid')).to.equal('7');
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('should not throw', function () {
+      expect(() => spec.onTimeout([{ bidder: 'missena', bidId }])).to.not.throw();
+    });
+  });
+
+  describe('onBidWon', function () {
+    const wonBid = {
+      params: [{ apiKey: API_KEY }],
+      meta: { networkName: 'pubmatic-banner' },
+      originalCpm: 1.25,
+      originalCurrency: 'EUR',
+    };
+
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should trigger the bid success pixel on the production events domain', function () {
+      spec.onBidWon(wonBid);
+      expect(utils.triggerPixel.calledOnce).to.equal(true);
+      const url = new URL(utils.triggerPixel.firstCall.args[0]);
+      expect(url.hostname).to.equal('events.missena.io');
+      expect(url.pathname).to.equal('/v1/bidsuccess');
+      expect(url.searchParams.get('t')).to.equal(API_KEY);
+      expect(url.searchParams.get('provider')).to.equal('pubmatic-banner');
+      expect(url.searchParams.get('cpm')).to.equal('1.25');
+      expect(url.searchParams.get('currency')).to.equal('EUR');
+    });
+
+    it('should use the staging events domain when a baseUrl is set', function () {
+      spec.onBidWon({
+        ...wonBid,
+        params: [{ apiKey: API_KEY, baseUrl: 'https://bid.staging.missena.xyz/' }],
+      });
+      const url = new URL(utils.triggerPixel.firstCall.args[0]);
+      expect(url.hostname).to.equal('events.staging.missena.xyz');
     });
   });
 });

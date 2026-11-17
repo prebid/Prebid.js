@@ -5,6 +5,11 @@ const { spec, getSDKVersion, formatAdHTML, getBidFloor, extractTransactionIds } 
 const pbjsVersion = getGlobal().version;
 
 describe('fwsspBidAdapter', () => {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.fwssp_cache;
+  });
+
   describe('isBidRequestValid', () => {
     it('should return true when all required params are present', () => {
       const bid = {

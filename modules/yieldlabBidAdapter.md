@@ -29,7 +29,7 @@ const adUnits = [
                 extId: 'abc',
                 iabContent: {
                     id: 'some_id',
-                    episode: '1',
+                    episode: 1,
                     title: 'some title',
                     series: 'some series',
                     season: 's1',
@@ -38,9 +38,9 @@ const adUnits = [
                     isrc: 'CC-XXX-YY-NNNNN',
                     url: 'http://foo_url.de',
                     cat: [ 'IAB1-1', 'IAB1-2', 'IAB2-10' ],
-                    context: '7',
-                    keywords: ['k1', 'k2'],
-                    live: '0'
+                    context: 7,
+                    keywords: 'k1,k2',
+                    live: 0
                 }
             }
         }]
@@ -104,3 +104,7 @@ const adUnit = {
     ]
 };
 ```
+
+# Price Floors
+
+Floors from the [Price Floors module](https://docs.prebid.org/dev-docs/modules/floors.html) are sent with each impression: the ad unit's floor, and for each of its media types the floor configured for that media type where it differs. Yieldlab applies the floor of the media type the Adslot is set up for, so a multi-format ad unit is floored as configured for the media type it serves. Floors are looked up in EUR; Yieldlab converts a USD floor and ignores a floor in any other currency.

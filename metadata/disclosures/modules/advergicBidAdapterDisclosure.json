@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "_advid",
+      "type": "cookie",
+      "maxAgeSeconds": 31536000,
+      "cookieRefresh": true,
+      "domains": [".avads.live"],
+      "purposes": [1, 2]
+    }
+  ],
+  "domains": [
+    {
+      "domain": ".avads.live",
+      "use": "Advergic uses the _advid cookie to recognize browsers and manage advertising frequency caps."
+    }
+  ]
+}

@@ -7,8 +7,7 @@ import { isBidUsable } from '../../src/targeting/filters.js';
 import { getGlobalVarName, shouldDefineGlobal } from '../../src/buildOptions.js';
 import { install } from './devtoolsMcp.ts';
 
-export type { ToolDefinition, ToolGroup, DevToolsHandlers, RegisteredInstance, DevToolsDeps } from './devtoolsMcp.ts';
-export { makeDevTools, getPrebidDevTools, installPrebidDevTools } from './devtoolsMcp.ts';
+export { makeDevTools, getPrebidDevTools, installPrebidDevTools, type ToolDefinition, type ToolGroup, type DevToolsHandlers, type RegisteredInstance, type DevToolsDeps } from './devtoolsMcp.ts';
 
 install({
   auctionManager,

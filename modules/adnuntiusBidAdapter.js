@@ -13,7 +13,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { toLegacyResponse, toOrtbNativeRequest } from '../src/native.js';
+import { toLegacyResponse } from '../src/native.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adnuntius';
@@ -22,7 +22,7 @@ const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
   return BIDDER_CODE_DEAL_ALIAS_BASE + num;
 });
 const GVLID = 855;
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] : [])];
 const MAXIMUM_DEALS_LIMIT = 5;
 const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const METADATA_KEY = 'adn.metaData';
@@ -398,12 +398,11 @@ export const spec = {
         const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: targetId };
         if (mediaType === VIDEO) {
           adUnit.adType = 'VAST';
-        } else if (mediaType === NATIVE) {
+        } else if (FEATURES.NATIVE && mediaType === NATIVE) {
           adUnit.adType = 'NATIVE';
           if (!mediaTypeData.ortb) {
             // assume it's using old format if ortb not specified
-            const legacyStyleNativeRequest = deepClone(mediaTypeData);
-            const nativeOrtb = toOrtbNativeRequest(legacyStyleNativeRequest);
+            const nativeOrtb = deepClone(bid.nativeOrtbRequest);
             // add explicit event tracker requests for impressions and viewable impressions, which do not exist in legacy format
             nativeOrtb.eventtrackers = [
               {
@@ -503,10 +502,10 @@ export const spec = {
       if (renderSource.vastXml) {
         adResponse.vastXml = renderSource.vastXml;
         adResponse.mediaType = VIDEO;
-      } else if (renderSource.nativeJson) {
+      } else if (FEATURES.NATIVE && renderSource.nativeJson) {
         adResponse.mediaType = NATIVE;
         if (bidOnRequest.mediaTypes?.native && !bidOnRequest.mediaTypes?.native?.ortb) {
-          adResponse.native = toLegacyResponse(renderSource.nativeJson.ortb, toOrtbNativeRequest(bidOnRequest.mediaTypes.native));
+          adResponse.native = toLegacyResponse(renderSource.nativeJson.ortb, bidOnRequest.nativeOrtbRequest);
         } else {
           adResponse.native = renderSource.nativeJson;
         }

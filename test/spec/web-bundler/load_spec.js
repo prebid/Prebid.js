@@ -1,4 +1,12 @@
-import { checkAndRun, getManifest, loadModules } from 'web-bundler/load.mjs';
+import {
+  checkAndRun,
+  getManifest,
+  getManifests,
+  loadModules,
+  MANIFEST,
+  METADATA_MANIFEST,
+  provideManifest
+} from 'web-bundler/load.mjs';
 
 describe('web bundler load utils', () => {
   let loader, success, fail;
@@ -9,25 +17,97 @@ describe('web bundler load utils', () => {
     }));
   });
   describe('getManifest', () => {
-    it('should load manifest.js as JSONP', async () => {
-      const p = getManifest(loader, 'checksum');
-      const cb = /^manifest.js\?callback=(.*)$/.exec(loader.getCall(0).args[0])[1];
-      window[cb]('manifest');
-      success();
-      expect(await p).to.eql('manifest');
+    let scope;
+    beforeEach(() => {
+      scope = {};
     });
 
-    Object.entries({
-      success: () => success(),
-      fail: () => fail()
-    }).forEach(([t, fn]) => {
-      it(`should clean up JSONP callback on ${t}`, async () => {
-        const p = getManifest(loader, 'checksum');
-        const cb = /^manifest.js\?callback=(.*)$/.exec(loader.getCall(0).args[0])[1];
-        fn();
-        await p.catch(() => {
-        });
-        expect(window[cb]).to.not.exist;
+    it('should load manifest.js, at a URL without a query string, so that it can be cached', () => {
+      getManifest(loader, 'checksum', scope);
+      sinon.assert.calledWith(loader, 'manifest.js', 'checksum');
+    });
+
+    [MANIFEST, METADATA_MANIFEST].forEach(file => {
+      it(`should resolve to the data ${file} provides through the scope`, async () => {
+        const p = getManifest(loader, 'checksum', scope, file);
+        provideManifest({ src: `https://cdn.example/${file}`, __pbjsScope: scope }, file, 'manifest');
+        success();
+        expect(await p).to.eql('manifest');
+        expect(Object.keys(scope)).to.eql([]);
+      });
+    });
+
+    it('should reject if the script provides no manifest', async () => {
+      const p = getManifest(loader, 'checksum', scope);
+      success();
+      try {
+        await p;
+        sinon.assert.fail('did not reject');
+      } catch (e) {
+        sinon.assert.match(e.message, /manifest.js/);
+      }
+    });
+
+    it('should reject if the script fails to load', async () => {
+      const p = getManifest(loader, 'checksum', scope);
+      fail(new Error('failed'));
+      try {
+        await p;
+        sinon.assert.fail('did not reject');
+      } catch (e) {
+        expect(e.message).to.eql('failed');
+      }
+    });
+  });
+
+  describe('provideManifest', () => {
+    afterEach(() => {
+      delete window.__pbjsTestCallback;
+    });
+
+    it('should call the JSONP callback of loaders before 11.48', () => {
+      window.__pbjsTestCallback = sinon.spy();
+      const scope = {};
+      provideManifest({ src: 'https://cdn.example/manifest.js?callback=__pbjsTestCallback', __pbjsScope: scope }, MANIFEST, 'manifest');
+      sinon.assert.calledWith(window.__pbjsTestCallback, 'manifest');
+      expect(Object.keys(scope)).to.eql([]);
+    });
+
+    it('should do nothing for a script without a scope', () => {
+      expect(() => provideManifest({ src: 'https://cdn.example/manifest.js' }, MANIFEST, 'manifest')).to.not.throw();
+    });
+  });
+
+  describe('getManifests', () => {
+    let scope, loaded;
+    beforeEach(() => {
+      scope = {};
+      loaded = [];
+      loader = sinon.stub().callsFake((file) => {
+        loaded.push(file);
+        provideManifest({ src: `https://cdn.example/${file}`, __pbjsScope: scope }, file, {
+          [MANIFEST]: { dependencies: { 'a.js': [] }, checksums: { 'a.js': 'cs-a' } },
+          [METADATA_MANIFEST]: { checksums: { 'a.metadata.js': 'cs-a-meta' } }
+        }[file]);
+        return Promise.resolve();
+      });
+    });
+    const checksums = { [MANIFEST]: 'cs-manifest', [METADATA_MANIFEST]: 'cs-metadata-manifest' };
+
+    it('should not load the metadata manifest when no module needs metadata', async () => {
+      const manifest = await getManifests(loader, checksums, scope, ['a'], () => false);
+      expect(loaded).to.eql([MANIFEST]);
+      sinon.assert.calledWith(loader, MANIFEST, 'cs-manifest');
+      expect(manifest).to.eql({ dependencies: { 'a.js': [] }, checksums: { 'a.js': 'cs-a' } });
+    });
+
+    it('should add the metadata checksums when a module needs metadata', async () => {
+      const manifest = await getManifests(loader, checksums, scope, ['a', 'storageControl'], (m) => m === 'storageControl');
+      expect(loaded).to.have.members([MANIFEST, METADATA_MANIFEST]);
+      sinon.assert.calledWith(loader, METADATA_MANIFEST, 'cs-metadata-manifest');
+      expect(manifest).to.eql({
+        dependencies: { 'a.js': [] },
+        checksums: { 'a.js': 'cs-a', 'a.metadata.js': 'cs-a-meta' }
       });
     });
   });

@@ -1,8 +1,9 @@
-import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO, AUDIO } from '../../../src/mediaTypes.js';
 
 export const ORTB_MTYPES = {
   1: BANNER,
   2: VIDEO,
+  3: AUDIO,
   4: NATIVE
 };
 

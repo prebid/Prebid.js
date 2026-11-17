@@ -44,6 +44,24 @@ jobs:
           name: prInfo
           path: ${{ runner.temp}}/prInfo.json
 
+  metadata:
+    # The release fails if a module declares a GVL ID that is deleted from (or missing in) the GVL, which
+    # can happen without any change here, when a vendor is removed from the GVL. Run the same metadata
+    # compilation on every master push so that it fails master, and is fixed, before release day.
+    # (On pull requests, adapter-naming.yml runs it too, but only to report naming problems.)
+    if: ${{ github.event_name == 'push' }}
+    name: Validate metadata (GVL IDs)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Compile metadata
+        # --no-fetch skips storage disclosure downloads; the GVL is still fetched to validate GVL IDs
+        run: |
+          npx gulp update-metadata --no-fetch
+
   polyfills:
     needs: [build]
     if: ${{ github.event_name == 'pull_request' }}
@@ -55,11 +73,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          fetch-depth: 2
       - name: Calculate base SHA and diff
         id: base
         run:  |
-          base=$(git merge-base HEAD "origin/${{ github.event.pull_request.base.ref }}")          
+          base=$(git rev-parse HEAD^1)
           git diff --name-only $base..HEAD  > ${{runner.temp}}/changed_files.txt
           echo "base=$base" >> $GITHUB_OUTPUT
       - name: Restore from cache
@@ -104,7 +122,9 @@ jobs:
             
             const base = JSON.parse(fs.readFileSync('${{ runner.temp }}/base-polyfills.json').toString());
             const head = JSON.parse(fs.readFileSync('${{ runner.temp }}/head-polyfills.json').toString());
-            const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(f => f.trim());
+            // spec files are not shipped, and they already run on older browsers in the normal PR checks
+            const files = fs.readFileSync('${{ runner.temp }}/changed_files.txt').toString().split('\n').map(f => f.trim())
+              .filter(f => !/_spec\.[jtm]sx?$/.test(f));
             
             const diff = files.reduce((memo, file) => {
               const fileBase = new Set(base.files[file] ?? []);

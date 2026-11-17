@@ -8,7 +8,7 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
-import { logError, logInfo, deepAccess, insertUserSyncIframe } from '../src/utils.js';
+import { logError, logInfo, deepAccess, createInvisibleIframe, insertElement } from '../src/utils.js';
 
 const GVL_ID = 898;
 const MODULE_NAME = 'mobkoiId';
@@ -115,9 +115,10 @@ export const utils = {
       'pixelUrl=' + encodeURIComponent(equativPixelUrl) +
       '&cookieName=sas_uid';
 
-    /**
-     * Listen for messages from the iframe with automatic cleanup
-     */
+    const iframe = createInvisibleIframe(document, {
+      src: url,
+      sandbox: 'allow-scripts allow-same-origin',
+    });
     let completed = false;
     let messageHandler;
     const complete = function(sasUid) {
@@ -126,11 +127,15 @@ export const utils = {
       }
       completed = true;
       window.removeEventListener('message', messageHandler);
+      iframe.parentNode?.removeChild(iframe);
       onCompleteCallback(sasUid);
     };
 
     messageHandler = function(event) {
-      switch (event.data.type) {
+      if (event.source !== iframe.contentWindow) {
+        return;
+      }
+      switch (event.data?.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
           logInfo('Parent window Sync completed. SAS ID:', sasUid);
@@ -144,10 +149,11 @@ export const utils = {
     };
 
     window.addEventListener('message', messageHandler);
-
-    insertUserSyncIframe(url, () => {
-      logInfo('insertUserSyncIframe loaded');
-    }, undefined, () => complete(null));
+    iframe.addEventListener('error', () => {
+      logError('Equativ SAS ID iframe failed to load');
+      complete(null);
+    });
+    insertElement(iframe, document, 'html', true);
 
     // Return the URL for testing purposes
     return url;

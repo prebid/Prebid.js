@@ -261,6 +261,9 @@ function prepareAuction(auction) {
   return isolatedAuction;
 }
 
+// far beyond real WebCrypto latency (hundreds of ms on a loaded runner); deadline tests use fake timers instead
+const REAL_TIMER_BUDGET = 10000;
+
 function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare = true) {
   if (prepare) auction = prepareAuction(auction);
   let callbackCount = 0;
@@ -268,7 +271,7 @@ function beginAuction(params = {}, auction = makeAuction(), userConsent, prepare
     encypherSubmodule.getBidRequestData(auction, () => {
       callbackCount += 1;
       resolve();
-    }, { params: Object.assign({ timeout: 300 }, params) }, userConsent);
+    }, { params: Object.assign({ timeout: REAL_TIMER_BUDGET }, params) }, userConsent);
   });
   return {
     auction,
@@ -350,34 +353,27 @@ function paddedJson(value, byteLength) {
   return serialized + ' '.repeat(padding);
 }
 
-function installStreamResponse(sandbox, matchingBody, spec) {
-  const NativeResponse = window.Response;
+function streamBody(spec) {
   const state = { cancelCount: 0, readCount: 0 };
-  sandbox.stub(window, 'Response').callsFake((body, init) => {
-    if (body !== matchingBody) return new NativeResponse(body, init);
-    const reader = {
-      read() {
-        state.readCount += 1;
-        if (spec.rejectRead) return GreedyPromise.reject(new Error('reader failed'));
-        if (spec.pendingRead) return new Promise(() => {});
-        const chunk = spec.chunks.shift();
-        return GreedyPromise.resolve(chunk
-          ? { done: false, value: chunk }
-          : { done: true, value: undefined });
-      },
-      cancel() {
-        state.cancelCount += 1;
-        return GreedyPromise.resolve();
-      },
-    };
-    return {
-      status: init.status,
-      statusText: init.statusText,
-      headers: new Headers(init.headers || {}),
-      body: spec.bodyNull ? null : { getReader: () => reader },
-    };
-  });
-  return state;
+  if (spec.bodyNull) return { body: null, state };
+  // highWaterMark 0: the stream pulls only when the module reads, so readCount counts reads.
+  const body = new ReadableStream({
+    pull(controller) {
+      state.readCount += 1;
+      if (spec.rejectRead) throw new Error('reader failed');
+      if (spec.pendingRead) return new Promise(() => {});
+      const chunk = spec.chunks.shift();
+      if (chunk) {
+        controller.enqueue(chunk);
+      } else {
+        controller.close();
+      }
+    },
+    cancel() {
+      state.cancelCount += 1;
+    },
+  }, { highWaterMark: 0 });
+  return { body, state };
 }
 
 function utf8Chunks(text, chunkSizes = []) {
@@ -393,7 +389,14 @@ function utf8Chunks(text, chunkSizes = []) {
   return chunks;
 }
 
-describe('encypherRtdProvider decision-network v1', () => {
+// The provider hashes with crypto.subtle, which browsers only expose in a secure context. A BrowserStack iPhone
+// loads the tests from http://bs-local.com (iOS can't reach localhost through the tunnel), which isn't one, so the suite
+// is only defined in a secure context; the suite at the end runs everywhere, so the file is never empty.
+function describeSecureContext(name, fn) {
+  if (window.isSecureContext) describe(name, fn);
+}
+
+describeSecureContext('encypherRtdProvider decision-network v1', () => {
   let sandbox;
   let cleanups;
   let digestStub;
@@ -908,7 +911,7 @@ describe('encypherRtdProvider decision-network v1', () => {
         callbackCount += 1;
         abortedAtCallback = lookup.fetch.request.signal.aborted;
         resolve();
-      }, { params: { timeout: 300 } });
+      }, { params: { timeout: REAL_TIMER_BUDGET } });
     });
     lookup = pendingLookup();
     lookup.respond(503, HEADERS, 'unavailable');
@@ -1267,8 +1270,10 @@ describe('encypherRtdProvider decision-network v1', () => {
     ));
     requests[0].respond(200, HEADERS, JSON.stringify(ready(lowRecord, 10)));
     requests[1].respond(200, HEADERS, JSON.stringify(ready(highRecord, 11)));
-    for (let attempt = 0; attempt < 20; attempt += 1) await nextTask();
-    assert.ok(resolveLow && resolveHigh, 'both signature verifications must be pending');
+    // stop as soon as both verifications have started (verify calls 1 and 2): each task can take tens of ms
+    // (e.g. WebKit), so a fixed number of tasks could outlast the module timeout before they are resolved
+    for (let attempt = 0; attempt < 20 && verify.callCount < 3; attempt += 1) await nextTask();
+    assert.strictEqual(verify.callCount, 3, 'both signature verifications must be pending');
 
     resolveHigh(true);
     await high.completion;
@@ -1597,10 +1602,10 @@ describe('encypherRtdProvider decision-network v1', () => {
     startAuction.before(captureActualAuction, 18);
     try {
       configureActualRtd({
-        auctionDelay: 300,
+        auctionDelay: REAL_TIMER_BUDGET,
         dataProviders: [
           { name: before.name, waitForIt: true },
-          { name: MODULE_NAME, waitForIt: true, params: { timeout: 300 } },
+          { name: MODULE_NAME, waitForIt: true, params: { timeout: REAL_TIMER_BUDGET } },
           { name: after.name, waitForIt: true },
         ],
       });
@@ -1698,14 +1703,14 @@ describe('encypherRtdProvider decision-network v1', () => {
     {
       name: 'limit plus one',
       body(limit) {
-        return { matching: 'plus-one', chunks: [new Uint8Array(limit + 1)], headers: HEADERS };
+        return { chunks: [new Uint8Array(limit + 1)], headers: HEADERS };
       },
       cancelled: true,
     },
     {
       name: 'one oversized chunk without Content-Length',
       body(limit) {
-        return { matching: 'single-oversized', chunks: [new Uint8Array(limit + 128)], headers: HEADERS };
+        return { chunks: [new Uint8Array(limit + 128)], headers: HEADERS };
       },
       cancelled: true,
     },
@@ -1713,7 +1718,6 @@ describe('encypherRtdProvider decision-network v1', () => {
       name: 'many chunks crossing the limit',
       body(limit) {
         return {
-          matching: 'multiple-oversized',
           chunks: [new Uint8Array(Math.floor(limit / 2)), new Uint8Array(Math.floor(limit / 2)), new Uint8Array(2)],
           headers: HEADERS,
         };
@@ -1724,7 +1728,6 @@ describe('encypherRtdProvider decision-network v1', () => {
       name: 'deceptive small Content-Length',
       body(limit) {
         return {
-          matching: 'deceptive-length',
           chunks: [new Uint8Array(limit), new Uint8Array(1)],
           headers: Object.assign({}, HEADERS, { 'Content-Length': '1' }),
         };
@@ -1734,21 +1737,23 @@ describe('encypherRtdProvider decision-network v1', () => {
     {
       name: 'reader rejection',
       body() {
-        return { matching: 'reader-rejection', chunks: [], headers: HEADERS, rejectRead: true };
+        return { chunks: [], headers: HEADERS, rejectRead: true };
       },
-      cancelled: true,
+      // a rejected read errors the stream, and cancelling an errored stream never reaches its source
+      cancelled: false,
+      aborted: true,
     },
     {
       name: 'null response body',
       body() {
-        return { matching: 'body-null', chunks: [], headers: HEADERS, bodyNull: true };
+        return { chunks: [], headers: HEADERS, bodyNull: true };
       },
       cancelled: false,
     },
     {
       name: 'malformed UTF-8',
       body() {
-        return { matching: 'malformed-utf8', chunks: [Uint8Array.from([0xc3, 0x28])], headers: HEADERS };
+        return { chunks: [Uint8Array.from([0xc3, 0x28])], headers: HEADERS };
       },
       cancelled: false,
     },
@@ -1761,8 +1766,7 @@ describe('encypherRtdProvider decision-network v1', () => {
       addCanonical(STORY_URL, cleanups);
       const run = beginAuction();
       const value = endpoint === 'lookup' ? ready(STORY_SIGNAL, 80) : JWKS;
-      const body = paddedJson(value, limit);
-      const state = installStreamResponse(sandbox, body, { chunks: utf8Chunks(body) });
+      const { body, state } = streamBody({ chunks: utf8Chunks(paddedJson(value, limit)) });
       if (endpoint === 'lookup') {
         pendingLookup().respond(200, HEADERS, body);
         await respondJwksIfRequested();
@@ -1779,8 +1783,7 @@ describe('encypherRtdProvider decision-network v1', () => {
     it('rejects an over-limit declared Content-Length before reading the ' + endpoint + ' body', async () => {
       addCanonical(STORY_URL, cleanups);
       const run = beginAuction();
-      const body = 'declared-over-limit';
-      const state = installStreamResponse(sandbox, body, { chunks: [new Uint8Array(1)] });
+      const { body, state } = streamBody({ chunks: [new Uint8Array(1)] });
       let request;
       if (endpoint === 'lookup') {
         request = pendingLookup();
@@ -1801,7 +1804,7 @@ describe('encypherRtdProvider decision-network v1', () => {
         addCanonical(STORY_URL, cleanups);
         const run = beginAuction();
         const fixture = testCase.body(limit);
-        const state = installStreamResponse(sandbox, fixture.matching, {
+        const { body, state } = streamBody({
           chunks: fixture.chunks.slice(),
           rejectRead: fixture.rejectRead,
           bodyNull: fixture.bodyNull,
@@ -1813,11 +1816,11 @@ describe('encypherRtdProvider decision-network v1', () => {
           pendingLookup().respond(200, HEADERS, JSON.stringify(ready(STORY_SIGNAL, 82)));
           request = await findPending(PINNED_JWKS_URL);
         }
-        request.respond(200, fixture.headers, fixture.matching);
+        request.respond(200, fixture.headers, body);
         await run.completion;
         assertNoInjection(run.auction);
         assert.strictEqual(state.cancelCount > 0, testCase.cancelled);
-        if (testCase.cancelled) assert.strictEqual(request.fetch.request.signal.aborted, true);
+        if (testCase.cancelled || testCase.aborted) assert.strictEqual(request.fetch.request.signal.aborted, true);
       });
     });
 
@@ -1825,8 +1828,7 @@ describe('encypherRtdProvider decision-network v1', () => {
       const clock = useFakeTimers();
       addCanonical(STORY_URL, cleanups);
       const run = beginAuction({ timeout: 100 });
-      const body = 'pending-reader';
-      const state = installStreamResponse(sandbox, body, { chunks: [], pendingRead: true });
+      const { body, state } = streamBody({ chunks: [], pendingRead: true });
       let request;
       if (endpoint === 'lookup') {
         request = pendingLookup();
@@ -1998,5 +2000,22 @@ describe('encypherRtdProvider decision-network v1', () => {
     assertNoInjection(run.auction);
     assert.deepStrictEqual(decodeClaims(PAGE_ATT).record_revision, 7);
     assert.strictEqual(server.requests.some(request => request.url.includes('/.well-known/jwks.json')), false);
+  });
+});
+
+describe('encypherRtdProvider without crypto.subtle', () => {
+  it('calls back without requesting a decision', async () => {
+    const subtle = window.crypto.subtle && sinon.stub(window.crypto, 'subtle').get(() => undefined);
+    try {
+      resetProviderState();
+      encypherSubmodule.init({ params: {} });
+      const requests = server.requests.length;
+      const { completion, callbackCount } = beginAuction();
+      await completion;
+      assert.strictEqual(callbackCount(), 1);
+      assert.strictEqual(server.requests.length, requests);
+    } finally {
+      if (subtle) subtle.restore();
+    }
   });
 });

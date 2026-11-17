@@ -15,7 +15,7 @@ const EID_SOURCE = 'anonymised.io';
 const LOG_PREFIX = 'User ID - anonymisedId submodule: ';
 
 /**
- * Local storage key holding the CUID. It is written by the Anonymised Marketing Tag when the user
+ * Local storage key holding the PPID. It is written by the Anonymised Marketing Tag when the user
  * signs in, and removed by it on sign-out or when consent is withdrawn. This module only reads it.
  */
 export const STORAGE_KEY = 'anon-cuid';
@@ -56,7 +56,7 @@ function usesUnsupportedStorage(config) {
 const ENCODED_VALUE_CHARS = /[\s{}[\]"']/;
 
 /**
- * The Marketing Tag writes the CUID as a plain string. Validation is deliberately loose - it
+ * The Marketing Tag writes the PPID as a plain string. Validation is deliberately loose - it
  * rejects the values that would be harmful to pass on (empty, serialised, or implausibly long)
  * without pinning the identifier's format, which is owned by the tag and can change on a much
  * faster release cycle than this module.
@@ -84,7 +84,7 @@ export const anonymisedIdSubmodule = {
   gvlid: GVLID,
 
   /**
-   * Read the CUID that the Anonymised Marketing Tag stored on this domain. This is a synchronous
+   * Read the PPID that the Anonymised Marketing Tag stored on this domain. This is a synchronous
    * read with no network call: when the tag has not written an ID yet - because it is not installed,
    * or the user is not signed in - there is simply no ID for this page view.
    * @function

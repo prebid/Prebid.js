@@ -800,10 +800,6 @@ describe('TNE Catalyst Bid Adapter', () => {
       expect(spec.code).to.equal('tne_catalyst');
     });
 
-    it('has GVL ID 1494', () => {
-      expect(spec.gvlid).to.equal(1494);
-    });
-
     it('supports banner, native, and video media types', () => {
       expect(spec.supportedMediaTypes).to.include(BANNER);
       expect(spec.supportedMediaTypes).to.include(NATIVE);

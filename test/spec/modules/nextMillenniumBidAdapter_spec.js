@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import {
   getImp,
   setImpPos,
@@ -13,6 +14,11 @@ import {
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
+  it('declares its Google Additional Consent provider ID instead of the deleted GVL ID', () => {
+    expect(spec.acpId).to.equal(21731);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
   describe('function getImp', () => {
     const dataTests = [
       {
@@ -1392,5 +1398,14 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
+
+    it('reports the scroll offset from getWinDimensions', () => {
+      const stub = sinon.stub(winDimensions, 'getWinDimensions').returns({ scrollY: 1234 });
+      try {
+        expect(getExtNextMilImp('1', { params: {} }).nextMillennium.scrollTop).to.equal(1234);
+      } finally {
+        stub.restore();
+      }
+    });
   });
 });

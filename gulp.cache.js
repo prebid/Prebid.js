@@ -298,12 +298,14 @@ function store() {
 
 function forwardErrors(out, streams) {
   let failed = false;
-  streams.forEach(stream => stream.on('error', err => {
+  const onError = err => {
     if (!failed) {
       failed = true;
       out.emit('error', err);
     }
-  }));
+  };
+  streams.forEach(stream => stream.on('error', onError));
+  return onError;
 }
 
 /**
@@ -336,10 +338,11 @@ function cachedPipeline({namespace, src, key, transform, dest}) {
   const stages = [lookup(dir, hits)].concat(transform(), store());
   const misses = stages.reduce((from, to) => from.pipe(to));
   const merged = mergeStream(misses, hits);
-  const out = merged.pipe(dest);
   // `pipe` does not carry errors downstream, so a failure in any stage would otherwise go
   // unhandled instead of failing the task
-  forwardErrors(out, [src, ...stages, merged]);
+  const onError = forwardErrors(dest, [src, ...stages]);
+  merged.on('error', onError);
+  const out = merged.pipe(dest);
   src.pipe(stages[0]);
   return out;
 }

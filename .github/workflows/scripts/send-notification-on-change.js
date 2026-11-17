@@ -1,13 +1,18 @@
 // send-notification-on-change.js
 //
 // called by the code-path-changes.yml workflow, this script queries github for
-// the changes in the current PR, checks the config file for whether any of those
-// file paths are set to alert an email address, and sends email to multiple
-// parties if needed
+// the changes in the current PR, checks explicit config rules and module
+// Markdown maintainers for matching paths, and sends one email per recipient
 
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const { getModuleRules, groupMatches } = require('./module-notifications');
+
+// File names come from the PR, and may contain markup.
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+}
 
 (async () => {
   const configFilePath = path.join(__dirname, 'codepath-notification');
@@ -34,6 +39,9 @@ const nodemailer = require('nodemailer');
         const [regex, email] = line.split(':').map(part => part.trim());
         return { regex: new RegExp(regex), email };
       });
+    // The workflow checks out the trusted base branch. Read its module docs,
+    // rather than taking notification recipients from unreviewed PR contents.
+    configRules.push(...getModuleRules(path.resolve(__dirname, '../../../modules')));
 
     // Fetch all changed files from github (paginated)
     const [owner, repoName] = repo.split('/');
@@ -60,17 +68,7 @@ const nodemailer = require('nodemailer');
     console.log('Changed files:', changedFiles);
 
     // match file pathnames that are in the config and group them by email address
-    const matchesByEmail = {};
-    changedFiles.forEach(file => {
-      configRules.forEach(rule => {
-        if (rule.regex.test(file)) {
-          if (!matchesByEmail[rule.email]) {
-            matchesByEmail[rule.email] = [];
-          }
-          matchesByEmail[rule.email].push(file);
-        }
-      });
-    });
+    const matchesByEmail = groupMatches(changedFiles, configRules);
 
     // Exit successfully if no matches were found
     if (Object.keys(matchesByEmail).length === 0) {
@@ -95,7 +93,7 @@ const nodemailer = require('nodemailer');
         <p>
         Files relevant to your integration have been changed in open source ${repo}. The <a href="https://github.com/${repo}/pull/${prNumber}">pull request is #${prNumber}</a>. These are the files you monitor that have been modified:
         <ul>
-          ${files.map(file => `<li>${file}</li>`).join('')}
+          ${files.map(file => `<li>${escapeHtml(file)}</li>`).join('')}
         </ul>
       `;
 
@@ -108,9 +106,9 @@ const nodemailer = require('nodemailer');
         });
 
         console.log(`Email sent successfully to ${email}`);
-        console.log(`${emailBody}`);
       } catch (error) {
         console.error(`Failed to send email to ${email}:`, error.message);
+        process.exitCode = 1;
       }
     }
   } catch (error) {
