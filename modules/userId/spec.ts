@@ -94,7 +94,8 @@ export type ProviderResponse = {
 };
 
 /**
- * Passed to getId / extendId for the duration of that invocation, including any callback it returns.
+ * Storage access passed to getId / extendId, usable until the invocation completes: when getId / extendId returns
+ * without a callback, or when its callback calls `setId`.
  *
  * By default the User ID module stores the ID data a submodule reports (as `id`, or through the callback's
  * `setId`), and reporting none keeps the current ID. A submodule that calls `set`, `touch` or `remove` manages
@@ -118,11 +119,6 @@ export type IdHandle = {
    * Delete the stored ID data.
    */
   remove(): void;
-  /**
-   * Report the ID data and finish the invocation; nothing reported through this handle afterwards has any effect.
-   * This only updates the ID in memory: use `set` to store it.
-   */
-  setId(id?: SerializableId): void;
 };
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;

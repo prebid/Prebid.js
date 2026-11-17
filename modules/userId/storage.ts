@@ -185,12 +185,16 @@ export type IdStore = {
    * Start a getId / extendId invocation. The new handle supersedes any earlier one for the same submodule.
    * @param options
    * @param options.isCurrent false once the ID system the invocation belongs to has been reinitialized
-   * @param options.onChange called when the invocation changes the in-memory ID after getId / extendId has returned
+   * @param options.onChange called when setId changes the in-memory ID
    */
   handle(options: { isCurrent: () => boolean, onChange: () => void }): InvocationHandle;
 };
 
-export type InvocationHandle = IdHandle & {
+export type InvocationHandle = {
+  /**
+   * What the submodule is given: storage access only.
+   */
+  view: IdHandle;
   /**
    * True once the submodule has used set, touch or remove: from then on the ID it reports is not stored by the
    * User ID module, and an empty one means "no ID".
@@ -202,12 +206,15 @@ export type InvocationHandle = IdHandle & {
    */
   store(value: SerializableId): void;
   /**
+   * Set the in-memory ID (empty clears it) and finish the invocation. Does not store it.
+   */
+  setId(id?: SerializableId): void;
+  /**
    * Finish the invocation, leaving the ID as it is.
    */
   close(): void;
   /**
-   * Set once the invocation outlives getId / extendId: from then on, ID changes are reported through `onChange`,
-   * and closing reports the callback as done.
+   * Called when the invocation finishes.
    */
   onClose?: () => void;
 };
@@ -247,18 +254,20 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
         };
       }
       const handle: InvocationHandle = {
+        view: {
+          get: () => read(),
+          set: write('set', (value: SerializableId) => {
+            if (value == null) {
+              logError(`${MODULE_NAME}: ${name()} - set() needs a value; use remove() to delete it`);
+            } else {
+              setStoredValue(submodule, value);
+            }
+          }),
+          touch: write('touch', () => touchStoredValue(submodule)),
+          remove: write('remove', () => deleteStoredValue(submodule)),
+        },
         managed: false,
         closed: false,
-        get: () => read(),
-        set: write('set', (value: SerializableId) => {
-          if (value == null) {
-            logError(`${MODULE_NAME}: ${name()} - set() needs a value; use remove() to delete it`);
-          } else {
-            setStoredValue(submodule, value);
-          }
-        }),
-        touch: write('touch', () => touchStoredValue(submodule)),
-        remove: write('remove', () => deleteStoredValue(submodule)),
         store(value) {
           if (isOpen() && hasStorage()) setStoredValue(submodule, value);
         },
@@ -272,7 +281,7 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
               logInfo(`${MODULE_NAME}: ${name()} - ignoring a callback superseded by a refresh`);
             } else {
               submodule.idObj = id ? submodule.submodule.decode(id, submodule.config) : undefined;
-              if (handle.onClose) onChange();
+              onChange();
             }
           } catch (e) {
             logError(`Error in userID module '${name()}':`, e);

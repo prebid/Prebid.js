@@ -773,23 +773,17 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
       const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
 
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(extendedConfig, consentData, storedId, handle);
+      response = submodule.submodule.getId(extendedConfig, consentData, storedId, handle.view);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, consentData, storedId, handle);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId, handle.view);
     }
   } else {
-    response = submodule.submodule.getId(submodule.config, consentData, undefined, handle);
+    response = submodule.submodule.getId(submodule.config, consentData, undefined, handle.view);
   }
 
   const id = isPlainObject(response) ? response.id : undefined;
   const callback = isPlainObject(response) && typeof response.callback === 'function' ? response.callback : undefined;
-  if (handle.closed) {
-    if (callback) {
-      logWarn(`${MODULE_NAME}: ${submodule.submodule.name} - ignoring the callback of a getId / extendId that already reported its ID`);
-    }
-    return;
-  }
   if (handle.managed) {
     submodule.idObj = id ? submodule.submodule.decode(id, submodule.config) : undefined;
   } else {

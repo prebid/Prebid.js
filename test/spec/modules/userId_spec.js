@@ -1343,12 +1343,6 @@ describe('User ID', function () {
           expect(read()).to.equal('newValue');
         });
 
-        it('should accept the handle\'s own setId, which does not store', async () => {
-          const ids = await run(withCallback((setId, handle) => handle.setId('memoryOnly')), 'stored');
-          expect(ids).to.eql({ mid: 'memoryOnly' });
-          expect(read()).to.equal('stored');
-        });
-
         it('should ignore storage calls and IDs reported after setId', async () => {
           const ids = await run(withCallback((setId, handle) => {
             setId('fresh');
@@ -1385,15 +1379,10 @@ describe('User ID', function () {
           expect(read()).to.equal('stored');
         });
 
-        it('should ignore the callback of a getId that already called setId', async () => {
-          const callback = sinon.stub();
-          const ids = await run((config, consent, storedId, handle) => {
-            handle.setId('sync');
-            return { callback };
-          });
-          expect(ids).to.eql({ mid: 'sync' });
-          sinon.assert.notCalled(callback);
-          sinon.assert.calledWith(utils.logWarn, sinon.match('ignoring the callback'));
+        it('should give the submodule storage access only', async () => {
+          let handle;
+          await run((config, consent, storedId, h) => { handle = h; });
+          expect(Object.keys(handle).sort()).to.eql(['get', 'remove', 'set', 'touch']);
         });
       });
 
