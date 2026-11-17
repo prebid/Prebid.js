@@ -1046,20 +1046,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "wipes",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "wi",
-      "aliasOf": "wipes",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "yahooAds",
       "aliasOf": null,
       "gvlid": 25,
