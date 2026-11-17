@@ -46,6 +46,13 @@ export type SharedIdParams = {
    */
   pixelConsent?: boolean;
   /**
+   * If true, the `pixelUrl` request also carries `cookie_domain`: the domain Prebid.js writes the ID cookie on (the
+   * topmost domain the browser accepts a cookie for, e.g. `example.com` on `www.example.com`), so a first-party
+   * endpoint can set its cookie with the same `Domain`. A server can't run the browser's public-suffix check
+   * itself; it should only accept a value equal to the request host or a parent domain of it. Default is false.
+   */
+  pixelCookieDomain?: boolean;
+  /**
    * The value to use for `inserter` in EIDs.
    */
   inserter?: string;
@@ -92,7 +99,7 @@ function readValue(name, type) {
 // this page view minted.
 const PIXEL_RECHECK_MS = 50;
 
-function getIdCallback(pubcid, pixelUrl, pixelParams?) {
+function getIdCallback(pubcid, pixelUrl, getPixelParams?: () => Record<string, string>) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
@@ -124,7 +131,7 @@ function getIdCallback(pubcid, pixelUrl, pixelParams?) {
           }
         };
         setTimeout(() => read(true), 0);
-      }, pixelParams)();
+      }, getPixelParams?.())();
     } else {
       callback(pubcid);
     }
@@ -132,18 +139,27 @@ function getIdCallback(pubcid, pixelUrl, pixelParams?) {
 }
 
 /**
- * The page's consent data as `pixelUrl` query params, URL-encoded, when `pixelConsent` is set. Empty values are left
- * out.
+ * The extra `pixelUrl` query params, URL-encoded: the page's consent data when `pixelConsent` is set, and the
+ * cookie domain when `pixelCookieDomain` is set. Empty values are left out.
  */
-function pixelConsentParams(pixelConsent, consentData: Partial<AllConsentData> | undefined): Record<string, string> {
-  if (!pixelConsent) return {};
+function pixelParams(
+  { pixelConsent, pixelCookieDomain }: SharedIdParams = {},
+  consentData: Partial<AllConsentData> | undefined
+): Record<string, string> {
   const params: Record<string, string> = {};
-  Object.entries(getUserSyncParams(consentData?.gdpr, consentData?.usp, consentData?.gpp))
-    .filter(([, value]) => value != null && value !== '')
-    .forEach(([key, value]) => {
-      // getUserSyncParams encodes us_privacy already
-      params[key] = key === 'us_privacy' ? String(value) : encodeURIComponent(String(value));
-    });
+  if (pixelConsent) {
+    Object.entries(getUserSyncParams(consentData?.gdpr, consentData?.usp, consentData?.gpp))
+      .filter(([, value]) => value != null && value !== '')
+      .forEach(([key, value]) => {
+        // getUserSyncParams encodes us_privacy already
+        params[key] = key === 'us_privacy' ? String(value) : encodeURIComponent(String(value));
+      });
+  }
+  if (pixelCookieDomain) {
+    // the domain the User ID module writes the ID cookie on. Only probed when asked for: the probe writes test cookies
+    const domain = sharedIdSystemSubmodule.domainOverride();
+    if (domain) params.cookie_domain = encodeURIComponent(domain);
+  }
   return params;
 }
 
@@ -199,7 +215,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const { params: { create = true, pixelUrl, pixelConsent } = {} } = config;
+    const { params: { create = true, pixelUrl } = {} } = config;
     let newId = storedId;
     if (!newId) {
       try {
@@ -213,7 +229,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl, pixelConsentParams(pixelConsent, consentData)) };
+    return { id: newId, callback: getIdCallback(newId, pixelUrl, () => pixelParams(config.params, consentData)) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -237,7 +253,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       logInfo('PubCommonId: IDs not provided for coppa requests, exiting PubCommonId');
       return;
     }
-    const { params: { extend = false, pixelUrl, pixelConsent } = {} } = config;
+    const { params: { extend = false, pixelUrl } = {} } = config;
 
     if (extend) {
       if (pixelUrl) {
@@ -246,7 +262,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
         // would have the User ID module re-store it, overwriting the server-set cookie from script.
         return {
           callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined),
-            pixelConsentParams(pixelConsent, consentData))()
+            pixelParams(config.params, consentData))()
         };
       } else {
         return { id: storedId };

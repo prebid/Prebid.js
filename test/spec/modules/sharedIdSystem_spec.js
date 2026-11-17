@@ -244,7 +244,7 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
-  describe('pixelConsent', function () {
+  describe('pixelConsent and pixelCookieDomain', function () {
     const PIXEL_URL = '/wp-json/pubcid/v1/extend/';
     const TC_STRING = 'CPx1VfLPx1VfLAcABBENC-CgAP_AAH_AAAAAJ5NV_H__bX9n-';
     const GPP_STRING = 'DBABMA~CPx1VfLPx1VfLAcABBENC-CgAP_AAH_AAAAAJ5NV_H__bX9n-';
@@ -261,6 +261,7 @@ describe('SharedId System', function () {
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       sandbox.useFakeTimers();
       sandbox.stub(utils, 'triggerPixel');
+      sandbox.stub(sharedIdSystemSubmodule, 'domainOverride').returns('example.com');
     });
 
     afterEach(function () {
@@ -372,6 +373,40 @@ describe('SharedId System', function () {
             id: `pubcid:${id}`,
             us_privacy: '1YNN'
           });
+        });
+
+        it('should not look up the cookie domain without pixelCookieDomain', function () {
+          firePixel({ pixelConsent: true }, FULL_CONSENT);
+          utils.triggerPixel.resetHistory();
+          expect(firePixel({ pixelCookieDomain: false }, FULL_CONSENT)).to.equal(PLAIN_URL + id);
+          sinon.assert.notCalled(sharedIdSystemSubmodule.domainOverride);
+        });
+
+        it('should send cookie_domain with pixelCookieDomain', function () {
+          const url = firePixel({ pixelCookieDomain: true }, FULL_CONSENT);
+          expect(url).to.equal(PLAIN_URL + id + '&cookie_domain=example.com');
+          sinon.assert.calledOnce(sharedIdSystemSubmodule.domainOverride);
+        });
+
+        it('should send both consent and cookie_domain with pixelConsent and pixelCookieDomain', function () {
+          expect(queryOf(firePixel({ pixelConsent: true, pixelCookieDomain: true }, { usp: '1YNN', gdpr: { gdprApplies: false } }))).to.eql({
+            id: `pubcid:${id}`,
+            gdpr: '0',
+            us_privacy: '1YNN',
+            cookie_domain: 'example.com'
+          });
+        });
+
+        it('should leave out cookie_domain when no domain is determined', function () {
+          sharedIdSystemSubmodule.domainOverride.returns(undefined);
+          expect(firePixel({ pixelCookieDomain: true }, undefined)).to.equal(PLAIN_URL + id);
+        });
+
+        it('should send the domain the module writes the cookie on', function () {
+          const expected = sharedIdSystemSubmodule.domainOverride.wrappedMethod();
+          sharedIdSystemSubmodule.domainOverride.callThrough();
+          const query = queryOf(firePixel({ pixelCookieDomain: true }, undefined));
+          expect(query.cookie_domain).to.equal(expected);
         });
       });
     });
