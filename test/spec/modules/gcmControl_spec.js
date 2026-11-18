@@ -23,6 +23,7 @@ import {
 } from 'src/activities/activities.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import adapterManager from 'src/adapterManager.js';
 
 describe('gcmControl', () => {
   const ALL_ACTIVITIES = [
@@ -216,6 +217,37 @@ describe('gcmControl', () => {
       config.setConfig({ consentManagement: {} });
       setConsent({ ad_user_data: 'denied' });
       expect(allowed(ACTIVITY_TRANSMIT_EIDS, MODULE_TYPE_BIDDER)).to.be.true;
+    });
+  });
+
+  describe('analytics_storage revoked mid-session', () => {
+    let adapter, enabled;
+    beforeEach(() => {
+      enabled = false;
+      adapter = {
+        get enabled() { return enabled; },
+        code: 'gcmMockAnalytics',
+        enableAnalytics: sinon.stub().callsFake(() => { enabled = true; }),
+        disableAnalytics: sinon.stub().callsFake(() => { enabled = false; })
+      };
+      adapterManager.registerAnalyticsAdapter({ code: adapter.code, adapter });
+      setupRules();
+    });
+    afterEach(() => {
+      delete adapterManager.analyticsRegistry[adapter.code];
+    });
+
+    it('disables, and re-enables, analytics adapters as consent changes', () => {
+      setConsent({ analytics_storage: 'granted' });
+      adapterManager.enableAnalytics({ provider: adapter.code });
+      expect(enabled).to.be.true;
+      // consent changes trigger this through allConsent.onChange
+      setConsent({ analytics_storage: 'denied' });
+      adapterManager.refreshAnalytics();
+      expect(enabled).to.be.false;
+      setConsent({ analytics_storage: 'granted' });
+      adapterManager.refreshAnalytics();
+      expect(enabled).to.be.true;
     });
   });
 
