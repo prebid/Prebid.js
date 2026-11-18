@@ -265,7 +265,15 @@ describe('cross-domain creative', () => {
         it('ignores messages that are not a prebid response message', () => {
           render({ adId: '123', pubUrl: ORIGIN });
           reply({ adId: '123', ad: 'markup' });
-          sinon.assert.notCalled(mkIframe);
+          reply({ message: MESSAGE_RESPONSE, adId: '123', ad: 'markup' });
+          return waitFor(() => getMessage(1)?.payload).then(() => {
+            sinon.assert.calledOnce(mkIframe);
+            expect(getMessage(1).payload).to.eql({
+              message: MESSAGE_EVENT,
+              adId: '123',
+              event: EVENT_AD_RENDER_SUCCEEDED
+            });
+          });
         });
 
         it('signals AD_RENDER_FAILED on exceptions', () => {
