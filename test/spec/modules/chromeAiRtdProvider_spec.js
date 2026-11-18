@@ -243,8 +243,8 @@ describe('Chrome AI RTD Provider', function () {
       self.Summarizer.availability.resolves('unavailable');
 
       return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function (result) {
-        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer is unavailable.'))).to.be.true;
-        // Init might still resolve to true if other features initialize successfully.
+        expect(logMessageStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer availability: unavailable.'))).to.be.true;
+        expect(self.Summarizer.create.called).to.be.false;
       });
     });
 
@@ -257,7 +257,11 @@ describe('Chrome AI RTD Provider', function () {
 
       return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(() => {
         expect(self.Summarizer.create.called).to.be.true;
-        expect(mockSummarizerInstance.addEventListener.calledWith('downloadprogress', sinon.match.func)).to.be.true;
+        const monitor = self.Summarizer.create.firstCall.args[0].monitor;
+        const monitorTarget = { addEventListener: sinon.stub() };
+        monitor(monitorTarget);
+        monitorTarget.addEventListener.firstCall.args[1]({ loaded: 0.5, total: 1 });
+        expect(logMessageStub.calledWith(sinon.match('Summarizer model download: 50%'))).to.be.true;
       });
     });
 
@@ -451,6 +455,394 @@ describe('Chrome AI RTD Provider', function () {
       const keywordPath = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.summarizer.ortb2Path; // or the configured one
       // Verify that keywords were not set by checking the path
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, keywordPath)).to.be.undefined;
+    });
+  });
+
+  describe('Classifier, Decisions and Prompt APIs', function () {
+    const NEW_APIS = ['Classifier', 'DecisionModel', 'LanguageModel'];
+    let originals;
+    let reqBidsConfigObj;
+
+    const flush = async () => {
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    };
+
+    function mockApi(name, instance, availability = 'available') {
+      const Api = function () {};
+      Api.availability = sinon.stub().resolves(availability);
+      Api.create = sinon.stub().resolves(instance);
+      self[name] = Api;
+      return Api;
+    }
+
+    function setUserActive(isActive) {
+      Object.defineProperty(navigator, 'userActivation', { value: { isActive }, configurable: true, writable: true });
+    }
+
+    function setCache(data) {
+      mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY)
+        .returns(JSON.stringify({ [chromeAiRtdProvider.getCurrentUrl()]: data }));
+    }
+
+    function storedData() {
+      const call = mockStorage.setDataInLocalStorage.lastCall;
+      return call && JSON.parse(call.args[1])[chromeAiRtdProvider.getCurrentUrl()];
+    }
+
+    function runAuction() {
+      chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      return reqBidsConfigObj.ortb2Fragments.global;
+    }
+
+    const init = (params) => chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: false }, ...params } });
+
+    beforeEach(function () {
+      originals = Object.fromEntries(NEW_APIS.map(name => [name, self[name]]));
+      NEW_APIS.forEach(name => { self[name] = undefined; });
+      Object.defineProperty(document.body, 'textContent', { get: () => 'A page about cars and new electric vehicles.', configurable: true });
+      setUserActive(false);
+      reqBidsConfigObj = { adUnits: [], ortb2Fragments: { global: {} } };
+    });
+
+    afterEach(function () {
+      NEW_APIS.forEach(name => {
+        if (originals[name] === undefined) delete self[name]; else self[name] = originals[name];
+      });
+      delete document.body.textContent;
+      delete navigator.userActivation;
+    });
+
+    describe('defaults', function () {
+      it('does not touch the new APIs unless enabled', async function () {
+        const apis = NEW_APIS.map(name => mockApi(name, {}));
+        await chromeAiRtdProvider.chromeAiSubmodule.init({});
+        apis.forEach(api => {
+          expect(api.availability.called).to.be.false;
+          expect(api.create.called).to.be.false;
+        });
+        const global = runAuction();
+        expect(global.site?.pagecat).to.be.undefined;
+        expect(global.site?.content?.data).to.be.undefined;
+      });
+    });
+
+    describe('categories', function () {
+      const classifications = [
+        { id: '45', confidence: 0.82 },
+        { id: '602', confidence: 0.98 },
+        { id: '597', confidence: 0.95 },
+        { id: '1', confidence: 0.3 }
+      ];
+      let classifier;
+
+      beforeEach(function () {
+        classifier = { classify: sinon.stub().resolves(classifications), destroy: sinon.stub() };
+      });
+
+      it('writes Classifier IDs above minScore, highest first and at most maxCategories, with cattax 9', async function () {
+        const Classifier = mockApi('Classifier', classifier);
+        expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2 } })).to.be.true;
+        expect(classifier.classify.calledWith('A page about cars and new electric vehicles.')).to.be.true;
+        expect(classifier.destroy.called).to.be.true;
+        expect(Classifier.create.firstCall.args[0].monitor).to.be.a('function');
+        const global = runAuction();
+        expect(global.site.pagecat).to.deep.equal(['602', '597']);
+        expect(global.site.cattax).to.equal(9);
+      });
+
+      it('caches the categories for the page URL', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true } });
+        expect(storedData().categories).to.deep.equal(['602', '597', '45']);
+      });
+
+      it('uses cached categories without calling the API', async function () {
+        const Classifier = mockApi('Classifier', classifier);
+        setCache({ categories: ['483'] });
+        await init({ categories: { enabled: true } });
+        expect(Classifier.availability.called).to.be.false;
+        expect(runAuction().site.pagecat).to.deep.equal(['483']);
+      });
+
+      it('does not cache when cacheInLocalStorage is false', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true, cacheInLocalStorage: false } });
+        expect(mockStorage.setDataInLocalStorage.called).to.be.false;
+        expect(runAuction().site.pagecat).to.have.length(3);
+      });
+
+      it('does not use the Prompt API when the Classifier is unavailable, unless promptFallback is set', async function () {
+        mockApi('Classifier', classifier, 'unavailable');
+        const LanguageModel = mockApi('LanguageModel', {});
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(classifier.classify.called).to.be.false;
+        expect(LanguageModel.availability.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
+      });
+
+      it('falls back to the Prompt API, constrained to tier 1 IDs, when the Classifier is missing', async function () {
+        const session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '483', confidence: 0.2 }] })),
+          destroy: sinon.stub()
+        };
+        const LanguageModel = mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, promptFallback: true } });
+        expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt).to.include('1: Automotive');
+        expect(responseConstraint.properties.categories.maxItems).to.equal(3);
+        expect(responseConstraint.properties.categories.items.properties.id.enum)
+          .to.deep.equal(Object.keys(chromeAiRtdProvider.IAB_CONTENT_3_1_TIER_1));
+        expect(session.destroy.called).to.be.true;
+        expect(runAuction().site).to.deep.equal({ pagecat: ['1'], cattax: 9 });
+      });
+
+      it('waits for user activation before a model download', async function () {
+        const Classifier = mockApi('Classifier', classifier, 'downloadable');
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(Classifier.create.called).to.be.false;
+
+        window.dispatchEvent(new Event('click'));
+        await flush();
+        expect(Classifier.create.called, 'still inactive').to.be.false;
+
+        setUserActive(true);
+        window.dispatchEvent(new Event('click'));
+        await flush();
+        expect(Classifier.create.calledOnce).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['602', '597', '45']);
+      });
+
+      it('creates the model when downloadable and the user is active', async function () {
+        const Classifier = mockApi('Classifier', classifier, 'downloadable');
+        setUserActive(true);
+        expect(await init({ categories: { enabled: true } })).to.be.true;
+        expect(Classifier.create.calledOnce).to.be.true;
+      });
+
+      it('does not overwrite publisher site.pagecat', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
+        expect(runAuction().site).to.deep.equal({ pagecat: ['IAB1'], cattax: 1 });
+      });
+
+      it('does not change a publisher site.cattax of another taxonomy', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 6 } };
+        expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 6 });
+      });
+
+      it('logs classify errors', async function () {
+        classifier.classify.rejects(new Error('too long'));
+        mockApi('Classifier', classifier);
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(logErrorStub.calledWith(sinon.match("Error detecting 'categories'"))).to.be.true;
+      });
+    });
+
+    describe('selectCategories', function () {
+      it('drops entries without a string id or numeric confidence, and duplicates', function () {
+        expect(chromeAiRtdProvider.selectCategories([
+          { id: '1', confidence: 0.9 }, { id: 1, confidence: 0.9 }, { id: '2' }, { id: '1', confidence: 0.8 }, null
+        ], { minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
+        expect(chromeAiRtdProvider.selectCategories(undefined, { minScore: 0, maxCategories: 5 })).to.deep.equal([]);
+      });
+    });
+
+    describe('decisions', function () {
+      const questions = [
+        { id: 'is_review', type: 'boolean', prompt: 'Is this page a product review?' },
+        {
+          id: 'audience',
+          type: 'choice',
+          prompt: 'Who is the page written for?',
+          options: [{ label: 'enthusiast', description: 'Car enthusiasts' }, { label: 'general' }]
+        },
+        { id: 'tone', type: 'score', prompt: 'Rate how positive the page is.' }
+      ];
+      const decision = {
+        is_review: { id: 'is_review', label: 'true', confidence: 0.9, probabilities: { true: 0.9, false: 0.1 } },
+        audience: { id: 'audience', label: 'enthusiast', confidence: 0.4, probabilities: {} },
+        tone: { id: 'tone', label: '4', expectedScore: 3.9, confidence: 0.7, probabilities: {} }
+      };
+      let model;
+
+      beforeEach(function () {
+        model = { decide: sinon.stub().resolves(decision), destroy: sinon.stub() };
+      });
+
+      it('answers with DecisionModel and writes the answers as site.content.data segments', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        const LanguageModel = mockApi('LanguageModel', {});
+        await init({ decisions: { enabled: true, questions, minConfidence: 0.5 } });
+        expect(DecisionModel.availability.firstCall.args[0]).to.deep.equal({ questions });
+        expect(DecisionModel.create.firstCall.args[0].questions).to.deep.equal(questions);
+        expect(model.decide.calledWith('A page about cars and new electric vehicles.')).to.be.true;
+        expect(model.destroy.called).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: [{ name: 'publisher', segment: [{ id: '1' }] }] } } };
+        expect(runAuction().site.content.data).to.deep.equal([
+          { name: 'publisher', segment: [{ id: '1' }] },
+          { name: 'chromeAi', segment: [{ id: 'is_review', value: 'true' }, { id: 'tone', value: '4' }] }
+        ]);
+      });
+
+      it('falls back to the Prompt API with a JSON schema built from the same questions', async function () {
+        const session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ is_review: 'false', audience: 'general', tone: '9' })),
+          destroy: sinon.stub()
+        };
+        mockApi('DecisionModel', model, 'unavailable');
+        mockApi('LanguageModel', session);
+        await init({ decisions: { enabled: true, questions } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt).to.include('audience: Who is the page written for? Answers: "enthusiast" (Car enthusiasts), "general"');
+        expect(responseConstraint).to.deep.equal({
+          type: 'object',
+          properties: {
+            is_review: { type: 'string', enum: ['true', 'false'] },
+            audience: { type: 'string', enum: ['enthusiast', 'general'] },
+            tone: { type: 'string', enum: ['1', '2', '3', '4', '5'] }
+          },
+          required: ['is_review', 'audience', 'tone'],
+          additionalProperties: false
+        });
+        expect(runAuction().site.content.data).to.deep.equal([
+          { name: 'chromeAi', segment: [{ id: 'is_review', value: 'false' }, { id: 'audience', value: 'general' }] }
+        ]);
+      });
+
+      it('does not fall back when promptFallback is false', async function () {
+        const LanguageModel = mockApi('LanguageModel', {});
+        expect(await init({ decisions: { enabled: true, questions, promptFallback: false } })).to.be.false;
+        expect(LanguageModel.availability.called).to.be.false;
+      });
+
+      it('ignores invalid questions', async function () {
+        mockApi('DecisionModel', model);
+        const invalid = [
+          { id: 'no_options', type: 'choice', prompt: 'Pick one' },
+          { id: 'bad_type', type: 'text', prompt: 'Anything' },
+          { type: 'boolean', prompt: 'No id' }
+        ];
+        await init({ decisions: { enabled: true, questions: [questions[0], ...invalid] } });
+        expect(model.decide.called).to.be.true;
+        expect(logErrorStub.calledWith(sinon.match('Ignoring invalid decisions question'))).to.be.true;
+        expect(runAuction().site.content.data[0].segment).to.deep.equal([{ id: 'is_review', value: 'true' }]);
+      });
+
+      it('does nothing without valid questions', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        expect(await init({ decisions: { enabled: true } })).to.be.false;
+        expect(DecisionModel.availability.called).to.be.false;
+      });
+
+      it('uses cached answers only while the questions are unchanged', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        const cached = storedData().decisions;
+        expect(cached.segment).to.have.length(3);
+
+        setCache({ decisions: cached });
+        await init({ decisions: { enabled: true, questions } });
+        expect(DecisionModel.create.calledOnce).to.be.true;
+
+        await init({ decisions: { enabled: true, questions: questions.slice(0, 1) } });
+        expect(DecisionModel.create.calledTwice).to.be.true;
+      });
+
+      it('does not add a second chromeAi entry to site.content.data', async function () {
+        mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        const existing = [{ name: 'chromeAi', segment: [{ id: 'mine', value: 'x' }] }];
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: existing } } };
+        expect(runAuction().site.content.data).to.deep.equal(existing);
+      });
+    });
+
+    describe('keywords', function () {
+      let session;
+
+      beforeEach(function () {
+        session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ keywords: [' cars ', 'electric vehicles', 'cars', ''] })),
+          destroy: sinon.stub()
+        };
+      });
+
+      it('extracts keywords with the Prompt API into a comma-separated site.content.keywords', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, maxKeywords: 5 } });
+        const [, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(responseConstraint.properties.keywords).to.deep.equal({ type: 'array', items: { type: 'string' }, maxItems: 5 });
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(storedData().extractedKeywords).to.deep.equal(['cars', 'electric vehicles']);
+        expect(runAuction().site.content.keywords).to.equal('cars,electric vehicles');
+      });
+
+      it('writes an array to a kwarray path', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, ortb2Path: 'site.content.kwarray' } });
+        expect(runAuction().site.content.kwarray).to.deep.equal(['cars', 'electric vehicles']);
+      });
+
+      it('falls back to the Summarizer, with the summarizer options, when LanguageModel is unavailable', async function () {
+        mockApi('LanguageModel', session, 'unavailable');
+        await init({ keywords: { enabled: true }, summarizer: { type: 'key-points', length: 'medium' } });
+        expect(session.prompt.called).to.be.false;
+        expect(self.Summarizer.availability.firstCall.args[0]).to.deep.equal({ type: 'key-points', format: 'markdown', length: 'medium' });
+        expect(mockSummarizerInstance.summarize.called).to.be.true;
+        expect(runAuction().site.content.keywords).to.equal('Test summary');
+      });
+
+      it('does not overwrite publisher keywords', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { keywords: 'mine' } } };
+        expect(runAuction().site.content.keywords).to.equal('mine');
+      });
+
+      it('uses cached keywords without calling the API', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        setCache({ extractedKeywords: ['cached'] });
+        await init({ keywords: { enabled: true } });
+        expect(LanguageModel.availability.called).to.be.false;
+        expect(runAuction().site.content.keywords).to.equal('cached');
+      });
+
+      it('runs only the keywords feature when summarizer is also enabled', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true }, summarizer: { enabled: true } });
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(runAuction().site.content.keywords).to.equal('cars,electric vehicles');
+      });
+    });
+
+    describe('existing summarizer config', function () {
+      it('keeps using only the Summarizer, writing an array of one summary', async function () {
+        const LanguageModel = mockApi('LanguageModel', {});
+        await init({ summarizer: { enabled: true } });
+        expect(LanguageModel.availability.called).to.be.false;
+        expect(storedData().keywords).to.deep.equal(['Test summary']);
+        expect(runAuction().site.content.keywords).to.deep.equal(['Test summary']);
+      });
+
+      it('uses keywords cached by earlier versions', async function () {
+        setCache({ keywords: ['old summary'] });
+        await init({ summarizer: { enabled: true } });
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(runAuction().site.content.keywords).to.deep.equal(['old summary']);
+      });
+
+      it('waits for user activation before a Summarizer download', async function () {
+        self.Summarizer.availability.resolves('downloadable');
+        expect(await init({ summarizer: { enabled: true } })).to.be.false;
+        expect(self.Summarizer.create.called).to.be.false;
+        expect(logMessageStub.calledWith(sinon.match('Summarizer needs a model download but the user is inactive'))).to.be.true;
+      });
     });
   });
 });
