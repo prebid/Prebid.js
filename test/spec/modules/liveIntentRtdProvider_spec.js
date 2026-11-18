@@ -61,13 +61,25 @@ describe('LiveIntent Rtd Provider', function () {
 
     it('calls callback and leaves ortb2 unchanged when segments are missing', function () {
       stubUserIds({ lipb: { lipbid: 'abc' } });
-      const reqBidsConfigObj = makeReqBidsConfig();
+
+      const existing = {
+        name: 'example.com',
+        segment: [{ id: 'a_1231' }, { id: 'b_4311' }]
+      };
+
+      const reqBidsConfigObj = makeReqBidsConfig({
+        source: {},
+        user: { data: [existing] }
+      });
       const callback = sandbox.spy();
 
       liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
 
       expect(callback.calledOnce).to.equal(true);
-      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({});
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
+        source: {},
+        user: { data: [existing] }
+      });
     });
 
     it('calls callback and leaves ortb2 unchanged when segments are empty', function () {
