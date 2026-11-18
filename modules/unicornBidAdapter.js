@@ -1,3 +1,4 @@
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
 import { logInfo, logWarn, deepAccess, generateUUID, canAccessWindowTop, getWindowTop, getWindowSelf } from '../src/utils.js';
 import { getWinDimensions } from '../src/utils/winDimensions.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -68,7 +69,7 @@ function fixedOrSticky(el) {
   let fixed = false;
   let sticky = false;
   while (node && node.nodeType === 1) {
-    const position = win.getComputedStyle(node).position;
+    const position = getElementStyle(node, win).position;
     if (position === 'fixed') fixed = true;
     else if (position === 'sticky') sticky = true;
     node = node.parentElement;
@@ -223,32 +224,10 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       accountId: deepAccess(validBidRequests[0], 'params.accountId')
     }
   };
-  const eids = initializeEids(validBidRequests[0]);
-  if (eids.length > 0) {
-    request.user.eids = eids;
-  }
 
   logInfo('[UNICORN] OpenRTB Formatted Request:', request);
   return JSON.stringify(request);
 }
-
-const initializeEids = (bidRequest) => {
-  const eids = [];
-
-  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    eids.push({
-      source: 'id5-sync.com',
-      uids: [
-        {
-          id: id5
-        }
-      ]
-    });
-  }
-
-  return eids;
-};
 
 const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);

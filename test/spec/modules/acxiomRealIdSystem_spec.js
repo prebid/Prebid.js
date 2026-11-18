@@ -1,4 +1,4 @@
-import { acxiomRealIdSubmodule, dep, storage } from 'modules/acxiomRealIdSystem.ts';
+import { acxiomRealIdSubmodule, dep } from 'modules/acxiomRealIdSystem.ts';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from 'src/adapterManager.js';
 import { expect } from 'chai';
 
@@ -6,6 +6,14 @@ const PARTNER_ID = 'TEST_PARTNER_01';
 const REAL_ID_TOKEN = 'acxiom-real-id-token-abc123';
 const HEM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 const STORAGE_NAME = 'acxiomRealId';
+
+function mockHandle() {
+  return { get: sinon.spy(), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+}
+
+function getId(config, consentData, storedId = undefined, handle = mockHandle()) {
+  return acxiomRealIdSubmodule.getId(config, consentData, storedId, handle);
+}
 
 function makeEidResponse(token, atype) {
   return JSON.stringify({
@@ -70,7 +78,6 @@ describe('acxiomRealIdSystem', () => {
 
     describe('post-load consent suppression', () => {
       let gdprStub, uspStub, gppStub;
-      let removeLocalStorageStub, setCookieStub;
 
       beforeEach(() => {
         gdprStub = sinon.stub(gdprDataHandler, 'getConsentData');
@@ -79,10 +86,6 @@ describe('acxiomRealIdSystem', () => {
         gdprStub.returns(null);
         uspStub.returns(null);
         gppStub.returns(null);
-        removeLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
-        setCookieStub = sinon.stub(storage, 'setCookie');
-        sinon.stub(storage, 'localStorageIsEnabled').returns(true);
-        sinon.stub(storage, 'cookiesAreEnabled').returns(true);
       });
 
       afterEach(() => {
@@ -94,53 +97,34 @@ describe('acxiomRealIdSystem', () => {
         expect(result).to.deep.equal({ acxiomRealId: { id: REAL_ID_TOKEN, atype: 1 } });
       });
 
-      it('should suppress and delete token with all suffixes when GDPR handler reports gdprApplies', () => {
+      it('should suppress when GDPR handler reports gdprApplies', () => {
         gdprStub.returns({ gdprApplies: true, consentString: 'BOtest' });
-        const config = { storage: { name: STORAGE_NAME } };
-        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN);
         expect(result).to.be.undefined;
-        ['', '_exp', '_cst', '_last'].forEach(suffix => {
-          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-        });
-        ['', '_cst', '_last'].forEach(suffix => {
-          expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-        });
       });
 
-      it('should suppress and delete token with all suffixes when USP handler reports opt-out', () => {
+      it('should suppress when USP handler reports opt-out', () => {
         uspStub.returns('1YYN');
-        const config = { storage: { name: STORAGE_NAME } };
-        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN);
         expect(result).to.be.undefined;
-        ['', '_exp', '_cst', '_last'].forEach(suffix => {
-          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-        });
       });
 
-      it('should suppress and delete token with all suffixes when GPP handler reports SaleOptOut', () => {
+      it('should suppress when GPP handler reports SaleOptOut', () => {
         gppStub.returns({
           applicableSections: [7],
           parsedSections: { usnat: { Version: 1, SaleOptOut: 1, SharingOptOut: 2 } }
         });
-        const config = { storage: { name: STORAGE_NAME } };
-        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN);
         expect(result).to.be.undefined;
-        ['', '_exp', '_cst', '_last'].forEach(suffix => {
-          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-        });
       });
 
-      it('should suppress and delete token with all suffixes when GPP handler reports SharingOptOut', () => {
+      it('should suppress when GPP handler reports SharingOptOut', () => {
         gppStub.returns({
           applicableSections: [8],
           parsedSections: { usca: { Version: 1, SaleOptOut: 2, SharingOptOut: 1 } }
         });
-        const config = { storage: { name: STORAGE_NAME } };
-        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN, config);
+        const result = acxiomRealIdSubmodule.decode(REAL_ID_TOKEN);
         expect(result).to.be.undefined;
-        ['', '_exp', '_cst', '_last'].forEach(suffix => {
-          expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-        });
       });
     });
   });
@@ -168,7 +152,7 @@ describe('acxiomRealIdSystem', () => {
     describe('consent suppression', () => {
       describe('EU/UK — TCF passive suppression', () => {
         it('should suppress when gdprApplies is true and consentString is present', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { gdpr: { gdprApplies: true, consentString: 'BOtest' } }
           );
@@ -176,7 +160,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should suppress when gdprApplies is true even without consentString', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { gdpr: { gdprApplies: true } }
           );
@@ -184,7 +168,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should suppress when consentString is present even if gdprApplies is false', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { gdpr: { gdprApplies: false, consentString: 'BOtest' } }
           );
@@ -194,7 +178,7 @@ describe('acxiomRealIdSystem', () => {
 
       describe('US — CCPA', () => {
         it('should suppress when us_privacy position 3 = Y (opted out of sale)', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { usp: '1YYN' }
           );
@@ -202,7 +186,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should not suppress when us_privacy position 3 = N (not opted out)', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { usp: '1YNN' }
           );
@@ -210,7 +194,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should not suppress when us_privacy string is too short', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             { usp: '1Y' }
           );
@@ -220,7 +204,7 @@ describe('acxiomRealIdSystem', () => {
 
       describe('US — GPP', () => {
         it('should suppress when GPP usnat SaleOptOut = 1', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -233,7 +217,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should suppress when GPP usnat SharingOptOut = 1', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -246,7 +230,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should suppress when GPP usca (California) SaleOptOut = 1', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -259,7 +243,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should not suppress when GPP section has no opt-out', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -272,7 +256,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should not suppress when applicable section is non-US', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -285,7 +269,7 @@ describe('acxiomRealIdSystem', () => {
         });
 
         it('should handle subsection arrays by flattening', () => {
-          const result = acxiomRealIdSubmodule.getId(
+          const result = getId(
             { params: { partnerId: PARTNER_ID } },
             {
               gpp: {
@@ -299,36 +283,21 @@ describe('acxiomRealIdSystem', () => {
       });
 
       describe('token deletion on consent block', () => {
-        let removeLocalStorageStub;
-        let setCookieStub;
-
-        beforeEach(() => {
-          removeLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
-          setCookieStub = sinon.stub(storage, 'setCookie');
-          sinon.stub(storage, 'localStorageIsEnabled').returns(true);
-          sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+        it('should delete the stored token through the storage handle when consent is blocked', () => {
+          const handle = mockHandle();
+          getId({ params: { partnerId: PARTNER_ID }, storage: { name: STORAGE_NAME } }, { usp: '1YYN' }, 'stored', handle);
+          sinon.assert.calledOnce(handle.remove);
         });
 
-        afterEach(() => {
-          sinon.restore();
-        });
-
-        it('should delete stored token and all suffixes when consent is blocked', () => {
-          acxiomRealIdSubmodule.getId(
-            { params: { partnerId: PARTNER_ID }, storage: { name: STORAGE_NAME } },
-            { usp: '1YYN' }
-          );
-          ['', '_exp', '_cst', '_last'].forEach(suffix => {
-            expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-          });
-          ['', '_cst', '_last'].forEach(suffix => {
-            expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-          });
+        it('should not delete the stored token when consent is not blocked', () => {
+          const handle = mockHandle();
+          getId({ params: { partnerId: PARTNER_ID }, storage: { name: STORAGE_NAME } }, { usp: '1YNN' }, 'stored', handle);
+          sinon.assert.notCalled(handle.remove);
         });
       });
 
       it('should not suppress when no consent data is provided', () => {
-        const result = acxiomRealIdSubmodule.getId(
+        const result = getId(
           { params: { partnerId: PARTNER_ID } },
           {}
         );
@@ -577,38 +546,25 @@ describe('acxiomRealIdSystem', () => {
     });
   });
 
-  describe('onDataDeletionRequest', () => {
-    let removeLocalStorageStub;
-    let setCookieStub;
+  describe('extendId', () => {
+    const config = { params: { partnerId: PARTNER_ID }, storage: { name: STORAGE_NAME } };
 
-    beforeEach(() => {
-      removeLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
-      setCookieStub = sinon.stub(storage, 'setCookie');
-      sinon.stub(storage, 'localStorageIsEnabled').returns(true);
-      sinon.stub(storage, 'cookiesAreEnabled').returns(true);
-    });
-
-    afterEach(() => {
-      sinon.restore();
-    });
-
-    it('should delete token and all suffixes from localStorage and cookies', () => {
-      acxiomRealIdSubmodule.onDataDeletionRequest(
-        { storage: { name: STORAGE_NAME } }
-      );
-      ['', '_exp', '_cst', '_last'].forEach(suffix => {
-        expect(removeLocalStorageStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
-      });
-      ['', '_cst', '_last'].forEach(suffix => {
-        expect(setCookieStub.calledWith(`${STORAGE_NAME}${suffix}`)).to.be.true;
+    [
+      ['GDPR applies', { gdpr: { gdprApplies: true, consentString: 'BOtest' } }],
+      ['USP opts out of sale', { usp: '1YYN' }],
+      ['GPP opts out of sale', { gpp: { applicableSections: [7], parsedSections: { usnat: { SaleOptOut: 1 } } } }]
+    ].forEach(([desc, consentData]) => {
+      it(`should delete the stored token when ${desc}`, () => {
+        const handle = mockHandle();
+        expect(acxiomRealIdSubmodule.extendId(config, consentData, REAL_ID_TOKEN, handle)).to.be.undefined;
+        sinon.assert.calledOnce(handle.remove);
       });
     });
 
-    it('should use module name as fallback and delete all suffixes when storage name is not configured', () => {
-      acxiomRealIdSubmodule.onDataDeletionRequest({});
-      ['', '_exp', '_cst', '_last'].forEach(suffix => {
-        expect(removeLocalStorageStub.calledWith(`acxiomRealId${suffix}`)).to.be.true;
-      });
+    it('should leave storage and the ID untouched when consent is not blocked', () => {
+      const handle = mockHandle();
+      expect(acxiomRealIdSubmodule.extendId(config, { usp: '1YNN' }, REAL_ID_TOKEN, handle)).to.be.undefined;
+      Object.values(handle).forEach(method => sinon.assert.notCalled(method));
     });
   });
 

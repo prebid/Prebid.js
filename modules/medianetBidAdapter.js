@@ -8,7 +8,9 @@ import {
   logInfo,
   safeJSONEncode,
   deepClone,
-  deepSetValue, getWindowTop
+  deepSetValue,
+  getWindowTop,
+  getWinDimensions
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -164,7 +166,6 @@ function extParams(bidRequest, bidderRequests) {
   const params = deepAccess(bidRequest, 'params');
   const gdpr = deepAccess(bidderRequests, 'gdprConsent');
   const uspConsent = deepAccess(bidderRequests, 'uspConsent');
-  const userId = deepAccess(bidRequest, 'userId');
   const sChain = deepAccess(bidRequest, 'ortb2.source.ext.schain') || {};
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
@@ -180,7 +181,6 @@ function extParams(bidRequest, bidderRequests) {
     uspApplies && { usp_consent_string: uspConsent || '' },
     { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
-    userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && { schain: sChain },
     {
@@ -312,7 +312,7 @@ function getOverlapArea(topLeft1, bottomRight1, topLeft2, bottomRight2) {
 }
 
 function normalizeCoordinates(coordinates) {
-  const { scrollX, scrollY } = window;
+  const { scrollX, scrollY } = getWinDimensions(window);
   return {
     top_left: {
       x: coordinates.top_left.x + scrollX,

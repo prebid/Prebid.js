@@ -251,10 +251,10 @@ describe('YieldmoAdapter', function () {
         expect(data.us_privacy).to.equal('');
       });
 
-      it('should add pubcid as parameter of request', function () {
+      it('should not read pubcid from a raw bid.userId', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
         const pubcidBid = mockBannerBid({ crumbs: undefined, userId: { pubcid } });
-        expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
+        expect(buildAndGetData([pubcidBid])).to.not.have.property('pubcid');
       });
 
       it('should add transaction id as parameter of request', function () {
@@ -277,28 +277,10 @@ describe('YieldmoAdapter', function () {
         expect(bidRequest.p).to.contain(auctionId);
       });
 
-      it('should add unified id as parameter of request', function () {
-        const unifiedIdBid = mockBannerBid({ crumbs: undefined });
-        expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
-      });
-
-      it('should use tdid.id when userId.tdid is an object', function () {
-        const tdidObj = {
-          id: '0bf1dcc1-fa25-4aff-a9ff-26c4819dcb17',
-          ext: {
-            rtiPartner: 'TDID',
-            provider: 'www.yahoo.com'
-          }
-        };
-        const bidWithObjectTdid = mockBannerBid({ crumbs: undefined, userId: { tdid: tdidObj } });
-        const data = buildAndGetData([bidWithObjectTdid]);
-        expect(data.tdid).to.equal(tdidObj.id);
-      });
-
-      it('should add CRITEO RTUS id as parameter of request', function () {
-        const criteoId = 'aff4';
-        const criteoIdBid = mockBannerBid({ crumbs: undefined, userId: { criteoId } });
-        expect(buildAndGetData([criteoIdBid]).cri_prebid).to.deep.equal(criteoId);
+      it('should not read tdid or criteoId from a raw bid.userId', function () {
+        const data = buildAndGetData([mockBannerBid({ crumbs: undefined, userId: { tdid: 'tdid-sample', criteoId: 'aff4' } })]);
+        expect(data).to.not.have.property('tdid');
+        expect(data).to.not.have.property('cri_prebid');
       });
 
       it('should add gdpr information to request if available', () => {

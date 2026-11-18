@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError, parseQueryStringParameters } from '../src/utils.js';
+import { logError, parseQueryStringParameters, parseUrl } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
@@ -50,26 +50,30 @@ export const unifiedIdSubmodule = {
    */
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
-    if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
+    const hasValidPartner = typeof configParams.partner === 'string' && configParams.partner.trim() !== '';
+    const hasValidUrl = typeof configParams.url === 'string' && configParams.url.trim() !== '';
+    if (!hasValidPartner && !hasValidUrl) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
     }
-    // Custom URLs are used verbatim; enrich only the default RID request.
-    let url = configParams.url;
-    if (!url) {
+    let url = hasValidUrl ? configParams.url : undefined;
+    const customUrl = url && parseUrl(url, { noDecodeWholeURL: true });
+    if (!url || customUrl.hostname === 'match.adsrvr.org') {
       const queryParams = { ttd_pid: configParams.partner, fmt: 'json' };
+      const ridUrl = new URL(customUrl ? customUrl.href : `https://match.adsrvr.org/track/rid?${parseQueryStringParameters(queryParams)}`);
       const gdprConsent = consentData?.gdpr;
-      if (typeof gdprConsent?.gdprApplies === 'boolean') {
-        queryParams.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+      // Preserve publisher-supplied parameters, including empty values.
+      if (!ridUrl.searchParams.has('gdpr') && typeof gdprConsent?.gdprApplies === 'boolean') {
+        ridUrl.searchParams.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
       }
-      if (typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
-        queryParams.gdpr_consent = gdprConsent.consentString;
+      if (!ridUrl.searchParams.has('gdpr_consent') && typeof gdprConsent?.consentString === 'string' && gdprConsent.consentString) {
+        ridUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
       }
       const domain = getRefererInfo().domain;
-      if (domain) {
-        queryParams.domain = domain;
+      if (!ridUrl.searchParams.has('domain') && domain) {
+        ridUrl.searchParams.set('domain', domain);
       }
-      url = `https://match.adsrvr.org/track/rid?${parseQueryStringParameters(queryParams)}`;
+      url = ridUrl.toString();
     }
 
     const resp = function (callback) {

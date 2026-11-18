@@ -533,7 +533,7 @@ describe('unicornBidAdapterTest', () => {
       const uid2 = JSON.parse(req2.data)['user']['id'];
       assert.deepStrictEqual(uid, uid2);
     });
-    it('test if contains ID5', () => {
+    it('does not add EIDs from a raw bid.userId', () => {
       const _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
@@ -543,16 +543,6 @@ describe('unicornBidAdapterTest', () => {
       const req = spec.buildRequests(_validBidRequests, bidderRequest);
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
-      openRTBRequestData.user.eids = [
-        {
-          source: 'id5-sync.com',
-          uids: [
-            {
-              id: 'id5_XXXXX'
-            }
-          ]
-        }
-      ];
       assert.deepStrictEqual(reqData, openRTBRequestData);
     });
   });

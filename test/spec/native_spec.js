@@ -212,8 +212,8 @@ describe('native.js', function () {
   it('fires click trackers', function () {
     const trackerType = fireNativeTrackers({ action: 'click' }, bid);
     expect(trackerType).to.equal('click');
-    sinon.assert.calledOnce(triggerPixelStub);
-    sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
+    sinon.assert.calledOnceWithExactly(politeTriggerPixelStub, bid.native.clickTrackers[0], 'include', true);
+    sinon.assert.notCalled(triggerPixelStub);
   });
 
   describe('native postMessages', () => {

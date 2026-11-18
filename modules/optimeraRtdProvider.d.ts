@@ -17,7 +17,8 @@ export interface OptimeraRtdParams {
    */
   device?: string;
   /**
-   * Optimera scores API version to use. One of `v0` or `v1`. Defaults to `v0`.
+   * Optimera scores API version to use. Defaults to `v0`.
+   * @deprecated `v1` is no longer supported; using it logs a warning and falls back to `v0`.
    */
   apiVersion?: 'v0' | 'v1';
   /**

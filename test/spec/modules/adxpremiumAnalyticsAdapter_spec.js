@@ -272,10 +272,17 @@ describe('AdxPremium analytics adapter', function () {
       }
     };
 
+    // Expected payloads depend on the browser under test (desktop Safari versus real iOS Safari).
+    const userAgent = navigator.userAgent;
+    const tablet = /ipad|android 3\.0|xoom|sch-i800|playbook|tablet|kindle/i.test(userAgent);
+    const mobile = /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent);
+    const expectedDeviceType = tablet ? 'tablet' : mobile ? 'mobile' : 'desktop';
+
     // what we expect after general auction
 
     let expectedAfterBidData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='));
     expectedAfterBidData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    expectedAfterBidData['device_type'] = expectedDeviceType;
     expectedAfterBidData = btoa(JSON.stringify(expectedAfterBidData));
 
     const expectedAfterBid = {
@@ -286,6 +293,7 @@ describe('AdxPremium analytics adapter', function () {
 
     let expectedAfterTimeoutData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19XX0='));
     expectedAfterTimeoutData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    expectedAfterTimeoutData['device_type'] = expectedDeviceType;
     expectedAfterTimeoutData = btoa(JSON.stringify(expectedAfterTimeoutData));
 
     const expectedAfterTimeout = {
@@ -352,6 +360,7 @@ describe('AdxPremium analytics adapter', function () {
 
     let wonExpectData = JSON.parse(atob('eyJwdWJsaXNoZXJfaWQiOjEyMywiYXVjdGlvbl9pZCI6ImM0ZjBjY2UwLTI2NGMtNDgzYS1iMmY0LThhYzIyNDhhODk2YiIsInJlZmVyZXIiOiJodHRwczovL3Rlc3QuY29tL2FydGljbGUvMTc2MDY3Iiwic2NyZWVuX3Jlc29sdXRpb24iOiIxNDQweDkwMCIsImRldmljZV90eXBlIjoiZGVza3RvcCIsImdlbyI6bnVsbCwiZXZlbnRzIjpbeyJ0eXBlIjoiVElNRU9VVCIsImJpZGRlcl9jb2RlIjoibHVwb25tZWRpYSIsImV2ZW50X3RpbWVzdGFtcCI6MTU4OTcwNzYxMzkwOCwiYmlkX2dwdF9jb2RlcyI6eyJkaXYtZ3B0LWFkLTE1MzMxNTUxOTM3ODAtMiI6W1szMDAsMjUwXV0sImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC0zIjpbWzMwMCwyNTBdXX19LHsidHlwZSI6IlJFU1BPTlNFIiwiYmlkZGVyX2NvZGUiOiJsdXBvbm1lZGlhIiwiZXZlbnRfdGltZXN0YW1wIjoxNTg5NzA3NjE1MTg4LCJzaXplIjoiMzAweDI1MCIsImdwdF9jb2RlIjoiZGl2LWdwdC1hZC0xNTMzMTU1MTkzNzgwLTIiLCJjdXJyZW5jeSI6IlVTRCIsImNyZWF0aXZlX2lkIjoiNDQzODAxMDEwIiwidGltZV90b19yZXNwb25kIjoxMjgwLCJjcG0iOjAuNDMsImlzX3dpbm5pbmciOmZhbHNlfV19'));
     wonExpectData['screen_resolution'] = window.screen.width + 'x' + window.screen.height;
+    wonExpectData['device_type'] = expectedDeviceType;
     wonExpectData = btoa(JSON.stringify(wonExpectData));
 
     const wonExpect = {

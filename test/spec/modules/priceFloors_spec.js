@@ -2492,7 +2492,7 @@ describe('the price floors module', function () {
       size: '100x100',
       mediaType: resp.mediaType,
       gptSlot: 'slot',
-      domain: 'localhost',
+      domain: window.location.hostname,
       adUnitCode: req.adUnitCode,
     }).forEach(([test, expected]) => {
       describe(`${test}`, () => {

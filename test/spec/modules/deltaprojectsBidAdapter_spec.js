@@ -115,7 +115,7 @@ describe('deltaprojectsBidAdapter', function() {
     }];
     const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
 
-    const GDPR_REQ_REFERER = 'http://localhost:9876/';
+    const GDPR_REQ_REFERER = 'http://example.com/';
     function getGdprRequestBody(gdprApplies, consentString) {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {
         gdprConsent: {

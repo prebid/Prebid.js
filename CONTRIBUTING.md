@@ -6,7 +6,7 @@ master branch.
 Pull requests must have 80% code coverage before being considered for merge.
 Additional details about the process can be found [here](./PR_REVIEW.md).
 
-Whenever possible, new modules should provide Typescript types for their public interface.
+Whenever possible, new modules should provide TypeScript types for their public interface.
 Examples of public interface are bid parameters and configuration (including configuration for analytics, userId, or real time data modules). 
 
 There are more details available if you'd like to contribute a [bid adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html) or [analytics adapter](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
@@ -22,14 +22,26 @@ If you have a documentation issue or pull request, please open a ticket or PR in
 ## Writing Tests
 
 Prebid uses [Mocha](http://mochajs.org/) and [Chai](http://chaijs.com/) for unit tests. [Sinon](http://sinonjs.org/)
-provides mocks, stubs, and spies. [Karma](https://karma-runner.github.io/1.0/index.html) runs the tests and generates
-code coverage reports at `build/coverage/lcov/lcov-report/index.html`.
+provides mocks, stubs, and spies. [Vitest](https://vitest.dev/guide/browser/) runs the tests in real browsers and
+generates code coverage reports (lcov) under `build/coverage/chunks`.
 
 Tests are stored in the [test/spec](test/spec) directory. Tests for Adapters are located in [test/spec/modules](test/spec/modules).
 They can be run with the following commands:
 
 - `gulp test` - run the test suite once (`npm test` is aliased to call `gulp test`)
-- `gulp serve` - run the test suite once, but re-run it whenever a file in the `src` or `test` directory is modified
+- `gulp test-only --file test/spec/modules/exampleBidAdapter_spec.js` - run a single spec file, without linting
+- `gulp test-only` - run the whole suite, without linting
+- `gulp serve-and-test` - run the tests, and re-run them whenever a file in the `src` or `test` directory is modified
+
+Run your adapter's spec and the whole suite before submitting. CI runs them in several browsers and devices, so tests
+should not assume a particular environment:
+
+- Don't hard-code the test page's address; it is not always `localhost`. Take it from `window.location` or
+  `getRefererInfo()`.
+- Don't assume a secure context: `crypto.subtle` may be missing and `Secure` cookies may not be kept. Define tests that
+  need one only if `window.isSecureContext`.
+- Don't rely on the screen size, user agent or device.
+- Restore anything you change on shared objects, such as `window.top`, `document.cookie` or stubs, after each test.
 
 Before a Pull Request will be considered for merge:
 

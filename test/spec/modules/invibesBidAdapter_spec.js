@@ -4,6 +4,11 @@ import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.invibes;
+  });
+
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
   const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
@@ -132,11 +137,7 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
-      transactionId: 't1',
-      userId: {
-        pubcid: 'pub-cid-code',
-        pubProvidedId: 'pub-provided-id'
-      }
+      transactionId: 't1'
     }, {
       bidId: 'b2',
       bidder: BIDDER_CODE,
@@ -514,9 +515,9 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
     });
 
-    it('sends all Placement Ids and userId', function () {
+    it('does not send a raw userId', function () {
       const request = spec.buildRequests(bidRequestsWithUserId, bidderRequestWithPageInfo);
-      expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
+      expect(JSON.parse(request.data.bidParamsJson)).to.not.have.property('userId');
     });
 
     it('sends undefined lid when no cookie', function () {

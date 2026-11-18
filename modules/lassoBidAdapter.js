@@ -165,12 +165,11 @@ function getBidRequestUrl(aimXR, params) {
 }
 
 function getDeviceData() {
-  const win = window.top;
   const winDimensions = getWinDimensions();
   return {
     ua: navigator.userAgent,
-    width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || win.document.body.clientWidth,
-    height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || win.document.body.clientHeight,
+    width: winDimensions.innerWidth || winDimensions.document.documentElement.clientWidth || winDimensions.document.body.clientWidth,
+    height: winDimensions.innerHeight || winDimensions.document.documentElement.clientHeight || winDimensions.document.body.clientHeight,
     browserLanguage: navigator.language,
   };
 }

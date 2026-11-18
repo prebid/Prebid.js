@@ -2,7 +2,6 @@ import {
   _each,
   contains,
   createTrackPixelHtml,
-  deepAccess,
   deepSetValue,
   getDefinedParams,
   isArray,
@@ -604,7 +603,7 @@ function createSite(refInfo, fpd) {
 }
 
 function getExtendedUserIds(bidderRequest) {
-  const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+  const eids = bidderRequest?.bids?.[0]?.userIdAsEids;
   if (isArray(eids)) {
     return eids;
   }
@@ -627,8 +626,8 @@ function formatAdMarkup(bid) {
  */
 function validateNativeAdUnit(adUnit) {
   return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
-    !deepAccess(adUnit, 'privacyLink.required') && // not supported yet
-    !deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+    !adUnit?.privacyLink?.required && // not supported yet
+    !adUnit?.privacyIcon?.required; // not supported yet
 }
 
 /**

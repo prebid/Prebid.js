@@ -808,9 +808,6 @@ const VALID_PAYLOAD_WITH_USERID = {
     'customer_id': 'customer_id',
     'prebid_version': 'v' + '$prebid.version$',
     'gdpr_applies': false,
-    'user_id': {
-      britepoolid: '82efd5e1-816b-4f87-97f8-044f407e2911'
-    },
     'usp_applies': false,
     'coppa_applies': false,
     'screen': {
@@ -1819,7 +1816,7 @@ describe('Media.net bid adapter', function () {
       expect(actual).to.deep.equal(VALID_BID_REQUEST[0].ortb2Imp);
     });
 
-    it('should have userid in bid request', function () {
+    it('should not send a raw bid.userId as user_id', function () {
       const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERID);
     });

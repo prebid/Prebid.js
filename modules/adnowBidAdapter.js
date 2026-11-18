@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { deepAccess, parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
+import { parseQueryStringParameters, parseSizesInput } from '../src/utils.js';
 
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -75,7 +75,7 @@ export const spec = {
       } else {
         data.width = data.height = 200;
 
-        const sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
+        const sizes = req?.mediaTypes?.native?.image?.sizes ?? [];
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
