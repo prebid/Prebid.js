@@ -128,6 +128,9 @@ export function renderer(win) {
       } catch (e) {
         return;
       }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return;
+      }
       if (!handshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
         handshakeComplete = true;
         whenBodyReady(guard(() => {
