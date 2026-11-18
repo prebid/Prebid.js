@@ -15,7 +15,9 @@ const port = argv.port || 4444;
 const dev = argv.dev || false;
 
 const REPLACE = {
-  'https://ib.adnxs.com/ut/v3/prebid': `http://${host}:${port}/appnexus`,
+  // msft sends to the -simple host when there is no purpose 1 consent
+  'https://ib.adnxs.com/openrtb2/prebidjs': `http://${host}:${port}/msft`,
+  'https://ib.adnxs-simple.com/openrtb2/prebidjs': `http://${host}:${port}/msft`,
   'https://tlx.3lift.com/header/auction': `http://${host}:${port}/triplelift`,
 };
 

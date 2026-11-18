@@ -1,4 +1,4 @@
-import { generateUUID, deepAccess, createTrackPixelHtml } from '../src/utils.js';
+import { generateUUID, createTrackPixelHtml } from '../src/utils.js';
 import { getDevicePixelRatio } from '../libraries/devicePixelRatio/devicePixelRatio.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -305,7 +305,7 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
 }
 
 function getIabConsentString(bidderRequest) {
-  if (deepAccess(bidderRequest, 'gdprConsent')) {
+  if (bidderRequest?.gdprConsent) {
     return getConsentStringFromPrebid(bidderRequest.gdprConsent);
   }
 

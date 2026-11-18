@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
+import { deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -134,15 +134,15 @@ function hasValidMediaType(bidRequest) {
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+  return !!bidRequest?.mediaTypes?.banner;
 }
 
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video');
+  return !!bidRequest?.mediaTypes?.video;
 }
 
 function hasValidBannerMediaType(bidRequest) {
-  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+  const sizes = bidRequest?.mediaTypes?.banner?.sizes;
   if (!sizes) {
     logError('AIDEM Bid Adapter: media type sizes missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
     return false;
@@ -151,7 +151,7 @@ function hasValidBannerMediaType(bidRequest) {
 }
 
 function hasValidVideoMediaType(bidRequest) {
-  const sizes = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  const sizes = bidRequest?.mediaTypes?.video?.playerSize;
   if (!sizes) {
     logError('AIDEM Bid Adapter: media type playerSize missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
     return false;
@@ -161,8 +161,8 @@ function hasValidVideoMediaType(bidRequest) {
 
 function hasValidVideoParameters(bidRequest) {
   let valid = true;
-  const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
-  const bidderParameter = deepAccess(bidRequest, 'params.video');
+  const adUnitsParameters = bidRequest?.mediaTypes?.video;
+  const bidderParameter = bidRequest?.params?.video;
   for (const property of REQUIRED_VIDEO_PARAMS) {
     const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property);
     const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property);
@@ -176,7 +176,7 @@ function hasValidVideoParameters(bidRequest) {
 }
 
 function passesRateLimit(bidRequest) {
-  const rateLimit = deepAccess(bidRequest, 'params.rateLimit', 1);
+  const rateLimit = bidRequest?.params?.rateLimit ?? 1;
   if (!isNumber(rateLimit) || rateLimit > 1 || rateLimit < 0) {
     logError('AIDEM Bid Adapter: invalid rateLimit (must be a number between 0 and 1)', { bidder: BIDDER_CODE, code: ERROR_CODES.INVALID_RATELIMIT });
     return false;
@@ -192,8 +192,8 @@ function passesRateLimit(bidRequest) {
 
 function hasValidParameters(bidRequest) {
   // Assigned from AIDEM to a publisher website
-  const siteId = deepAccess(bidRequest, 'params.siteId');
-  const publisherId = deepAccess(bidRequest, 'params.publisherId');
+  const siteId = bidRequest?.params?.siteId;
+  const publisherId = bidRequest?.params?.publisherId;
 
   if (!isStr(siteId)) {
     logError('AIDEM Bid Adapter: siteId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });

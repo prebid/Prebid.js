@@ -114,7 +114,7 @@ describe('orbidderBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        page: 'https://localhost:9876/'
+        page: 'https://example.com/'
       }
     })[0];
   };
@@ -223,7 +223,7 @@ describe('orbidderBidAdapter', () => {
       expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequestBanner).length + 2);
 
       const expectedBidRequest = deepClone(defaultBidRequestBanner);
-      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.pageUrl = 'https://example.com/';
       expectedBidRequest.v = getGlobal().version;
       expect(request.data).to.deep.equal(expectedBidRequest);
     });
@@ -233,7 +233,7 @@ describe('orbidderBidAdapter', () => {
       expect(Object.keys(nativeRequest.data).length).to.equal(Object.keys(defaultBidRequestNative).length + 2);
 
       const expectedBidRequest = deepClone(defaultBidRequestNative);
-      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.pageUrl = 'https://example.com/';
       expectedBidRequest.v = getGlobal().version;
       expect(nativeRequest.data).to.deep.equal(expectedBidRequest);
     });

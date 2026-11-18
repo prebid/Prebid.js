@@ -3,6 +3,7 @@ import { deepClone } from '../../../src/utils.js';
 import { expect } from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
+  const TEST_UA = 'Mozilla/5.0 (Test UA)';
   const bannerRequest = [{
     auctionId: '223',
     mediaTypes: {
@@ -12,6 +13,9 @@ describe('zMaticoo Bidder Adapter', function () {
     },
     refererInfo: {
       page: 'testprebid.com'
+    },
+    ortb2: {
+      device: { ua: TEST_UA }
     },
     params: {
       user: {
@@ -151,6 +155,11 @@ describe('zMaticoo Bidder Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].tagid).to.eql(videoRequest[0].params.tagid);
       expect(payload.imp[0].bidfloor).to.eql(videoRequest[0].params.bidfloor);
+    });
+    it('reads ua from ortb2.device instead of navigator', function () {
+      const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+      const payload = JSON.parse(request.data);
+      expect(payload.device.ua).to.eql(TEST_UA);
     });
     it('Test video object', function () {
       const request = spec.buildRequests(videoRequest, videoRequest[0]);

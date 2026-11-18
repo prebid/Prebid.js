@@ -3,12 +3,13 @@ import { config } from './config.js';
 import { hook } from './hook.js';
 import { auctionManager } from './auctionManager.js';
 import type { VideoBid } from "./bidfactory.ts";
-import { type BaseMediaType } from "./mediaTypes.ts";
+import { type BaseMediaType, VIDEO } from "./mediaTypes.ts";
 import type { ORTBImp } from "./types/ortb/request.d.ts";
 import type { Size } from "./types/common.d.ts";
-import type { AdUnitDefinition } from "./adUnits.ts";
+import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
 
 import { getGlobalVarName } from "./buildOptions.ts";
+import { getRendererDef, isRendererAllowed } from "./utils/renderers.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -56,10 +57,6 @@ const ORTB_PARAMS = [
  */
 export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 
-function hasRenderer(subject: { renderer?: unknown; safeRenderer?: unknown } | null | undefined): boolean {
-  return !!(subject?.renderer || subject?.safeRenderer);
-}
-
 export type VideoContext = typeof INSTREAM | typeof OUTSTREAM;
 
 export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<ORTBImp['video']>, (typeof ORTB_PARAMS)[number][0]>> {
@@ -72,6 +69,13 @@ export interface VideoMediaType extends BaseMediaType, Partial<Pick<NonNullable<
    * VAST URLs and cache keys.
    */
   cache?: boolean;
+  /**
+   * If true, cache all video bids (using the globally configured `cache.url` or `cache.useLocal`).
+   * If false, only instream bids are cached.
+   *
+   * Default is false. Setting `cache: false` overrides this option.
+   */
+  useCacheKey?: boolean;
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
@@ -117,30 +121,13 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
  */
 export function isValidVideoBid(bid: VideoBid, { index = auctionManager.index } = {}): boolean {
   const videoMediaType = index.getMediaTypes(bid)?.video;
-  const context = videoMediaType && videoMediaType?.context;
-  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  if (videoMediaType == null) return true;
+  const { context, useCacheKey } = videoMediaType;
   const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
-  return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
-}
-
-declare module './bidfactory' {
-  interface VideoBidResponseProperties {
-    vastXml?: string;
-    vastUrl?: string;
-  }
-}
-
-declare module './hook' {
-  interface NamedHooks {
-    checkVideoBidSetup: typeof checkVideoBidSetup
-  }
-}
-
-export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
-  if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
+  if (useCacheKey || context !== OUTSTREAM) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal, allowVastXmlOnly } = config.getConfig('cache') || {};
     if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl && videoMediaType.cache !== false) {
@@ -155,14 +142,32 @@ export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, v
       `);
       return false;
     }
+  }
 
+  if (videoBidRequiresRenderer(videoMediaType, adUnit)) {
+    // outstream bids, by default, require a renderer on the bid or pub-defined on adunit
+    const bidRequest = index.getBidRequest(bid);
+    return (
+      isRendererAllowed('safeRenderer', bid.bidderCode, VIDEO, adUnit, bid) && (
+        bid.safeRenderer != null || getRendererDef('safeRenderer', true, bidRequest, videoMediaType, adUnit) != null
+      )
+    ) || (
+      isRendererAllowed('renderer', bid.bidderCode, VIDEO, adUnit, bid) && (
+        bid.renderer != null || getRendererDef('renderer', true, bidRequest, videoMediaType, adUnit) != null
+      )
+    );
+  } else {
     return !!(bid.vastUrl || bid.vastXml);
   }
+}
 
-  // outstream bids require a renderer on the bid or pub-defined on adunit
-  if (context === OUTSTREAM && !useCacheKey) {
-    return hasRenderer(bid) || hasRenderer(adUnit) || hasRenderer(videoMediaType);
+export const videoBidRequiresRenderer = hook('sync', (videoMediaType: VideoMediaType, adUnit: AdUnit) => {
+  return videoMediaType?.context === OUTSTREAM && !videoMediaType?.useCacheKey;
+});
+
+declare module './bidfactory' {
+  interface VideoBidResponseProperties {
+    vastXml?: string;
+    vastUrl?: string;
   }
-
-  return true;
-}, 'checkVideoBidSetup');
+}

@@ -54,6 +54,8 @@ declare module './events' {
     [EVENTS.EXPIRED_RENDER]: [Bid];
 
     [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
+    [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' | 'nativeClick' }];
+    [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
   }
 }
 
@@ -160,6 +162,11 @@ export function handleCreativeEvent(data, bidResponse) {
         id: bidResponse.adId
       });
       break;
+    case EVENTS.BID_CLICK:
+      if (config.getConfig('bidClickTracking')?.enabled === true && bidResponse.mediaType === 'banner' && data.method === 'creativeClick') {
+        reportBidClick(bidResponse, 'creativeClick');
+      }
+      break;
     case EVENTS.BROWSER_INTERVENTION:
       emitBrowserIntervention({
         bid: bidResponse,
@@ -178,6 +185,11 @@ export function handleNativeMessage(data, bidResponse, { resizeFn, fireTrackers 
       resizeFn(data.width, data.height);
       break;
     default:
+      if (data.action === 'click' && bidResponse?.native != null) {
+        // only reports the bidClick event: the bidder's click trackers below fire on every click, as they do
+        // without bidClickTracking, so enabling it never changes what bidders (or the ad server) receive
+        reportBidClick(bidResponse, 'nativeClick', data.assetId);
+      }
       fireTrackers(data, bidResponse);
   }
 }
@@ -198,6 +210,77 @@ function creativeMessageHandler(deps) {
   };
 }
 
+type BidClickData = {
+  bid: Bid;
+  adId: string;
+  adUnitCode: string;
+  bidder: string;
+  method: 'creativeClick' | 'iframeFocus' | 'nativeClick';
+  assetId?: number | string;
+};
+
+const reportedBidClicks = new WeakSet<Bid>();
+
+export const userActivation = {
+  /**
+   * Sticky user activation of the top page (`navigator.userActivation.hasBeenActive`): true once the user has
+   * interacted with the page, including by clicking inside a nested ad frame. Transient activation can't be used,
+   * because a click that opens a new tab consumes it before the creative's message arrives.
+   * `undefined` when the browser doesn't support the API.
+   */
+  hasBeenActive(): boolean | undefined {
+    return (navigator as any).userActivation?.hasBeenActive;
+  }
+};
+
+/** The two detection paths share this one once-per-bid gate. */
+export function reportBidClick(bid: Bid, method: BidClickData['method'], assetId?: number | string): boolean {
+  const settings = config.getConfig('bidClickTracking');
+  if (settings?.enabled !== true || (bid?.mediaType !== 'banner' && bid?.native == null)) return false;
+  // Banner click reports come from messages that any frame on the page, including the creative itself, can send
+  // without a user click. Ignore them until the user has interacted with the page at all, so that clicks can't be
+  // forged on impressions nobody touched; this is checked before the once-per-bid gate so a forged report can't
+  // use it up. Browsers without the API still get the event, but not tracker requests (see below).
+  const activation = userActivation.hasBeenActive();
+  if (method !== 'nativeClick' && activation === false) return false;
+  if (reportedBidClicks.has(bid) && !(method === 'nativeClick' && settings.dedupeNativeClicks === false)) return false;
+
+  reportedBidClicks.add(bid);
+  const data = {
+    bid,
+    adId: bid.adId,
+    adUnitCode: bid.adUnitCode,
+    bidder: bid.bidder,
+    method,
+    ...(assetId != null ? { assetId } : {})
+  };
+  if (method === 'creativeClick' || method === 'nativeClick') {
+    events.emit(EVENTS.BID_CLICK, { ...data, method });
+  } else {
+    events.emit(EVENTS.BID_CLICK_INFERRED, { ...data, method });
+  }
+
+  if (method !== 'nativeClick' && bid.mediaType === 'banner' && settings.fireTrackers === true && activation === true &&
+    !hasClickthroughMacro(bid) && validClickUrl(bid.clickUrl)) {
+    // Start the keepalive GET before the click can navigate away.
+    politeTriggerPixel(bid.clickUrl, 'include', true);
+  }
+  return true;
+}
+
+export function hasClickthroughMacro(bid: Bid): boolean {
+  return [bid?.ad, bid?.adUrl].some(value => typeof value === 'string' && /\$\{CLICKTHROUGH\}/.test(value));
+}
+
+export function validClickUrl(url: unknown): url is string {
+  if (typeof url !== 'string' || /%%|\$\{/.test(url)) return false;
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
 type RenderOptions = {
   clickUrl?: string;
   viewUrl?: string;
@@ -211,6 +294,7 @@ export const getRenderingData = hook('sync', function (bidResponse: Bid, options
     width,
     height,
     instl,
+    trackClicks: bidResponse.mediaType === 'banner' && config.getConfig('bidClickTracking')?.enabled === true,
   };
 });
 
@@ -292,7 +376,7 @@ export const doRender = hook('sync', function({ renderFn, resizeFn, bidResponse,
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const { bidResponse, doc } = args;
-  if (isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse)) {
+  if (usesLegacyRenderer(bidResponse)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc).then(
       () => emitAdRenderSucceeded({ doc, bid: bidResponse, id: bidResponse.adId }),
       (e) => emitAdRenderFail({
@@ -308,10 +392,32 @@ doRender.before(function (next, args) {
   }
 }, 100);
 
-export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
-  if (bidResponse != null && options?.viewUrl != null) {
-    bidResponse.viewUrl = options.viewUrl;
+export function isRenderSuppressed(bidResponse: Bid) {
+  const { adId } = bidResponse;
+  const { suppressStaleRender, suppressExpiredRender } = config.getConfig('auctionOptions');
+  const reasons = [];
+  function logReasons() {
+    reasons.forEach(([event, msg]) => {
+      logWarn(msg);
+      events.emit(event, bidResponse);
+    });
   }
+  if (bidResponse.status === BID_STATUS.RENDERED) {
+    reasons.push([STALE_RENDER, `Ad id ${adId} has been rendered before`]);
+    if (suppressStaleRender) {
+      return { suppress: true, logReasons };
+    }
+  }
+  if (!bidFilters.isBidNotExpired(bidResponse)) {
+    reasons.push([EXPIRED_RENDER, `Ad id ${adId} has been expired`]);
+    if (suppressExpiredRender) {
+      return { suppress: true, logReasons };
+    }
+  }
+  return { suppress: false, logReasons };
+}
+
+export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, doc }) {
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -321,21 +427,14 @@ export function handleRender({ renderFn, resizeFn, adId, options, bidResponse, d
       });
       return;
     }
-    if (bidResponse.status === BID_STATUS.RENDERED) {
-      logWarn(`Ad id ${adId} has been rendered before`);
-      events.emit(STALE_RENDER, bidResponse);
-      if (config.getConfig('auctionOptions')?.suppressStaleRender) {
-        return;
-      }
-    }
-    if (!bidFilters.isBidNotExpired(bidResponse)) {
-      logWarn(`Ad id ${adId} has been expired`);
-      events.emit(EXPIRED_RENDER, bidResponse);
-      if (config.getConfig('auctionOptions')?.suppressExpiredRender) {
-        return;
-      }
-    }
+    const { suppress, logReasons } = isRenderSuppressed(bidResponse);
+    logReasons();
+    if (suppress) return;
 
+    // A second render can be rejected by the stale/expired bid guards above.
+    // Keep the click and view URLs tied to the creative that was actually rendered.
+    if (options?.viewUrl != null) bidResponse.viewUrl = options.viewUrl;
+    if (options?.clickUrl != null) bidResponse.clickUrl = options.clickUrl;
     try {
       doRender({ renderFn, resizeFn, bidResponse, options, doc });
     } catch (e) {
@@ -488,4 +587,11 @@ export function insertLocatorFrame() {
 
 export function getSafeRenderer(bidResponse: Bid): SafeRendererConfig | undefined {
   return bidResponse.safeRenderer;
+}
+
+/**
+ * True if the bid is rendered by running its renderer in the publisher's document, outside any creative frame.
+ */
+export function usesLegacyRenderer(bidResponse: Bid): boolean {
+  return isRendererRequired(bidResponse.renderer) && !getSafeRenderer(bidResponse);
 }

@@ -1,7 +1,7 @@
 <html>
 
 <head>
-  <script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter"></script>
+  <script async src="http://localhost:4444/bundle?modules=msftBidAdapter"></script>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script>
     var PREBID_TIMEOUT = 5000;
@@ -15,9 +15,9 @@
       },
       // Replace this object to test a new Adapter!
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'msft',
         params: {
-          placementId: 13144370
+          placement_id: 13144370
         }
       }]
 
@@ -46,10 +46,10 @@
         }
       },
       bids: [{
-        bidder: 'appnexus',
+        bidder: 'msft',
         params: {
-          placementId: 13232354,
-          allowSmallerSizes: true
+          placement_id: 13232354,
+          allow_smaller_sizes: true
         }
       }]
     }];
@@ -70,15 +70,15 @@
       pbjs.setConfig({enableTIDs: true});
       pbjs.addAdUnits(adUnits);
       pbjs.bidderSettings = {
-        appnexus: {
+        msft: {
           adserverTargeting: [
             {
-              key: "apn_pbMg",
+              key: "msft_pbMg",
               val: function (bidResponse) {
                 return bidResponse.pbMg;
               }
             }, {
-              key: "apn_adId",
+              key: "msft_adId",
               val: function (bidResponse) {
                 return bidResponse.adId;
               }
