@@ -35,10 +35,6 @@ function buildRequest(bid, gdprConsent) {
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
 
-  if (bid.userId && bid.userId.gemiusId) {
-    payload.aouserid = bid.userId.gemiusId;
-  }
-
   const emitterRequestParams = [];
   if (bid.params.emitterRequestParams) {
     _each(bid.params.emitterRequestParams, function(v, k) {

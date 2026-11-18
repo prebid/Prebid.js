@@ -1,4 +1,4 @@
-import { VIDEO_CUSTOM_PARAMS, parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets, getResponseMeta, getDomainFromURL } from '../libraries/adtruePwbidUtils/bidderUtils.js';
+import { VIDEO_CUSTOM_PARAMS, parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets, getResponseMeta, getDomainFromURL, parseNativeAdm } from '../libraries/adtruePwbidUtils/bidderUtils.js';
 import { logWarn, isArray, inIframe, isStr, deepClone, deepSetValue, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -112,7 +112,7 @@ function _parseNativeResponse(bid, newBid) {
   if (bid.hasOwnProperty('adm')) {
     var adm;
     try {
-      adm = JSON.parse(bid.adm.replace(/\\/g, ''));
+      adm = parseNativeAdm(bid.adm);
     } catch (ex) {
       // logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native response for ad response: ' + newBid.adm);
       return;
@@ -153,7 +153,7 @@ function _checkMediaType(adm, newBid) {
     newBid.mediaType = VIDEO;
   } else {
     try {
-      admStr = JSON.parse(adm.replace(/\\/g, ''));
+      admStr = parseNativeAdm(adm);
       if (admStr && admStr.native) {
         newBid.mediaType = NATIVE;
       }

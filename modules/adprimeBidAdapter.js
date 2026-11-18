@@ -18,10 +18,6 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
     placement.wPlayer = placement.playerSize?.[0]?.[0];
     placement.hPlayer = placement.playerSize?.[0]?.[1];
   }
-  if (bid.userId && bid.userId.idl_env) {
-    placement.identeties = {};
-    placement.identeties.identityLink = bid.userId.idl_env;
-  }
 
   placement.keywords = getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords);
   placement.audiences = bid.params.audiences || [];

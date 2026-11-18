@@ -47,9 +47,6 @@ describe('kargo adapter tests', function() {
         gpid: '/1234/prebid/slot/path',
       }
     },
-    userId: {
-      tdid: 'random-tdid'
-    },
     userIdAsEids: [
       {
         source: 'adquery.io',
@@ -1199,7 +1196,7 @@ describe('kargo adapter tests', function() {
     });
 
     describe('user', function() {
-      it('fetches the trade desk id from the adapter if present', function() {
+      it('does not read the trade desk id from a raw bid.userId', function() {
         const payload = getPayloadFromTestBids([{
           ...minimumBidParams,
           userId: {
@@ -1207,7 +1204,7 @@ describe('kargo adapter tests', function() {
           }
         }]);
 
-        expect(payload.user.tdID).to.equal('test-tdid-module');
+        expect(payload.user.tdID).to.be.undefined;
       });
 
       it('fetches the trade desk id from cerberus if present', function() {
@@ -1220,7 +1217,7 @@ describe('kargo adapter tests', function() {
         expect(payload.user.tdID).to.equal('test-tdid-crb');
       });
 
-      it('fetches the trade desk id from the adapter if adapter and cerberus are present', function() {
+      it('fetches the trade desk id from cerberus even if a raw bid.userId is present', function() {
         setLocalStorageValue('krg_crb', buildCrbValue(false, true, true, true, true, false));
 
         const payload = getPayloadFromTestBids([{
@@ -1230,7 +1227,7 @@ describe('kargo adapter tests', function() {
           }
         }]);
 
-        expect(payload.user.tdID).to.equal('test-tdid-module');
+        expect(payload.user.tdID).to.equal('test-tdid-cerberus-localstorage');
       });
 
       it('does not set kargoId if it is not present', function() {

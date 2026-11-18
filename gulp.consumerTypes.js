@@ -74,6 +74,130 @@ export const params: BidderParams['appnexus'] = {placementId: 1};
 // @ts-expect-error
 export const badParams: BidderParams['appnexus'] = {placementId: true};
 `,
+  // Literal provider names are inferred at the setter, including through the type-only API.
+  'providerConfig.ts': `
+import pbjs from 'prebid.js';
+import type {PrebidJS, UserIdConfig} from 'prebid.js/types.d.ts';
+import 'prebid.js/modules/sharedIdSystem';
+import 'prebid.js/modules/geolocationRtdProvider';
+declare const typedPbjs: PrebidJS;
+declare const dynamicName: string;
+const sharedId: UserIdConfig<'sharedId'> = {name: 'sharedId', params: {create: false}};
+pbjs.setConfig({userSync: {userIds: [sharedId]}});
+typedPbjs.setConfig({userSync: {userIds: [{name: 'sharedId', params: {create: true}}, {name: 'custom', params: {anything: 1}}]}});
+pbjs.mergeConfig({realTimeData: {dataProviders: [{name: 'geolocation', params: {requestPermission: true}}, {name: 'custom', anything: 1}]}});
+pbjs.setConfig({userSync: {userIds: [{name: dynamicName, params: {anything: 1}}]}});
+// @ts-expect-error - a known ID provider cannot use the untyped fallback
+typedPbjs.setConfig({userSync: {userIds: [{name: 'sharedId', params: {create: 'invalid'}}]}});
+// @ts-expect-error - excess params are rejected, even alongside a custom provider
+pbjs.setConfig({userSync: {userIds: [{name: 'custom', params: {foo: true}}, {name: 'sharedId', params: {create: false, foo: true}}]}});
+// @ts-expect-error - mergeConfig shares the same ID validation
+pbjs.mergeConfig({userSync: {userIds: [{name: 'sharedId', params: {create: 'invalid'}}]}});
+// @ts-expect-error - known RTD provider params are also checked
+typedPbjs.setConfig({realTimeData: {dataProviders: [{name: 'geolocation', params: {requestPermission: 'invalid'}}]}});
+// @ts-expect-error - custom RTD providers do not weaken known ones
+pbjs.mergeConfig({realTimeData: {dataProviders: [{name: 'custom', params: {anything: 1}}, {name: 'geolocation', params: {foo: true}}]}});
+pbjs.setBidderConfig({bidders: [dynamicName], config: {userSync: {userIds: [sharedId]}}});
+// @ts-expect-error - bidder config also infers provider names, independent of bidder names
+pbjs.setBidderConfig({bidders: [dynamicName], config: {userSync: {userIds: [{name: 'sharedId', params: {create: 'invalid'}}]}}});
+// @ts-expect-error - merging bidder config checks RTD params
+pbjs.mergeBidderConfig({bidders: ['appnexus'], config: {realTimeData: {dataProviders: [{name: 'geolocation', params: {requestPermission: 'invalid'}}]}}});
+`,
+  'adUnitConfig.ts': `
+import pbjs from 'prebid.js';
+import type {AdUnitDefinition, AdUnitBidDefinition} from 'prebid.js';
+import type {PrebidJS} from 'prebid.js/types.d.ts';
+import 'prebid.js/modules/adapexBidAdapter';
+import 'prebid.js/modules/appnexusBidAdapter';
+import 'prebid.js/modules/adfBidAdapter';
+declare const typedPbjs: PrebidJS;
+declare const dynamicBidder: string;
+const definition = {code: 'slot', bids: [{bidder: 'adapex', params: {seat: 'publisher'}}]} satisfies AdUnitDefinition<'adapex'>;
+const customBid: AdUnitBidDefinition<'adapex' | 'custom'> = {bidder: 'custom', params: {anything: 1}};
+pbjs.addAdUnits(definition);
+typedPbjs.addAdUnits([{code: 'first', bids: [{bidder: 'adapex', params: {seat: 'publisher'}}, customBid]}, {code: 'stored', bids: [{module: 'pbsBidAdapter', params: {configName: 'stored'}}]}]);
+pbjs.requestBids({adUnits: [{code: 'slot', bids: [{bidder: 'adapex', params: {seat: 'publisher'}}, {bidder: 'custom', params: {anything: 1}}]}]});
+pbjs.addAdUnits({code: 'dynamic', bids: [{bidder: dynamicBidder, params: {anything: 1}}]});
+pbjs.addAdUnits({code: 'unionParams', bids: [{bidder: 'adf', params: {mid: 1}}, {bidder: 'adf', params: {inv: 1, mname: 'tag'}}]});
+pbjs.requestBids();
+// @ts-expect-error - known bidder parameters cannot fall back to the untyped branch
+typedPbjs.addAdUnits({code: 'slot', bids: [{bidder: 'adapex', params: {seat: 42}}]});
+// @ts-expect-error - arrays retain validation, including alongside custom aliases
+pbjs.addAdUnits([{code: 'slot', bids: [customBid, {bidder: 'adapex', params: {seat: 'publisher', bogus: true}}]}]);
+// @ts-expect-error - required parameters stay required
+pbjs.addAdUnits({code: 'slot', bids: [{bidder: 'adapex', params: {}}]});
+// @ts-expect-error - requestBids also infers bidder names
+typedPbjs.requestBids({adUnits: [{code: 'slot', bids: [{bidder: 'custom', params: {}}, {bidder: 'adapex', params: {seat: false}}]}]});
+// @ts-expect-error - declared aliases keep their bidder's types
+pbjs.addAdUnits({code: 'slot', bids: [{bidder: 'appnexusAst', params: {placementId: true}}]});
+// @ts-expect-error - standalone generic definitions validate params too
+const invalid: AdUnitDefinition<'adapex'> = {code: 'slot', bids: [{bidder: 'adapex', params: {seat: 42}}]};
+// @ts-expect-error - mutually exclusive parameter alternatives are preserved
+pbjs.addAdUnits({code: 'slot', bids: [{bidder: 'adf', params: {mid: 1, inv: 1, mname: 'tag'}}]});
+`,
+  'bidderSettings.ts': `
+import pbjs from 'prebid.js';
+import type {BidRequest, BidderScopedSettings, BidderSettings, BidderSettingsMap} from 'prebid.js';
+import 'prebid.js/modules/adapexBidAdapter';
+import 'prebid.js/modules/appnexusBidAdapter';
+import 'prebid.js/modules/priceFloors';
+declare function expectType<T>(value: T): void;
+const defaults: BidderSettings<string> = {storageAllowed: false};
+const scoped: BidderScopedSettings<'adapex'> = {
+  bidCpmAdjustment(cpm, _bid, request) {
+    expectType<'adapex'>(request.bidder);
+    expectType<string>(request.params.seat);
+    // @ts-expect-error - callback params remain specific to the bidder
+    expectType<unknown>(request.params.placementId);
+    return cpm;
+  }
+};
+const settings = {
+  standard: defaults,
+  adapex: {
+    ...scoped,
+    bidDesirabilityAdjustment(cpm, _bid, request) { expectType<string>(request.params.seat); return cpm; },
+    inverseBidAdjustment(floor, request) { expectType<string>(request.params.seat); return floor; },
+    adserverTargeting: [{key: 'seat', val: (_bid, request) => request.params.seat}]
+  },
+  custom: {
+    bidCpmAdjustment(cpm, _bid, request) {
+      expectType<string>(request.bidder);
+      expectType<unknown>(request.params.anything);
+      // @ts-expect-error - custom params retain unknown rather than any
+      expectType<string>(request.params.anything);
+      return cpm;
+    }
+  }
+} satisfies BidderSettingsMap;
+export function assignSettings(owner: typeof pbjs) {
+  owner.bidderSettings = settings;
+}
+export function assignInlineSettings(owner: typeof pbjs) {
+  owner.bidderSettings = {
+    appnexus: {bidCpmAdjustment(cpm, _bid, request) {
+      expectType<'appnexus'>(request.bidder);
+      expectType<number | string | undefined>(request.params.placementId);
+      // @ts-expect-error - whole-object assignment keeps callback parameter checking
+      expectType<unknown>(request.params.seat);
+      return cpm;
+    }}
+  };
+}
+export function assignScopedSettings(owner: typeof pbjs) {
+  owner.bidderSettings.adapex = scoped;
+}
+// @ts-expect-error - a callback for a different bidder is rejected
+export const mismatchedBidder: NonNullable<typeof pbjs.bidderSettings.adapex> = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'appnexus'>) => cpm};
+// @ts-expect-error - a named bidder's callback must accept all of that bidder's requests
+export const narrowCallback: NonNullable<typeof pbjs.bidderSettings.adapex> = {bidCpmAdjustment: (cpm: number, _bid: unknown, _request: BidRequest<'adapex'> & {extraRequiredField: string}) => cpm};
+// @ts-expect-error - known settings values stay typed
+export const invalidZeroCpm: typeof pbjs.bidderSettings = {adapex: {allowZeroCpmBids: 'invalid'}};
+// @ts-expect-error - custom bidders still use the shared settings types
+export const invalidStorageAllowed: typeof pbjs.bidderSettings = {custom: {storageAllowed: 'invalid'}};
+// @ts-expect-error - excess setting keys are rejected
+export const invalidSetting: typeof pbjs.bidderSettings = {adapex: {bogus: true}};
+`,
 };
 
 function createConsumer(workDir, {moduleResolution, module}, type) {

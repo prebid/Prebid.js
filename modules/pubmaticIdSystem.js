@@ -1,8 +1,6 @@
 import { logInfo, logError, isStr, isEmptyStr } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler, gdprDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'pubmaticId';
@@ -13,8 +11,6 @@ const STORAGE_REFRESH_IN_SECONDS = 24 * 3600; // 24 Hours
 const LOG_PREFIX = 'PubMatic User ID: ';
 const VERSION = '1';
 const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function generateQueryStringParams(config) {
   const uspString = uspDataHandler.getConsentData();
@@ -48,23 +44,7 @@ function buildUrl(config) {
   return baseUrl;
 }
 
-function deleteFromAllStorages(key) {
-  const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
-  cKeys.forEach((cKey) => {
-    if (storage.getCookie(cKey)) {
-      storage.setCookie(cKey, '', new Date(0).toUTCString());
-    }
-  });
-
-  const lsKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
-  lsKeys.forEach((lsKey) => {
-    if (storage.getDataFromLocalStorage(lsKey)) {
-      storage.removeDataFromLocalStorage(lsKey);
-    }
-  });
-}
-
-function getSuccessAndErrorHandler(callback) {
+function getSuccessAndErrorHandler(callback, handle) {
   return {
     success: (response) => {
       let responseObj;
@@ -77,12 +57,12 @@ function getSuccessAndErrorHandler(callback) {
       if (responseObj && isStr(responseObj.id) && !isEmptyStr(responseObj.id)) {
         callback(responseObj);
       } else {
-        deleteFromAllStorages(STORAGE_NAME);
+        handle.remove();
         callback();
       }
     },
     error: (error) => {
-      deleteFromAllStorages(STORAGE_NAME);
+      handle.remove();
       logError(LOG_PREFIX + 'getId fetch encountered an error', error);
       callback();
     }
@@ -132,7 +112,7 @@ export const pubmaticIdSubmodule = {
     }
     return undefined;
   },
-  getId(config) {
+  getId(config, consentData, storedId, handle) {
     if (!hasRequiredConfig(config)) {
       return undefined;
     }
@@ -140,7 +120,7 @@ export const pubmaticIdSubmodule = {
     const resp = (callback) => {
       logInfo(LOG_PREFIX + 'requesting an ID from the server');
       const url = buildUrl(config);
-      ajax(url, getSuccessAndErrorHandler(callback), null, {
+      ajax(url, getSuccessAndErrorHandler(callback, handle), null, {
         method: 'GET',
         withCredentials: true,
       });

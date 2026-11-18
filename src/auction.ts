@@ -286,16 +286,17 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
     } else {
+      _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
       events.emit(EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
-      _timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
         if (_timedOutRequests.length) {
           events.emit(EVENTS.BID_TIMEOUT, _timedOutRequests);
         }
+      } else {
+        _timedOutRequests = [];
       }
 
       _auctionStatus = AUCTION_COMPLETED;
@@ -357,6 +358,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
+      // No adapter dispatch will run to resolve this for an empty auction.
+      requestsDone.resolve();
       auctionDone();
     } else {
       addBidderRequests.call({
@@ -570,17 +573,17 @@ export function auctionCallbacks(auctionDone, auctionInstance, { index = auction
 
   function handleBidResponse(adUnitCode: string, bid: Partial<Bid>, handler) {
     bidResponseMap[bid.requestId] = true;
-    addCommonResponseProperties(bid, adUnitCode);
+    addCommonResponseProperties(bid, adUnitCode, { index });
     outstandingBidsAdded++;
     return handler(afterBidAdded);
   }
 
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
-      const bidResponse = getPreparedBidForAuction(bid);
+      const bidResponse = getPreparedBidForAuction(bid, { index });
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
-        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done, { index });
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
@@ -1121,6 +1124,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
         value = value(custBidObj, bidReq);
       } catch (e) {
         logError('bidmanager', 'ERROR', e);
+        return;
       }
     }
 
