@@ -138,6 +138,9 @@ export function renderer(win) {
           });
           renderer.onload = guard(function () {
             const W = renderer.contentWindow;
+            const script = W.document.createElement('script');
+            script.textContent = data.renderer;
+            (W.document.body || W.document.documentElement).appendChild(script);
             // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
             // does not appear to work if P comes from another frame
             W.Promise.resolve(W.render(data, { sendMessage, mkFrame, onMessage: (cb) => forward.push(guard(cb)) }, win)).then(
@@ -147,7 +150,7 @@ export function renderer(win) {
           });
           // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
           // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
-          renderer.srcdoc = `<script>${data.renderer}</script>`;
+          renderer.srcdoc = '<!doctype html><html><body></body></html>';
           win.document.body.appendChild(renderer);
         }));
       } else if (handshakeComplete) {
