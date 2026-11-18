@@ -769,7 +769,7 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
     submodule.idObj = submodule.config.value;
     return;
   }
-  // store.handle() also records the new handle as submodule.handle, which processSubmoduleCallbacks reads
+  // store.handle() also records the new handle as submodule.handle
   const handle = submodule.store.handle({
     isCurrent: () => priorityMaps === initializedSubmodules,
     onChange: () => {
