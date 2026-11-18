@@ -267,9 +267,15 @@ export function resetScoresCache() {
  * @param {object} userConsent
  */
 export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
-  return ensureScoresFetched().then(() => {
+  return ensureScoresFetched().then((success) => {
     try {
-      if (transmitWithBidRequests === 'allow') {
+      // Only inject when the fetch this call actually awaited resolved with
+      // valid, current data. If it failed (or was superseded - e.g. after a
+      // SPA navigation to a new page whose scorefile request subsequently
+      // fails), `optimeraTargeting` may still hold a previous page's scores;
+      // injecting those into the current page's ad units would apply
+      // incorrect cross-page targeting whenever slot codes happen to match.
+      if (success && transmitWithBidRequests === 'allow') {
         injectOrtbScores(reqBidsConfigObj);
       }
     } catch (err) {

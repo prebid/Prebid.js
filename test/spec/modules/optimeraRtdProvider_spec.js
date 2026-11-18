@@ -650,4 +650,39 @@ describe('Optimera RTD fetchScores', () => {
     expect(ajaxBuilderStub.called).to.equal(false);
     expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
   });
+
+  it('does not inject a previous page\'s stale scores when a SPA navigation\'s new scorefile request fails', async () => {
+    // Page A's scorefile loads successfully.
+    stubAjax((url, cbObj) => cbObj.success(scoreFile, { status: 200 }));
+    optimeraRTD.init(conf({ clientID: 'pageA' }));
+    expect(optimeraRTD.optimeraTargeting['div-0']).to.deep.equal(['A1', 'A2']);
+
+    // SPA navigation to page B produces a new scorefile URL (simulated here
+    // via a new clientID, since setScoresURL() keys the URL off clientID and
+    // location). The new request fails. `optimeraTargeting` still holds page
+    // A's scores at this point, since nothing has overwritten it yet.
+    ajaxBuilderStub.restore();
+    const utilsLogErrorStub = sinon.stub(utils, 'logError');
+    stubAjax((url, cbObj) => cbObj.error());
+    optimeraRTD.init(conf({ clientID: 'pageB' }));
+
+    const callback = sinon.spy();
+    // Same ad unit code as page A happened to use, to make sure a stale
+    // match isn't injected.
+    const reqBidsConfigObj = { adUnits: [{ code: 'div-0', ortb2Imp: {} }] };
+    await optimeraRTD.fetchScores(reqBidsConfigObj, callback);
+    utilsLogErrorStub.restore();
+
+    expect(callback.calledOnce).to.equal(true);
+    // Page A's stale scores must not be injected into page B's ad units.
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
+
+    // A subsequent auction on page B (still using the same failed-fetch
+    // promise) must also not inject the stale data.
+    const secondCallback = sinon.spy();
+    const secondReqBidsConfigObj = { adUnits: [{ code: 'div-0', ortb2Imp: {} }] };
+    await optimeraRTD.fetchScores(secondReqBidsConfigObj, secondCallback);
+    expect(secondCallback.calledOnce).to.equal(true);
+    expect(secondReqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
+  });
 });
