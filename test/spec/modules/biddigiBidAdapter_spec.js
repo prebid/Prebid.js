@@ -150,7 +150,7 @@ describe('biddigiAdapter', function () {
         placementId: 'placement-123',
         publisherId: 'publisher-abc',
       });
-      expect(built.data.cur).to.deep.equal(['INR']);
+      expect(built.data.cur).to.deep.equal(['USD']);
     });
 
     it('still resolves to the (single, global) endpoint when params.region is set', async function () {
@@ -262,7 +262,7 @@ describe('biddigiAdapter', function () {
       expect(bids[0].ttl).to.equal(300);
     });
 
-    it('defaults currency to INR when the response omits cur', async function () {
+    it('defaults currency to USD when the response omits cur', async function () {
       const request = spec.buildRequests([BANNER_BID_REQUEST], await addFPDToBidderRequest(bidderRequest));
       const serverResponse = {
         body: {
@@ -281,7 +281,7 @@ describe('biddigiAdapter', function () {
         },
       };
       const bids = spec.interpretResponse(serverResponse, request);
-      expect(bids[0].currency).to.equal('INR');
+      expect(bids[0].currency).to.equal('USD');
     });
 
     // ------------------------------------------------------------------------------------
