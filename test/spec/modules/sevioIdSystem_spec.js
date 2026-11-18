@@ -368,11 +368,21 @@ describe('Sevio ID System', function () {
         respondWith(server.requests[1], { sevio_id: null, changed: false });
         respondWith(server.requests[0], { sevio_id: NEW_ENVELOPE, syncs: [{ url: 'https://partner.example/sync' }] });
 
-        sinon.assert.calledOnce(newerHandle.remove);
+        sinon.assert.calledOnceWithExactly(newerHandle.set, { revoked: true });
         sinon.assert.calledOnceWithExactly(newer);
         sinon.assert.calledOnceWithExactly(older);
-        sinon.assert.notCalled(olderHandle.remove);
+        Object.values(olderHandle).forEach(method => sinon.assert.notCalled(method));
         sinon.assert.notCalled(utils.politeTriggerPixel);
+      });
+
+      it('does not revoke the stored ID for a null answer to an older request', function () {
+        const { older, newer, olderHandle } = startTwo();
+        respondWith(server.requests[1], { sevio_id: NEW_ENVELOPE });
+        respondWith(server.requests[0], { sevio_id: null, changed: false });
+
+        sinon.assert.calledOnceWithExactly(newer, NEW_ENVELOPE);
+        sinon.assert.calledOnceWithExactly(older);
+        Object.values(olderHandle).forEach(method => sinon.assert.notCalled(method));
       });
 
       it('ignores an older answer that arrives first', function () {
@@ -405,6 +415,17 @@ describe('Sevio ID System', function () {
         sinon.assert.notCalled(utils.politeTriggerPixel);
       });
 
+      it('does not revoke the stored ID for a null answer that arrives once COPPA is turned on', function () {
+        const inFlight = sinon.spy();
+        const handle = mockHandle();
+        getId(validConfig, consentData, ENVELOPE, handle).callback(inFlight);
+        config.setConfig({ coppa: true });
+        respondWith(server.requests[0], { sevio_id: null, changed: false });
+
+        sinon.assert.calledOnceWithExactly(inFlight);
+        Object.values(handle).forEach(method => sinon.assert.notCalled(method));
+      });
+
       it('ignores an older request that fails, without logging an error', function () {
         const { older, newer } = startTwo();
         server.requests[0].respond(500, {}, '');
@@ -425,15 +446,17 @@ describe('Sevio ID System', function () {
       Object.values(handle).forEach(method => sinon.assert.notCalled(method));
     });
 
-    it('removes the stored ID, passes nothing and logs no error when the Identity service answers a null sevio_id', function () {
+    it('stores the revocation marker, passes nothing and logs no error when the Identity service answers a null sevio_id', function () {
       const callback = sinon.spy();
       const handle = mockHandle();
       getId(validConfig, consentData, ENVELOPE, handle).callback(callback);
       respondWith(server.requests[0], { sevio_id: null, changed: false });
-      sinon.assert.calledOnce(handle.remove);
+      sinon.assert.calledOnceWithExactly(handle.set, { revoked: true });
+      sinon.assert.notCalled(handle.remove);
       sinon.assert.calledOnceWithExactly(callback);
       // the handle only accepts storage calls until the invocation reports its ID
-      sinon.assert.callOrder(handle.remove, callback);
+      sinon.assert.callOrder(handle.set, callback);
+      expect(sevioIdSubmodule.decode(handle.set.firstCall.args[0])).to.be.undefined;
       sinon.assert.notCalled(utils.logError);
       sinon.assert.calledOnce(utils.logInfo);
     });
@@ -454,7 +477,7 @@ describe('Sevio ID System', function () {
         getId(validConfig, consentData, undefined, handle).callback(callback);
         respondWith(server.requests[0], body);
         sinon.assert.calledOnceWithExactly(callback);
-        sinon.assert.notCalled(handle.remove);
+        Object.values(handle).forEach(method => sinon.assert.notCalled(method));
         sinon.assert.calledOnce(utils.logError);
       });
     });
@@ -465,7 +488,7 @@ describe('Sevio ID System', function () {
       getId(validConfig, consentData, undefined, handle).callback(callback);
       server.requests[0].respond(500, {}, '');
       sinon.assert.calledOnceWithExactly(callback);
-      sinon.assert.notCalled(handle.remove);
+      Object.values(handle).forEach(method => sinon.assert.notCalled(method));
       sinon.assert.calledOnce(utils.logError);
     });
   });
@@ -603,7 +626,7 @@ describe('Sevio ID System', function () {
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
     });
 
-    it('deletes the stored ID when a refresh is answered with a null sevio_id', async function () {
+    it('revokes the stored ID when a refresh is answered with a null sevio_id', async function () {
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toUTCString();
       const refreshingConfig = { ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } };
       seedCookie(ENVELOPE, twoDaysAgo);
@@ -617,17 +640,14 @@ describe('Sevio ID System', function () {
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
-      COOKIE_SUFFIXES.forEach(suffix => expect(coreStorage.getCookie(STORAGE_NAME + suffix)).to.not.be.ok);
-      HTML5_SUFFIXES.forEach(suffix => expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME + suffix)).to.not.be.ok);
-    });
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
+      expect(decodeURIComponent(coreStorage.getDataFromLocalStorage(STORAGE_NAME))).to.equal('{"revoked":true}');
 
-    it('ignores a revocation marker stored by earlier versions', async function () {
-      seedCookie('{"revoked":true}', new Date().toUTCString());
-      startUserId({ ...validConfig, storage: { ...validConfig.storage, refreshInSeconds: 86400 } });
+      // The next page view decodes the marker without calling the service again.
+      startUserId(refreshingConfig);
       await getGlobal().getUserIdsAsync();
-
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
-      expect(server.requests.length).to.equal(0);
+      expect(server.requests.length).to.equal(1);
     });
 
     it('provides no ID and makes no request for a stored value that is not a string until a refresh is due', async function () {
@@ -657,7 +677,7 @@ describe('Sevio ID System', function () {
       expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ENVELOPE);
     });
 
-    it('stores nothing when an older request answers after an overlapping refresh is answered with a null sevio_id', async function () {
+    it('keeps the revocation when an older request answers after an overlapping refresh', async function () {
       startUserId();
       const first = getGlobal().getUserIdsAsync();
       await waitForRequest();
@@ -674,8 +694,8 @@ describe('Sevio ID System', function () {
 
       expect(getGlobal().getUserIds()).to.not.have.property('sevioId');
       expect(sevioEids()).to.deep.equal([]);
-      expect(coreStorage.getCookie(STORAGE_NAME)).to.not.be.ok;
-      expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.not.be.ok;
+      expect(coreStorage.getCookie(STORAGE_NAME)).to.equal('{"revoked":true}');
+      expect(decodeURIComponent(coreStorage.getDataFromLocalStorage(STORAGE_NAME))).to.equal('{"revoked":true}');
     });
 
     it('stores nothing when COPPA is turned on while a request is in flight', async function () {

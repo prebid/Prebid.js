@@ -26,6 +26,11 @@ const EID_SOURCE = 'adx.ws';
 const LOG_PREFIX = 'sevioId: ';
 const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
 const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
+// Stored in place of the ID when the Identity service refuses a request. Deleting the ID instead would
+// leave nothing stored, and the userId core calls getId, and so asks the service again, on every page
+// view without a stored value. The marker holds the refusal until consent changes, `refreshInSeconds`
+// elapses or it expires; `decode` maps it to no ID.
+const REVOKED = { revoked: true };
 
 // Generation of the most recent ID request. The core starts a new request when consent changes
 // without cancelling one in flight, and stores whatever any of them answers; only the latest
@@ -86,8 +91,7 @@ function buildPrivacy(consentData: Partial<AllConsentData> | undefined) {
 // Only a non-empty string is a valid ID: anything else is neither stored from a response, nor
 // provided to bidders, nor sent back to the Identity service. The ID is stored as a bare string and
 // the userId core parses any stored string that starts with '{' as JSON, so such a string is not a
-// valid ID either: it could be read back as an object, such as the `{revoked: true}` marker earlier
-// versions stored on revocation, which browsers may still hold.
+// valid ID either: it could be read back as an object, or as the revocation marker.
 function isSevioId(value): value is string {
   if (typeof value !== 'string') return false;
   const trimmed = value.trim();
@@ -167,7 +171,7 @@ function fetchId(callback: (id?: string) => void, params: SevioIdParams, consent
       } else if (id === null) {
         // The Identity service answers null when the privacy signals or its agent check refuse the call.
         logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request; revoking any stored ID`);
-        handle.remove();
+        handle.set(REVOKED);
         callback();
       } else {
         logError(`${LOG_PREFIX}the ID response has no valid 'sevio_id'`, response);
