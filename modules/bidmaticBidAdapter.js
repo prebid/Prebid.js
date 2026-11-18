@@ -157,7 +157,6 @@ export function remapBidRequest(bidRequests, adapterRequest) {
   bidRequestBody.GPPSid = adapterRequest.gppConsent ? adapterRequest.gppConsent.applicableSections?.toString() : adapterRequest.ortb2?.regs?.gpp_sid;
   bidRequestBody.Schain = bidRequests[0]?.schain;
   bidRequestBody.UserEids = bidRequests[0]?.userIdAsEids;
-  bidRequestBody.UserIds = bidRequests[0]?.userId;
   bidRequestBody.Tmax = adapterRequest.timeout;
   if (adapterRequest?.gdprConsent?.gdprApplies) {
     bidRequestBody.GDPRConsent = adapterRequest?.gdprConsent?.consentString;

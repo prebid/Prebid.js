@@ -1,4 +1,4 @@
-import { generateUUID, _each, deepAccess } from '../src/utils.js';
+import { generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -259,7 +259,6 @@ function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
   const dnt = getDNT() ? 1 : 0;
-  const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const schain = bid?.ortb2?.source?.ext?.schain;
   const supplyChain = getSupplyChain(schain);
   const bidFloor = getFloor(bid, size, bid.mediaTypes);
@@ -272,13 +271,13 @@ function getRequestData(bid, bidderRequest) {
     je: 1,
     dnt: dnt,
     adid: bid.params.adid,
-    tdid: userIdTdid,
+    tdid: '', // Prebid 10+ does not set bid.userId
     schain: supplyChain
   };
 
   addBidData(bidData, 'fp', bidFloor);
   addBidData(bidData, 'gpid', gpid);
-  addUserId(bidData, bid.userId);
+  bidData.eids = '';
 
   bidData.u = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   bidData.host = bidderRequest.refererInfo.domain;
@@ -333,54 +332,6 @@ function getRequestData(bid, bidderRequest) {
   if (bidderRequest?.ortb2?.regs?.coppa) {
     bidData.coppa = true;
   }
-
-  return bidData;
-}
-
-function addUserId(bidData, userId) {
-  bidData['eids'] = '';
-  _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
-    switch (userIdProviderKey) {
-      case 'hadronId':
-        if (userIdObjectOrValue.hadronId) {
-          bidData[userIdProviderKey + 'hadronId'] = userIdObjectOrValue.hadronId;
-        }
-        if (userIdObjectOrValue.auSeg) {
-          bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;
-        }
-        break;
-      case 'parrableId':
-        if (userIdObjectOrValue.eid) {
-          bidData[userIdProviderKey + '_eid'] = userIdObjectOrValue.eid;
-        }
-        break;
-      case 'id5id':
-        if (userIdObjectOrValue.uid) {
-          bidData[userIdProviderKey + '_uid'] = userIdObjectOrValue.uid;
-        }
-        if (userIdObjectOrValue.ext && userIdObjectOrValue.ext.linkType) {
-          bidData[userIdProviderKey + '_linkType'] = userIdObjectOrValue.ext.linkType;
-        }
-        break;
-      case 'uid2':
-        if (userIdObjectOrValue.id) {
-          bidData['eids'] = (bidData['eids'].length > 0)
-            ? (bidData['eids'] + '!' + userIdProviderKey + ',' + userIdObjectOrValue.id)
-            : (userIdProviderKey + ',' + userIdObjectOrValue.id);
-        }
-        break;
-      case 'connectid':
-        if (userIdObjectOrValue) {
-          bidData['eids'] = (bidData['eids'].length > 0)
-            ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
-            : ('verizonMediaId,' + userIdObjectOrValue);
-        }
-        break;
-      default:
-        bidData[userIdProviderKey] = userIdObjectOrValue;
-        break;
-    }
-  });
 
   return bidData;
 }

@@ -482,6 +482,7 @@ describe('User ID', function () {
     }
 
     function recordCookieWrites() {
+      const domain = sharedIdSystemSubmodule.domainOverride?.();
       let proto = Object.getPrototypeOf(document);
       while (proto && !Object.getOwnPropertyDescriptor(proto, 'cookie')) proto = Object.getPrototypeOf(proto);
       const nativeCookie = Object.getOwnPropertyDescriptor(proto, 'cookie');
@@ -496,7 +497,7 @@ describe('User ID', function () {
       });
       return {
         writes,
-        setFromServer: (cookie) => nativeCookie.set.call(document, cookie),
+        setFromServer: (cookie) => nativeCookie.set.call(document, `${cookie}${domain ? `; domain=${domain}` : ''}`),
         restore: () => { delete document.cookie; }
       };
     }
@@ -515,7 +516,7 @@ describe('User ID', function () {
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         // a consent hash matching the current one, so that the stored ID is extended rather than fetched again
-        coreStorage.setCookie('pubcid_alt_cst', getConsentHash(), (new Date(Date.now() + 20000)).toUTCString());
+        coreStorage.setCookie('pubcid_alt_cst', getConsentHash(), (new Date(Date.now() + 20000)).toUTCString(), undefined, sharedIdSystemSubmodule.domainOverride?.());
         config.setConfig(customConfig);
         expect(await userIdsAfterCallbacks()).to.eql({});
         sinon.assert.calledOnce(extendId);
