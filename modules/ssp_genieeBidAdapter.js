@@ -157,8 +157,7 @@ export const getUidFromEids = (eids, source) => {
  * location `user.ext.eids`. Read them from `bid.ortb2` (where core FPD and the
  * userId module write eids) so ids still come through even when the userId
  * module is not in the build, or when an RTD module / the publisher injects
- * eids straight into ortb2. Fall back to the `bid.userIdAsEids` alias, then to
- * the legacy `bid.userId` shape for Prebid <= 9 builds.
+ * eids straight into ortb2. Fall back to the `bid.userIdAsEids` alias.
  * @param {Object} bid
  * @returns {Array|undefined}
  */
@@ -171,8 +170,8 @@ const getBidEids = (bid) => utils.deepAccess(bid, 'ortb2.user.ext.eids') || bid.
 export const getExtuidIds = (bid) => {
   const eids = getBidEids(bid);
   return {
-    id5: getUidFromEids(eids, EID_SOURCE_ID5) || utils.deepAccess(bid, 'userId.id5id.uid'),
-    imuId: getUidFromEids(eids, EID_SOURCE_IMUID) || utils.deepAccess(bid, 'userId.imuid'),
+    id5: getUidFromEids(eids, EID_SOURCE_ID5),
+    imuId: getUidFromEids(eids, EID_SOURCE_IMUID),
   };
 };
 

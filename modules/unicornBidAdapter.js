@@ -224,32 +224,10 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       accountId: deepAccess(validBidRequests[0], 'params.accountId')
     }
   };
-  const eids = initializeEids(validBidRequests[0]);
-  if (eids.length > 0) {
-    request.user.eids = eids;
-  }
 
   logInfo('[UNICORN] OpenRTB Formatted Request:', request);
   return JSON.stringify(request);
 }
-
-const initializeEids = (bidRequest) => {
-  const eids = [];
-
-  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    eids.push({
-      source: 'id5-sync.com',
-      uids: [
-        {
-          id: id5
-        }
-      ]
-    });
-  }
-
-  return eids;
-};
 
 const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);

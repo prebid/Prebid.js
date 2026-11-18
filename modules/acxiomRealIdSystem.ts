@@ -7,18 +7,15 @@
 
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { logError, getWindowSelf } from '../src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
-import type { IdProviderSpec, UserIdConfig, EID } from './userId/spec.ts';
+import type { IdProviderSpec, EID } from './userId/spec.ts';
 import type { AllConsentData } from '../src/consentHandler.ts';
 
 const MODULE_NAME = 'acxiomRealId' as const;
 const DEFAULT_API_URL = 'https://ids.api.gcprivacy.id/v1/eid/l';
 const DEFAULT_SOURCE_ID = 'acxiom.id';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 export const dep = {
   ajaxBuilder
 };
@@ -131,21 +128,6 @@ function isConsentBlockedByHandlers(): boolean {
   return false;
 }
 
-function deleteStoredToken(config: UserIdConfig<typeof MODULE_NAME>) {
-  const storageName = config?.storage?.name || MODULE_NAME;
-  const expired = new Date(0).toUTCString();
-  if (storage.localStorageIsEnabled()) {
-    ['', '_exp', '_cst', '_last'].forEach(suffix => {
-      storage.removeDataFromLocalStorage(`${storageName}${suffix}`);
-    });
-  }
-  if (storage.cookiesAreEnabled()) {
-    ['', '_cst', '_last'].forEach(suffix => {
-      storage.setCookie(`${storageName}${suffix}`, '', expired);
-    });
-  }
-}
-
 function buildLookupUrl(apiUrl: string | undefined): string {
   return (apiUrl || DEFAULT_API_URL).replace(/\/+$/, '');
 }
@@ -153,9 +135,8 @@ function buildLookupUrl(apiUrl: string | undefined): string {
 export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
   name: MODULE_NAME,
 
-  decode(value, config) {
+  decode(value) {
     if (isConsentBlockedByHandlers()) {
-      deleteStoredToken(config);
       return undefined;
     }
     if (value && typeof value === 'string') {
@@ -168,7 +149,7 @@ export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
     return undefined;
   },
 
-  getId(config, consentData, storedId) {
+  getId(config, consentData, storedId, handle) {
     const configParams = config?.params || {} as AcxiomRealIdParams;
     const { partnerId, apiUrl, sourceId, hem } = configParams;
 
@@ -178,7 +159,7 @@ export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
     }
 
     if (isConsentBlocked(consentData)) {
-      deleteStoredToken(config);
+      handle.remove();
       return undefined;
     }
 
@@ -233,8 +214,11 @@ export const acxiomRealIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
     };
   },
 
-  onDataDeletionRequest(config) {
-    deleteStoredToken(config);
+  extendId(config, consentData, storedId, handle) {
+    if (isConsentBlocked(consentData)) {
+      handle.remove();
+    }
+    return undefined;
   },
 
   eids: {
