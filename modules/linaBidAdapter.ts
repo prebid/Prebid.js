@@ -3,8 +3,9 @@ import type { ClientBidderRequest, BidRequest } from '../src/adapterManager.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import type { Size } from '../src/types/common.d.ts';
-import type { NativeResponse } from '../src/types/ortb/native.d.ts';
+import type { NativeRequest, NativeResponse } from '../src/types/ortb/native.d.ts';
 import { fillVideoImp } from '../libraries/ortbConverter/processors/video.js';
+import { fillNativeImp } from '../libraries/ortbConverter/processors/native.js';
 
 const BIDDER_CODE = 'lina' as const;
 const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
@@ -185,20 +186,21 @@ function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
   const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
   const bannerFormats = getBannerFormats(bid);
   const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
-  const generated: Pick<LinaImp, 'video'> = {};
+  const nativeOrtbRequest = getNativeOrtbRequest(bid);
+  const generated: Pick<LinaImp, 'video' | 'native'> = {};
   if (video) fillVideoImp(generated, { mediaTypes: { video } }, {});
-  const nativeRequest = FEATURES.NATIVE ? getNativeRequest(bid.mediaTypes?.native) : undefined;
+  if (nativeOrtbRequest) fillNativeImp(generated, { nativeOrtbRequest }, {});
   return {
     ...original,
     id: bid.bidId,
     tagid: getPlacementId(bid)!,
     ...(bannerFormats.length > 0 ? { banner: { ...banner, format: bannerFormats } } : {}),
     ...(generated.video ? { video: { ...originalVideo, ...generated.video } } : {}),
-    ...(nativeRequest === undefined ? {} : { native: { ...native, request: nativeRequest } }),
+    ...(generated.native ? { native: { ...native, ...generated.native } } : {}),
   };
 }
 
-function isValidNativeRequest(request: unknown): boolean {
+function isValidNativeRequest(request: unknown): request is NativeRequest {
   if (!isRecord(request) || !Array.isArray(request.assets) || request.assets.length === 0 ||
     (request.ver !== undefined && (typeof request.ver !== 'string' || request.ver.trim().length === 0))) return false;
 
@@ -226,10 +228,17 @@ function isValidNativeRequest(request: unknown): boolean {
   });
 }
 
-function getNativeRequest(native: { ortb?: unknown } | undefined): string | undefined {
-  if (!isValidNativeRequest(native?.ortb)) return undefined;
+function getNativeOrtbRequest(bid: BidRequest<typeof BIDDER_CODE>): NativeRequest | undefined {
+  if (!FEATURES.NATIVE || !bid.mediaTypes?.native) return undefined;
+  const request = bid.nativeOrtbRequest ?? bid.mediaTypes.native.ortb;
+  return isValidNativeRequest(request) ? request : undefined;
+}
+
+function getNativeRequest(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
+  const request = getNativeOrtbRequest(bid);
+  if (!request) return undefined;
   try {
-    return JSON.stringify(native.ortb);
+    return JSON.stringify(request);
   } catch {
     return undefined;
   }
@@ -320,7 +329,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   isBidRequestValid(bid) {
     const hasValidBanner = getBannerFormats(bid).length > 0;
     const hasValidVideo = isValidVideo(bid);
-    const hasValidNative = FEATURES.NATIVE && getNativeRequest(bid.mediaTypes?.native) !== undefined;
+    const hasValidNative = getNativeRequest(bid) !== undefined;
     return (hasValidBanner || hasValidVideo || hasValidNative) &&
       getPublisherId(bid) !== undefined &&
       getPlacementId(bid) !== undefined;

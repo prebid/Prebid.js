@@ -187,6 +187,50 @@ describe('linaBidAdapter', function () {
 
       expect(JSON.parse(request.data.bids[0].ortb2Imp.native.request)).to.deep.equal(nativeRequest);
     });
+
+    it('uses the normalized Native request supplied by Prebid Core', function () {
+      const nativeOrtbRequest = {
+        ver: '1.2',
+        assets: [
+          { id: 1, required: 1, title: { len: 80 } },
+          { id: 2, required: 1, img: { type: 3, w: 300, h: 169 } },
+        ],
+      };
+      const nativeBid = {
+        ...BID_REQUEST,
+        mediaTypes: {
+          native: {
+            title: { required: true, len: 80 },
+            image: { required: true, sizes: [300, 169] },
+          },
+        },
+        nativeOrtbRequest,
+        sizes: undefined,
+      };
+
+      expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
+      const request = spec.buildRequests([nativeBid], BIDDER_REQUEST);
+      expect(JSON.parse(request.data.bids[0].ortb2Imp.native.request)).to.deep.equal(nativeOrtbRequest);
+    });
+
+    it('does not restore Native from stale nativeOrtbRequest when Native is not active', function () {
+      const videoBid = {
+        ...BID_REQUEST,
+        mediaTypes: {
+          video: {
+            playerSize: [300, 250],
+            mimes: ['video/mp4'],
+          },
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [{ id: 1, required: 1, title: { len: 80 } }],
+        },
+      };
+
+      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
+      expect(spec.buildRequests([videoBid], BIDDER_REQUEST).data.bids[0].ortb2Imp).not.to.have.property('native');
+    });
   }
 
   if (!FEATURES.NATIVE) {
@@ -793,7 +837,12 @@ describe('linaBidAdapter', function () {
     expect(request.data.bids[0].ortb2Imp).to.deep.include({
       banner: { format: [{ w: 300, h: 250 }] },
       video: { w: 640, h: 360, mimes: ['video/mp4'], protocols: [3] },
-      ...(FEATURES.NATIVE ? { native: { request: JSON.stringify({ ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] }) } } : {}),
+      ...(FEATURES.NATIVE ? {
+        native: {
+          request: JSON.stringify({ ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] }),
+          ver: '1.2',
+        },
+      } : {}),
     });
     expect(request.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
     expect(request.data.bids[0].ortb2Imp).not.to.have.property('bidfloorcur');
