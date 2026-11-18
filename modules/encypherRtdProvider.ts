@@ -1,7 +1,10 @@
 import { getHook, submodule } from '../src/hook.js';
 import { fetcherFactory } from '../src/ajax.js';
 import { gdprDataHandler, gppDataHandler, type AllConsentData } from '../src/consentHandler.ts';
+import { logWarn } from '../src/utils.js';
 import type { StartAuctionOptions } from '../src/prebid.ts';
+import type { AdUnitCode, ByAdUnit } from '../src/types/common.d.ts';
+import type { TargetingMap } from '../src/targeting.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
 
 const REAL_TIME_MODULE = 'realTimeData';
@@ -22,11 +25,22 @@ const RECORD_STATUS_CACHE_TTL_MS = 30_000;
 const JWKS_CACHE_TTL_MS = 30_000;
 const LOOKUP_MAX_BYTES = 4 * 1024;
 const JWKS_MAX_BYTES = 64 * 1024;
+const MAX_TARGETING_BYTES = 256;
+const TARGETING_VALUE_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
+const TARGETING_DROP_ORDER = ['encypher_pkg', 'encypher_att', 'encypher_verified'] as const;
+const GAM_TARGETING_PARAM_KEYS = ['includeAttestationId', 'packages'];
+
+/** GAM key-value emission, Targeting Contract V1. Omit or set `false` to emit nothing. */
+export interface EncypherGamTargetingParams {
+  includeAttestationId?: boolean;
+  packages?: string[];
+}
 
 export interface EncypherRtdParams {
   timeout?: number;
   telemetry?: boolean;
   adoptionReporting?: boolean;
+  gamTargeting?: false | EncypherGamTargetingParams;
 }
 
 declare module './rtdModule/spec.ts' {
@@ -63,7 +77,21 @@ interface RequestCallbacks {
   error: (timedOut: boolean) => void;
 }
 
+interface GamTargetingSettings {
+  includeAttestationId: boolean;
+  packages: string[];
+}
+
+/** Targeting Contract V1 key-value payload for one ad unit. */
+type TargetingValues = {
+  encypher_verified?: '1';
+  encypher_att?: string;
+  encypher_pkg?: string[];
+};
+
 const decisions = new Map<string, DecisionState>();
+/** Core preserves this per-request codes array while deep-cloning ad units; auction IDs may be reused. */
+let injectedAttestationIds = new WeakMap<object, Map<AdUnitCode, string>>();
 let trustedJwkCache: { jwks: unknown; expiresAt: number } | null = null;
 let maxDatasetVersionSeen = 0;
 let globalStaleBarrier = 0;
@@ -370,14 +398,60 @@ function closeAuctionOwnership(next: (auction?: StartAuctionOptions) => void, au
   next(auction);
 }
 
+/** `null` when the publisher value does not match Targeting Contract V1. */
+function parseGamTargeting(value: unknown): GamTargetingSettings | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  const candidate = value as JsonObject;
+  if (Object.keys(candidate).some(key => !GAM_TARGETING_PARAM_KEYS.includes(key))) return null;
+  const { includeAttestationId, packages } = candidate;
+  if (includeAttestationId !== undefined && typeof includeAttestationId !== 'boolean') return null;
+  if (packages !== undefined && (
+    !Array.isArray(packages) ||
+    packages.some(code => typeof code !== 'string' || !TARGETING_VALUE_PATTERN.test(code))
+  )) return null;
+  return {
+    includeAttestationId: includeAttestationId === true,
+    packages: packages === undefined ? [] : (packages as string[]).slice(),
+  };
+}
+
+/** Publisher-configured GAM targeting, or `null` when unset, disabled, or malformed. */
+function gamTargetingSettings(moduleConfig: RTDProviderConfig<'encypher'>): GamTargetingSettings | null {
+  const params: EncypherRtdParams = (moduleConfig && moduleConfig.params) || {};
+  if (params.gamTargeting === undefined || params.gamTargeting === false) return null;
+  return parseGamTargeting(params.gamTargeting);
+}
+
+/**
+ * Drop optional keys until the serialized payload fits the per-ad-unit cap.
+ * Only the `encypher_pkg` step is reachable in practice: without it the payload is at most
+ * 75 bytes, since `record.id` is limited to 32 characters. The later steps stay as a guard
+ * in case the contract admits a longer value.
+ * Fixed keys and validated ASCII values make JSON string length equal its UTF-8 byte length.
+ */
+function fitTargetingCap(values: TargetingValues): TargetingValues | null {
+  let dropIndex = 0;
+  while (
+    JSON.stringify(values).length > MAX_TARGETING_BYTES &&
+    dropIndex < TARGETING_DROP_ORDER.length
+  ) {
+    delete values[TARGETING_DROP_ORDER[dropIndex]];
+    dropIndex += 1;
+  }
+  return values.encypher_verified === undefined ? null : values;
+}
+
 function injectPerImpression(auction: StartAuctionOptions, record: C2paSignalV1): number | null {
   if (!Array.isArray(auction.adUnits) || !isolatedAdUnitArrays.has(auction.adUnits)) return null;
   const adUnits = auction.adUnits;
+  const attestationIds = new Map<AdUnitCode, string>();
   adUnits.forEach(adUnit => {
     const impression = adUnit.ortb2Imp || (adUnit.ortb2Imp = {});
     const extension = impression.ext || (impression.ext = {});
     extension.c2pa = { v: record.v, id: record.id, ref: record.ref, att: record.att };
+    if (typeof adUnit.code === 'string') attestationIds.set(adUnit.code, record.id);
   });
+  if (Array.isArray(auction.adUnitCodes)) injectedAttestationIds.set(auction.adUnitCodes, attestationIds);
   return adUnits.length;
 }
 
@@ -634,7 +708,15 @@ function commitNonReadyDecision(urlHash: string, status: 'miss' | 'revoked' | 's
   decisions.set(urlHash, { datasetVersion, status, recordRevision: current?.recordRevision });
 }
 
-const init = (_config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => {
+const init = (config: RTDProviderConfig<'encypher'>, _userConsent: AllConsentData): boolean => {
+  const params: EncypherRtdParams = (config && config.params) || {};
+  if (
+    params.gamTargeting !== undefined &&
+    params.gamTargeting !== false &&
+    parseGamTargeting(params.gamTargeting) === null
+  ) {
+    logWarn(MODULE_NAME + ': ignoring malformed params.gamTargeting; GAM targeting stays off');
+  }
   if (!isolationHookInstalled) {
     const startAuction = getHook('startAuction');
     startAuction.before(isolateBeforeRtd, 21);
@@ -651,6 +733,7 @@ const getBidRequestData = (
   userConsent?: AllConsentData,
   rtdTimeout?: number
 ): void => {
+  if (Array.isArray(auction.adUnitCodes)) injectedAttestationIds.delete(auction.adUnitCodes);
   if (!hasConsentForDataTransmission(userConsent)) {
     callback();
     return;
@@ -825,9 +908,38 @@ const getBidRequestData = (
   });
 };
 
+/**
+ * Targeting Contract V1 GPT key-values, emitted only for ad units that reached the
+ * `injected` state in the auction being closed.
+ */
+const getTargetingData: NonNullable<RtdProviderSpec<'encypher'>['getTargetingData']> = (
+  adUnitCodes,
+  moduleConfig,
+  userConsent,
+  auction
+): ByAdUnit<TargetingMap<string | string[]>> => {
+  const targeting: ByAdUnit<TargetingValues> = {};
+  const settings = gamTargetingSettings(moduleConfig);
+  const attestationIds = auction && injectedAttestationIds.get(auction.adUnitCodes);
+  if (settings === null || !hasConsentForDataTransmission(userConsent) || !attestationIds) return targeting;
+  adUnitCodes.forEach(adUnitCode => {
+    const attestationId = attestationIds.get(adUnitCode);
+    if (attestationId === undefined) return;
+    const values: TargetingValues = { encypher_verified: '1' };
+    if (settings.includeAttestationId && TARGETING_VALUE_PATTERN.test(attestationId)) {
+      values.encypher_att = attestationId;
+    }
+    if (settings.packages.length > 0) values.encypher_pkg = settings.packages.slice();
+    const fitted = fitTargetingCap(values);
+    if (fitted !== null) targeting[adUnitCode] = fitted;
+  });
+  return targeting;
+};
+
 /** Clear page-lifecycle memory between isolated module tests. */
 export function resetProviderState(): void {
   decisions.clear();
+  injectedAttestationIds = new WeakMap<object, Map<AdUnitCode, string>>();
   trustedJwkCache = null;
   maxDatasetVersionSeen = 0;
   globalStaleBarrier = 0;
@@ -844,6 +956,7 @@ export const encypherSubmodule: RtdProviderSpec<'encypher'> = {
   name: MODULE_NAME as 'encypher',
   init,
   getBidRequestData,
+  getTargetingData,
 };
 
 submodule(REAL_TIME_MODULE, encypherSubmodule);
