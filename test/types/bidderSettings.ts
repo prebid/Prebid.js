@@ -53,6 +53,20 @@ export function checkBidderSettings(pbjs: PrebidJS) {
   pbjs.bidderSettings.adapex = scopedSettings;
 }
 
+export const standardSettings: BidderSettingsMap = {
+  standard: {
+    bidCpmAdjustment(cpm, _bid, request) {
+      expectType<string>(request.bidder);
+      return cpm * 0.9;
+    },
+    bidDesirabilityAdjustment: (cpm) => cpm,
+    adserverTargeting: [{ key: 'hb_bidder', val: (bid) => bid.bidderCode }]
+  }
+};
+
+// @ts-expect-error - standard targeting entries keep their shape
+export const invalidStandardTargeting: BidderSettingsMap = { standard: { adserverTargeting: [{ key: 'hb_pb' }] } };
+
 // @ts-expect-error - shared settings keep their declared value types
 export const invalidStorageAllowed: PrebidJS['bidderSettings'] = { custom: { storageAllowed: 'invalid' } };
 // @ts-expect-error - known bidder settings reject unknown settings
