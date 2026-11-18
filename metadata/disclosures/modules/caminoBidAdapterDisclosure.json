@@ -1,0 +1,16 @@
+{
+  "disclosures": [
+    {
+      "identifier": "camino_sid",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Camino stores a random session identifier (camino_sid) in localStorage. It is sent with bid requests and user syncs so Camino's sync server can link a user sync to the bid requests from the same browser, including in browsers that block third-party cookies."
+    }
+  ]
+}
