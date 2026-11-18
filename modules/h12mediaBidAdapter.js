@@ -71,7 +71,6 @@ export const spec = {
           refererUrl: deepAccess(bidderRequest, 'refererInfo.ref', window.document.referrer),
           isiframe,
           version: '$prebid.version$',
-          ExtUserIDs: bidRequest.userId,
           visitorInfo: {
             localTime: getLocalDateFormatted(),
             dayOfWeek: new Date().getDay(),

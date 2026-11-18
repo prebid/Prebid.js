@@ -126,7 +126,8 @@ export interface OptableRtdProviderParams {
   site?: string | null;
   /**
    * When `false`, the visitor passport is sent as a query parameter instead of
-   * relying on cookies. Defaults to `true`. `enableTargeting` only.
+   * relying on cookies, and the request is sent without credentials.
+   * Defaults to `true`. `enableTargeting` only.
    */
   cookies?: boolean;
   /**
