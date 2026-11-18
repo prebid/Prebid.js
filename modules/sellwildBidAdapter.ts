@@ -2,6 +2,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
 import { replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 interface SellwildBidParams {
   /**
@@ -34,32 +35,33 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     currency: DEFAULT_CURRENCY,
   },
   bidResponse(buildBidResponse, bid, context) {
-    // The exchange passes on mtype only when its demand set it. Without it, take the media
-    // type from the markup, provided the ad unit asked for that type.
+    // The exchange passes on mtype only when its demand set it. Without it, take the media type
+    // from the ad unit when it has one format, else from the markup. The context is per imp and
+    // shared by every bid on it, so pass the inferred type on a copy.
     if (!bid.mtype) {
       const mediaType = inferMediaType(bid.adm, context.bidRequest?.mediaTypes);
-      if (mediaType) context.mediaType = mediaType;
+      if (mediaType) return buildBidResponse(bid, { ...context, mediaType });
     }
     return buildBidResponse(bid, context);
   },
 });
 
 function inferMediaType(adm: unknown, mediaTypes: Partial<Record<MediaType, unknown>> = {}): MediaType | undefined {
-  if (typeof adm !== 'string') return undefined;
   const requested = ([BANNER, VIDEO, NATIVE] as MediaType[]).filter((type) => mediaTypes[type]);
   if (requested.length === 1) return requested[0];
-  let type: MediaType = BANNER;
-  if (/<VAST[\s>]/i.test(adm)) {
-    type = VIDEO;
-  } else if (adm.trim().startsWith('{')) {
-    try {
-      const parsed = JSON.parse(adm);
-      if (parsed?.assets || parsed?.native?.assets) type = NATIVE;
-    } catch (e) {
-      // not native markup
-    }
-  }
+  if (typeof adm !== 'string') return undefined;
+  const type = /<VAST[\s>]/i.test(adm) ? VIDEO : isNativeMarkup(adm) ? NATIVE : BANNER;
   return requested.includes(type) ? type : undefined;
+}
+
+/** The same test the ortbConverter native processor applies: a JSON object with an assets array. */
+function isNativeMarkup(adm: string): boolean {
+  if (!adm.trim().startsWith('{')) return false;
+  try {
+    return Array.isArray(parseUntrustedJSON(adm)?.assets);
+  } catch (e) {
+    return false;
+  }
 }
 
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (bid) => {
@@ -74,15 +76,13 @@ const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (
  * key authenticates the whole request.
  */
 const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {
-  const groups = new Map<string, typeof validBidRequests>();
+  const groups: Record<string, typeof validBidRequests> = {};
   for (const bidRequest of validBidRequests) {
     const { partnerCode, key } = bidRequest.params;
-    const id = JSON.stringify([partnerCode, key]);
-    if (!groups.has(id)) groups.set(id, []);
-    groups.get(id).push(bidRequest);
+    (groups[`${partnerCode}\n${key}`] ??= []).push(bidRequest);
   }
 
-  return [...groups.values()].map((bidRequests) => {
+  return Object.values(groups).map((bidRequests) => {
     const { partnerCode, key } = bidRequests[0].params;
     return {
       method: 'POST' as const,
@@ -100,9 +100,10 @@ const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (
 };
 
 /**
- * The exchange bills its demand when burl fires. Video creatives carry their own win
- * impression in the VAST (the player renders them, not Prebid.js), so burl is only fired here
- * for banner and native.
+ * The exchange bills its demand when its win URL fires. For banner and native that is burl,
+ * fired here on render. A video creative is rendered by the publisher's player, not Prebid.js,
+ * so the exchange puts the same win URL in the VAST as an <Impression> and burl is not fired
+ * here: the impression is billed when the player shows it.
  */
 const onBidBillable: BidderSpec<typeof BIDDER_CODE>['onBidBillable'] = (bid) => {
   const burl = bid.burl;
@@ -117,7 +118,6 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   buildRequests,
   interpretResponse,
   onBidBillable,
-  getUserSyncs: () => [],
 };
 
 registerBidder(spec);

@@ -41,6 +41,28 @@ const multiFormatBid = {
   params: { ...PARAMS },
 };
 
+const NATIVE_ORTB_REQUEST = { ver: '1.2', assets: [{ id: 1, required: 1, title: { len: 80 } }] };
+
+const nativeBid = {
+  adUnitCode: 'native-div',
+  auctionId: 'auction-1',
+  bidId: 'bid-native',
+  bidder: 'sellwild',
+  bidderRequestId: 'bidder-request-1',
+  mediaTypes: { native: { ortb: NATIVE_ORTB_REQUEST } },
+  nativeOrtbRequest: NATIVE_ORTB_REQUEST,
+  params: { ...PARAMS },
+};
+
+const bannerNativeBid = {
+  ...nativeBid,
+  adUnitCode: 'banner-native-div',
+  bidId: 'bid-banner-native',
+  mediaTypes: { banner: { sizes: [[300, 250]] }, native: { ortb: NATIVE_ORTB_REQUEST } },
+};
+
+const NATIVE_ADM = JSON.stringify({ ver: '1.2', assets: [{ id: 1, title: { text: 'Hello' } }], link: { url: 'https://brand.com' } });
+
 function bidderRequestFor(bids) {
   return {
     bidderCode: 'sellwild',
@@ -67,10 +89,6 @@ describe('Sellwild bid adapter', () => {
     it('declares the bidder code and media types', () => {
       expect(spec.code).to.equal('sellwild');
       expect(spec.supportedMediaTypes).to.have.members(['banner', 'video', 'native']);
-    });
-
-    it('registers no user syncs', () => {
-      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])).to.deep.equal([]);
     });
   });
 
@@ -224,6 +242,67 @@ describe('Sellwild bid adapter', () => {
           }],
         }));
         expect(bids.map((b) => b.mediaType)).to.deep.equal(['video', 'banner']);
+      });
+    }
+
+    if (FEATURES.VIDEO) {
+      it('does not let one bid\'s inferred type leak to another bid on the same imp', () => {
+        const bids = respond([multiFormatBid], (req) => ({
+          id: req.id,
+          seatbid: [{
+            bid: [
+              { id: 'v', impid: 'bid-multi', price: 3, adm: '<VAST version="3.0"></VAST>', crid: 'c' },
+              { id: 'b', impid: 'bid-multi', price: 2, adm: '<div/>', w: 300, h: 250, crid: 'c', mtype: 1 },
+            ],
+          }],
+        }));
+        expect(bids.map((b) => b.mediaType)).to.deep.equal(['video', 'banner']);
+        expect(bids[1].ad).to.equal('<div/>');
+      });
+
+      it('takes the type from a single-format ad unit even without markup', () => {
+        const [bid] = respond([videoBid], (req) => ({
+          id: req.id,
+          seatbid: [{ bid: [{ id: 'v', impid: 'bid-video', price: 3, nurl: 'https://demand.example/vast.xml', crid: 'c' }] }],
+        }));
+        expect(bid.mediaType).to.equal('video');
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it('fills imp.native from the ad unit', () => {
+        const [request] = build([nativeBid]);
+        expect(JSON.parse(request.data.imp[0].native.request)).to.deep.equal(NATIVE_ORTB_REQUEST);
+      });
+
+      it('returns native bids', () => {
+        const [bid] = respond([nativeBid], (req) => ({
+          id: req.id,
+          seatbid: [{ bid: [{ id: 'n', impid: 'bid-native', price: 1.5, adm: NATIVE_ADM, crid: 'c', mtype: 4 }] }],
+        }));
+        expect(bid.mediaType).to.equal('native');
+        expect(bid.native.ortb.assets[0].title.text).to.equal('Hello');
+      });
+
+      it('recognises native markup on a banner and native ad unit when mtype is missing', () => {
+        const bids = respond([bannerNativeBid], (req) => ({
+          id: req.id,
+          seatbid: [{
+            bid: [
+              { id: 'n', impid: 'bid-banner-native', price: 1.5, adm: NATIVE_ADM, crid: 'c' },
+              { id: 'b', impid: 'bid-banner-native', price: 1, adm: '<div/>', w: 300, h: 250, crid: 'c' },
+            ],
+          }],
+        }));
+        expect(bids.map((b) => b.mediaType)).to.deep.equal(['native', 'banner']);
+      });
+
+      it('treats JSON without a top-level assets array as banner markup', () => {
+        const [bid] = respond([bannerNativeBid], (req) => ({
+          id: req.id,
+          seatbid: [{ bid: [{ id: 'x', impid: 'bid-banner-native', price: 1, adm: '{"native":{"assets":[]}}', w: 300, h: 250, crid: 'c' }] }],
+        }));
+        expect(bid.mediaType).to.equal('banner');
       });
     }
 

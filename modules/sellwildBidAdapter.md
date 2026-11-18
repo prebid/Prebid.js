@@ -14,6 +14,8 @@ Sellwild assigns each publisher a `partnerCode` and a Prebid.js `key`. The key i
 
 The adapter sends one request per `partnerCode` and `key`. Sellwild bills its demand when the ad renders: for banner and native the adapter fires the bid's `burl`, and video creatives carry their own impression tracker in the VAST.
 
+Outstream video needs a renderer from the publisher (on the ad unit or `mediaTypes.video`); the adapter doesn't supply one.
+
 # Bid Params
 
 | Name          | Scope    | Description                        | Example     | Type     |
