@@ -63,6 +63,19 @@ export let callOPS = false;
 /** @type {Object<string, any>} */
 export let optimeraTargeting = {};
 
+// --- In-memory scorefile cache / in-flight request tracking -----------------
+// `_scoresPromise` resolves once the fetch for `_scoresPromiseURL` has settled
+// (successfully or not). Concurrent auctions that share the same `scoresURL`
+// reuse this single promise instead of issuing duplicate network requests.
+// `_fetchToken` guards against an older, slower response overwriting data
+// from a newer request (e.g. after a SPA navigation changes `scoresURL`
+// while a previous fetch for the old URL is still in flight).
+/** @type {Promise<boolean>|null} */
+let _scoresPromise = null;
+/** @type {string|undefined} */
+let _scoresPromiseURL;
+let _fetchToken = 0;
+
 /** @type {RtdSubmodule} */
 export const optimeraSubmodule = {
   name: 'optimeraRTD',
@@ -97,6 +110,13 @@ export function init(moduleConfig) {
     if (callOPS) {
       loadOPS();
     }
+    // Kick off the scorefile request as early as possible (at config time,
+    // rather than waiting for the first auction's getBidRequestData call) so
+    // that by the time an auction runs - even with a very short or zero
+    // auctionDelay - the fetch is already in flight or complete, and the
+    // browser's HTTP cache (and our in-memory cache) can be used immediately
+    // by any eligible auction.
+    ensureScoresFetched();
     return true;
   }
   logError('Optimera clientID is missing in the Optimera RTD configuration.');
@@ -152,42 +172,110 @@ export function setScoresURL() {
 }
 
 /**
- * Called by Prebid before auction. Fetches Optimera scores and injects into ORTB2.
+ * Ensures a fetch of the current scorefile URL is in flight or has already
+ * completed, returning a promise all callers can share.
+ *
+ * - If `scoresURL` hasn't changed since the last call, and a fetch for it
+ *   was already started (in flight or settled), the existing promise is
+ *   reused: no duplicate network request is issued, and concurrent auctions
+ *   effectively share one in-flight request.
+ * - If `scoresURL` hasn't changed and no fetch was ever tracked for it (e.g.
+ *   a previous page load already populated the cache in a prior session, or
+ *   tests reset module state), nothing to do - resolve immediately.
+ * - If `scoresURL` has changed (first call, or e.g. a SPA navigation), a new
+ *   fetch is started and a fetch token is bumped so a slow, superseded
+ *   response can't clobber newer data.
+ *
+ * The browser's own HTTP cache (driven by the scorefile endpoint's
+ * Cache-Control/ETag headers) is left to do its job: the URL is stable and
+ * no cache-busting parameters are added, so a request for an unchanged URL
+ * can be served from HTTP cache without another full download. This
+ * function adds the in-memory layer on top: once resolved, repeat callers
+ * don't even need to hit `fetch`/XHR at all.
+ *
+ * @returns {Promise<boolean>} resolves true if `optimeraTargeting` reflects
+ *   a freshly validated scorefile for the current `scoresURL`, false if the
+ *   fetch failed, was invalid, or was superseded.
+ */
+export function ensureScoresFetched() {
+  const changed = setScoresURL();
+  if (!changed) {
+    if (_scoresPromise && _scoresPromiseURL === scoresURL) {
+      return _scoresPromise;
+    }
+    return Promise.resolve(false);
+  }
+
+  const token = ++_fetchToken;
+  _scoresPromiseURL = scoresURL;
+  const requestedURL = scoresURL;
+  const ajax = dep.ajaxBuilder();
+  _scoresPromise = new Promise((resolve) => {
+    ajax(requestedURL, {
+      success: (res, req) => {
+        if (token !== _fetchToken) {
+          // A newer fetch has since started (e.g. the page navigated); drop
+          // this now-stale response rather than overwrite fresher data.
+          resolve(false);
+          return;
+        }
+        if (req.status === 200) {
+          try {
+            setScores(res);
+            resolve(true);
+          } catch (err) {
+            logError('Unable to parse Optimera Score File.', err);
+            resolve(false);
+          }
+        } else {
+          logError(`Unable to fetch the Optimera Score File - ${req.status}`);
+          resolve(false);
+        }
+      },
+      error: () => {
+        if (token !== _fetchToken) {
+          resolve(false);
+          return;
+        }
+        logError('Unable to fetch the Optimera Score File.');
+        resolve(false);
+      }
+    });
+  });
+  return _scoresPromise;
+}
+
+/**
+ * Resets the module-level scorefile fetch/cache tracking state. Exposed for
+ * unit tests so each test can exercise `ensureScoresFetched`/`fetchScores`
+ * in isolation, without depending on `scoresURL` left over from a previous
+ * test or a previous page's `init()` call.
+ */
+export function resetScoresCache() {
+  _scoresPromise = null;
+  _scoresPromiseURL = undefined;
+  scoresURL = undefined;
+  optimeraTargeting = {};
+}
+
+/**
+ * Called by Prebid before auction. Waits for the (possibly already
+ * in-flight, possibly already cached) scorefile and injects it into ORTB2.
  * @param {object} reqBidsConfigObj
  * @param {function} callback
  * @param {object} config
  * @param {object} userConsent
  */
 export function fetchScores(reqBidsConfigObj, callback, config, userConsent) {
-  // If setScoresURL returns false, no need to re-fetch the score file
-  if (!setScoresURL()) {
-    callback();
-    return;
-  }
-  // Else, fetch the score file
-  const ajax = dep.ajaxBuilder();
-  ajax(scoresURL, {
-    success: (res, req) => {
-      if (req.status === 200) {
-        try {
-          setScores(res);
-          if (transmitWithBidRequests === 'allow') {
-            injectOrtbScores(reqBidsConfigObj);
-          }
-          callback();
-        } catch (err) {
-          logError('Unable to parse Optimera Score File.', err);
-          callback();
-        }
-      } else if (req.status === 403) {
-        logError('Unable to fetch the Optimera Score File - 403');
-        callback();
+  return ensureScoresFetched().then(() => {
+    try {
+      if (transmitWithBidRequests === 'allow') {
+        injectOrtbScores(reqBidsConfigObj);
       }
-    },
-    error: () => {
-      logError('Unable to fetch the Optimera Score File.');
-      callback();
+    } catch (err) {
+      logError('Unable to apply Optimera targeting to bid requests.', err);
     }
+    callback();
   });
 }
 
