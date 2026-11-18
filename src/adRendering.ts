@@ -69,7 +69,7 @@ type Replacement = {
    * Callbacks waiting on the replacement; cleared once it is known.
    */
   waiting?: ((bid: Bid) => void)[];
-}
+};
 
 /**
  * Tracks expired bids that have been passed to `auctionOptions.replaceExpiredBid`.
