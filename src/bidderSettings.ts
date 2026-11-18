@@ -94,9 +94,11 @@ type OpenBidderSettings = {
   [K in keyof BidderScopedSettings<BidderCode>]: BivariantCallback<BidderScopedSettings<BidderCode>[K]>
 };
 
+type StandardBidderSettings = BidderSettings<BidderCode> & Pick<BidderScopedSettings<BidderCode>, 'bidCpmAdjustment' | 'bidDesirabilityAdjustment' | 'adserverTargeting'>;
+
 /** Known bidders receive their own request types; custom bidders retain an open params object. */
 export type BidderSettingsMap = {
-  standard?: BidderSettings<BidderCode>
+  standard?: StandardBidderSettings
 } & {
   [bidder: BidderCode]: OpenBidderSettings | undefined
 } & {
