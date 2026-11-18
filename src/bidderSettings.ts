@@ -94,7 +94,13 @@ type OpenBidderSettings = {
   [K in keyof BidderScopedSettings<BidderCode>]: BivariantCallback<BidderScopedSettings<BidderCode>[K]>
 };
 
-type StandardBidderSettings = BidderSettings<BidderCode> & Pick<BidderScopedSettings<BidderCode>, 'bidCpmAdjustment' | 'bidDesirabilityAdjustment' | 'adserverTargeting'>;
+/**
+ * Settings under `standard`, the fallback for every bidder: the shared settings, plus the callbacks and targeting
+ * that a bidder without its own falls back to. `allowPriorityBids` and `allowHouseBids` are read only under the
+ * adapter's own code, so they are not available here.
+ */
+export type StandardBidderSettings = BidderSettings<BidderCode> &
+  Pick<BidderScopedSettings<BidderCode>, 'bidCpmAdjustment' | 'bidDesirabilityAdjustment' | 'adserverTargeting'>;
 
 /** Known bidders receive their own request types; custom bidders retain an open params object. */
 export type BidderSettingsMap = {
