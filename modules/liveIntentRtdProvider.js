@@ -2,51 +2,42 @@
  * This module adds the LiveIntent provider to the Real Time Data module (rtdModule).
  */
 import { submodule } from '../src/hook.js';
-import { deepAccess, deepSetValue } from '../src/utils.js';
-
-/**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- * @typedef {import('../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/rtdModule/index.js').UserConsentData} UserConsentData
- */
+import { deepAccess, mergeDeep } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'liveintent';
 const GVLID = 148;
+const LI_DOMAIN = 'liveintent.com';
 
-/**
- * Init
- * @param {Object} config Module configuration
- * @param {UserConsentData} userConsent User consent
- * @returns true
- */
-const init = (config, userConsent) => {
-  return true;
-};
+const init = () => true;
 
-/**
- * onBidRequest is called for each bidder during an auction and contains the bids for that bidder.
- *
- * @param {Object} bidRequest
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
+function getLiveIntentSegments() {
+  const userIds = typeof getGlobal().getUserIds === 'function'
+    ? getGlobal().getUserIds()
+    : {};
+  return deepAccess(userIds, 'lipb.segments', []);
+}
 
-function onBidRequest(bidRequest, config, userConsent) {
-  bidRequest.bids.forEach(bid => {
-    const providedSegmentsFromUserId = deepAccess(bid, 'userId.lipb.segments', []);
-    if (providedSegmentsFromUserId.length > 0) {
-      const providedSegments = { name: 'liveintent.com', segment: providedSegmentsFromUserId.map(id => ({ id })) };
-      const existingData = deepAccess(bid, 'ortb2.user.data', []);
-      deepSetValue(bid, 'ortb2.user.data', existingData.concat(providedSegments));
-    }
-  });
+function getBidRequestData(reqBidsConfigObj, callback) {
+  const segments = getLiveIntentSegments();
+  if (segments.length > 0) {
+    mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
+      user: {
+        data: [{
+          name: LI_DOMAIN,
+          segment: segments.map(id => ({ id }))
+        }]
+      }
+    });
+  }
+  callback();
 }
 
 export const liveIntentRtdSubmodule = {
   name: SUBMODULE_NAME,
   gvlid: GVLID,
-  init: init,
-  onBidRequestEvent: onBidRequest
+  init,
+  getBidRequestData
 };
 
 submodule('realTimeData', liveIntentRtdSubmodule);

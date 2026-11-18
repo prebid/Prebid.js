@@ -1,116 +1,130 @@
 import { liveIntentRtdSubmodule } from 'modules/liveIntentRtdProvider.js';
-import * as utils from 'src/utils.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 import { expect } from 'chai';
 
 describe('LiveIntent Rtd Provider', function () {
   const SUBMODULE_NAME = 'liveintent';
+  const SEGMENTS = ['asa_1231', 'lalo_4311', 'liurl_99123'];
+  const EXPECTED_USER_DATA = [{
+    name: 'liveintent.com',
+    segment: SEGMENTS.map(id => ({ id }))
+  }];
+
+  let sandbox;
+  let getUserIdsStub;
+
+  function makeReqBidsConfig(globalOrtb2 = {}) {
+    return {
+      ortb2Fragments: {
+        global: globalOrtb2,
+        bidder: {}
+      }
+    };
+  }
+
+  function stubUserIds(userIds) {
+    getUserIdsStub = sandbox.stub().returns(userIds);
+    sandbox.stub(prebidGlobal, 'getGlobal').returns({
+      getUserIds: getUserIdsStub
+    });
+  }
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   describe('submodule `init`', function () {
-    const config = {
-      name: SUBMODULE_NAME,
-    };
-    it('init returns true when the subModuleName is defined', function () {
-      const value = liveIntentRtdSubmodule.init(config);
-      expect(value).to.equal(true);
+    it('returns true', function () {
+      expect(liveIntentRtdSubmodule.init({ name: SUBMODULE_NAME })).to.equal(true);
     });
   });
 
-  describe('submodule `onBidRequestEvent`', function () {
-    const bidRequestExample = {
-      bidderCode: 'appnexus',
-      auctionId: '8dbd7cb1-7f6d-4f84-946c-d0df4837234a',
-      bidderRequestId: '2a038c6820142b',
-      bids: [
-        {
-          bidder: 'appnexus',
-          userId: {
-            lipb: {
-              segments: [
-                'asa_1231',
-                'lalo_4311',
-                'liurl_99123'
-              ]
-            }
-          }
-        }
-      ]
-    };
-
+  describe('submodule `getBidRequestData`', function () {
     it('exists', function () {
-      expect(liveIntentRtdSubmodule.onBidRequestEvent).to.be.a('function');
+      expect(liveIntentRtdSubmodule.getBidRequestData).to.be.a('function');
     });
 
-    it('undefined segments field does not change the ortb2', function() {
-      const bidRequest = {
-        bidderCode: 'appnexus',
-        auctionId: '8dbd7cb1-7f6d-4f84-946c-d0df4837234a',
-        bidderRequestId: '2a038c6820142b',
-        bids: [
-          {
-            bidder: 'appnexus',
-            ortb2: {}
-          }
-        ]
+    it('calls callback and leaves ortb2 unchanged when getUserIds is missing', function () {
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({});
+      const reqBidsConfigObj = makeReqBidsConfig();
+      const callback = sandbox.spy();
+
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+
+      expect(callback.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({});
+    });
+
+    it('calls callback and leaves ortb2 unchanged when segments are missing', function () {
+      stubUserIds({ lipb: { lipbid: 'abc' } });
+      const reqBidsConfigObj = makeReqBidsConfig();
+      const callback = sandbox.spy();
+
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+
+      expect(callback.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({});
+    });
+
+    it('calls callback and leaves ortb2 unchanged when segments are empty', function () {
+      stubUserIds({ lipb: { segments: [] } });
+      const reqBidsConfigObj = makeReqBidsConfig();
+      const callback = sandbox.spy();
+
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+
+      expect(callback.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({});
+    });
+
+    it('writes liveintent.com user.data from getUserIds().lipb.segments', function () {
+      stubUserIds({ lipb: { lipbid: 'abc', segments: SEGMENTS } });
+      const reqBidsConfigObj = makeReqBidsConfig();
+      const callback = sandbox.spy();
+
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+
+      expect(callback.calledOnce).to.equal(true);
+      expect(getUserIdsStub.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
+        user: { data: EXPECTED_USER_DATA }
+      });
+    });
+
+    it('still writes segments when lipbid is absent', function () {
+      stubUserIds({ lipb: { segments: SEGMENTS } });
+      const reqBidsConfigObj = makeReqBidsConfig();
+      const callback = sandbox.spy();
+
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+
+      expect(callback.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.data).to.deep.equal(EXPECTED_USER_DATA);
+    });
+
+    it('appends to existing global user.data', function () {
+      stubUserIds({ lipb: { segments: SEGMENTS } });
+      const existing = {
+        name: 'example.com',
+        segment: [{ id: 'a_1231' }, { id: 'b_4311' }]
       };
-
-      liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
-      const ortb2 = bidRequest.bids[0].ortb2;
-      expect(ortb2).to.deep.equal({});
-    });
-
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when the ortb2 is undefined', function() {
-      const bidRequest = utils.deepClone(bidRequestExample);
-
-      liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
-      const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
-      expect(ortb2).to.deep.equal(expectedOrtb2);
-    });
-
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when user is undefined', function() {
-      bidRequestExample.bids[0].ortb2 = { source: {} };
-      const bidRequest = utils.deepClone(bidRequestExample);
-
-      liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
-      const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
-      expect(ortb2).to.deep.equal(expectedOrtb2);
-    });
-
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when data is undefined', function() {
-      bidRequestExample.bids[0].ortb2 = {
+      const reqBidsConfigObj = makeReqBidsConfig({
         source: {},
-        user: {}
-      };
-      const bidRequest = utils.deepClone(bidRequestExample);
+        user: { data: [existing] }
+      });
+      const callback = sandbox.spy();
 
-      liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
-      const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
-      expect(ortb2).to.deep.equal(expectedOrtb2);
-    });
+      liveIntentRtdSubmodule.getBidRequestData(reqBidsConfigObj, callback);
 
-    it('extracts segments and move them to the bidRequest.ortb2.user.data with the existing data', function() {
-      bidRequestExample.bids[0].ortb2 = {
+      expect(callback.calledOnce).to.equal(true);
+      expect(reqBidsConfigObj.ortb2Fragments.global).to.deep.equal({
         source: {},
-        user: {
-          data: [
-            {
-              name: 'example.com',
-              segment: [
-                { id: 'a_1231' },
-                { id: 'b_4311' }
-              ]
-            }
-          ]
-        }
-      };
-      const bidRequest = utils.deepClone(bidRequestExample);
-
-      liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
-      const ortb2 = bidRequest.bids[0].ortb2;
-      const expectedOrtb2 = { source: {}, user: { data: [{ name: 'example.com', segment: [{ id: 'a_1231' }, { id: 'b_4311' }] }, { name: 'liveintent.com', segment: [{ id: 'asa_1231' }, { id: 'lalo_4311' }, { id: 'liurl_99123' }] }] } };
-      expect(ortb2).to.deep.equal(expectedOrtb2);
+        user: { data: [existing, ...EXPECTED_USER_DATA] }
+      });
     });
   });
 });
