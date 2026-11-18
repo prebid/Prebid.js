@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/engerioBidAdapter.js';
 import { config } from 'src/config.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 
@@ -463,7 +464,18 @@ describe('engerioBidAdapter', () => {
       refererInfo: { page: 'https://example.com/article', domain: 'example.com' },
     };
 
+    // Pinned rather than left to the build, which registers whatever modules the loaded specs import.
+    let installedModulesSandbox;
+    let installedModulesStub;
+
+    beforeEach(() => {
+      installedModulesSandbox = sinon.createSandbox();
+      installedModulesStub = installedModulesSandbox.stub(getGlobal(), 'installedModules')
+        .value(['bidViewability', 'bidViewabilityIO']);
+    });
+
     afterEach(() => {
+      installedModulesSandbox.restore();
       config.resetConfig();
     });
 
@@ -520,6 +532,24 @@ describe('engerioBidAdapter', () => {
 
     it('reports viewability as unmeasured when the module is present but disabled', () => {
       config.setConfig({ bidViewability: { enabled: false } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    // setConfig accepts both topics whether or not the module is in the build; without the
+    // module nothing listens for the render, so no viewable event can follow.
+    it('reports viewability as unmeasured when the enabled modules are not in the build', () => {
+      installedModulesStub.value([]);
+      config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('requires the enabled module itself to be in the build, not just either one', () => {
+      installedModulesStub.value(['bidViewabilityIO']);
+      config.setConfig({ bidViewability: { enabled: true } });
       const request = spec.buildRequests([validBid], bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;

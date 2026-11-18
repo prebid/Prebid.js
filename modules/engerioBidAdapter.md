@@ -71,8 +71,9 @@ bid also carries a standard `eventtrackers` entry (`event: 2`, viewable) that Pr
 itself — either route is sufficient, and the endpoint is idempotent.
 
 The adapter reports which of these is active in the bid request, so Engerio can tell "measured,
-not viewed" apart from "not measured at all". **With neither module enabled, viewable
-impressions are reported as unavailable rather than as zero** — no bids are lost either way.
+not viewed" apart from "not measured at all". **Unless one of them is both in your build and
+enabled, viewable impressions are reported as unavailable rather than as zero** — no bids are
+lost either way.
 
 ## First-party data
 

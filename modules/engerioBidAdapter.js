@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import { deepAccess, generateUUID, logInfo, logWarn, mergeDeep } from '../src/utils.js';
 
 const BIDDER_CODE = 'engerio';
@@ -35,7 +36,8 @@ function getAdUnitCode(bid) {
  * Whether this page will actually report viewability for our bids.
  *
  * Both modules are publisher-side opt-ins that must be in the Prebid.js build *and* enabled
- * via setConfig, and both expose their own enabled state for exactly this purpose. Engerio
+ * via setConfig, so both are checked: setConfig accepts either topic whether or not the module
+ * was built in, and only an installed module can send a viewable event. Engerio
  * uses the answer to tell "measured, not viewed" apart from "never measured" — without it,
  * every publisher who has not switched a module on would report 0% viewability rather than
  * no data.
@@ -47,9 +49,11 @@ function getAdUnitCode(bid) {
  * @returns {boolean}
  */
 function isViewabilityMeasured() {
+  const installedModules = getGlobal().installedModules;
   return (
-    config.getConfig('bidViewability')?.enabled === true ||
-    (config.getConfig('bidViewabilityIO')?.enabled === true && clientSupportsIntersectionObserver())
+    (installedModules.includes('bidViewability') && config.getConfig('bidViewability')?.enabled === true) ||
+    (installedModules.includes('bidViewabilityIO') && config.getConfig('bidViewabilityIO')?.enabled === true &&
+      clientSupportsIntersectionObserver())
   );
 }
 
