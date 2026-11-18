@@ -12,11 +12,15 @@ Connects Prebid.js to LINA SSP for client-side Banner, Video, and Native bids.
 
 The bidder code is `lina`. An active LINA publisher account and authorized
 placements are required. LINA SSP provides the required `publisherId` and
-`placementId` values.
+placement identifier. The placement identifier can be supplied as
+`params.placementId`, or as standard OpenRTB `ortb2Imp.tagid` when no bidder
+override is configured.
 
 `publisherId` is the public integration key (`app_key`), not the account UUID or
 login password. `placementId` is the UUID of the registered placement, independent
-of its media types.
+of its media types. A valid LINA placement identifier is always required; when
+`params.placementId` and `ortb2Imp.tagid` are both present, the bidder parameter
+takes precedence.
 
 LINA supports Multi-format Ad Units and returns one winning format per bid
 request. Currency, floors, and fees are managed by LINA SSP. Returned CPM is
