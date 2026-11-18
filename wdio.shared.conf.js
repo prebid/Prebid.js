@@ -14,6 +14,13 @@ exports.config = {
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.
   connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
   connectionRetryCount: 3, // additional retries for transient session issues
+  // Don't let @wdio/local-runner wrap workers in `xvfb-run`. No browser here needs a display:
+  // the local configs run chrome, firefox and edge headless, and wdio.conf.js drives
+  // BrowserStack. And the wrapper breaks the worker on Ubuntu 26.04 (now `ubuntu-latest`):
+  // its xvfb-run (xorg-server >= 2:21.1.15-2, Debian #1087418) claims fd 3 for diagnostics
+  // and runs the command with `3>&-`, which closes the IPC channel wdio places on fd 3.
+  // The worker's first process.send() then crashes with `write EINVAL`.
+  autoXvfb: false,
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
