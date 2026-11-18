@@ -458,6 +458,22 @@ describe('cross-domain creative', () => {
             });
           });
 
+          it('marks the renderer frame so the native renderer keeps it when replacing markup', () => {
+            window._render = sinon.stub();
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = window.parent._render'
+            });
+            return waitFor(() => window._render.called).then(() => {
+              // creative/renderers/native/renderer.js finds its own frame with this selector
+              expect(frames[0].matches('iframe[srcdoc*="render"]')).to.be.true;
+            }).finally(() => {
+              delete window._render;
+            });
+          });
+
           it('sets up and runs renderer', () => {
             window._render = sinon.stub();
             const data = {

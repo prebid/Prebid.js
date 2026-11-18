@@ -163,7 +163,8 @@ export function renderer(win) {
           });
           // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
           // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
-          renderer.srcdoc = '<!doctype html><html><body></body></html>';
+          // The native renderer, which may come from a different Prebid version, keeps its own frame by matching iframe[srcdoc*="render"].
+          renderer.srcdoc = '<!doctype html><html><head><!-- prebid renderer --></head><body></body></html>';
           win.document.body.appendChild(renderer);
         }));
       } else if (handshakeComplete) {
