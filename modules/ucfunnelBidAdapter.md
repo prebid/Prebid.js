@@ -3,7 +3,7 @@
 ```
 Module Name: ucfunnel Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: ryan.chou@ucfunnel.com
+Maintainer: support@ucfunnel.com
 ```
 
 # Description
