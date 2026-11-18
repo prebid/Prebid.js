@@ -80,7 +80,6 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   const firstBidRequest = validBidRequests[0];
-  const tdidAdapter = firstBidRequest?.userId?.tdid;
 
   const metadata = getAllMetadata(bidderRequest);
 
@@ -98,7 +97,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    user: getUserIds(bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
     ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
   });
 
@@ -349,17 +348,15 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
+function getUserIds(usp, gdpr, eids, gpp) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
   };
 
   // Pull Trade Desk ID
-  if (!tdidAdapter && crb.tdID) {
+  if (crb.tdID) {
     userIds.tdID = crb.tdID;
-  } else if (tdidAdapter) {
-    userIds.tdID = tdidAdapter;
   }
 
   // USP

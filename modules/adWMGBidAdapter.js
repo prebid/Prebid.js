@@ -83,12 +83,6 @@ export const spec = {
         request.uspConsent = bidderRequest.uspConsent;
       }
  */
-      if (bidRequest.userId && bidRequest.userId.pubcid) {
-        request.userId = {
-          pubcid: bidRequest.userId.pubcid
-        };
-      }
-
       if (debug) {
         request.debug = debug;
       }

@@ -1,6 +1,6 @@
 ## Rediads User ID Submodule
 
-The Rediads User ID submodule generates a first-party identifier in the browser, stores it through Prebid's `userId` framework, and exposes it through `bidRequest.userId` and `userIdAsEids`.
+The Rediads User ID submodule generates a first-party identifier in the browser, stores it through Prebid's `userId` framework, and exposes it to bid adapters as an EID in `ortb2.user.ext.eids` (also available as `bidRequest.userIdAsEids`).
 
 The module is vendorless for TCF enforcement, so Prebid applies purpose-level storage checks without requiring a separate vendor consent entry.
 
@@ -47,6 +47,6 @@ pbjs.setConfig({
 
 - `getId()` generates a `ruid_<uuid>` value on first use.
 - `extendId()` preserves the existing Rediads ID and refreshes metadata.
-- `decode()` exposes the ID as `bidRequest.userId.rediadsId`.
+- `decode()` exposes the ID under the `rediadsId` key (see `pbjs.getUserIds()`); bid adapters receive it as an EID.
 - EIDs are suppressed when US Privacy or GPP opt-out signals indicate sharing should be blocked.
 - The module returns `undefined` when COPPA applies or when GDPR applies without TCF Purpose 1 consent.
