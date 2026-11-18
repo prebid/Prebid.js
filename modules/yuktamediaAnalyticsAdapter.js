@@ -123,13 +123,6 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
                 bidId: bidRequest.bidId,
                 auctionId: args.auctionId
               };
-              if (typeof initOptions.enableUserIdCollection !== 'undefined' && initOptions.enableUserIdCollection && typeof bidRequest['userId'] !== 'undefined') {
-                for (let [userIdProvider, userId] in Object.entries(bidRequest['userId'])) {
-                  userIdProvider = typeof userIdProvider !== 'string' ? JSON.stringify(userIdProvider) : userIdProvider;
-                  userId = typeof userId !== 'string' ? JSON.stringify(userId) : userId;
-                  events.auctions[args.auctionId]['bids'][bidRequest.bidId]['userID-'.concat(userIdProvider)] = userId;
-                }
-              }
             });
           }
           break;
