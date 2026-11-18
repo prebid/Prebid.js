@@ -989,3 +989,69 @@ describe('user sync iframes', () => {
     });
   });
 });
+
+describe('browserSupportsUserSyncCookies', () => {
+  const { browserSupportsUserSyncCookies } = require('../../src/userSync.js');
+  const DETECTORS = {
+    safari: 'isSafariBrowser',
+    firefox: 'isFirefoxBrowser',
+    chromeIOS: 'isChromeIOSBrowser'
+  };
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    Object.values(DETECTORS).forEach(detector => sandbox.stub(utils, detector).returns(false));
+    config.resetConfig();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    config.resetConfig();
+  });
+
+  it('returns true on a browser that is not restricted', () => {
+    expect(browserSupportsUserSyncCookies()).to.be.true;
+  });
+
+  Object.entries(DETECTORS).forEach(([browser, detector]) => {
+    describe(`on ${browser}`, () => {
+      beforeEach(() => {
+        utils[detector].returns(true);
+      });
+
+      it('returns false by default', () => {
+        expect(browserSupportsUserSyncCookies()).to.be.false;
+      });
+
+      it(`returns true when allowRestrictedBrowsers includes '${browser}'`, () => {
+        config.setConfig({ userSync: { allowRestrictedBrowsers: [browser] } });
+        expect(browserSupportsUserSyncCookies()).to.be.true;
+      });
+
+      it(`returns false when allowRestrictedBrowsers only lists other browsers`, () => {
+        const others = Object.keys(DETECTORS).filter(b => b !== browser);
+        config.setConfig({ userSync: { allowRestrictedBrowsers: others } });
+        expect(browserSupportsUserSyncCookies()).to.be.false;
+      });
+
+      it('returns false when the browser is allowed but device access is off', () => {
+        config.setConfig({ deviceAccess: false, userSync: { allowRestrictedBrowsers: [browser] } });
+        expect(browserSupportsUserSyncCookies()).to.be.false;
+      });
+    });
+  });
+
+  it('ignores an allowRestrictedBrowsers value that is not an array', () => {
+    utils.isFirefoxBrowser.returns(true);
+    config.setConfig({ userSync: { allowRestrictedBrowsers: 'firefox' } });
+    expect(browserSupportsUserSyncCookies()).to.be.false;
+  });
+
+  it('checks the config on every call, so a publisher can enable it after consent', () => {
+    utils.isFirefoxBrowser.returns(true);
+    expect(browserSupportsUserSyncCookies()).to.be.false;
+    config.setConfig({ userSync: { allowRestrictedBrowsers: ['firefox'] } });
+    expect(browserSupportsUserSyncCookies()).to.be.true;
+  });
+});

@@ -36,6 +36,17 @@ export type RemoveUserSyncsOptions = {
   withChildFrames?: boolean;
 };
 
+/**
+ * Browsers in which user syncs are off by default.
+ */
+export type RestrictedBrowser = 'safari' | 'firefox' | 'chromeIOS';
+
+const RESTRICTED_BROWSERS: Record<RestrictedBrowser, () => boolean> = {
+  safari: () => isSafariBrowser(),
+  firefox: () => isFirefoxBrowser(),
+  chromeIOS: () => isChromeIOSBrowser(),
+};
+
 export type IframeRemovalDelays = {
   withChildFrames?: number | false;
   all?: number | false;
@@ -84,6 +95,12 @@ export interface UserSyncConfig {
    * - `all`: remove the iframe regardless. Default: 15000.
    */
   removeIframes?: boolean | IframeRemovalDelays;
+  /**
+   * Browsers in which user syncs are off by default ('safari', 'firefox', 'chromeIOS') where this page
+   * should still fire them, for example after the user has opted in to tracking. Applies to bid adapter
+   * syncs and Prebid Server cookie syncs. Cookie access and activity controls still apply. Default: none.
+   */
+  allowRestrictedBrowsers?: RestrictedBrowser[];
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -254,7 +271,11 @@ export const internal = {
 const storage = getCoreStorageManager('usersync');
 
 export function browserSupportsUserSyncCookies() {
-  return !isSafariBrowser() && !isFirefoxBrowser() && !isChromeIOSBrowser() && storage.cookiesAreEnabled();
+  const allowed = config.getConfig('userSync.allowRestrictedBrowsers');
+  const allowList: string[] = isArray(allowed) ? allowed : [];
+  const restricted = Object.entries(RESTRICTED_BROWSERS)
+    .some(([browser, detect]) => !allowList.includes(browser) && detect());
+  return !restricted && storage.cookiesAreEnabled();
 }
 
 /**

@@ -4006,6 +4006,13 @@ describe('S2S Adapter', function () {
           expect(server.requests).to.have.length(1);
           expect(server.requests[0].url).to.equal(cfg.endpoint.p1Consent);
         });
+
+        it(`requests PBS syncs on ${browser} when userSync.allowRestrictedBrowsers includes it`, () => {
+          utils[detector].returns(true);
+          config.setConfig({ userSync: { allowRestrictedBrowsers: ['safari', 'firefox', 'chromeIOS'] } });
+          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+          expect(server.requests[0].url).to.equal(cfg.syncEndpoint.p1Consent);
+        });
       });
     });
   });
