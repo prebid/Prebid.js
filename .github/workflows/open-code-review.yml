@@ -1,11 +1,10 @@
 # GitHub-hosted CPU-only, local-model review. No external LLM provider/API key.
 # The runner downloads Ollama and open weights, then performs inference on loopback.
-# pull_request_target: never check out or execute untrusted PR code with a write token.
-# The pinned Alibaba action checks out the trusted base and reads PR Git objects.
+# Only same-repo branches run it: fork PRs get a read-only token and could not post comments.
 name: OpenCodeReview PR Review
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -19,7 +18,7 @@ concurrency:
 jobs:
   review:
     # Only the ci/ocr-agent-* branch prefix opts in to the full agent.
-    if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/ocr-agent-') }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'ci/ocr-agent-') }}
     name: Experimental OpenCodeReview (Qwen3.5 9B)
     runs-on: ubuntu-latest
     # CPU prefill runs at roughly 13-25 tokens/s, and every agent turn sends

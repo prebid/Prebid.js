@@ -1,7 +1,7 @@
 name: Bounded Qwen PR review
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -15,8 +15,8 @@ concurrency:
 jobs:
   review:
     # Paused on regular PRs: its findings have mostly been false positives. Like OpenCodeReview
-    # (ci/ocr-agent-*), it runs only on branches that opt in by name.
-    if: ${{ startsWith(github.event.pull_request.head.ref, 'ci/qwen-') }}
+    # (ci/ocr-agent-*), it runs only on branches that opt in by name. Fork PRs get a read-only token.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'ci/qwen-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:

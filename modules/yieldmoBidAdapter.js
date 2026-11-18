@@ -124,19 +124,8 @@ export const spec = {
 
       bannerBidRequests.forEach(request => {
         serverRequest.p.push(addPlacement(request));
-        const pubcid = getId(request, 'pubcid');
-        if (pubcid) {
-          serverRequest.pubcid = pubcid;
-        } else if (request.crumbs && request.crumbs.pubcid) {
+        if (request.crumbs && request.crumbs.pubcid) {
           serverRequest.pubcid = request.crumbs.pubcid;
-        }
-        const tdid = getId(request, 'tdid');
-        if (tdid) {
-          serverRequest.tdid = (typeof tdid === 'object') ? tdid.id : tdid;
-        }
-        const criteoId = getId(request, 'criteoId');
-        if (criteoId) {
-          serverRequest.cri_prebid = criteoId;
         }
         const schain = deepAccess(request, 'ortb2.source.ext.schain');
         if (schain) {
@@ -412,16 +401,6 @@ function getPageDescription() {
   } else {
     return '';
   }
-}
-
-/**
- * Gets an id from the userId object if it exists
- * @param {*} request
- * @param {*} idType
- * @returns an id if there is one, or undefined
- */
-function getId(request, idType) {
-  return (typeof deepAccess(request, 'userId') === 'object') ? request.userId[idType] : undefined;
 }
 
 /**

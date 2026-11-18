@@ -137,7 +137,7 @@ export const spec = {
         auctionId: firstBid?.auctionId,
         bidderRequestId: firstBid?.bidderRequestId,
         src: firstBid?.src,
-        userIds: firstBid?.userId || {},
+        userIds: {}, // Prebid 10+ does not set bid.userId; IDs are in userIdAsEids
         userIdAsEids: firstBid?.userIdAsEids || [],
         auctionsCount: firstBid?.auctionsCount,
         bidRequestsCount: firstBid?.bidRequestsCount,

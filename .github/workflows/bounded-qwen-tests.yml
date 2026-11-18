@@ -1,7 +1,7 @@
 name: Bounded Qwen reviewer tests
 
-# The review workflow uses pull_request_target and runs the trusted base
-# branch's scripts, so it never exercises reviewer changes in a PR. Run the
+# The review workflow runs the base branch's scripts, and only on opt-in
+# branches, so it never exercises reviewer changes in a PR. Run the
 # PR's own unit tests here: read-only token, no secrets, no model download.
 on:
   pull_request:

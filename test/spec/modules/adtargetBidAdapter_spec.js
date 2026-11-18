@@ -294,8 +294,8 @@ describe('adtargetBidAdapter', () => {
       it('sets Schain', () => {
         expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
       });
-      it('sets UserId\'s', () => {
-        expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
+      it('does not send raw UserIds', () => {
+        expect(bidRequestWithPubSettingsData).to.not.have.property('UserIds');
       });
     });
   });
