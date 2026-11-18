@@ -637,7 +637,7 @@ function setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
 
 addApiMethod('setTargetingForAst', setTargetingForAst);
 
-type RenderAdOptions = {
+export type RenderAdOptions = {
   /**
    * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
    */

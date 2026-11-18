@@ -344,7 +344,6 @@ export const spec = {
         userLanguage,
         pageUrl,
         pageDomain,
-        userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
           id: eid.uids?.[0]?.id

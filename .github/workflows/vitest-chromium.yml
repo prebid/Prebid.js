@@ -114,7 +114,8 @@ jobs:
           done
           sudo apt-get update
           sudo apt-get install lcov -y
-          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov -o coverage.info
+          # lcov 2.4 (ubuntu-26.04) errors on two same-named functions in one file, which is common in our sources
+          find build/coverage/chunks -name 'lcov.info' -printf ' -a %p' | xargs lcov --ignore-errors inconsistent -o coverage.info
           { echo '### Vitest coverage'; echo '```'; lcov --summary coverage.info 2>&1; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - id: name
         run: echo "artifact=vitest-coverage-${{ github.run_id }}-${{ inputs.coverage-only && 'base' || 'head' }}" >> "$GITHUB_OUTPUT"
