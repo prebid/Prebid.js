@@ -1,4 +1,5 @@
-import { consentHandler, coppaDataHandler, gdprDataHandler, gvlidList, gvlidRegistry, multiHandler, normalizeGvlid, VENDORLESS_GVLID } from '../../../../src/consentHandler.js';
+import { allConsent, consentHandler, coppaDataHandler, gcmDataHandler, gdprDataHandler, gppDataHandler, gvlidList, gvlidRegistry, multiHandler, normalizeGvlid, uspDataHandler, VENDORLESS_GVLID } from '../../../../src/consentHandler.js';
+import { cyrb53Hash } from '../../../../src/utils.js';
 import { config } from 'src/config.js';
 
 describe('Consent data handler', () => {
@@ -232,6 +233,22 @@ describe('multiHandler', () => {
         });
       });
     });
+  });
+});
+
+describe('allConsent', () => {
+  afterEach(() => gcmDataHandler.reset());
+
+  it('includes gcm', () => {
+    expect(allConsent.getConsentData()).to.have.property('gcm');
+  });
+
+  it('leaves gcm out of the hash until it is enabled', () => {
+    const legacyHash = () => cyrb53Hash([gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler].map(h => h.hash).join(':'));
+    expect(allConsent.hash).to.equal(legacyHash());
+    gcmDataHandler.enable();
+    gcmDataHandler.setConsentData({ ad_storage: 'denied' });
+    expect(allConsent.hash).to.not.equal(legacyHash());
   });
 });
 

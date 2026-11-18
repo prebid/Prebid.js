@@ -3,7 +3,7 @@ import { getHook, module } from '../../src/hook.js';
 import { logError, logInfo, logWarn, mergeDeep } from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
-import adapterManager, { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js';
+import adapterManager, { gcmDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../../src/adapterManager.js';
 import { timedAuctionHook } from '../../src/utils/perfMetrics.js';
 import { GDPR_ACPIDS, GDPR_GVLIDS } from '../../src/consentHandler.js';
 import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
@@ -141,7 +141,8 @@ function getConsentData() {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
     gpp: gppDataHandler.getConsentData(),
-    coppa: !!(config.getConfig('coppa'))
+    coppa: !!(config.getConfig('coppa')),
+    gcm: gcmDataHandler.getConsentData()
   };
 }
 
