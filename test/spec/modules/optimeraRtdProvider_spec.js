@@ -326,6 +326,23 @@ describe('Optimera RTD oPS script', () => {
     expect(script.parentNode).to.equal(document.body);
     script.remove();
   });
+
+  it('defers appending the oPS script until the body is available when document.body is not yet set', () => {
+    const originalBody = document.body;
+    const addEventListenerSpy = sinon.spy(document, 'addEventListener');
+    Object.defineProperty(document, 'body', { value: null, configurable: true });
+    try {
+      optimeraRTD.init(conf({ clientID: '9999-no-body', callOPS: true }));
+      expect(loadExternalScriptStub.calledOnce).to.equal(true);
+      // Since document.body was unavailable, the script should not have been
+      // appended yet; instead a DOMContentLoaded listener should have been
+      // registered to append it later.
+      expect(addEventListenerSpy.calledWith('DOMContentLoaded')).to.equal(true);
+    } finally {
+      Object.defineProperty(document, 'body', { value: originalBody, configurable: true });
+      addEventListenerSpy.restore();
+    }
+  });
 });
 
 describe('Optimera RTD fetchScores', () => {
@@ -582,5 +599,55 @@ describe('Optimera RTD fetchScores', () => {
     calls[0].cbObj.success(scoreFile, { status: 200 });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(optimeraRTD.optimeraTargeting['div-0']).to.deep.equal(['NEW1', 'NEW2']);
+  });
+
+  it('discards a stale ajax *error* superseded by a newer fetch', async () => {
+    const calls = [];
+    stubAjax((url, cbObj) => {
+      calls.push({ url, cbObj });
+    });
+    optimeraRTD.init(conf({ clientID: '8899' }));
+    expect(calls.length).to.equal(1);
+
+    // A newer fetch starts (e.g. a SPA navigation) while the first request
+    // is still outstanding.
+    optimeraRTD.resetScoresCache();
+    optimeraRTD.init(conf({ clientID: '8899-new' }));
+    expect(calls.length).to.equal(2);
+
+    // The newer request succeeds first.
+    calls[1].cbObj.success(JSON.stringify({ 'div-0': ['NEW1', 'NEW2'] }), { status: 200 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(optimeraRTD.optimeraTargeting['div-0']).to.deep.equal(['NEW1', 'NEW2']);
+
+    // The stale, older request then errors out; since it's superseded, it
+    // must not log another error or otherwise disturb the already-cached
+    // newer data.
+    const utilsLogErrorStub = sinon.stub(utils, 'logError');
+    calls[0].cbObj.error();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(utils.logError.called).to.equal(false);
+    expect(optimeraRTD.optimeraTargeting['div-0']).to.deep.equal(['NEW1', 'NEW2']);
+    utilsLogErrorStub.restore();
+  });
+
+  it('resolves immediately without fetching when the URL is unchanged but no fetch was ever tracked for it', async () => {
+    // Simulate a scorefile URL that is already known (e.g. computed directly
+    // via setScoresURL(), independently of ensureScoresFetched/fetchScores)
+    // but for which no fetch has ever been started or cached in this
+    // module's lifetime.
+    stubAjax(() => {});
+    optimeraRTD.init(conf({ clientID: '9910' }));
+    optimeraRTD.resetScoresCache();
+    optimeraRTD.setScoresURL();
+    ajaxBuilderStub.resetHistory();
+
+    const callback = sinon.spy();
+    const reqBidsConfigObj = { adUnits: [{ code: 'div-0', ortb2Imp: {} }] };
+    await optimeraRTD.fetchScores(reqBidsConfigObj, callback);
+
+    expect(callback.calledOnce).to.equal(true);
+    expect(ajaxBuilderStub.called).to.equal(false);
+    expect(reqBidsConfigObj.adUnits[0].ortb2Imp.ext?.data?.optimera).to.be.undefined;
   });
 });
