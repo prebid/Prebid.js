@@ -1,15 +1,24 @@
 # Overview
 
 ```
-Module Name: Streamads Bidder Adapter
-Module Type: Streamads Bidder Adapter
+Module Name: StreamAds Bidder Adapter
+Module Type: StreamAds Bidder Adapter
 Maintainer: support@streamads.media
 ```
 
 # Description
 
-Connects to Streamads exchange for bids.
-Streamads bid adapter supports Banner, Video (instream and outstream) and Native.
+Connects to StreamAds exchange for bids.
+StreamAds bid adapter supports Banner, Video (instream and outstream) and Native.
+
+# Media Type Selection
+
+Set `params.mediaType` to `banner`, `video`, or `native` when an ad unit offers
+multiple supported formats. StreamAds requests only the selected format.
+Bids without a selection on multiformat ad units, or with a selection absent
+from `mediaTypes`, are rejected. For single-format ad units this parameter is optional.
+
+Example bidder parameters: `{ placementId: 'testVideo', mediaType: 'video' }`.
 
 # Test Parameters
 ```
@@ -24,7 +33,7 @@ Streamads bid adapter supports Banner, Video (instream and outstream) and Native
                     },
                     bids: [
                         {
-                            bidder: 'streamads',
+                            bidder: 'stmads',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +52,7 @@ Streamads bid adapter supports Banner, Video (instream and outstream) and Native
                     },
                     bids: [
                         {
-                            bidder: 'streamads',
+                            bidder: 'stmads',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +77,7 @@ Streamads bid adapter supports Banner, Video (instream and outstream) and Native
                     },
                     bids: [
                         {
-                            bidder: 'streamads',
+                            bidder: 'stmads',
                             params: {
                                 placementId: 'testNative',
                             }

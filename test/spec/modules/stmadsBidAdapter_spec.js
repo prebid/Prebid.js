@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/streamadsBidAdapter.ts';
+import { spec } from '../../../modules/stmadsBidAdapter.ts';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'streamads';
+const bidder = 'stmads';
 
-describe('StreamadsBidAdapter', function () {
+describe('StreamAdsBidAdapter', function () {
   const userIdAsEids = [{
     source: 'test.org',
     uids: [{
@@ -112,6 +112,61 @@ describe('StreamadsBidAdapter', function () {
     });
     it('Should return false if at least one of parameters is not present', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
+  });
+
+  describe('media type selection', function () {
+    function multiformatBid(mediaType) {
+      return {
+        ...bids[0],
+        params: { ...bids[0].params, mediaType },
+        mediaTypes: { ...bids[0].mediaTypes, ...bids[1].mediaTypes, ...bids[2].mediaTypes }
+      };
+    }
+
+    it('Rejects multiformat bids without an explicit selection', function () {
+      expect(spec.isBidRequestValid(multiformatBid())).to.be.false;
+    });
+
+    [BANNER, VIDEO, NATIVE].forEach(mediaType => {
+      it(`Builds only the selected ${mediaType} format without mutating the bid`, function () {
+        const bid = multiformatBid(mediaType);
+        const original = JSON.parse(JSON.stringify(bid));
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.placements).to.have.lengthOf(1);
+        expect(request.data.placements[0].adFormat).to.equal(mediaType);
+        expect(request.data.placements[0].bidId).to.equal(bid.bidId);
+        expect(bid).to.deep.equal(original);
+      });
+
+      it(`Accepts single-format ${mediaType} bids without a selection`, function () {
+        const bid = bids.find(bid => bid.mediaTypes[mediaType]);
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+    });
+
+    ['audio', '', null].forEach(mediaType => {
+      it(`Rejects invalid selection ${JSON.stringify(mediaType)}`, function () {
+        expect(spec.isBidRequestValid(multiformatBid(mediaType))).to.be.false;
+      });
+    });
+
+    it('Rejects a selected format missing from the ad unit', function () {
+      const bid = { ...bids[0], params: { ...bids[0].params, mediaType: VIDEO } };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('Validates the selected video even when banner is valid', function () {
+      const bid = multiformatBid(VIDEO);
+      bid.mediaTypes.video = {};
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('Accepts selected video even when the unselected banner is invalid', function () {
+      const bid = multiformatBid(VIDEO);
+      bid.mediaTypes.banner = {};
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
   });
 

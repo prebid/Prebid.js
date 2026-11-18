@@ -8,7 +8,7 @@ import {
   type TeqBlazeBidParams
 } from '../libraries/teqblazeUtils/bidderUtils.ts';
 
-const BIDDER_CODE = 'streamads';
+const BIDDER_CODE = 'stmads';
 const AD_URL = 'https://rtb-ssp-eu.streamads.media/pbjs';
 const SYNC_URL = 'https://sync.streamads.media';
 
