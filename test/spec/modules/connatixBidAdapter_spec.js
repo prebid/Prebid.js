@@ -96,6 +96,7 @@ describe('connatixBidAdapter', function () {
       // An element of the top document, which the tests treat as the page (inIframe() is false): one of the test
       // frame's document would be offset and clipped by that frame, which on a phone isn't at the top left.
       element = window.top.document.createElement('div');
+      window.top.document.body.appendChild(element);
       getBoundingClientRectStub = sandbox.stub(element, 'getBoundingClientRect');
 
       topWinMock = {
@@ -122,6 +123,7 @@ describe('connatixBidAdapter', function () {
 
     afterEach(() => {
       sandbox.restore();
+      element.remove();
     });
 
     it('should return 100% viewability when the element is fully within view and has a valid viewabilityContainerIdentifier', () => {
