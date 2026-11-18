@@ -52,10 +52,8 @@ pbjs.setConfig({
 | `verbose` | Boolean | No | Enable diagnostic logging. Default: `false`. |
 
 `auctionDelay` limits the RTD core's wait for providers marked `waitForIt`.
-Panxo does not enrich a request after core releases it, including early release
-when other waiting providers finish. With older RTD cores that do not provide
-the auction lifecycle check, Panxo uses only signals available synchronously;
-asynchronous signals can be used by subsequent auctions.
+If Panxo has no signal when the auction continues, the auction proceeds without
+Panxo enrichment.
 
 A data-deletion request clears the provider's cached signal and disables its
 connection for the rest of the page. A new page load is required to reconnect.
@@ -69,7 +67,4 @@ An AI visit produces:
 ortb2.site.ext.data.panxo = { ai: true };
 ```
 
-The flag describes the visit, not the page's topic. Other runtime fields,
-including user/device identifiers, source, confidence, country and audience
-segments, are not copied into the auction. A missing or false AI flag adds no
-Panxo data. Existing publisher and other providers' data are preserved.
+The flag classifies the visit. A missing or false signal adds no Panxo data.
