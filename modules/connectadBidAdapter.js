@@ -8,6 +8,10 @@ import { isViewabilityMeasurable, getViewability } from '../libraries/percentInV
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 import { ORTB_MTYPES } from '../libraries/ortbConverter/processors/mediaType.js';
 
+/**
+ * @typedef {import('./connectadBidAdapter.d.ts').ConnectadBidParams} ConnectadBidParams
+ */
+
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v3';

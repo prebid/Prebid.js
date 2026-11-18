@@ -13,7 +13,8 @@ import { qualifiedAjaxBuilder } from './ajax.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { generateUUID, logError, logWarn } from './utils.js';
-import { attributeValue, cdata } from './utils/xml.js';
+import { cdata } from './utils/xml.js';
+import { getBidVastTrackers, insertVastTrackers, type VastTrackers } from './utils/vast.js';
 import { addBidToAuction } from './auction.js';
 import { hook } from './hook.js';
 import { OUTSTREAM } from './video.js';
@@ -29,50 +30,21 @@ const ttlBufferInSeconds = 15;
 
 export const vastLocalCache = new Map();
 
-/**
- * VAST Trackers interface for video cache
- */
-export interface VastTrackers {
-  impression?: string[];
-  error?: string[];
-  trackingEvents?: Array<{ event: string; url: string }>;
-}
+export type { VastTrackers } from './utils/vast.js';
 
 /**
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param uri The URI where the VAST content can be found.
- * @param trackers VAST trackers object containing impression, error, and trackingEvents
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri: string, trackers?: VastTrackers) {
-  // Build Impression tags
-  const impressions = trackers?.impression?.length
-    ? trackers.impression.map(trk => `<Impression>${cdata(trk)}</Impression>`).join('')
-    : '';
-
-  // Build Error tags
-  const errors = trackers?.error?.length
-    ? trackers.error.map(trk => `<Error>${cdata(trk)}</Error>`).join('')
-    : '';
-
-  // Build TrackingEvents for Linear creative
-  let trackingEventsXml = '';
-  if (trackers?.trackingEvents?.length) {
-    const trackingTags = trackers.trackingEvents
-      .map(({ event, url }) => `<Tracking event="${attributeValue(event)}">${cdata(url)}</Tracking>`)
-      .join('');
-    trackingEventsXml = `<Creative><Linear><TrackingEvents>${trackingTags}</TrackingEvents></Linear></Creative>`;
-  }
-
+function wrapURI(uri: string) {
   return '<VAST version="3.0">' +
     '<Ad>' +
     '<Wrapper>' +
     '<AdSystem>prebid.org wrapper</AdSystem>' +
     '<VASTAdTagURI>' + cdata(uri) + '</VASTAdTagURI>' +
-    impressions +
-    errors +
-    '<Creatives>' + trackingEventsXml + '</Creatives>' +
+    '<Creatives></Creatives>' +
     '</Wrapper>' +
     '</Ad>' +
     '</VAST>';
@@ -245,7 +217,7 @@ function shimStorageCallback(done: VideoCacheStoreCallback) {
  * @param getAjax
  * the data has been stored in the cache.
  */
-export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
+export function store(bids: VideoBid[], done: VideoCacheStoreCallback = (_error, _uuids) => {}, getAjax = (timeout) => qualifiedAjaxBuilder(MODULE_TYPE_PREBID, 'cache', timeout)) {
   const requestData = {
     puts: bids.map(bid => toStorageRequest(bid))
   };
@@ -257,7 +229,16 @@ export function store(bids: VideoBid[], done?: VideoCacheStoreCallback, getAjax 
 }
 
 export function getCacheUrl(cacheUrl, id) {
-  return `${cacheUrl}?uuid=${id}`;
+  let url;
+  try {
+    url = new URL(cacheUrl, document.baseURI);
+  } catch (e) {
+    return `${cacheUrl}?uuid=${encodeURIComponent(id)}`;
+  }
+  const params = url.search.replace(/^\?/, '').split('&').filter(param => param && param.split('=')[0] !== 'uuid');
+  params.push(`uuid=${encodeURIComponent(id)}`);
+  url.search = `?${params.join('&')}`;
+  return url.toString();
 }
 
 export const storeLocally = (bid) => {
@@ -319,7 +300,10 @@ export function handleVideoBidCaching({
 
 export const updateVast = hook('sync', function (bidResponse: VideoBidResponse | AudioBidResponse) {
   if (!bidResponse.vastXml && bidResponse.vastUrl) {
-    bidResponse.vastXml = wrapURI(bidResponse.vastUrl, (bidResponse as VideoBidResponse).vastTrackers);
+    bidResponse.vastXml = wrapURI(bidResponse.vastUrl);
+  }
+  if (bidResponse.vastXml) {
+    bidResponse.vastXml = insertVastTrackers(getBidVastTrackers(bidResponse as VideoBidResponse), bidResponse.vastXml);
   }
 }, 'updateVast');
 
@@ -350,8 +334,8 @@ export function storeBatch(batch) {
     } else {
       cacheIds.forEach((cacheId, i) => {
         const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
-        if (cacheId.uuid === '') {
-          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        if (cacheId == null || typeof cacheId.uuid !== 'string' || cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was rejected or missing from Prebid Cache. Video bid must be discarded.`);
           afterBidAdded();
         } else {
           bidResponse.cacheUrl = cacheUrl;
@@ -393,6 +377,7 @@ if (FEATURES.VIDEO || FEATURES.AUDIO) {
 export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
   let batches = [[]];
   let debouncing = false;
+  // Preserve synchronous dispatch when batching is not delayed.
   const noTimeout = cb => cb();
 
   return function (auctionInstance, bidResponse, afterBidAdded) {

@@ -4,13 +4,17 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('./resetdigitalBidAdapter.d.ts').ResetdigitalBidParams} ResetdigitalBidParams
+ */
+
 const BIDDER_CODE = 'resetdigital';
-const GVLID = 1162;
 const CURRENCY = 'USD';
+const ACP_ID = 3163; // Google Additional Consent provider ID (Reset Digital Europe Ltd)
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
+  acpId: ACP_ID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
@@ -223,10 +227,9 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    // Sync regardless of the bid response: a no-bid (HTTP 204, empty body) must
+    // still trigger a sync, otherwise users we never bid on never get matched.
     const syncs = [];
-    if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
 
     let gdprParams = '';
     if (gdprConsent) {

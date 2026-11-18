@@ -265,7 +265,7 @@ describe('docereeadmanager', function () {
       expect(payloadData.requestId).to.equal('testing');
       expect(payloadData.mobile).to.equal('XXXXXXXXXX');
       expect(payloadData.adunit).to.equal('DOC-19-1');
-      expect(payloadData.pageurl).to.equal('http://localhost:9876/context.html');
+      expect(payloadData.pageurl).to.equal(window.location.href);
       expect(payloadData.consent.gdprstr).to.equal('COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
       expect(payloadData.consent.gdpr).to.equal(0);
     });

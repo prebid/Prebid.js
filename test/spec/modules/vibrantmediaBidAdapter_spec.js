@@ -52,7 +52,7 @@ const getValidBidderRequest = (bidRequests) => {
 describe('VibrantMediaBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('constants', function () {
+  it('exposes the expected code and supported media types', function () {
     expect(spec.code).to.equal('vibrantmedia');
     expect(spec.supportedMediaTypes).to.deep.equal([BANNER, NATIVE, VIDEO]);
   });

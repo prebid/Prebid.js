@@ -177,13 +177,32 @@ describe('transfonSecurityRtdProvider', () => {
       }
     });
 
+    // The cookies the module writes. WebKit (desktop Safari, iOS Safari) doesn't reliably keep a cookie written on a
+    // test page, so the tests below check the write itself rather than reading document.cookie back.
+    function recordCookieWrites() {
+      const writes = [];
+      const { get, set } = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get: () => get.call(document),
+        set: (value) => { writes.push(value); set.call(document, value); }
+      });
+      return { writes, restore: () => { delete document.cookie; } };
+    }
+
     it('creates the visitor cookie when it is missing', async () => {
       clearUidCookie();
-      rtdTag({ qs: true });
-      start(config());
-      await flush();
-      const uid = rtd.init.firstCall.args[1].uid;
-      expect(document.cookie).to.include(`__unis_uid=${uid}`);
+      const cookies = recordCookieWrites();
+      try {
+        rtdTag({ qs: true });
+        start(config());
+        await flush();
+        const uid = rtd.init.firstCall.args[1].uid;
+        expect(uid).to.match(/^[0-9a-f-]{36}$/);
+        expect(cookies.writes.some(c => c.split(';')[0].trim() === `__unis_uid=${uid}`)).to.equal(true);
+      } finally {
+        cookies.restore();
+      }
     });
 
     it('does not read or write the visitor cookie without device access', async () => {
@@ -218,12 +237,17 @@ describe('transfonSecurityRtdProvider', () => {
 
     it('replaces a visitor cookie that cannot be decoded', async () => {
       document.cookie = '__unis_uid=%E0%A4%A; path=/';
-      rtdTag({ qs: true });
-      start(config());
-      await flush();
-      const uid = rtd.init.firstCall.args[1].uid;
-      expect(uid).to.match(/^[0-9a-f-]{36}$/);
-      expect(document.cookie).to.include(`__unis_uid=${uid}`);
+      const cookies = recordCookieWrites();
+      try {
+        rtdTag({ qs: true });
+        start(config());
+        await flush();
+        const uid = rtd.init.firstCall.args[1].uid;
+        expect(uid).to.match(/^[0-9a-f-]{36}$/);
+        expect(cookies.writes.some(c => c.split(';')[0].trim() === `__unis_uid=${uid}`)).to.equal(true);
+      } finally {
+        cookies.restore();
+      }
     });
 
     it('sends no visitor id when cookies throw', async () => {
@@ -494,7 +518,7 @@ describe('transfonSecurityRtdProvider', () => {
 
       it('fails open at once when loading fails', async () => {
         loadExternalScriptStub.callsFake((url, type, code, callback) => {
-          callback.error(new Error('blocked'));
+          Promise.resolve().then(() => callback.error(new Error('blocked')));
           return document.createElement('script');
         });
         const { req, elapsed } = await timeAuction();
@@ -556,10 +580,10 @@ describe('transfonSecurityRtdProvider', () => {
         expect(second.ortb2Fragments.global.site.ext.data.tss_qs).to.equal(0);
       });
 
-      it('marks the script when its own load fails, even synchronously', async () => {
+      it('marks the script when its own load fails', async () => {
         const script = document.createElement('script');
         loadExternalScriptStub.callsFake((url, type, code, callback) => {
-          callback.error(new Error('blocked'));
+          Promise.resolve().then(() => callback.error(new Error('blocked')));
           return script;
         });
         await timeAuction();

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/theAdxBidAdapter.js';
 
 describe('TheAdxAdapter', function () {
-  describe('getUserSyncs', () => {
+  it('getUserSyncs should return iframe and image syncs from the response', () => {
     const USER_SYNC_IFRAME_URL = 'https://ssp.theadx.com/async_usersync_iframe.html';
     const USER_SYNC_IMAGE_URL = 'https://ssp.theadx.com/async_usersync_image.gif';
 

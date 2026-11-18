@@ -1,7 +1,7 @@
 import {
-  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
-  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeInsertUserSyncIframe, politeTriggerPixel,
-  removeUserSyncIframes
+  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, isArray, isFn,
+  logWarn, isStr, isSafariBrowser, isFirefoxBrowser, isChromeIOSBrowser, politeTriggerPixel,
+  createInvisibleIframe, insertElement, runBackgroundTask, waitForElementToLoad
 } from './utils.js';
 import { config } from './config.js';
 
@@ -28,6 +28,18 @@ type SyncConfig = {
   filter: 'include' | 'exclude'
 };
 type FilterSettings = { [K in SyncType | 'all']?: SyncConfig };
+
+export type RemoveUserSyncsOptions = {
+  /**
+   * If true, only remove sync iframes that have created frames of their own.
+   */
+  withChildFrames?: boolean;
+};
+
+export type IframeRemovalDelays = {
+  withChildFrames?: number | false;
+  all?: number | false;
+};
 
 export interface UserSyncConfig {
   /**
@@ -65,6 +77,13 @@ export interface UserSyncConfig {
    * Can be toggled via `setConfig({userSync: {usePoliteSync: ...}})`. Default: false.
    */
   usePoliteSync?: boolean;
+  /**
+   * Remove sync iframes automatically, some time after each one is inserted; `false` keeps them for the life of the page.
+   * An object sets the delays in milliseconds, or `false` to skip a step:
+   * - `withChildFrames`: remove the iframe if it has created frames of its own. Default: 15000.
+   * - `all`: remove the iframe regardless. Default: 15000.
+   */
+  removeIframes?: boolean | IframeRemovalDelays;
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
@@ -85,6 +104,152 @@ export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
 config.setDefaults({
   'userSync': deepClone(USERSYNC_DEFAULT_CONFIG)
 });
+
+const DEFAULT_IFRAME_REMOVAL_DELAYS = { withChildFrames: 15000, all: 15000 };
+
+type SyncIframe = {
+  onCleanup?: () => void;
+  done?: () => void;
+  removalTimer?: ReturnType<typeof setTimeout>;
+};
+
+/**
+ * Tracked by element, so that several Prebid instances on the same page do not remove each other's iframes.
+ */
+const OWN_SYNC_IFRAMES = new WeakMap<HTMLIFrameElement, SyncIframe>();
+
+/**
+ * Insert an invisible iframe that loads `url`, for cookie sync.
+ * @param url URL to load
+ * @param done called once the iframe loads or is removed, or after `timeout`
+ * @param timeout maximum time in milliseconds to wait for the iframe to load before calling `done`
+ * @param onCleanup called before the iframe is removed, manually or automatically
+ */
+export function insertUserSyncIframe(url: string, done?: () => void, timeout?: number, onCleanup?: () => void) {
+  if (!url) return;
+  const iframe = createInvisibleIframe(document, {
+    sandbox: 'allow-scripts allow-same-origin',
+    src: url,
+  });
+  const entry: SyncIframe = { onCleanup: isFn(onCleanup) ? onCleanup : undefined };
+  if (isFn(done)) {
+    let settled = false;
+    entry.done = () => {
+      if (!settled) {
+        settled = true;
+        done();
+      }
+    };
+    waitForElementToLoad(iframe, timeout).then(entry.done);
+  }
+  OWN_SYNC_IFRAMES.set(iframe, entry);
+  // not on load: a sync whose nested frames never finish loading would never fire it
+  scheduleIframeRemoval(iframe);
+  insertElement(iframe, document, 'html', true);
+}
+
+export function politeInsertUserSyncIframe(url: string, done?: () => void, timeout?: number, onCleanup?: () => void) {
+  runBackgroundTask(() => internal.insertUserSyncIframe(url, done, timeout, onCleanup));
+}
+
+const loggedRemovalWarnings = new Set<string>();
+
+function warnOnce(message: string) {
+  if (!loggedRemovalWarnings.has(message)) {
+    loggedRemovalWarnings.add(message);
+    logWarn(message);
+  }
+}
+
+function iframeRemovalDelays(): { withChildFrames?: number; all?: number } {
+  const setting = config.getConfig('userSync.removeIframes');
+  if (setting === false) return {};
+  if (setting != null && setting !== true && !isPlainObject(setting)) {
+    warnOnce(`Invalid userSync.removeIframes setting: ${setting}; using defaults`);
+  }
+  const delays = {};
+  Object.entries(DEFAULT_IFRAME_REMOVAL_DELAYS).forEach(([step, defaultDelay]) => {
+    const delay = isPlainObject(setting) ? (setting[step] ?? defaultDelay) : defaultDelay;
+    if (delay === false) return;
+    if (typeof delay === 'number' && Number.isFinite(delay) && delay >= 0) {
+      delays[step] = delay;
+    } else {
+      warnOnce(`Invalid userSync.removeIframes.${step} setting: ${delay}; using ${defaultDelay}`);
+      delays[step] = defaultDelay;
+    }
+  });
+  return delays;
+}
+
+function scheduleIframeRemoval(iframe: HTMLIFrameElement) {
+  const entry = OWN_SYNC_IFRAMES.get(iframe);
+  if (entry == null) return;
+  const { withChildFrames, all } = iframeRemovalDelays();
+  const schedule = (delay: number, task: () => void) => {
+    entry.removalTimer = setTimeout(task, delay);
+  };
+  if (withChildFrames != null && (all == null || withChildFrames < all)) {
+    schedule(withChildFrames, () => {
+      if (childFrameCount(iframe) > 0) {
+        removeIframeAutomatically(iframe);
+      } else if (all != null) {
+        schedule(all - withChildFrames, () => removeIframeAutomatically(iframe));
+      }
+    });
+  } else if (all != null) {
+    schedule(all, () => removeIframeAutomatically(iframe));
+  }
+}
+
+function removeIframeAutomatically(iframe: HTMLIFrameElement) {
+  const frames = childFrameCount(iframe);
+  if (frames > 0) {
+    logWarn(`Removing user sync iframe that created ${frames} frame(s) of its own: ${iframe.src}`);
+  }
+  removeSyncIframe(iframe);
+}
+
+function removeSyncIframe(iframe: HTMLIFrameElement) {
+  const entry = OWN_SYNC_IFRAMES.get(iframe);
+  if (entry == null) return;
+  OWN_SYNC_IFRAMES.delete(iframe);
+  clearTimeout(entry.removalTimer);
+  try {
+    entry.onCleanup?.();
+  } catch (error) {
+    logError('Error cleaning up user sync iframe', error);
+  }
+  iframe.parentNode?.removeChild(iframe);
+  entry.done?.();
+}
+
+/**
+ * `length` can be read on a cross-origin window, so this needs no cooperation from the sync page.
+ */
+function childFrameCount(iframe: HTMLIFrameElement): number {
+  try {
+    return iframe.contentWindow?.length ?? 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/**
+ * Remove the sync iframes inserted by this Prebid instance, and return how many were removed.
+ */
+export function removeUserSyncIframes({ withChildFrames = false }: RemoveUserSyncsOptions = {}): number {
+  const iframes = Array.from(document.querySelectorAll('iframe'))
+    .filter(iframe => OWN_SYNC_IFRAMES.has(iframe))
+    .filter(iframe => !withChildFrames || childFrameCount(iframe) > 0);
+  iframes.forEach(removeSyncIframe);
+  return iframes.length;
+}
+
+export const internal = {
+  insertUserSyncIframe,
+  politeInsertUserSyncIframe,
+  removeUserSyncIframes,
+};
 
 const storage = getCoreStorageManager('usersync');
 
@@ -225,9 +390,9 @@ export function newUserSync(deps) {
       const [bidderName, iframeUrl, onCleanup] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       if (usConfig.usePoliteSync) {
-        politeInsertUserSyncIframe(iframeUrl, undefined, undefined, onCleanup);
+        internal.politeInsertUserSyncIframe(iframeUrl, undefined, undefined, onCleanup);
       } else {
-        insertUserSyncIframe(iframeUrl, undefined, undefined, onCleanup);
+        internal.insertUserSyncIframe(iframeUrl, undefined, undefined, onCleanup);
       }
       // for a bidder, if iframe sync is present then remove image pixel
       removeImagePixelsForBidder(queue, bidderName);
@@ -392,7 +557,7 @@ export function newUserSync(deps) {
     }
   };
 
-  publicApi.removeUserSyncs = () => removeUserSyncIframes();
+  publicApi.removeUserSyncs = (options?: RemoveUserSyncsOptions) => internal.removeUserSyncIframes(options);
 
   publicApi.canBidderRegisterSync = (type, bidder) => {
     if (usConfig.filterSettings) {

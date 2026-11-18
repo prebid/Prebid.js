@@ -7,7 +7,6 @@ import {
   parseSizesInput,
   triggerPixel,
   deepSetValue,
-  deepAccess,
   deepClone
 } from '../src/utils.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
@@ -109,7 +108,7 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
 
-    const seatbids = deepAccess(response, 'body.seatbid');
+    const seatbids = response?.body?.seatbid;
     if (seatbids) {
       seatbids.forEach(seat => {
         seat.bid.forEach(bid => {
@@ -119,7 +118,7 @@ export const spec = {
             requestId: bid.impid,
             mediaType: VIDEO,
             cpm: bid.price,
-            currency: deepAccess(response, 'body.cur') || 'USD',
+            currency: response?.body?.cur || 'USD',
             ttl: 3600,
             creativeId: bid.crid || bid.id,
             netRevenue: true,
@@ -130,7 +129,7 @@ export const spec = {
             width: bid.w || 640,
             height: bid.h || 360,
             meta: {
-              advertiserDomains: deepAccess(bid, 'adomain') || [],
+              advertiserDomains: bid?.adomain || [],
               networkName: seat.seat,
               mediaType: VIDEO,
             },
@@ -139,24 +138,24 @@ export const spec = {
       });
     }
 
-    const res = deepAccess(response, 'body.data');
+    const res = response?.body?.data;
     if (!res) return bidResponses;
 
     bidResponses.push({
       requestId: res.requestId,
       cpm: res.cpm,
-      width: deepAccess(res, 'mediaType.width'),
-      height: deepAccess(res, 'mediaType.height'),
+      width: res?.mediaType?.width,
+      height: res?.mediaType?.height,
       creativeId: res.creationId,
       dealId: res.dealid || '',
       currency: res.currency || ADQUERY_DEFAULT_CURRENCY,
       netRevenue: ADQUERY_NET_REVENUE,
       ttl: ADQUERY_TTL,
       ad: `<script src="${res.adqLib}"></script>${res.tag}`,
-      mediaType: deepAccess(res, 'mediaType.name') || BANNER,
+      mediaType: res?.mediaType?.name || BANNER,
       meta: {
-        advertiserDomains: deepAccess(res, 'adDomains') || [],
-        mediaType: deepAccess(res, 'mediaType.name') || BANNER,
+        advertiserDomains: res?.adDomains || [],
+        mediaType: res?.mediaType?.name || BANNER,
       },
     });
 
@@ -265,7 +264,7 @@ export const spec = {
       logMessage('no gdpr or purpose1 consent, no syncs');
       return [];
     }
-    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => deepAccess(r, 'body.data.qid')).find(Boolean) : null;
+    const qid = Array.isArray(serverResponses) ? serverResponses.map(r => r?.body?.data?.qid).find(Boolean) : null;
     if (!qid) {
       logMessage('no qid found in server responses');
       return [];

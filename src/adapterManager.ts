@@ -1,4 +1,4 @@
-/** @module adaptermanger */
+/** @module adapterManager */
 
 import {
   deepClone,
@@ -63,6 +63,7 @@ import type {
   Size, StorageDisclosure
 } from "./types/common.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
+import type { AnyFunction } from "./types/functions.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import { mergeBidderOrtb2 } from './fpd/merge.js';
 import type {
@@ -72,6 +73,8 @@ import type {
 } from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 import { getGlobal } from "./prebidGlobal.ts";
 import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
+import { type MediaType } from "./mediaTypes.ts";
+import { getRendererDef, isRendererAllowed, RENDERER_TYPES } from "./utils/renderers.ts";
 
 export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
 
@@ -113,7 +116,7 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | typeof RENDERER_TYPES[number] | 'mediaTypes' | 'ortb2Imp'> {
   /**
    * Unique ID for this request.
    */
@@ -157,6 +160,22 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
    * FPD is in `ortb2Imp`.
    */
   ortb2: DeepPartial<ORTBRequest>;
+  /**
+   * Flags indicating whether a bidder-provided renderer will be used for this request.
+   *
+   * A bid response may set `.renderer` and/or `.safeRenderer`, but whether they will
+   * be used to render the bid depends on publisher configuration.
+   *
+   * For any `mediaType` in this request, `rendererSupport[mediaType].renderer` is true
+   * when core will use a matching response's `.renderer`, false otherwise; likewise for `.safeRenderer`
+   * (but note that when both are provided, `.safeRenderer` is preferred).
+   */
+  rendererSupport: {
+    [K in MediaType]?: {
+      renderer: boolean,
+      safeRenderer: boolean,
+    }
+  }
 }
 
 export interface StoredBidRequest extends BaseBidRequest, Omit<{ [K in keyof AdUnitBidderBid<BidderCode>]?: undefined | null }, keyof BaseBidRequest> {
@@ -226,11 +245,6 @@ const ADUNIT_BID_PROPERTIES = [
   'element',
 ] as const;
 
-const RENDERER_PROPERTIES = [
-  'renderer',
-  'safeRenderer',
-] as const;
-
 type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
   bidderCode: BIDDER;
   auctionId: Identifier;
@@ -277,7 +291,7 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
       bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         const [tid, tidSource] = getTid(bid.bidder, adUnit.transactionId, bid.ortb2Imp?.ext?.tid ?? adUnit.ortb2Imp?.ext?.tid);
         bid = Object.assign({},
-          getDefinedParams(adUnit, RENDERER_PROPERTIES),
+          getDefinedParams(adUnit, RENDERER_TYPES),
           bid,
           {
             ortb2Imp: mergeDeep(
@@ -319,7 +333,24 @@ function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({ bidd
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
-          deferBilling: !!adUnit.deferBilling
+          deferBilling: !!adUnit.deferBilling,
+          rendererSupport: Object.fromEntries(
+            Object.entries(mediaTypes).map(([mediaType, mediaTypeDef]) => {
+              const rendererAllowed = isRendererAllowed('renderer', bid.bidder, mediaType as MediaType, adUnit);
+              const safeRendererAllowed = isRendererAllowed('safeRenderer', bid.bidder, mediaType as MediaType, adUnit);
+              return [
+                mediaType,
+                {
+                  renderer: rendererAllowed &&
+                    getRendererDef('renderer', false, bid, mediaTypeDef, adUnit) == null &&
+                    // any safeRenderer will be used over a bidder-provided renderer
+                    !(safeRendererAllowed && getRendererDef('safeRenderer', true, bid, mediaTypeDef, adUnit) != null),
+                  safeRenderer: safeRendererAllowed &&
+                    getRendererDef('safeRenderer', false, bid, mediaTypeDef, adUnit) == null,
+                }
+              ];
+            })
+          )
         }));
         return bids;
       }, [])
@@ -803,7 +834,7 @@ const adapterManager = {
             // make bid requests
             s2sAdapter.callBids(
               s2sBidRequest,
-              serverBidderRequests,
+              uniqueServerRequests,
               addBidResponse,
               (timedOut) => doneCbs.forEach(done => done(timedOut)),
               s2sAjax
@@ -1096,7 +1127,7 @@ function getSupportedMediaTypes(bidderCode) {
   return supportedMediaTypes;
 }
 
-function getBidderMethod(bidder, method): [string, string] {
+function getBidderMethod(bidder, method): [Record<string, any>, AnyFunction] | undefined {
   const adapter = _bidderRegistry[bidder];
   const spec = adapter?.getSpec && adapter.getSpec();
   if (spec && spec[method] && typeof spec[method] === 'function') {

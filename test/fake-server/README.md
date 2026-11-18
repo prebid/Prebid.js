@@ -20,7 +20,7 @@ Follow the steps below to add another `request-response` pair.
   - If you are creating a one-off type of test, you can name this directory with a name that describes the test; for example `basic-banner`.
   - If you plan to create a series of tests focusing on one feature/topic, then you can create a generic container directory to hold all your tests together; for example `multi-bidder`.
   - If you did the latter case, please proceed to create the necessary test directories describing them with a meaningful name.
-2. If you are planning to handle multiple bidder requests as part of your tests, each of those requests needs its own pair, in the fixture group of the bidder that sends it. Note that an alias sends to the endpoint of the bidder it aliases, so its pairs belong in that bidder's group — `adasta` is an `appnexus` alias, which is why `multi-bidder/multi-bidder-adasta` lives under `fixtures/appnexus`.
+2. If you are planning to handle multiple bidder requests as part of your tests, each of those requests needs its own pair, in the fixture group of the bidder that sends it. Note that an alias sends to the endpoint of the bidder it aliases, so its pairs belong in that bidder's group — `multiple_bidders.html` registers `msftalias` as an alias of `msft`, which is why `multi-bidder/multi-bidder-msftalias` lives under `fixtures/msft`.
 3. Once all your directories are created, inside the bottom test folder(s), create **three files**:
   - `description.md` (Contains path of test page and spec file. Also, contains the ad unit that generates the **request-response** pair)
   - `request.json` (This object will be matched against the acutal incoming request)
@@ -30,7 +30,7 @@ Pairs are keyed by their path under `fixtures/`, so a directory name only has to
 
 Fixtures are read when the server starts, so a running fake-server has to be restarted to pick up an edited fixture.
 
-For reference, please have a look at `fixtures/appnexus/basic-banner` or `fixtures/appnexus/multi-bidder` directories (as matching your scenario).
+For reference, please have a look at `fixtures/msft/basic-banner` or `fixtures/msft/multi-bidder` directories (as matching your scenario).
 
 ## How to add a bidder ?
 
@@ -60,7 +60,7 @@ module.exports = makeResponder('<bidder>');
 
 Pass `matchRequests(actualRequest, mockRequest)` to compare only the stable parts of the request, and `makeResponse(actualRequest, mockResponse)` to carry per-request values into the response. The `mock` argument is a deep copy in both cases, so a hook can mutate it without corrupting the loaded fixtures.
 
-`responders/appnexus.js` uses both: it drops `uuid` and `tid` before comparing, then copies each request's `uuid` into the response it returns. `responders/triplelift.js` only overrides matching, comparing `imp` alone with `tid` stripped, so that the volatile `ortb2` fields a fixture cannot predict are ignored.
+`responders/msft.js` uses both: it compares `imp` alone, with `imp[].id`, `tid` and `banner.topframe` stripped, then resolves each `seatbid[].bid[].impid` in `response.json` - written there as the *index* of the imp being bid on - to that imp's real id. `responders/triplelift.js` only overrides matching, comparing `imp` alone with `tid` stripped, so that the volatile `ortb2` fields a fixture cannot predict are ignored.
 
 ## How is the server initiated ?
 

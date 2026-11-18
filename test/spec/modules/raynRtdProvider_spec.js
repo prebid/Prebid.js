@@ -2,8 +2,10 @@ import * as raynRTD from 'modules/raynRtdProvider.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
-const TEST_CHECKSUM = '-1135402174';
-const TEST_URL = 'http://localhost:9876/context.html';
+const TEST_CHECKSUM = '-1880567186';
+const TEST_URL = 'http://example.com/context.html';
+// The module keys segments by the checksum of the page URL. Computed before generateChecksum is stubbed.
+const PAGE_CHECKSUM = raynRTD.generateChecksum(window.location.href);
 const TEST_SEGMENTS = {
   [TEST_CHECKSUM]: {
     7: {
@@ -231,17 +233,18 @@ describe('rayn RTD Submodule', function () {
     it('should update reqBidsConfigObj and execute callback', function () {
       const callbackSpy = sinon.spy();
       const logMessageSpy = sandbox.spy(utils, 'logMessage');
+      const segments = { ...TEST_SEGMENTS, [PAGE_CHECKSUM]: TEST_SEGMENTS[TEST_CHECKSUM] };
 
       getDataFromLocalStorageStub
         .withArgs(raynRTD.RAYN_LOCAL_STORAGE_KEY)
-        .returns(JSON.stringify(TEST_SEGMENTS));
+        .returns(JSON.stringify(segments));
 
       const reqBidsConfigObj = { ortb2Fragments: { bidder: {} } };
 
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG);
 
       expect(callbackSpy.calledOnce).to.be.true;
-      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(TEST_SEGMENTS)}`);
+      expectLog(logMessageSpy, `Segtax data from localStorage: ${JSON.stringify(segments)}`);
     });
 
     it('should update reqBidsConfigObj and execute callback using user segments from localStorage', function () {

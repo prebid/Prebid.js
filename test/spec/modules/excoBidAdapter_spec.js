@@ -218,6 +218,11 @@ describe('ExcoBidAdapter', function () {
       });
     });
 
+    it('should keep netRevenue false when the bid says so', function () {
+      expect(helpers.adoptBidResponse({ meta: {} }, { netRevenue: false }, {}).netRevenue).to.equal(false);
+      expect(helpers.adoptBidResponse({ meta: {} }, {}, {}).netRevenue).to.equal(true);
+    });
+
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null, BUILT_REQ);
       expect(responses).to.have.length(0);
@@ -239,17 +244,43 @@ describe('ExcoBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     const serverResponses = [BID_SERVER_RESPONSE];
+    const isExcoSync = (sync) => sync.type === 'iframe' && sync.url.startsWith('https://cdn.ex.co/sync/');
 
-    it('should return empty if no server responses', function () {
+    it('should return only the exco sync if no server responses', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
+      expect(syncs).to.have.length(1);
+      expect(isExcoSync(syncs[0])).to.be.true;
+    });
+
+    it('should return empty if no server responses and iframes are disabled', function () {
+      const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
     it('should return iframe only user syncs', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses);
-      expect(syncs).to.deep.equal([
-        { type: 'iframe', url: 'https://example.com/sync.html' },
-      ]);
+      expect(syncs).to.have.length(2);
+      expect(isExcoSync(syncs[0])).to.be.true;
+      expect(syncs[1]).to.deep.equal({ type: 'iframe', url: 'https://example.com/sync.html' });
+    });
+
+    it('should include gdpr consent in the exco sync url', function () {
+      const [sync] = adapter.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'abc' });
+      const params = new URL(sync.url).searchParams;
+      expect(params.get('gdpr')).to.equal('1');
+      expect(params.get('gdpr_consent')).to.equal('abc');
+    });
+
+    it('should not double-encode consent strings in the exco sync url', function () {
+      const params = new URL(helpers.createSyncUrl({
+        gdprApplies: true,
+        consentString: 'a+b/c=',
+        gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [2, 6]
+      })).searchParams;
+      expect(params.get('gdpr_consent')).to.equal('a+b/c=');
+      expect(params.get('gpp')).to.equal('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(params.get('gpp_sid')).to.equal('2,6');
     });
 
     it('should return pixels only user syncs', function () {
@@ -266,11 +297,12 @@ describe('ExcoBidAdapter', function () {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
       sizes: [[300, 250]],
-      params: {
+      // as adapterManager.callTimedOutBidders passes them: one entry per bid of this bidder on the ad unit
+      params: [{
         accountId: 'accountId',
         publisherId: 'publisherId',
         tagId: 'tagId',
-      },
+      }],
       metrics: {
         timeSince: () => 500,
       },
@@ -297,6 +329,21 @@ describe('ExcoBidAdapter', function () {
     it('Should trigger event url', function() {
       adapter.onTimeout([bid]);
       expect(stubbedFetch.callCount).to.equal(1);
+    });
+
+    it('Should include the bid params and time passed in the event url', function() {
+      const params = new URL(helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.get('publisherId')).to.equal('publisherId');
+      expect(params.get('accountId')).to.equal('accountId');
+      expect(params.get('tagId')).to.equal('tagId');
+      expect(params.get('extraData.timepassed')).to.equal('500');
+    });
+
+    it('Should not throw when the bid has no metrics', function() {
+      const { metrics, ...noMetrics } = bid;
+      const params = new URL(helpers.getEventUrl([noMetrics], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.has('extraData.timepassed')).to.be.false;
+      expect(params.get('tagId')).to.equal('tagId');
     });
   });
 

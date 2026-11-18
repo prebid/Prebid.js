@@ -1,5 +1,7 @@
 import {
+  HIGH_ENTROPY_HINTS,
   highEntropySUAAccessor,
+  highEntropyValuesAccessor,
   lowEntropySUAAccessor,
   SUA_SOURCE_HIGH_ENTROPY,
   SUA_SOURCE_LOW_ENTROPY,
@@ -251,5 +253,40 @@ describe('highEntropySUAAccessor', () => {
     return getSUA().then(result => {
       expect(() => { result.prop = 'value'; }).to.throw();
     });
+  });
+});
+
+describe('highEntropyValuesAccessor', () => {
+  let userAgentData, uaResult, getValues;
+  beforeEach(() => {
+    uaResult = { architecture: 'x86', wow64: false };
+    userAgentData = {
+      getHighEntropyValues: sinon.stub().callsFake(() => Promise.resolve(uaResult))
+    };
+    getValues = highEntropyValuesAccessor(userAgentData);
+  });
+
+  it('should resolve to the raw values', () => {
+    return getValues(['architecture', 'wow64']).then(result => {
+      expect(result).to.eql({ architecture: 'x86', wow64: false });
+    });
+  });
+
+  it('should resolve to null if getHighEntropyValues is not available', () => {
+    return highEntropyValuesAccessor({})().then(result => {
+      expect(result).to.eql(null);
+    });
+  });
+
+  it('should resolve to null on an empty result', () => {
+    uaResult = {};
+    return getValues().then(result => {
+      expect(result).to.eql(null);
+    });
+  });
+
+  it('should request all high entropy hints by default', () => {
+    getValues();
+    sinon.assert.calledWith(userAgentData.getHighEntropyValues, HIGH_ENTROPY_HINTS);
   });
 });

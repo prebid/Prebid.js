@@ -1,0 +1,100 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/msft",
+    "body": {
+      "imp": [
+        {
+          "video": {
+            "skip": 0,
+            "playbackmethod": [
+              2
+            ],
+            "plcmt": 2,
+            "w": 640,
+            "h": 480
+          },
+          "ext": {
+            "tid": "u40679a11-7698-4914-b395-91abc56b179c",
+            "tidSource": "pbjs",
+            "appnexus": {
+              "require_asset_url": true,
+              "placement_id": 13232361
+            }
+          },
+          "id": "15cf47f4-58cd-4b7c-8f47-b934ef167864",
+          "secure": 1
+        }
+      ],
+      "site": {
+        "domain": "localhost:9999",
+        "publisher": {
+          "domain": "localhost:9999"
+        },
+        "page": "http://localhost:9999/test/pages/instream.html?pbjs_debug=true"
+      },
+      "device": {
+        "w": 800,
+        "h": 600,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "language": "en",
+        "ext": {
+          "vpw": 748,
+          "vph": 477
+        },
+        "sua": {
+          "source": 1,
+          "platform": {
+            "brand": "Windows"
+          },
+          "browsers": [
+            {
+              "brand": "Not:A-Brand",
+              "version": [
+                "8"
+              ]
+            },
+            {
+              "brand": "Chromium",
+              "version": [
+                "156"
+              ]
+            },
+            {
+              "brand": "Google Chrome",
+              "version": [
+                "156"
+              ]
+            }
+          ],
+          "mobile": 0
+        }
+      },
+      "source": {
+        "tid": "u5a78c774-1402-4f80-a5ad-175a4c576a53",
+        "ext": {
+          "tidSource": "pbjs"
+        }
+      },
+      "id": "98df919d-c160-483f-9234-1ed869ed8d46",
+      "test": 0,
+      "tmax": 10000,
+      "ext": {
+        "appnexus": {
+          "prebid": true,
+          "hb_source": 1,
+          "sdk": {
+            "version": "11.47.0-pre",
+            "source": "pbjs"
+          },
+          "referrer_detection": {
+            "rd_ref": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Finstream.html%3Fpbjs_debug%3Dtrue",
+            "rd_top": true,
+            "rd_ifs": 0,
+            "rd_stk": "http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Finstream.html%3Fpbjs_debug%3Dtrue"
+          }
+        }
+      }
+    }
+  }
+}
