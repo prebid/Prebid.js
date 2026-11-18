@@ -261,10 +261,11 @@ function nullConsent(): GCMConsentData | null {
 
 /**
  * The current Consent Mode state, from the dataLayer commands read so far, with `defaultWhenAbsent` applied.
+ * `warn` should only be set once TCF and GPP have settled, as they decide whether region-scoped defaults apply.
  */
-export function currentConsent(): FoldResult {
+export function currentConsent(warn = false): FoldResult {
   const result = foldConsent(commands, { gdpr: gdprApplies(), region: gcmConfig.region });
-  if (result.regionsIgnored && !regionWarningLogged) {
+  if (warn && result.regionsIgnored && !regionWarningLogged) {
     regionWarningLogged = true;
     logWarn('consentManagement.gcm: ignoring region-scoped Consent Mode defaults, as the visitor\'s region is unknown and GDPR does not apply. Set consentManagement.gcm.region to apply them.');
   }
@@ -282,7 +283,7 @@ function isReadingDataLayer() {
 function refreshConsent() {
   if (isReadingDataLayer() && gcmDataHandler.enabled && gcmDataHandler.ready) {
     watchDataLayer();
-    gcmDataHandler.setConsentData(currentConsent().state);
+    gcmDataHandler.setConsentData(currentConsent(true).state);
   }
 }
 

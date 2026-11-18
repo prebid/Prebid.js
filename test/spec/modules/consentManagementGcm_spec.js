@@ -495,7 +495,8 @@ describe('consentManagementGcm', () => {
       it('are ignored, with a single warning, without a region when GDPR does not apply', async () => {
         await configure({ gcm: { timeout: 0 } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
-        currentConsent();
+        expect(utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length).to.equal(0);
+        refreshConsentHook(() => null, {});
         refreshConsentHook(() => null, {});
         expect(utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length).to.equal(1);
       });
