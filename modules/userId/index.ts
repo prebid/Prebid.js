@@ -76,7 +76,7 @@ export const dep = {
 };
 
 declare module '../../src/userSync' {
-  interface UserSyncConfig {
+  interface UserSyncConfig<P extends string = string> {
     /**
      * EID source to use as PPID for GAM.
      *
@@ -94,7 +94,12 @@ declare module '../../src/userSync' {
     idPriority?: {
       [idName: keyof UserId]: UserIdProvider[]
     }
-    userIds?: (UserIdConfig<keyof ProviderParams> | UserIdConfig<UserIdProvider>)[];
+    // Map each name separately: a union passed to UserIdConfig would mix providers' params.
+    // P is inferred at the setter, so an unknown name doesn't also match a known provider.
+    userIds?: (
+      { [K in keyof ProviderParams]: UserIdConfig<K> }[keyof ProviderParams]
+      | { [K in P]: UserIdConfig<K> }[P]
+    )[];
     // TODO documentation for these is either missing or inscrutable
     encryptedSignalSources?: {
       sources: {
