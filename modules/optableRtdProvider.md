@@ -75,7 +75,7 @@ When `handleRtd` is not provided, the module enriches each auction as soon as it
 2. If the bundle has not loaded yet, the module merges the targeting data the bundle cached on a previous page
    (`localStorage` key `OPTABLE_RESOLVED`, read through Prebid's storage manager), without waiting. Cached EIDs are
    added to `user.ext.eids`.
-3. If nothing is cached, the module waits for the bundle to load (up to `auctionDelay` when `waitForIt` is `true`),
+3. If nothing is cached, the module waits for the bundle to load (up to `auctionDelay` when `waitForIt` is `true`, and not at all otherwise),
    then continues as in step 1.
 
 Most publishers should not need a custom `handleRtd`.
@@ -117,11 +117,11 @@ A `handleRtd` function implementation has access to its surrounding context incl
 With `params.enableTargeting: true` the module fetches targeting itself instead of handing off to the Optable bundle:
 
 1. If the Optable Web SDK instance (`window.optable[instance]`) is on the page, it waits for the SDK's `optable-targeting:change` event (up to `auctionDelay`), or uses the SDK's cached targeting.
-2. If `window.optable` exists but the SDK has not loaded yet, the page is loading an Optable bundle: like the [default handler](#default-handler), the module uses the targeting cached under `OPTABLE_RESOLVED` (EIDs or a split test assignment), or waits for the SDK when nothing usable is cached, then continues as in step 1. It does not call the DCN itself, so the bundle's merged cache is left alone.
+2. If `window.optable` exists but the SDK has not loaded yet, the page is loading an Optable bundle: like the [default handler](#default-handler), the module uses the targeting cached under `OPTABLE_RESOLVED` (EIDs or a split test assignment), or waits for the SDK (up to `auctionDelay`) when nothing usable is cached, then continues as in step 1. It does not call the DCN itself, so the bundle's merged cache is left alone.
 3. Otherwise, if `host`, `node` and `site` are set, it calls the DCN targeting API (`https://<host>/v2/targeting`) directly. This is for pages without the Optable bundle.
 4. Otherwise, when none of `host`, `node` and `site` is set, it relies on the Web SDK loading later, as in step 2.
 
-When the auction is not delayed (`auctionDelay` unset or 0), the module does not wait for the SDK's event.
+When the auction is not delayed (`auctionDelay` unset or 0), the module does not wait for the SDK or its event.
 
 `bundleUrl` and `optableRtdConfig` are ignored in this mode.
 
@@ -156,7 +156,7 @@ pbjs.setConfig({
 | params.host                  | String   | DCN hostname. Required for direct API calls                                                                       | None               |
 | params.node                  | String   | DCN node identifier. Required for direct API calls                                                                | None               |
 | params.site                  | String   | Site slug configured on the DCN. Required for direct API calls                                                    | None               |
-| params.cookies               | Boolean  | When `false`, the visitor passport is sent as a query parameter instead of relying on cookies                     | `true`             |
+| params.cookies               | Boolean  | When `false`, the visitor passport is sent as a query parameter instead of relying on cookies, and the request is sent without credentials (cookies) | `true`             |
 | params.timeout               | String/Number | Targeting API timeout as a duration, e.g. `"500ms"`, or a number of milliseconds. Defaults to `auctionDelay` minus 100ms when the auction is delayed | `null`  |
 | params.ids                   | Array    | Optable identifiers, e.g. `"e:<sha256>"`, `"c:<ppid>"`. Prebid userId EIDs are not used                           | `["__passport__"]` |
 | params.hids                  | Array    | Hint identifiers                                                                                                  | `[]`               |
@@ -168,7 +168,7 @@ pbjs.setConfig({
 ### Behaviour
 
 - **Enrichment:** EIDs are merged into `ortb2Fragments.global.user.ext.eids`, subject to Prebid's `enrichEids` activity controls. Each ad unit gets `ortb2Imp.ext.optable.variant`, and `ortb2Imp.ext.optable.splitTestAssignment` when the DCN returns `split_test_assignment`.
-- **Caching:** Direct API responses are cached in localStorage under `OPTABLE_RESOLVED` (or `optableCacheTargeting`), the key Optable bundles and the Web SDK's Prebid helper use, which the module reads back, and under the Web SDK's `OPTABLE_TARGETING_*` key so the SDK's `targetingFromCache()` can use them. A cached response is used immediately and refreshed in the background once per page load; concurrent auctions share one API call. A successful response replaces the cache, even when empty; a failed call leaves it untouched. Without a cache, the auction waits for the API call, and a response arriving after `auctionDelay` is cached for the next auction instead of merged.
+- **Caching:** Direct API responses are cached in localStorage under `OPTABLE_RESOLVED` (or `optableCacheTargeting`), the key Optable bundles and the Web SDK's Prebid helper use, which the module reads back, and under the Web SDK's `OPTABLE_TARGETING_*` key so the SDK's `targetingFromCache()` can use them. A cached response is used immediately and refreshed in the background once per page load for each combination of identifiers, consent and settings; concurrent auctions with the same ones share one API call, and a later auction with a combination already answered gets that answer again (and it is written back to the cache). A successful response replaces the cache, even when empty; a failed call leaves it untouched. Without a cache, the auction waits for the API call, and a response arriving after `auctionDelay` is cached for the next auction instead of merged.
 - **UID2 refresh data:** `ext.optable.ref` pointers are stripped from EIDs before they reach bid requests, and `refs` are stored keyed by EID source, matching the Web SDK cache format.
 - **Passport:** Stored under the Web SDK's `OPTABLE_PASSPORT_*` key, and removed from the response before merging.
 - **Split tests:** `splitTestAssignment` comes from the DCN's `split_test_assignment` (`test` or `production`). The DCN enforces its holdout by returning no EIDs to `test` visitors, so direct mode uses the DCN split; the Web SDK's client-side `setupAB` (`OPTABLE_SPLIT_TEST`) is not read.
