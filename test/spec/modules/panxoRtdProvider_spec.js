@@ -1130,7 +1130,7 @@ describe('LAB02 QA RTD real external script loader', function () {
     return { req, done };
   }
 
-  it('sets anonymous CORS and no-referrer before insertion, with only property and connection parameters', () => {
+  it('sets anonymous CORS and no-referrer before insertion, with only property and connection parameters', async () => {
     provider.init(config, {});
     clock.tick(0);
     expect(inserted).to.have.length(1);
@@ -1148,7 +1148,8 @@ describe('LAB02 QA RTD real external script loader', function () {
     const pending = auction();
     expect(pending.done.notCalled).to.be.true;
     expect(inserted).to.have.length(1);
-    snapshot.tag.onload();
+    snapshot.tag.dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(connect.calledOnce).to.be.true;
     expect(pending.done.calledOnce).to.be.true;
     expect(pending.req.ortb2Fragments.global.site.ext.data.panxo).to.deep.equal({ ai: true });
@@ -1156,7 +1157,7 @@ describe('LAB02 QA RTD real external script loader', function () {
     expect(inserted).to.have.length(1);
   });
 
-  it('retains real adloader activity denial and permits a later attributed load', () => {
+  it('retains real adloader activity denial and permits a later attributed load', async () => {
     allowed.withArgs('loadExternalScript').returns(false);
     expect(provider.init(config, {})).to.be.true;
     clock.tick(0);
@@ -1171,7 +1172,8 @@ describe('LAB02 QA RTD real external script loader', function () {
     expect(inserted).to.have.length(1);
     expect(inserted[0].crossorigin).to.equal('anonymous');
     expect(inserted[0].referrerpolicy).to.equal('no-referrer');
-    inserted[0].tag.onload();
+    inserted[0].tag.dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(connect.calledOnce).to.be.true;
     expect(pending.done.calledOnce).to.be.true;
   });
@@ -1485,7 +1487,7 @@ describe('LAB02 QA RTD initial configuration task', function () {
   }
 
   ['accessDevice', 'enrichUfpd', 'loadExternalScript'].forEach(activity => {
-    it(`honors ${activity} registered after init in the same configuration task`, () => {
+    it(`honors ${activity} registered after init in the same configuration task`, async () => {
       expect(provider.init(config, {})).to.be.true;
       expect(inserted).to.have.length(0);
       const remove = activityRules.registerActivityControl(activity, 'LAB02 late configuration', params => {
@@ -1498,19 +1500,21 @@ describe('LAB02 QA RTD initial configuration task', function () {
       remove();
       const next = auction();
       expect(inserted).to.have.length(1);
-      inserted[0].onload();
+      inserted[0].dispatchEvent(new Event('load'));
+      await clock.tickAsync(0);
       expect(next.done.calledOnce).to.be.true;
       expect(next.req.ortb2Fragments.global.site.ext.data.panxo).to.deep.equal({ ai: true });
     });
   });
 
-  it('preloads after the initial task without waiting for an auction', () => {
+  it('preloads after the initial task without waiting for an auction', async () => {
     expect(provider.init(config, {})).to.be.true;
     expect(utils.generateUUID.notCalled).to.be.true;
     expect(inserted).to.have.length(0);
     clock.tick(0);
     expect(inserted).to.have.length(1);
-    inserted[0].onload();
+    inserted[0].dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(auction().done.calledOnce).to.be.true;
   });
 
@@ -1540,18 +1544,19 @@ describe('LAB02 QA RTD initial configuration task', function () {
     expect(inserted).to.have.length(0);
   });
 
-  it('allows an immediate auction to start loading once before the deferred preload', () => {
+  it('allows an immediate auction to start loading once before the deferred preload', async () => {
     provider.init(config, {});
     const pending = auction();
     expect(inserted).to.have.length(1);
     expect(pending.done.notCalled).to.be.true;
     clock.tick(0);
     expect(inserted).to.have.length(1);
-    inserted[0].onload();
+    inserted[0].dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(pending.done.calledOnce).to.be.true;
   });
 
-  it('contains deferred and immediate loader errors and permits a later retry', () => {
+  it('contains deferred and immediate loader errors and permits a later retry', async () => {
     loadExternalScriptStub.callsFake(() => { throw new Error('synthetic loader failure'); });
     expect(provider.init(config, {})).to.be.true;
     expect(() => clock.tick(0)).to.not.throw();
@@ -1561,7 +1566,8 @@ describe('LAB02 QA RTD initial configuration task', function () {
     loadExternalScriptStub.callsFake(loadExternalScript);
     const next = auction();
     expect(inserted).to.have.length(1);
-    inserted[0].onload();
+    inserted[0].dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(next.done.calledOnce).to.be.true;
     clock.tick(100);
     expect(failed.done.calledOnce).to.be.true;
@@ -1581,7 +1587,7 @@ describe('LAB02 QA RTD initial configuration task', function () {
     expect(pending.done.calledOnce).to.be.true;
   });
 
-  it('does not clear a replacement generation when the old deferred loader throws', () => {
+  it('does not clear a replacement generation when the old deferred loader throws', async () => {
     let pending;
     let first = true;
     loadExternalScriptStub.callsFake((...args) => {
@@ -1597,7 +1603,8 @@ describe('LAB02 QA RTD initial configuration task', function () {
     expect(() => clock.tick(0)).to.not.throw();
     expect(pending.done.notCalled).to.be.true;
     expect(inserted).to.have.length(1);
-    inserted[0].onload();
+    inserted[0].dispatchEvent(new Event('load'));
+    await clock.tickAsync(0);
     expect(pending.done.calledOnce).to.be.true;
     expect(pending.req.ortb2Fragments.global.site.ext.data.panxo).to.deep.equal({ ai: true });
   });
