@@ -96,7 +96,7 @@ const storage = getStorageManager({
  * keywords -> getConfig('appnexusAuctionKeywords') (read now from ortb.site/user) -> site/user DONE
  * gdpr_consent -> set in adapter from bidderRequest.gdprConsent -> regs.ext.gdpr and user.ext.consent DONE
  * privacy -> set in adapter from bidderRequest.uspConsent -> regs.ext.privacy DONE
- * eids -> set in adapter from bidRequest.userId -> user.ext.eids DONE
+ * eids -> read from ortb2.user.ext.eids -> user.ext.eids DONE
  * dsa -> set in adapter from ortb.regs.ext.dsa -> regs.ext.dsa DONE
  * coppa -> getConfig('coppa') -> regs.coppa DONE
  * require_asset_url -> mediaTypes.video.context === 'instream' -> imp.ext.appnexus.require_asset_url DONE

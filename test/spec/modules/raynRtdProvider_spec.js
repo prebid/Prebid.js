@@ -2,10 +2,9 @@ import * as raynRTD from 'modules/raynRtdProvider.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
-const TEST_CHECKSUM = '-1135402174';
-const TEST_URL = 'http://localhost:9876/context.html';
-// The module keys segments by the checksum of the page URL, which is TEST_URL only under Karma (a BrowserStack
-// device loads the page from bs-local.com). Computed here, before generateChecksum is stubbed.
+const TEST_CHECKSUM = '-1880567186';
+const TEST_URL = 'http://example.com/context.html';
+// The module keys segments by the checksum of the page URL. Computed before generateChecksum is stubbed.
 const PAGE_CHECKSUM = raynRTD.generateChecksum(window.location.href);
 const TEST_SEGMENTS = {
   [TEST_CHECKSUM]: {

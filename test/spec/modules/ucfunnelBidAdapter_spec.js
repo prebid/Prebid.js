@@ -182,7 +182,10 @@ describe('ucfunnel Adapter', function () {
       expect(data.adid).to.equal('ad-34BBD2AA24B678BBFD4E7B9EE3B872D');
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
-      expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888!verizonMediaId,4567');
+      // a raw bid.userId is ignored
+      expect(data.eids).to.equal('');
+      expect(data.tdid).to.equal('');
+      expect(data).to.not.have.any.keys('id5id_uid', 'parrableId_eid', 'criteoId', 'pubcid');
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 

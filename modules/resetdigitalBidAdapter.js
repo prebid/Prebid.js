@@ -11,9 +11,11 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'resetdigital';
 const CURRENCY = 'USD';
 const ENDPOINT_URL = 'https://adsreq.resetdigital.co/HB';
+const ACP_ID = 3163; // Google Additional Consent provider ID (Reset Digital Europe Ltd)
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
