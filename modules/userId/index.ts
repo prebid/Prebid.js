@@ -167,6 +167,7 @@ function processSubmoduleCallbacks(submodules, cb) {
     cb();
   }, submodules.length);
   submodules.forEach(function (submodule) {
+    // set by submodule.store.handle() in populateSubmoduleId (see IdStore.handle in ./storage.ts)
     const handle: InvocationHandle = submodule.handle;
     handle.onClose = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
     function setId(id?: SerializableId) {
@@ -768,6 +769,7 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
     submodule.idObj = submodule.config.value;
     return;
   }
+  // store.handle() also records the new handle as submodule.handle, which processSubmoduleCallbacks reads
   const handle = submodule.store.handle({
     isCurrent: () => priorityMaps === initializedSubmodules,
     onChange: () => {
