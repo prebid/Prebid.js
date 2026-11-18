@@ -36,7 +36,7 @@ function makeBid(overrides = {}) {
     adUnitCode: 'div-1',
     auctionId: 'auction-1',
     bidderRequestId: 'bidder-request-1',
-    params: { epid: '1234' },
+    params: { endpointId: '1234' },
     mediaTypes: { banner: { sizes: [[300, 250], [728, 90]] } },
     ...overrides,
   };
@@ -79,31 +79,27 @@ describe('boldwin bid adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    it('accepts a non-empty string epid', function () {
-      expect(spec.isBidRequestValid(makeBid({ params: { epid: '1234' } }))).to.equal(true);
-    });
-
-    it('accepts a numeric epid', function () {
-      expect(spec.isBidRequestValid(makeBid({ params: { epid: 1234 } }))).to.equal(true);
-    });
-
-    it('rejects a missing, empty or malformed epid', function () {
-      expect(spec.isBidRequestValid(makeBid({ params: {} }))).to.equal(false);
-      expect(spec.isBidRequestValid(makeBid({ params: { epid: '' } }))).to.equal(false);
-      expect(spec.isBidRequestValid(makeBid({ params: { epid: NaN } }))).to.equal(false);
-      expect(spec.isBidRequestValid(makeBid({ params: { epid: { id: 1 } } }))).to.equal(false);
-      expect(spec.isBidRequestValid(makeBid({ params: undefined }))).to.equal(false);
-    });
-
-    it('accepts endpointId and placementId from earlier configurations', function () {
+    it('accepts a non-empty string endpointId', function () {
       expect(spec.isBidRequestValid(makeBid({ params: { endpointId: '1234' } }))).to.equal(true);
-      expect(spec.isBidRequestValid(makeBid({ params: { placementId: 1234 } }))).to.equal(true);
+    });
+
+    it('accepts a numeric endpointId', function () {
+      expect(spec.isBidRequestValid(makeBid({ params: { endpointId: 1234 } }))).to.equal(true);
+    });
+
+    it('rejects a missing, empty or malformed endpointId', function () {
+      expect(spec.isBidRequestValid(makeBid({ params: {} }))).to.equal(false);
       expect(spec.isBidRequestValid(makeBid({ params: { endpointId: '' } }))).to.equal(false);
+      expect(spec.isBidRequestValid(makeBid({ params: { endpointId: NaN } }))).to.equal(false);
+      expect(spec.isBidRequestValid(makeBid({ params: { endpointId: { id: 1 } } }))).to.equal(false);
+      expect(spec.isBidRequestValid(makeBid({ params: { epid: '1234' } }))).to.equal(false);
+      expect(spec.isBidRequestValid(makeBid({ params: { placementId: '1234' } }))).to.equal(false);
+      expect(spec.isBidRequestValid(makeBid({ params: undefined }))).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    it('posts one OpenRTB request with epid in the URL', function () {
+    it('posts one OpenRTB request with the endpoint ID as epid in the URL', function () {
       const requests = buildRequests([makeBid()]);
       expect(requests).to.have.lengthOf(1);
       const [request] = requests;
@@ -115,33 +111,16 @@ describe('boldwin bid adapter', function () {
       expect(request.data.site.page).to.equal('https://example.com/page');
     });
 
-    it('sends placementId or endpointId as the epid, in the order the earlier adapter read them', function () {
-      const urls = [
-        { endpointId: '11' },
-        { placementId: '22' },
-        { epid: '33', endpointId: '11', placementId: '22' },
-        { endpointId: '11', placementId: '22' },
-        { endpointId: '11', placementId: '' },
-        { endpointId: '11', placementId: 0 },
-        { endpointId: '11', placementId: NaN },
-        { epid: '', placementId: '22' },
-      ].map((params) => buildRequests([makeBid({ params })])[0].url);
-      expect(urls).to.deep.equal([
-        `${BID_URL}?epid=11`, `${BID_URL}?epid=22`, `${BID_URL}?epid=33`, `${BID_URL}?epid=22`,
-        `${BID_URL}?epid=11`, `${BID_URL}?epid=11`, `${BID_URL}?epid=11`, `${BID_URL}?epid=22`,
-      ]);
-    });
-
-    it('url-encodes the epid', function () {
-      const [request] = buildRequests([makeBid({ params: { epid: 'a b&c' } })]);
+    it('url-encodes the endpoint ID', function () {
+      const [request] = buildRequests([makeBid({ params: { endpointId: 'a b&c' } })]);
       expect(request.url).to.equal(`${BID_URL}?epid=a%20b%26c`);
     });
 
-    it('puts the bids of one epid into one request and every epid into its own', function () {
+    it('puts the bids of one endpoint into one request and every endpoint into its own', function () {
       const bids = [
-        makeBid({ bidId: 'bid-1', params: { epid: '1' } }),
-        makeBid({ bidId: 'bid-2', params: { epid: '2' } }),
-        makeBid({ bidId: 'bid-3', params: { epid: 1 } }),
+        makeBid({ bidId: 'bid-1', params: { endpointId: '1' } }),
+        makeBid({ bidId: 'bid-2', params: { endpointId: '2' } }),
+        makeBid({ bidId: 'bid-3', params: { endpointId: 1 } }),
       ];
       const requests = buildRequests(bids);
       expect(requests.map((request) => request.url)).to.deep.equal([`${BID_URL}?epid=1`, `${BID_URL}?epid=2`]);

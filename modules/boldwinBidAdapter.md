@@ -8,12 +8,11 @@ Maintainer: info@bold-win.com, support@bold-win.com
 
 # Description
 
-Connects to the Boldwin endpoint that the `epid` (endpoint ID) param selects. Supports banner,
+Connects to the Boldwin endpoint that the `endpointId` param selects. Supports banner,
 video (instream; outstream needs the publisher's own renderer) and native (ORTB native request).
 
-Contact info@bold-win.com or support@bold-win.com to get an `epid`. The ad units of one `epid` go into one request,
-one impression each. Configurations made for the earlier Boldwin adapter keep working: the
-adapter sends their `placementId` or `endpointId` as the `epid`.
+Contact info@bold-win.com or support@bold-win.com to get an `endpointId`. The ad units of one
+`endpointId` go into one request, one impression each.
 
 Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
 out of the request, and Prebid still enforces it on the bids.
@@ -29,17 +28,13 @@ no sync is made when COPPA applies.
 
 # Bid Params
 
-| Name          | Scope    | Description                                                   | Example   | Type                 |
-|---------------|----------|---------------------------------------------------------------|-----------|----------------------|
-| `epid`        | required | Endpoint ID issued by Boldwin                                 | `'12345'` | `string` or `number` |
-| `placementId` | optional | Earlier name of `epid`, read when `epid` is not set           | `'12345'` | `string` or `number` |
-| `endpointId`  | optional | Earlier name of `epid`, read when neither of the above is set | `'12345'` | `string` or `number` |
-
-`epid` is required unless the ad unit has `placementId` or `endpointId`.
+| Name         | Scope    | Description                   | Example   | Type                 |
+|--------------|----------|-------------------------------|-----------|----------------------|
+| `endpointId` | required | Endpoint ID issued by Boldwin | `'12345'` | `string` or `number` |
 
 # Test Parameters
 
-The `epid` below is a Boldwin test endpoint that returns test ads. In production, replace it
+The `endpointId` below is a Boldwin test endpoint that returns test ads. In production, replace it
 with the value issued by Boldwin. Instream video bids return VAST XML, so they need Prebid Cache
 (`cache: { url: ... }` or `cache: { useLocal: true }`).
 
@@ -56,7 +51,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwin',
       params: {
-        epid: '20132'
+        endpointId: '20132'
       }
     }]
   },
@@ -75,7 +70,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwin',
       params: {
-        epid: '20132'
+        endpointId: '20132'
       }
     }]
   },
@@ -98,7 +93,7 @@ var adUnits = [
     bids: [{
       bidder: 'boldwin',
       params: {
-        epid: '20132'
+        endpointId: '20132'
       }
     }]
   }

@@ -12,21 +12,13 @@ import { isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
 import { insertVastTrackers } from '../src/utils/vast.js';
 
 /**
- * Boldwin bid parameters. One of the three is required; all of them carry the endpoint ID issued by Boldwin.
+ * Boldwin bid parameters.
  */
 export interface BoldwinBidParams {
   /**
    * Endpoint ID issued by Boldwin. Sent as the `epid` query parameter of the bid request.
    */
-  epid?: string | number;
-  /**
-   * The name earlier Boldwin configurations use for the endpoint ID. Read when `epid` is not set.
-   */
-  placementId?: string | number;
-  /**
-   * The other name earlier Boldwin configurations use. Read when neither `epid` nor `placementId` is set.
-   */
-  endpointId?: string | number;
+  endpointId: string | number;
 }
 
 declare module '../src/adUnits' {
@@ -43,17 +35,9 @@ const CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE] as const;
 
-// Configurations made for the earlier Boldwin adapter carry the ID as placementId or endpointId.
-// That adapter took placementId when it was truthy and endpointId otherwise; this keeps the same choice.
-function getEpid(params: BoldwinBidParams | undefined): unknown {
-  if (params?.epid != null && params.epid !== '') {
-    return params.epid;
-  }
-  return params?.placementId || params?.endpointId;
-}
-
-function isValidEpid(epid: unknown): boolean {
-  return (typeof epid === 'string' && epid.length > 0) || (typeof epid === 'number' && Number.isFinite(epid));
+function isValidEndpointId(endpointId: unknown): boolean {
+  return (typeof endpointId === 'string' && endpointId.length > 0) ||
+    (typeof endpointId === 'number' && Number.isFinite(endpointId));
 }
 
 function skipLeadingXmlComments(markup: string): string {
@@ -155,26 +139,26 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid(bidRequest) {
-    return isValidEpid(getEpid(bidRequest?.params));
+    return isValidEndpointId(bidRequest?.params?.endpointId);
   },
 
-  // The epid goes in the URL, so the bids of one epid share a request and each epid gets its own.
+  // The endpoint ID goes in the URL, so the bids of one endpoint share a request and each endpoint gets its own.
   buildRequests(validBidRequests, bidderRequest) {
-    const bidsByEpid = new Map<string, typeof validBidRequests>();
+    const bidsByEndpoint = new Map<string, typeof validBidRequests>();
     validBidRequests.forEach((bidRequest) => {
-      const epid = String(getEpid(bidRequest.params));
-      if (!bidsByEpid.has(epid)) {
-        bidsByEpid.set(epid, []);
+      const endpointId = String(bidRequest.params.endpointId);
+      if (!bidsByEndpoint.has(endpointId)) {
+        bidsByEndpoint.set(endpointId, []);
       }
-      bidsByEpid.get(epid).push(bidRequest);
+      bidsByEndpoint.get(endpointId).push(bidRequest);
     });
     const requests: AdapterRequest[] = [];
-    bidsByEpid.forEach((bidRequests, epid) => {
+    bidsByEndpoint.forEach((bidRequests, endpointId) => {
       const data = converter.toORTB({ bidRequests, bidderRequest });
       if (data.imp.length > 0) {
         requests.push({
           method: 'POST',
-          url: `${BID_URL}?epid=${encodeURIComponent(epid)}`,
+          url: `${BID_URL}?epid=${encodeURIComponent(endpointId)}`,
           data,
         });
       }
