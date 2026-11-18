@@ -768,7 +768,7 @@ function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, prio
     submodule.idObj = submodule.config.value;
     return;
   }
-  const handle = submodule.store.handle({
+  const handle = submodule.handle = submodule.store.handle({
     isCurrent: () => priorityMaps === initializedSubmodules,
     onChange: () => {
       priorityMaps.refresh();
