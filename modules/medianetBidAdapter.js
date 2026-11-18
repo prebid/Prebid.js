@@ -166,7 +166,6 @@ function extParams(bidRequest, bidderRequests) {
   const params = deepAccess(bidRequest, 'params');
   const gdpr = deepAccess(bidderRequests, 'gdprConsent');
   const uspConsent = deepAccess(bidderRequests, 'uspConsent');
-  const userId = deepAccess(bidRequest, 'userId');
   const sChain = deepAccess(bidRequest, 'ortb2.source.ext.schain') || {};
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
@@ -182,7 +181,6 @@ function extParams(bidRequest, bidderRequests) {
     uspApplies && { usp_consent_string: uspConsent || '' },
     { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
-    userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && { schain: sChain },
     {

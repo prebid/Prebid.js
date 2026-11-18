@@ -50,5 +50,5 @@ pbjs.setConfig({
 | `clientID`                 | string  | required  | Optimera Client ID. Contact Optimera to obtain yours. |
 | `optimeraKeyName`          | string  | optional  | GAM key name for Optimera targeting. Defaults to `hb_deal_optimera` for legacy compatibility. |
 | `device`                   | string  | optional  | Device type code. Use `mo` (mobile), `tb` (tablet), or `de` (desktop) or output the common library splitter value here. |
-| `apiVersion`               | string  | optional  | Optimera API version. Allowed values: `v0` or `v1`. **Note:** `v1` must be enabled by Optimera. |
+| `apiVersion`               | string  | optional  | Optimera API version. Currently only `v0` is supported. |
 | `transmitWithBidRequests` | string  | optional  | Set to `'allow'` (default if not set) to inject Optimera data into the ORTB2 object for bid requests or `'deny'` to prevent injection. |

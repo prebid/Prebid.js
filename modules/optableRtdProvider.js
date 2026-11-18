@@ -258,16 +258,19 @@ export const readCachedTargeting = () => {
  * Run `withBundle` once the Optable bundle has loaded. Until it loads, hand the
  * targeting it cached on a previous page to `withCache` instead of waiting, so
  * auctions that start first still get Optable data; with nothing cached, wait
- * for the bundle.
+ * for the bundle, but no longer than `timeout`: the RTD framework releases the
+ * auction after auctionDelay, so anything merged later would be wasted work.
  * @param {boolean} bundleLoaded Whether the bundle has already loaded
  * @param {function(): (Object|null)} readCache Reads the cache, null when there is nothing usable
- * @param {function(): *} withBundle Called once the bundle is available
+ * @param {function((number|null)): *} withBundle Called once the bundle is available, with what is left of `timeout`
  * @param {function(Object): *} withCache Called with what `readCache` returned
+ * @param {number|null} [timeout] Stop waiting for the bundle after this many ms (the RTD auctionDelay);
+ *   0 does not wait, and unset waits until the bundle loads
  * @returns {Promise<*>} What the chosen callback returns
  */
-const withBundleOrCache = async (bundleLoaded, readCache, withBundle, withCache) => {
+const withBundleOrCache = async (bundleLoaded, readCache, withBundle, withCache, timeout = null) => {
   if (bundleLoaded) {
-    return withBundle();
+    return withBundle(timeout);
   }
 
   const cached = readCache();
@@ -276,10 +279,30 @@ const withBundleOrCache = async (bundleLoaded, readCache, withBundle, withCache)
     return withCache(cached);
   }
 
+  const bounded = typeof timeout === 'number';
+  if (bounded && timeout <= 0) {
+    logMessage('Optable bundle not loaded yet and no cached data; the auction is not delayed, so not waiting');
+    return;
+  }
+
   logMessage('Optable bundle not loaded yet and no cached data, waiting for the bundle');
+  const deadline = bounded ? Date.now() + timeout : null;
   window.optable = window.optable || { cmd: [] };
-  await new Promise((resolve) => window.optable.cmd.push(resolve));
-  return withBundle();
+  const loaded = await new Promise((resolve) => {
+    let timer;
+    window.optable.cmd.push(() => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+    if (bounded) {
+      timer = setTimeout(() => resolve(false), timeout);
+    }
+  });
+  if (!loaded) {
+    logWarn(`Optable bundle did not load within ${timeout}ms`);
+    return;
+  }
+  return withBundle(bounded ? Math.max(deadline - Date.now(), 0) : null);
 };
 
 /**
@@ -323,8 +346,9 @@ const handleRtdWithBundle = async (reqBidsConfigObj, optableExtraData, mergeFn, 
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn, instance = null, timeout = null) => withBundleOrCache(
   isBundleLoaded(instance),
   readResolvedCache,
-  () => handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance, timeout),
+  (remaining) => handleRtdWithBundle(reqBidsConfigObj, optableExtraData, mergeFn, instance, remaining),
   (cachedOrtb2) => mergeFn(reqBidsConfigObj.ortb2Fragments.global, toExtEids(cachedOrtb2)),
+  timeout,
 );
 
 /**
@@ -342,7 +366,11 @@ export const mergeOptableData = async (handleRtdFn, reqBidsConfigObj, optableExt
 };
 
 let sessionID = null;
-let targetingRequest = null;
+/**
+ * Targeting requests by `targetingRequestKey`, as `{ request, data }` with `data` set once it succeeds;
+ * failed ones are dropped so the next auction retries
+ */
+let targetingRequests = new Map();
 
 /**
  * Generates a random session ID (base64url encoded 16-byte random value), once per page load
@@ -705,37 +733,84 @@ const callTargetingAPI = (params) => {
         logError('Targeting API call failed', error);
         resolve(null);
       }
-    }, null, { method: 'GET', withCredentials: params.consent.deviceAccess, keepalive: true });
+    }, null, { method: 'GET', withCredentials: params.consent.deviceAccess && params.cookies !== false, keepalive: true });
   });
 };
 
 /**
- * Call the targeting API once per page load and update both caches. Concurrent
- * auctions share the request; a failed call is retried by the next auction.
+ * What a targeting request depends on. Leaves out the passport, which the first
+ * response updates, and the session ID, which is fixed per page load.
+ * @param {Object} apiParams Targeting API parameters
+ * @returns {string} Key shared by requests that would get the same answer
+ */
+const targetingRequestKey = (apiParams) => {
+  const { host, node, site, ids, hids, consent, cookies, cacheKey } = apiParams;
+  return JSON.stringify([host, node, site, ids, hids, consent, cookies !== false, cacheKey]);
+};
+
+/**
+ * Write a targeting response to both caches
+ * @param {Object} apiParams Targeting API parameters the response answers
+ * @param {Object} data Targeting response
+ */
+const storeTargeting = (apiParams, data) => {
+  setCachedTargeting(apiParams.cacheKey, data);
+  setSDKTargetingCache(apiParams.host, apiParams.node, data);
+};
+
+/**
+ * Call the targeting API once per page load for each set of parameters (host, node,
+ * site, identifiers, consent, cookie mode and cache key), and update both caches.
+ * Concurrent auctions with the same parameters share the request; a failed call is
+ * retried by the next auction.
  * @param {Object} apiParams Targeting API parameters
  * @returns {Promise<Object|null>} Targeting response or null
  */
 const fetchTargeting = (apiParams) => {
-  if (!targetingRequest) {
-    targetingRequest = callTargetingAPI(apiParams).then(data => {
+  const key = targetingRequestKey(apiParams);
+  if (!targetingRequests.has(key)) {
+    const entry = { data: null };
+    const forget = () => {
+      if (targetingRequests.get(key) === entry) {
+        targetingRequests.delete(key);
+      }
+    };
+    entry.request = callTargetingAPI(apiParams).then(data => {
       if (data) {
-        setCachedTargeting(apiParams.cacheKey, data);
-        setSDKTargetingCache(apiParams.host, apiParams.node, data);
+        entry.data = data;
+        storeTargeting(apiParams, data);
       } else {
-        targetingRequest = null;
+        forget();
       }
       return data;
     }).catch(err => {
       logError('Targeting request failed', err);
-      targetingRequest = null;
+      forget();
       return null;
     });
+    targetingRequests.set(key, entry);
   }
-  return targetingRequest;
+  return targetingRequests.get(key).request;
+};
+
+/**
+ * The response this page already got for these parameters, written back to both
+ * caches: the caches are shared, so a call with other parameters (say other `ids`)
+ * may have replaced it since
+ * @param {Object} apiParams Targeting API parameters
+ * @returns {Object|null} Targeting response, or null when there is none yet
+ */
+const reuseTargeting = (apiParams) => {
+  const data = targetingRequests.get(targetingRequestKey(apiParams))?.data;
+  if (!data) {
+    return null;
+  }
+  storeTargeting(apiParams, data);
+  return data;
 };
 
 export function resetTargetingRequest() {
-  targetingRequest = null;
+  targetingRequests = new Map();
 }
 
 /**
@@ -837,8 +912,9 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
       await withBundleOrCache(
         sdkAvailable,
         () => readUsableCache(cacheKey),
-        () => handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, options, instance, timeout),
+        (remaining) => handleSDKMode(handleRtdFn, reqBidsConfigObj, mergeDeep, options, instance, remaining),
         (cachedData) => handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options),
+        timeout,
       );
       callback();
       return;
@@ -854,8 +930,9 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
 
     logMessage(`Direct API mode: host=${host}, node=${node}, site=${site}, cookies=${cookies}, timeout=${effectiveTimeout}`);
 
-    // Serve the cache immediately and refresh it in the background, once per page load
-    const cachedData = getCachedTargeting(cacheKey);
+    // Serve the cache immediately and refresh it in the background, once per page load for these
+    // parameters; once that refresh has answered, serve its answer, as the shared cache may hold another's
+    const cachedData = reuseTargeting(apiParams) || getCachedTargeting(cacheKey);
     if (cachedData) {
       fetchTargeting(apiParams);
       await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
