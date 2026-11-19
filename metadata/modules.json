@@ -5755,13 +5755,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "tapadId",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "teadsId",
       "gvlid": 132,
       "disclosureURL": null,
