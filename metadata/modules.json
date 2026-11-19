@@ -5857,11 +5857,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "adxcg",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "adxpremium",
       "gvlid": null
     },
