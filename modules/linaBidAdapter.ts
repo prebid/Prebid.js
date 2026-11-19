@@ -6,6 +6,8 @@ import type { Size } from '../src/types/common.d.ts';
 import type { NativeRequest, NativeResponse } from '../src/types/ortb/native.d.ts';
 import { fillVideoImp } from '../libraries/ortbConverter/processors/video.js';
 import { fillNativeImp } from '../libraries/ortbConverter/processors/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'lina' as const;
 const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
@@ -139,6 +141,42 @@ function getBannerFormats(bid: BidRequest<typeof BIDDER_CODE>): BannerFormat[] {
   return bannerSizes.map((size) => findMatchingBannerFormat(size, formats) ?? { w: size[0], h: size[1] });
 }
 
+function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): string | undefined {
+  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
+  const requestCurrencies = bidderRequest.ortb2?.cur;
+  const requestCurrency = Array.isArray(requestCurrencies) && requestCurrencies.length === 1 &&
+    isValidCurrency(requestCurrencies[0]) ? requestCurrencies[0] : undefined;
+  if (isValidCurrency(adServerCurrency) && requestCurrency !== undefined) {
+    return adServerCurrency === requestCurrency ? adServerCurrency : undefined;
+  }
+  return isValidCurrency(adServerCurrency) ? adServerCurrency : requestCurrency;
+}
+
+function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>, currency: string | undefined): Record<string, unknown> {
+  const ortb2 = bidderRequest.ortb2 ?? {};
+  return currency !== undefined && ortb2.cur === undefined ? { ...ortb2, cur: [currency] } : ortb2;
+}
+
+type ClientFloorResult =
+  | { valid: true; floor?: { bidfloor: number; bidfloorcur: string } }
+  | { valid: false };
+
+function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | undefined): ClientFloorResult {
+  if (typeof bid.getFloor !== 'function') return { valid: true };
+  if (currency === undefined) return { valid: false };
+  try {
+    const floor = bid.getFloor({ currency, mediaType: '*', size: '*' });
+    if (floor === null || (isRecord(floor) && !('floor' in floor) && !('currency' in floor))) {
+      return { valid: true };
+    }
+    if (!isRecord(floor) || typeof floor.floor !== 'number' || !Number.isFinite(floor.floor) ||
+      floor.floor < 0 || !isValidCurrency(floor.currency) || floor.currency !== currency) return { valid: false };
+    return { valid: true, floor: { bidfloor: floor.floor, bidfloorcur: floor.currency } };
+  } catch {
+    return { valid: false };
+  }
+}
+
 function getPrivacy(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): LinaRequest['privacy'] {
   const gdprConsent = bidderRequest.gdprConsent;
   const gppConsent = bidderRequest.gppConsent;
@@ -182,11 +220,16 @@ function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
       video.maxduration >= (typeof video.minduration === 'number' ? video.minduration : 0)));
 }
 
-function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
+function buildImp(bid: BidRequest<typeof BIDDER_CODE>, currency: string | undefined): LinaImp | undefined {
   const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
   const bannerFormats = getBannerFormats(bid);
   const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
   const nativeOrtbRequest = getNativeOrtbRequest(bid);
+  const clientFloor = getClientFloor(bid, currency);
+  if (!clientFloor.valid) {
+    logWarn(`LINA: skipped bid ${bid.bidId} because the Price Floors Module did not return a usable floor in the request currency`);
+    return undefined;
+  }
   const generated: Pick<LinaImp, 'video' | 'native'> = {};
   if (video) fillVideoImp(generated, { mediaTypes: { video } }, {});
   if (nativeOrtbRequest) fillNativeImp(generated, { nativeOrtbRequest }, {});
@@ -197,6 +240,7 @@ function buildImp(bid: BidRequest<typeof BIDDER_CODE>): LinaImp {
     ...(bannerFormats.length > 0 ? { banner: { ...banner, format: bannerFormats } } : {}),
     ...(generated.video ? { video: { ...originalVideo, ...generated.video } } : {}),
     ...(generated.native ? { native: { ...native, ...generated.native } } : {}),
+    ...clientFloor.floor,
   };
 }
 
@@ -336,6 +380,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   },
 
   buildRequests(validBidRequests, bidderRequest): AdapterRequest | AdapterRequest[] {
+    const currency = getRequestCurrency(bidderRequest);
     const requestsByPublisher = new Map<string, {
       publisherId: string;
       bids: BidRequest<typeof BIDDER_CODE>[];
@@ -348,9 +393,19 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
       requestsByPublisher.set(publisherId, batch);
     });
 
-    const requests = [...requestsByPublisher.values()].map(({ publisherId, bids }) => {
+    const requests = [...requestsByPublisher.values()].flatMap(({ publisherId, bids }) => {
       const auctionId = bidderRequest.auctionId;
       const timeoutMs = getTimeout(bidderRequest);
+      const mappedBids = bids.flatMap((bid) => {
+        const ortb2Imp = buildImp(bid, currency);
+        return ortb2Imp === undefined ? [] : [{
+          bidId: bid.bidId,
+          ...(isNonEmptyString(bid.transactionId) ? { transactionId: bid.transactionId } : {}),
+          adUnitCode: bid.adUnitCode,
+          ortb2Imp,
+        }];
+      });
+      if (mappedBids.length === 0) return [];
       return {
         method: 'POST' as const,
         url: ENDPOINT_URL,
@@ -358,13 +413,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           ...(isNonEmptyString(auctionId) ? { auctionId } : {}),
           publisherId,
           ...(timeoutMs === undefined ? {} : { timeoutMs }),
-          ortb2: bidderRequest.ortb2 ?? {},
-          bids: bids.map((bid) => ({
-            bidId: bid.bidId,
-            ...(isNonEmptyString(bid.transactionId) ? { transactionId: bid.transactionId } : {}),
-            adUnitCode: bid.adUnitCode,
-            ortb2Imp: buildImp(bid),
-          })),
+          ortb2: getRequestOrtb2(bidderRequest, currency),
+          bids: mappedBids,
           privacy: getPrivacy(bidderRequest),
         },
       };
