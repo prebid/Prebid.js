@@ -1,11 +1,217 @@
 import { expect } from 'chai';
-import { spec } from 'modules/nexverseBidAdapter.js';
+import { spec, storage } from 'modules/nexverseBidAdapter.js';
+import { config } from 'src/config.js';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import { getDeviceModel, buildEndpointUrl, parseNativeResponse } from '../../../libraries/nexverseUtils/index.js';
 import { getOsVersion } from '../../../libraries/advangUtils/index.js';
 
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
+  let userAgentDescriptor;
+
+  beforeEach(() => {
+    userAgentDescriptor = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+  });
+
+  afterEach(() => {
+    if (userAgentDescriptor) {
+      Object.defineProperty(navigator, 'userAgent', userAgentDescriptor);
+    } else {
+      delete navigator.userAgent;
+    }
+  });
+
+  describe('auction requests and responses', () => {
+    let sandbox;
+    let bid;
+    let bidderRequest;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(storage, 'getCookie').returns('publisher-user');
+      sandbox.stub(storage, 'setCookie');
+      sandbox.stub(config, 'getConfig').withArgs('debug').returns(false);
+      sandbox.stub(winDimensions, 'getWinDimensions').returns({ innerWidth: 1000, innerHeight: 1000 });
+      bid = {
+        bidId: 'bid-1',
+        adUnitCode: 'nexverse-test-unit',
+        sizes: [[300, 250], [320, 50]],
+        mediaTypes: { banner: {} },
+        params: { uid: 'publisher', pubId: '123', pubEpid: '456', bidFloor: 0.75 }
+      };
+      bidderRequest = {
+        auctionId: 'auction-1',
+        auctionStart: 123456,
+        refererInfo: { page: 'https://publisher.example/article', domain: 'publisher.example' }
+      };
+    });
+
+    afterEach(() => sandbox.restore());
+
+    function payload() {
+      return JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+    }
+
+    function responseBid(overrides = {}) {
+      return Object.assign({ impid: 'bid-1', id: 'creative-1', price: 1.25, adm: '<div>Ad</div>', cat: ['IAB1', 'IAB2'] }, overrides);
+    }
+
+    function interpret(bids, extra = {}) {
+      return spec.interpretResponse({ body: Object.assign({ seatbid: [{ bid: bids }] }, extra) });
+    }
+
+    it('builds a POST request with banner sizes, auction context, and a persistent user ID', () => {
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(request).to.include({ method: 'POST', bidRequest: bid, url: `${BIDDER_ENDPOINT}?uid=publisher&pub_id=123&pub_epid=456` });
+      expect(data.id).to.equal('auction-1');
+      expect(data.site).to.deep.equal({ page: 'https://publisher.example/article', domain: 'publisher.example', ref: '' });
+      expect(data.imp).to.deep.equal([{
+        id: 'bid-1',
+        banner: { format: [{ w: 300, h: 250 }, { w: 320, h: 50 }], w: 300, h: 250 },
+        secure: window.location.protocol === 'https:' ? 1 : 0,
+        metric: [{ type: 'viewability', value: 0, vendor: 'nexverse.ai' }],
+        ext: { gpid: 'nexverse-test-unit' },
+        bidFloor: 0.75
+      }]);
+      expect(data.user).to.include({ id: 'publisher-user', buyeruid: '', yob: null, gender: '', keywords: '' });
+      expect(data.user.ext.consent).to.equal(null);
+      expect(data.regs.ext.gdpr).to.equal(0);
+      expect(data.ext.prebid.auctiontimestamp).to.equal(123456);
+      expect(data.test).to.equal(0);
+      expect(storage.setCookie.calledOnce).to.equal(true);
+    });
+
+    it('preserves one request per bid and drops bids without auction context', () => {
+      const second = Object.assign({}, bid, { bidId: 'bid-2' });
+      const requests = spec.buildRequests([bid, second], bidderRequest);
+      expect(requests.map(request => JSON.parse(request.data).imp[0].id)).to.deep.equal(['bid-1', 'bid-2']);
+      expect(spec.buildRequests([bid], null)).to.deep.equal([]);
+      expect(spec.buildRequests([], bidderRequest)).to.deep.equal([]);
+    });
+
+    it('builds video and native impressions alongside banner and requests media-specific floors', () => {
+      bid.mediaTypes.video = { mimes: ['video/webm'], protocols: [3], maxduration: 15, linearity: 2, playbackmethod: [1] };
+      bid.mediaTypes.native = { title: { required: true }, image: { required: true } };
+      bid.getFloor = sandbox.stub().callsFake(({ mediaType }) => ({ floor: { banner: 1, video: 2, native: 3 }[mediaType] }));
+      const { imp } = payload();
+      expect(imp).to.have.length(3);
+      expect(imp[1].video).to.deep.equal({ w: 300, h: 250, mimes: ['video/webm'], protocols: [3], maxduration: 15, linearity: 2, playbackmethod: [1] });
+      expect(JSON.parse(imp[2].native.request)).to.deep.equal(bid.mediaTypes.native);
+      expect(imp.map(impression => impression.bidFloor)).to.deep.equal([1, 2, 3]);
+      expect(bid.getFloor.getCalls().map(call => call.args[0])).to.deep.equal(['banner', 'video', 'native'].map(mediaType => ({ currency: 'USD', mediaType, size: '*' })));
+    });
+
+    it('uses video defaults for an otherwise unconfigured video impression', () => {
+      bid.mediaTypes = { video: {} };
+      expect(payload().imp[0].video).to.deep.equal({ w: 300, h: 250, mimes: ['video/mp4'], protocols: [2, 3, 5, 6], maxduration: 30, linearity: 1, playbackmethod: [2] });
+    });
+
+    it('includes user demographics, consent, referrer, and app details', () => {
+      Object.assign(bid.params, { yob: '1980', gender: 'F', keywords: 'news', geoLat: 10, geoLon: 20 });
+      Object.assign(bidderRequest, {
+        userId: 'buyer-user',
+        gdprConsent: { gdprApplies: true, consentString: 'gdpr-consent' },
+        uspConsent: '1YNN',
+        app: { id: 'app-1', name: 'Example', bundle: 'example.app', domain: 'app.example', storeUrl: 'https://store.example/app', cat: ['IAB1'] }
+      });
+      bidderRequest.refererInfo.ref = 'https://search.example/';
+      const data = payload();
+      expect(data.user).to.deep.equal({ id: 'publisher-user', buyeruid: 'buyer-user', yob: 1980, gender: 'F', keywords: 'news', ext: { consent: 'gdpr-consent' } });
+      expect(data.device.geo).to.deep.equal({ lat: 10, lon: 20 });
+      expect(data.regs.ext).to.deep.equal({ gdpr: 1, us_privacy: '1YNN' });
+      expect(data.site.ref).to.equal('https://search.example/');
+      expect(data.app).to.deep.equal({ id: 'app-1', name: 'Example', bundle: 'example.app', domain: 'app.example', storeurl: 'https://store.example/app', cat: ['IAB1'] });
+    });
+
+    it('generates an auction ID, defaults app categories, and supports per-bid debug mode', () => {
+      delete bidderRequest.auctionId;
+      bidderRequest.app = { id: 'app-1' };
+      bid.isDebug = true;
+      const data = payload();
+      expect(data.id).to.match(/^[0-9a-f-]{36}$/i);
+      expect(data.app.cat).to.deep.equal([]);
+      expect(data.test).to.equal(1);
+    });
+
+    it('measures the visible share of a clipped ad unit', () => {
+      bid.element = { getBoundingClientRect: () => ({ top: -125, bottom: 125, left: 0, right: 300, width: 300, height: 250 }) };
+      expect(payload().imp[0].metric[0].value).to.equal(0.5);
+    });
+
+    it('reports zero viewability for an ad outside the viewport', () => {
+      bid.element = { getBoundingClientRect: () => ({ top: 1100, bottom: 1350, left: 0, right: 300, width: 300, height: 250 }) };
+      expect(payload().imp[0].metric[0].value).to.equal(0);
+    });
+
+    it('returns no bids for no-content and invalid auction responses', () => {
+      expect(spec.interpretResponse({ status: 204 })).to.deep.equal([]);
+      [undefined, {}, { seatbid: {} }].forEach(body => {
+        expect(spec.interpretResponse({ body })).to.deep.equal([]);
+      });
+      expect(interpret([])).to.deep.equal([]);
+    });
+
+    it('maps banner responses and advertiser metadata to Prebid bids', () => {
+      const [result] = interpret([responseBid({ crid: 'creative-id', w: 300, h: 250, adomain: ['advertiser.example'], attr: [1], nurl: 'https://tracker.example/win' })], { cur: 'EUR' });
+      expect(result).to.deep.equal({
+        requestId: 'bid-1',
+        cpm: 1.25,
+        currency: 'EUR',
+        width: 300,
+        height: 250,
+        creativeId: 'creative-id',
+        ttl: 300,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '<div>Ad</div>',
+        nurl: 'https://tracker.example/win',
+        meta: { advertiserDomains: ['advertiser.example'], attr: [1], primaryCatId: ['IAB1', 'IAB2'], secondaryCatIds: ['IAB2'] }
+      });
+    });
+
+    it('applies response defaults and handles bids from multiple seats', () => {
+      const bids = spec.interpretResponse({
+        body: {
+          seatbid: [
+            { bid: [responseBid({ adm: undefined, bundle: 'advertiser.app' })] },
+            { bid: [responseBid({ id: 'creative-2', impid: 'bid-2', ext: { mediaType: 'video' } })] }
+          ]
+        }
+      });
+      expect(bids).to.have.length(2);
+      expect(bids[0]).to.include({ currency: 'USD', width: 0, height: 0, creativeId: 'creative-1', mediaType: 'banner', ad: '' });
+      expect(bids[0].meta).to.include({ advertiserDomains: 'advertiser.app' });
+      expect(bids[0].meta.attr).to.deep.equal([]);
+      expect(bids[1]).to.include({ requestId: 'bid-2', mediaType: 'video' });
+    });
+
+    it('recognizes VAST markup as video', () => {
+      const vastXml = '<VAST version="3.0"></VAST>';
+      expect(interpret([responseBid({ adm: vastXml })])[0]).to.include({ mediaType: 'video', vastXml });
+    });
+
+    it('parses native responses into Prebid native assets', () => {
+      const adm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Native headline' } }], link: { url: 'https://advertiser.example/' } } });
+      const [result] = interpret([responseBid({ adm })]);
+      expect(result.mediaType).to.equal('native');
+      expect(result.native).to.include({ title: 'Native headline', clickUrl: 'https://advertiser.example/' });
+    });
+
+    it('includes supported consent strings and the stored ID in iframe syncs', () => {
+      const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: true, consentString: 'consent' }, { consentString: '1YNN' }, { gppString: 'gpp-consent', applicableSections: [7, 8] }, true);
+      expect(sync).to.deep.equal({ type: 'iframe', url: `${BIDDER_ENDPOINT}/iframe?pbjs=1&gdpr=1&gdpr_consent=consent&ccpa_consent=1YNN&gpp=gpp-consent&gpp_sid=7,8&coppa=1&uid=publisher-user` });
+    });
+
+    it('uses pixel syncs and defaults unspecified GDPR applicability to zero', () => {
+      [undefined, false].forEach(gdprApplies => {
+        const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies, consentString: 'consent' }, null, { gppString: 'ignored', applicableSections: [] }, false);
+        expect(sync).to.deep.equal({ type: 'image', url: `${BIDDER_ENDPOINT}/image?pbjs=1&gdpr=0&gdpr_consent=consent&coppa=0&uid=publisher-user` });
+      });
+    });
+  });
+
   describe('getUserSyncs', () => {
     it('includes configured COPPA in the sync URL', () => {
       const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, true);
