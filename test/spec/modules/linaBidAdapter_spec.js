@@ -188,6 +188,55 @@ describe('linaBidAdapter', function () {
       expect(JSON.parse(request.data.bids[0].ortb2Imp.native.request)).to.deep.equal(nativeRequest);
     });
 
+    it('accepts Native video assets with a zero minimum duration', function () {
+      const nativeRequest = {
+        ver: '1.2',
+        assets: [{
+          id: 1,
+          required: 1,
+          video: {
+            mimes: ['video/mp4'],
+            protocols: [2, 3],
+            minduration: 0,
+            maxduration: 30,
+          },
+        }],
+      };
+      const nativeBid = {
+        ...BID_REQUEST,
+        mediaTypes: { native: { ortb: nativeRequest } },
+        sizes: undefined,
+      };
+
+      expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
+      const request = spec.buildRequests([nativeBid], BIDDER_REQUEST);
+      expect(JSON.parse(request.data.bids[0].ortb2Imp.native.request)).to.deep.equal(nativeRequest);
+
+      const mixedBid = {
+        ...nativeBid,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          native: nativeBid.mediaTypes.native,
+        },
+      };
+      expect(spec.isBidRequestValid(mixedBid)).to.equal(true);
+      const mixedRequest = spec.buildRequests([mixedBid], BIDDER_REQUEST);
+      expect(JSON.parse(mixedRequest.data.bids[0].ortb2Imp.native.request)).to.deep.equal(nativeRequest);
+
+      const invalidRangeBid = {
+        ...nativeBid,
+        mediaTypes: {
+          native: {
+            ortb: {
+              ...nativeRequest,
+              assets: [{ ...nativeRequest.assets[0], video: { ...nativeRequest.assets[0].video, minduration: 31 } }],
+            },
+          },
+        },
+      };
+      expect(spec.isBidRequestValid(invalidRangeBid)).to.equal(false);
+    });
+
     it('uses the normalized Native request supplied by Prebid Core', function () {
       const nativeOrtbRequest = {
         ver: '1.2',
