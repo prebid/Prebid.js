@@ -5947,11 +5947,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "malltv",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "mobkoi",
       "gvlid": 898
     },
