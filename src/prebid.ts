@@ -54,7 +54,7 @@ import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { AUDIO, BANNER, VIDEO } from './mediaTypes.js';
 import { delayIfPrerendering } from './utils/prerendering.js';
-import { type BidAdapter, type BidderSpec, newBidder } from './adapters/bidderFactory.js';
+import { type BidderSpec, newBidder } from './adapters/bidderFactory.js';
 import { normalizeFPD } from './fpd/normalize.js';
 import type { Bid } from "./bidfactory.ts";
 import type { AdUnit, AdUnitDefinition, BidderParams } from "./adUnits.ts";
@@ -1051,12 +1051,17 @@ function getEvents() {
 }
 addApiMethod('getEvents', getEvents);
 
-function registerBidAdapter(adapter: BidAdapter, bidderCode: BidderCode): void;
-function registerBidAdapter<B extends BidderCode>(adapter: void, bidderCode: B, spec: BidderSpec<B>): void;
-function registerBidAdapter(bidderAdaptor, bidderCode, spec?) {
+/**
+ * Register a bid adapter from a bidderFactory spec. The first argument is ignored; it used to take a
+ * pre-bidderFactory adapter function, which Prebid 12 no longer accepts.
+ */
+function registerBidAdapter<B extends BidderCode>(adapter: null | undefined, bidderCode: B, spec: BidderSpec<B>): void {
+  if (spec == null) {
+    logError(`registerBidAdapter('${bidderCode}'): a bidder spec is required; adapter functions are no longer supported`);
+    return;
+  }
   try {
-    const bidder = spec ? newBidder(spec) : bidderAdaptor();
-    adapterManager.registerBidAdapter(bidder, bidderCode);
+    adapterManager.registerBidAdapter(newBidder(spec), bidderCode);
   } catch (e) {
     logError('Error registering bidder adapter : ' + e.message);
   }
