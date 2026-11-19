@@ -90,9 +90,12 @@ export function getBidToRender(bid: Bid | undefined, forRender: boolean, callbac
 }
 
 export function canReplaceExpiredBid(bid: Bid) {
-  // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply
+  // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply;
+  // a deferred or winning bid is waiting for (or was billed by) `triggerBilling` on its own ad ID
   return isFn(config.getConfig('auctionOptions')?.replaceExpiredBid) &&
     bid.status !== BID_STATUS.RENDERED &&
+    !bid.deferRendering &&
+    !WINNERS.has(bid) &&
     !bidFilters.isBidNotExpired(bid);
 }
 

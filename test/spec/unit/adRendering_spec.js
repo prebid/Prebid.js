@@ -349,6 +349,18 @@ describe('adRendering', () => {
           sinon.assert.notCalled(replaceExpiredBid);
         });
 
+        it('should not ask for a replacement of a bid that defers rendering', () => {
+          expired.deferRendering = true;
+          expect(getBid('expired')).to.equal(expired);
+          sinon.assert.notCalled(replaceExpiredBid);
+        });
+
+        it('should not ask for a replacement of a bid that already won', () => {
+          markWinner(expired);
+          expect(getBid('expired')).to.equal(expired);
+          sinon.assert.notCalled(replaceExpiredBid);
+        });
+
         it('should not ask for a replacement when not rendering', () => {
           expect(getBid('expired', false)).to.equal(expired);
           sinon.assert.notCalled(replaceExpiredBid);
