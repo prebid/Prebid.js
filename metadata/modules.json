@@ -5591,13 +5591,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "kpuid",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "lmpid",
       "gvlid": null,
       "disclosureURL": null,

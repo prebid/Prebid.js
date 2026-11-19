@@ -164,16 +164,6 @@ pbjs.setConfig({
         }, {
             name: "gemiusId"
         }, {
-             name: "kpuid",
-             params:{
-                    accountid: 124 // example of account id
-                   },
-             storage: {
-                 type: "cookie",
-                 name: "knssoId",
-                 expires: 30
-                  },
-        {
              name: "dacId"
         },
         {
@@ -331,17 +321,6 @@ pbjs.setConfig({
                 name: "_dpes_id",
                 expires: 90
             }
-        },{
-             name: "kpuid",
-                   params:{
-                     accountid: 124 // example of account id
-                   },
-             storage: {
-                 type: "html5",
-                 name: "knssoId",
-                 expires: 30
-                  },
-        }
         },
         {
             name: 'imuid',

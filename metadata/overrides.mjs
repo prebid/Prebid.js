@@ -9,7 +9,6 @@ export default {
   experianRtdProvider: 'experian_rtid',
   gravitoIdSystem: 'gravitompId',
   intentIqAnalyticsAdapter: 'iiqAnalytics',
-  kinessoIdSystem: 'kpuid',
   mobianRtdProvider: 'mobianBrandSafety',
   neuwoRtdProvider: 'NeuwoRTDModule',
   oneKeyIdSystem: 'oneKeyData',
