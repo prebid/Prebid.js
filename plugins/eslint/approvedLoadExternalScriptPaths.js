@@ -5,7 +5,6 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'src/debugging.js',
   'src/Renderer.js',
   // RTD modules:
-  'modules/aaxBlockmeterRtdProvider.js',
   'modules/adagioRtdProvider.js',
   'modules/adlooxAnalyticsAdapter.js',
   'modules/arcspanRtdProvider.js',
