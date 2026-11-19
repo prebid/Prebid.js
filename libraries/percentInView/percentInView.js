@@ -354,7 +354,12 @@ startAuction.before(mkIntersectionHook());
 // main thread time is available to the observer
 requestBids.before(mkPrewarmHook(), 100);
 
+const isDetached = (element) => element?.isConnected === false;
+
 export function percentInView(element, { w, h } = {}) {
+  if (isDetached(element)) {
+    return 0;
+  }
   if (!observerAllowed()) {
     return percentInViewStatic(element, { w, h });
   }
@@ -388,7 +393,7 @@ export function percentInView(element, { w, h } = {}) {
  * @returns {boolean} True if viewability is measurable
  */
 export function isViewabilityMeasurable(element) {
-  return !inIframe() && element !== null;
+  return !inIframe() && element !== null && !isDetached(element);
 }
 
 /**
