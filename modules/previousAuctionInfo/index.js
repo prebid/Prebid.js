@@ -6,6 +6,8 @@ import { startAuction } from '../../src/prebid.js';
 export const CONFIG_NS = 'previousAuctionInfo';
 export let previousAuctionInfoEnabled = false;
 let enabledBidders = [];
+// bidders Prebid Server asked us to relay for (bid.relayPreviousAuctionInfo), in addition to `enabledBidders`
+let relayBidders = new Set();
 let maxQueueLength = 10;
 let handlersAttached = false;
 
@@ -14,6 +16,7 @@ export let auctionState = {};
 export function resetPreviousAuctionInfo() {
   previousAuctionInfoEnabled = false;
   enabledBidders = [];
+  relayBidders = new Set();
   auctionState = {};
   deinitHandlers();
 }
@@ -72,9 +75,18 @@ export const onAuctionEndHandler = (auctionDetails) => {
       });
     }
 
+    const relayRequestIds = new Set(
+      [...(auctionDetails.bidsReceived || []), ...(auctionDetails.bidsRejected || [])]
+        .filter(bid => bid.relayPreviousAuctionInfo === true)
+        .map(bid => bid.requestId)
+    );
+
     if (auctionDetails.bidderRequests?.length) {
       auctionDetails.bidderRequests.forEach(bidderRequest => {
-        const enabledBidder = enabledBidders.length === 0 || enabledBidders.find(bidderCode => bidderCode === bidderRequest.bidderCode);
+        if (bidderRequest.bids?.some(bid => relayRequestIds.has(bid.bidId))) {
+          relayBidders.add(bidderRequest.bidderCode);
+        }
+        const enabledBidder = isEnabledBidder(bidderRequest.bidderCode);
 
         if (enabledBidder) {
           auctionState[bidderRequest.bidderCode] = auctionState[bidderRequest.bidderCode] || [];
@@ -109,6 +121,10 @@ export const onAuctionEndHandler = (auctionDetails) => {
   } catch (error) {}
 };
 
+function isEnabledBidder(bidderCode) {
+  return enabledBidders.length === 0 || enabledBidders.includes(bidderCode) || relayBidders.has(bidderCode);
+}
+
 export const onBidWonHandler = (winningBid) => {
   const winningTid = winningBid.transactionId;
 
@@ -120,9 +136,8 @@ export const onBidWonHandler = (winningBid) => {
 };
 
 export function startAuctionHook(next, req) {
-  const bidders = enabledBidders.length ? enabledBidders : Object.keys(auctionState);
-  bidders
-    .filter(bidder => auctionState[bidder]?.length)
+  Object.keys(auctionState)
+    .filter(bidder => isEnabledBidder(bidder) && auctionState[bidder]?.length)
     .forEach(bidder => {
       auctionState[bidder].forEach(payload => { delete payload.transactionId; });
       deepSetValue(req.ortb2Fragments, `bidder.${bidder}.ext.prebid.previousauctioninfo`, auctionState[bidder]);

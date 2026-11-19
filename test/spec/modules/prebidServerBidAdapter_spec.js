@@ -35,6 +35,11 @@ import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
+import {
+  onAuctionEndHandler,
+  resetPreviousAuctionInfo,
+  startAuctionHook
+} from '../../../modules/previousAuctionInfo/index.js';
 import { ACTIVITY_TRANSMIT_UFPD } from '../../../src/activities/activities.js';
 import { MODULE_TYPE_PREBID } from '../../../src/activities/modules.js';
 import { ACTIVITY_PARAM_S2S_NAME } from '../../../src/activities/params.js';
@@ -2364,6 +2369,24 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('forwards bidder-specific ext.prebid.previousauctioninfo in ext.prebid.bidderconfig', () => {
+      const previousauctioninfo = [{ bidId: 'prev-bid', source: 'pbjs', bidderCpm: 1.5, timestamp: 1 }];
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids({
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {},
+          bidder: { appnexus: { ext: { prebid: { previousauctioninfo } } } }
+        }
+      }, BID_REQUESTS, addBidResponse, done, ajax);
+      const payload = JSON.parse(server.requests[0].requestBody);
+      expect(payload.ext.prebid.bidderconfig).to.eql([{
+        bidders: ['appnexus'],
+        config: { ortb2: { ext: { prebid: { previousauctioninfo } } } }
+      }]);
+      expect(payload.ext.prebid.previousauctioninfo).to.not.exist;
+    });
+
     describe('user.ext.eids', () => {
       let req;
       beforeEach(() => {
@@ -3807,6 +3830,83 @@ describe('S2S Adapter', function () {
         const response = addBidResponse.firstCall.args[1];
         expect(response).to.have.property('pbsBidId', '654321');
       }
+    });
+
+    describe('ext.prebid.relaypreviousauctioninfo', () => {
+      function respondWith(relay) {
+        const response = utils.deepClone(RESPONSE_OPENRTB);
+        if (relay !== undefined) {
+          response.seatbid[0].bid[0].ext.prebid.relaypreviousauctioninfo = relay;
+        }
+        config.setConfig({ s2sConfig: CONFIG });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(response));
+        sinon.assert.calledOnce(addBidResponse);
+        return addBidResponse.firstCall.args[1];
+      }
+
+      it('sets relayPreviousAuctionInfo on the bid when PBS asks for it', () => {
+        expect(respondWith(true).relayPreviousAuctionInfo).to.be.true;
+      });
+
+      [undefined, false, 'true'].forEach(relay => {
+        it(`does not set relayPreviousAuctionInfo when the flag is ${JSON.stringify(relay)}`, () => {
+          expect(respondWith(relay)).to.not.have.property('relayPreviousAuctionInfo');
+        });
+      });
+
+      describe('with the previousAuctionInfo module', () => {
+        afterEach(() => {
+          resetPreviousAuctionInfo();
+        });
+
+        it('forwards info for a flagged bidder to PBS on the next auction', () => {
+          config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['someOtherBidder'] } });
+          const bid = respondWith(true);
+          onAuctionEndHandler({
+            // auction.js sets adUnitCode, which the stubbed addBidResponse skips
+            bidsReceived: [{ ...bid, adUnitCode: addBidResponse.firstCall.args[0] }],
+            bidsRejected: [],
+            bidderRequests: BID_REQUESTS,
+            timestamp: 1
+          });
+          const ortb2Fragments = { global: {}, bidder: {} };
+          startAuctionHook((req) => {
+            adapter.callBids({ ...REQUEST, ortb2Fragments: req.ortb2Fragments }, BID_REQUESTS, addBidResponse, done, ajax);
+          }, { ortb2Fragments });
+          const payload = JSON.parse(server.requests[1].requestBody);
+          expect(payload.ext.prebid.bidderconfig).to.have.lengthOf(1);
+          expect(payload.ext.prebid.bidderconfig[0].bidders).to.eql(['appnexus']);
+          const info = payload.ext.prebid.bidderconfig[0].config.ortb2.ext.prebid.previousauctioninfo;
+          expect(info).to.have.lengthOf(1);
+          expect(info[0]).to.include({
+            bidderRequestId: '3d1063078dfcc8',
+            bidId: '123',
+            source: 'pbjs',
+            adUnitCode: 'div-gpt-ad-1460505748561-0',
+            highestBidCpm: 0.5,
+            highestBidCurrency: 'EUR',
+            bidderCpm: 0.5,
+            bidderCurrency: 'EUR',
+            timestamp: 1
+          });
+          expect(info[0]).to.not.have.property('transactionId');
+        });
+
+        it('does not forward info for an unflagged bidder that is not enabled', () => {
+          config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['someOtherBidder'] } });
+          const bid = respondWith(undefined);
+          onAuctionEndHandler({
+            bidsReceived: [bid],
+            bidsRejected: [],
+            bidderRequests: BID_REQUESTS,
+            timestamp: 1
+          });
+          const ortb2Fragments = { global: {}, bidder: {} };
+          startAuctionHook(() => {}, { ortb2Fragments });
+          expect(ortb2Fragments.bidder).to.eql({});
+        });
+      });
     });
 
     it('add request property pbsBidId with ext.prebid.bidid value', function () {
