@@ -4080,20 +4080,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pwbid",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "pubwise",
-      "aliasOf": "pwbid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "advangelists",
       "aliasOf": null,
       "gvlid": null,
