@@ -263,7 +263,7 @@ function isValidNativeRequest(request: unknown): request is NativeRequest {
         !fields.mimes.every((mime) => typeof mime === 'string' && mime.trim().length > 0) ||
         !Array.isArray(fields.protocols) || fields.protocols.length === 0 ||
         !fields.protocols.every((protocol) => Number.isInteger(protocol) && protocol > 0) ||
-        !Number.isInteger(fields.minduration) || (fields.minduration as number) <= 0 ||
+        !Number.isInteger(fields.minduration) || (fields.minduration as number) < 0 ||
         !Number.isInteger(fields.maxduration) || (fields.maxduration as number) < (fields.minduration as number))) return false;
     if (assetTypes[0] === 'data' && (!Number.isInteger(fields.type) || (fields.type as number) <= 0)) return false;
     if (assetIds.has(asset.id as number)) return false;
