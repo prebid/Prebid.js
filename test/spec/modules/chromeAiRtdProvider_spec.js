@@ -1,5 +1,6 @@
 import * as chromeAiRtdProvider from 'modules/chromeAiRtdProvider.js';
 import * as utils from 'src/utils.js';
+import { getSignals } from 'libraries/gptUtils/gptUtils.js';
 
 import 'src/storageManager.js';
 
@@ -548,7 +549,7 @@ describe('Chrome AI RTD Provider', function () {
 
       it('asks the Prompt API for Content Taxonomy 2.2 tier 1 by default and writes cattax 6', async function () {
         const LanguageModel = mockApi('LanguageModel', session);
-        expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2 } })).to.be.true;
+        expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2, gamPps: false } })).to.be.true;
         expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
         expect(LanguageModel.create.firstCall.args[0].monitor).to.be.a('function');
         const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
@@ -681,14 +682,14 @@ describe('Chrome AI RTD Provider', function () {
 
       it('does not overwrite publisher site.pagecat', async function () {
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, gamPps: false } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
         expect(runAuction().site).to.deep.equal({ pagecat: ['IAB1'], cattax: 1 });
       });
 
       it('does not change a publisher site.cattax of another taxonomy', async function () {
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, gamPps: false } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 7 } };
         expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 7 });
       });
@@ -696,7 +697,7 @@ describe('Chrome AI RTD Provider', function () {
       ['cat', 'sectioncat'].forEach(field => {
         it('skips taxonomy 6 when the publisher has site.' + field + ' without cattax, which means taxonomy 1', async function () {
           mockApi('LanguageModel', session);
-          await init({ categories: { enabled: true } });
+          await init({ categories: { enabled: true, gamPps: false } });
           reqBidsConfigObj.ortb2Fragments.global = { site: { [field]: ['IAB1-1'] } };
           expect(runAuction().site).to.deep.equal({ [field]: ['IAB1-1'] });
         });
@@ -712,7 +713,7 @@ describe('Chrome AI RTD Provider', function () {
 
       it('keeps a matching publisher site.cattax', async function () {
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, gamPps: false } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { cattax: 6, sectioncat: ['483'] } };
         expect(runAuction().site).to.deep.equal({ cattax: 6, sectioncat: ['483'], pagecat: ['1', '640', '483'] });
       });
@@ -732,6 +733,133 @@ describe('Chrome AI RTD Provider', function () {
           { id: 'IAB1', confidence: 0.9 }, { id: 'toString', confidence: 0.9 }, null
         ], { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
         expect(chromeAiRtdProvider.selectCategories(undefined, { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal([]);
+      });
+    });
+
+    describe('prompt overrides', function () {
+      it('uses the categories prompt, still appending the categories and page text and constraining the IDs', async function () {
+        const session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '9999', confidence: 0.9 }] })),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, prompt: 'Pick the main topics of this car blog.' } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt.startsWith('Pick the main topics of this car blog.')).to.be.true;
+        expect(prompt).to.not.include('Classify this web page text');
+        expect(prompt).to.include('640: Television').and.to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.categories.items.properties.id.enum)
+          .to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('uses the keywords prompt, still appending the page text and the keyword array schema', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, maxKeywords: 4, prompt: 'Give product keywords.' } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt.startsWith('Give product keywords.')).to.be.true;
+        expect(prompt).to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.keywords).to.deep.equal({ type: 'array', items: { type: 'string' }, maxItems: 4 });
+        expect(runAuction().site.content.keywords).to.equal('ev');
+      });
+
+      [['', 'empty'], [42, 'non-string'], ['   ', 'blank']].forEach(([value, label]) => {
+        it(`warns about a ${label} prompt and uses the default`, async function () {
+          const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+          mockApi('LanguageModel', session);
+          const logWarnStub = sandbox.stub(utils, 'logWarn');
+          await init({ keywords: { enabled: true, prompt: value } });
+          expect(logWarnStub.calledWith(sinon.match('keywords.prompt'))).to.be.true;
+          expect(session.prompt.firstCall.args[0]).to.include('short keywords that describe the topic');
+        });
+      });
+
+      it('refreshes cached categories and keywords when the prompt changes', async function () {
+        const session = {
+          prompt: sinon.stub().callsFake((text, { responseConstraint }) => Promise.resolve(JSON.stringify(
+            responseConstraint.properties.keywords ? { keywords: ['ev'] } : { categories: [{ id: '1', confidence: 0.9 }] }
+          ))),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, prompt: 'A' }, categories: { enabled: true, prompt: 'A' } });
+        expect(session.prompt.callCount).to.equal(2);
+        const stored = Object.assign({}, ...mockStorage.setDataInLocalStorage.getCalls()
+          .map(call => JSON.parse(call.args[1])[chromeAiRtdProvider.getCurrentUrl()]));
+        setCache({ extractedKeywords: stored.extractedKeywords, categories: stored.categories });
+        await init({ keywords: { enabled: true, prompt: 'A' }, categories: { enabled: true, prompt: 'A' } });
+        expect(session.prompt.callCount).to.equal(2);
+        await init({ keywords: { enabled: true, prompt: 'B' }, categories: { enabled: true, prompt: 'B' } });
+        expect(session.prompt.callCount).to.equal(4);
+      });
+    });
+
+    describe('GAM Publisher Provided Signals', function () {
+      let session;
+
+      beforeEach(function () {
+        session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '640', confidence: 0.8 }] })),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+      });
+
+      it('writes no segtax 6 entry with gamPps: false', async function () {
+        await init({ categories: { enabled: true, gamPps: false } });
+        const global = runAuction();
+        expect(global.site.content).to.be.undefined;
+        expect(getSignals(global)).to.deep.equal([]);
+      });
+
+      it('writes a segtax 6 site.content.data entry by default, which getSignals sends as IAB_CONTENT_2_2', async function () {
+        await init({ categories: { enabled: true } });
+        const global = runAuction();
+        expect(global.site.pagecat).to.deep.equal(['1', '640']);
+        expect(global.site.content.data).to.deep.equal([{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] }]);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('writes the segtax 6 entry even when the publisher pagecat is kept', async function () {
+        await init({ categories: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
+        const global = runAuction();
+        expect(global.site.pagecat).to.deep.equal(['IAB1']);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('keeps the decisions entry separate', async function () {
+        const DecisionModel = mockApi('DecisionModel', {
+          decide: sinon.stub().resolves({ q: { id: 'q', label: 'true', confidence: 1 } }),
+          destroy: sinon.stub()
+        });
+        await init({
+          categories: { enabled: true },
+          decisions: { enabled: true, questions: [{ id: 'q', type: 'boolean', prompt: 'Is it about cars?' }] }
+        });
+        expect(DecisionModel.create.called).to.be.true;
+        const global = runAuction();
+        expect(global.site.content.data).to.deep.equal([
+          { name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] },
+          { name: 'chromeAi', segment: [{ id: 'q', value: 'true' }] }
+        ]);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('does not add a second segtax 6 chromeAi entry', async function () {
+        await init({ categories: { enabled: true } });
+        const existing = [{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '483' }] }];
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: existing } } };
+        expect(runAuction().site.content.data).to.deep.equal(existing);
+      });
+
+      it('writes no segtax entry for taxonomy 1', async function () {
+        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        const global = runAuction();
+        expect(global.site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
+        expect(getSignals(global)).to.deep.equal([]);
       });
     });
 

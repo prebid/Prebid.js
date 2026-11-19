@@ -34,6 +34,11 @@ export interface ChromeAiKeywordsParams {
   /** Defaults to `10`. */
   maxKeywords?: number;
   /**
+   * Replaces the default instruction. The module still appends the page text, and the response is still
+   * constrained by its JSON schema. Must be a non-empty string.
+   */
+  prompt?: string;
+  /**
    * Defaults to `'site.content.keywords'`, which gets a comma-separated string. A path ending in `kwarray` gets an array.
    */
   ortb2Path?: string;
@@ -58,6 +63,16 @@ export interface ChromeAiCategoriesParams {
   minScore?: number;
   /** Defaults to `3`. */
   maxCategories?: number;
+  /**
+   * Replaces the default instruction. The module still appends the tier 1 category list and the page text, and the response is still
+   * constrained by its JSON schema. Must be a non-empty string.
+   */
+  prompt?: string;
+  /**
+   * With taxonomy 6, also writes the categories to `site.content.data` as a `segtax` 6 entry, which `gptPreAuction`
+   * sends to Google Ad Manager as `IAB_CONTENT_2_2` Publisher Provided Signals. Defaults to `true`.
+   */
+  gamPps?: boolean;
   /** Defaults to `true`. */
   cacheInLocalStorage?: boolean;
 }

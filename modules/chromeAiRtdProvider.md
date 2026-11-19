@@ -6,7 +6,7 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds 
 
 - detect the page language with the [Language Detector API](https://developer.chrome.com/docs/ai/language-detection), written to `site.content.language`;
 - extract keywords with the [Prompt API](https://github.com/webmachinelearning/prompt-api) (`LanguageModel`), falling back to the [Summarizer API](https://developer.chrome.com/docs/ai/summarizer-api), written to `site.content.keywords`;
-- classify the page into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Prompt API, written to `site.pagecat`;
+- classify the page into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Prompt API, written to `site.pagecat`. With Content Taxonomy 2.2, the categories also reach Google Ad Manager as Publisher Provided Signals (`IAB_CONTENT_2_2`) through the `gptPreAuction` module, with no extra setup beyond GPT targeting;
 - answer publisher-defined questions about the page with the [Decisions API](https://github.com/explainers-by-googlers/decisions-api) (`DecisionModel`), falling back to the Prompt API, written to `site.content.data`.
 
 ## API availability
@@ -97,6 +97,7 @@ pbjs.setConfig({
 | `languageDetector.ortb2Path` | String | Where to write the language | `'site.content.language'` |
 | `keywords.enabled` | Boolean | Extract keywords with the Prompt API, falling back to the Summarizer | `false` |
 | `keywords.maxKeywords` | Number | Maximum number of keywords | `10` |
+| `keywords.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
 | `keywords.ortb2Path` | String | Where to write the keywords: a comma-separated string, or an array when the path ends in `kwarray` | `'site.content.keywords'` |
 | `keywords.cacheInLocalStorage` | Boolean | Cache the keywords in localStorage | `true` |
 | `summarizer.enabled` | Boolean | Use only the Summarizer for keywords. Ignored when `keywords.enabled` is `true` | `false` |
@@ -109,6 +110,8 @@ pbjs.setConfig({
 | `categories.taxonomy` | Number | AdCOM `cattax` of the categories: `6` (Content Taxonomy 2.2) or `1` (Content Category Taxonomy 1.0) | `6` |
 | `categories.minScore` | Number | Minimum confidence the model gives a category (0 - 1) | `0.5` |
 | `categories.maxCategories` | Number | Maximum number of categories | `3` |
+| `categories.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
+| `categories.gamPps` | Boolean | With taxonomy 6, also send the categories to Google Ad Manager as Publisher Provided Signals, see [Google Ad Manager](#google-ad-manager-publisher-provided-signals) | `true` |
 | `categories.cacheInLocalStorage` | Boolean | Cache the categories in localStorage | `true` |
 | `decisions.enabled` | Boolean | Answer `decisions.questions` about the page | `false` |
 | `decisions.questions` | Array | Questions in the Decisions API schema shape, see below | `[]` |
@@ -145,9 +148,56 @@ The bundled tier 1 lists come from the IAB Tech Lab taxonomy files:
 - `taxonomy: 6`, Content Taxonomy 2.2: the 29 topical categories, with numeric IDs from 1 to 680. IDs above 680 are never used. The file's other parentless rows are left out: Sensitive Topics (`v9i3On`), Brand Suitability and Risk (`MRkz4Q`), and the Content Channel, Type, Source, Media Format, Language and Source Geo extension dimensions (1000 - 1219).
 - `taxonomy: 1`, Content Category Taxonomy 1.0: `IAB1` - `IAB23`. `IAB24` Uncategorized, `IAB25` Non-Standard Content and `IAB26` Illegal Content are left out because they aren't page topics.
 
+#### Google Ad Manager Publisher Provided Signals
+
+With `taxonomy: 6`, the categories are also added to `site.content.data` as an entry with `ext.segtax: 6`:
+
+```javascript
+{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] }
+```
+
+The `gptPreAuction` module, which is on by default when it is in the build, sends segtax 6 entries to GPT as the `IAB_CONTENT_2_2` Publisher Provided Signals when targeting is set with `setTargetingForGPTAsync`. This module never calls `googletag` itself. The entry is added even when the publisher's own `site.pagecat` is kept, but not when `site.content.data` already has a segtax 6 `chromeAi` entry.
+
+```bash
+gulp build --modules=rtdModule,chromeAiRtdProvider,gptPreAuction
+```
+
+```javascript
+pbjs.setConfig({
+  realTimeData: {
+    dataProviders: [{
+      name: 'chromeAi',
+      params: {
+        categories: { enabled: true } // taxonomy 6 and gamPps are the defaults
+      }
+    }]
+  }
+});
+// later, after the auction:
+pbjs.setTargetingForGPTAsync();
+```
+
+Set `categories.gamPps: false` to keep the categories out of `site.content.data` and GAM. Google Ad Manager has no Publisher Provided Signals taxonomy for Content Category Taxonomy 1.0, so `taxonomy: 1` never adds this entry: use 2.2 for GAM.
+
 The module doesn't use the [Classifier API](https://github.com/explainers-by-googlers/classifier-api): its explainer says it is no longer pursued.
 
 Categories are not written when the auction already has `site.pagecat`, or when the publisher's site categories are in another taxonomy than `categories.taxonomy`: a different `site.cattax`, or, for taxonomy 6, `site.cat` or `site.sectioncat` without `site.cattax` (which OpenRTB reads as taxonomy 1). When they match, `site.pagecat` is added next to the publisher's categories. `site.cattax` also describes `site.cat` and `site.sectioncat`, so it can't be changed.
+
+### Custom prompts
+
+`keywords.prompt` and `categories.prompt` replace the module's default instruction. The module still adds the rest:
+
+- for categories, the tier 1 category list (`ID: name` lines) and then the page text;
+- for keywords, the page text.
+
+The Prompt API's `responseConstraint` still applies, so a custom prompt can't produce IDs outside the taxonomy list, more than `maxCategories` or `maxKeywords` results, or another response shape. A prompt that isn't a non-empty string is ignored with a warning, and the default is used. Changing the prompt refreshes cached results.
+
+```javascript
+categories: {
+  enabled: true,
+  prompt: 'Pick the categories that best describe the main subject of this recipe site page, ignoring navigation and ads.'
+}
+```
 
 ### Publisher questions (`decisions`)
 
@@ -162,7 +212,7 @@ Categories are not written when the auction already has `site.pagecat`, or when 
 
 The Decisions API answers all questions in one pass. Answers with a confidence below `minConfidence` are dropped. When `DecisionModel` is unavailable, the Prompt API answers instead, constrained by a JSON schema built from the same questions so that each answer is one of the question's labels; it gives no confidence, so `minConfidence` doesn't apply.
 
-The answers are added to `site.content.data` as one entry:
+The answers are added to `site.content.data` as one entry, without `ext.segtax`, separate from the categories entry:
 
 ```javascript
 {
@@ -175,13 +225,13 @@ The answers are added to `site.content.data` as one entry:
 }
 ```
 
-No entry is added when `site.content.data` already has one named `chromeAi`.
+No entry is added when `site.content.data` already has a `chromeAi` entry without `ext.segtax`.
 
 ## Storage
 
 All results are stored in localStorage under the `chromeAi_detected_data` key, as an object keyed by page URL, when storage is allowed for the module by the activity controls (for example, the `storage` activity and TCF consent).
 
-Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords`; `taxonomy`, `minScore` and `maxCategories`; the questions and `minConfidence`), and detected again when those settings change.
+Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords` and `prompt`; `taxonomy`, `minScore`, `maxCategories` and `prompt`; the questions and `minConfidence`), and detected again when those settings change.
 
 ## Requirements
 

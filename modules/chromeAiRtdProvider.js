@@ -18,6 +18,7 @@ export const CONSTANTS = Object.freeze({
   ACTIVATION_EVENTS: ['click', 'keydown', 'mousedown', 'touchend', 'pointerdown', 'pointerup'],
   MAX_TEXT_LENGTH: 1000, // Limit to prevent QuotaExceededError with Chrome AI APIs
   DECISION_TYPES: ['boolean', 'choice', 'score'],
+  CATTAX_IAB_CONTENT_2_2: 6,
   DEFAULT_CONFIG: {
     languageDetector: {
       enabled: true,
@@ -42,6 +43,7 @@ export const CONSTANTS = Object.freeze({
       enabled: false,
       minScore: 0.5,
       maxCategories: 3,
+      gamPps: true,
       taxonomy: 6,
       cacheInLocalStorage: true
     },
@@ -487,7 +489,8 @@ export const extractKeywords = async (text, config, retry) => {
   }
   const maxKeywords = config.maxKeywords;
   const response = await promptForJson(
-    `List up to ${maxKeywords} short keywords that describe the topic of this web page text:\n\n${text}`,
+    (config.prompt ?? `List up to ${maxKeywords} short keywords that describe the topic of this web page text.`) +
+      `\n\nPage text:\n${text}`,
     getKeywordsSchema(maxKeywords)
   );
   const keywords = (response?.keywords || []).filter(isStr).map(kw => kw.trim()).filter(Boolean);
@@ -516,9 +519,11 @@ const getCategoriesSchema = (taxonomy, maxCategories) => ({
   additionalProperties: false
 });
 
-const getCategoriesPrompt = (text, taxonomy, maxCategories) =>
-  `Classify this web page text into at most ${maxCategories} ${TAXONOMY_NAMES[taxonomy]} categories, ` +
-  `each with your confidence between 0 and 1. Use only these category IDs (ID: name):\n` +
+// A publisher `prompt` replaces only the instruction; the category list and page text are always appended.
+const getCategoriesPrompt = (text, { taxonomy, maxCategories, prompt }) =>
+  (prompt ?? `Classify this web page text into at most ${maxCategories} ${TAXONOMY_NAMES[taxonomy]} categories, ` +
+    `each with your confidence between 0 and 1.`) +
+  `\n\nCategory IDs (ID: name):\n` +
   Object.entries(TIER_1_CATEGORIES[taxonomy]).map(([id, name]) => `${id}: ${name}`).join('\n') +
   `\n\nPage text:\n${text}`;
 
@@ -539,7 +544,7 @@ export const classifyPage = async (text, config, retry) => {
   const api = await selectApi('Categories', [{ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS }], retry);
   if (!api || api === DEFERRED) return api;
   const classifications = (await promptForJson(
-    getCategoriesPrompt(text, config.taxonomy, config.maxCategories),
+    getCategoriesPrompt(text, config),
     getCategoriesSchema(config.taxonomy, config.maxCategories)
   ))?.categories;
   return selectCategories(classifications, config);
@@ -620,6 +625,13 @@ export const answerQuestions = async (text, config, retry) => {
 const init = async (config) => {
   moduleConfig = mergeModuleConfig(config);
   detected = {};
+  ['keywords', 'categories'].forEach(feature => {
+    const prompt = moduleConfig[feature]?.prompt;
+    if (prompt !== undefined && !(isStr(prompt) && prompt.trim() !== '')) {
+      logWarn(`${CONSTANTS.LOG_PRE_FIX} ${feature}.prompt must be a non-empty string; using the default prompt.`);
+      delete moduleConfig[feature].prompt;
+    }
+  });
   logMessage(`${CONSTANTS.LOG_PRE_FIX} Initializing with config:`, moduleConfig);
 
   const activeInitializations = [];
@@ -633,7 +645,8 @@ const init = async (config) => {
 
   if (moduleConfig.keywords?.enabled === true) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords enabled. Initializing...`);
-    activeInitializations.push(initFeature('extractedKeywords', moduleConfig.keywords, extractKeywords, [moduleConfig.keywords.maxKeywords]));
+    activeInitializations.push(initFeature('extractedKeywords', moduleConfig.keywords, extractKeywords,
+      [moduleConfig.keywords.maxKeywords, moduleConfig.keywords.prompt ?? null]));
     if (moduleConfig.summarizer?.enabled === true) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} keywords is enabled, so the Summarizer only runs as its fallback.`);
     }
@@ -649,9 +662,10 @@ const init = async (config) => {
     moduleConfig.categories.enabled = false;
   }
   if (moduleConfig.categories?.enabled === true) {
-    const { taxonomy, minScore, maxCategories } = moduleConfig.categories;
+    const { taxonomy, minScore, maxCategories, prompt } = moduleConfig.categories;
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled (taxonomy ${taxonomy}). Initializing...`);
-    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage, [taxonomy, minScore, maxCategories]));
+    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage,
+      [taxonomy, minScore, maxCategories, prompt ?? null]));
   }
 
   if (moduleConfig.decisions?.enabled === true) {
@@ -700,10 +714,22 @@ const enrichKeywords = (global, path, keywords, format) => {
  */
 const getPublisherCattax = (site) => site.cattax ?? (hasValue(site.cat) || hasValue(site.sectioncat) ? 1 : null);
 
+const hasChromeAiData = (global, segtax) => (global.site?.content?.data || [])
+  .some(entry => entry?.name === CONSTANTS.SUBMODULE_NAME && entry.ext?.segtax === segtax);
+
 const enrichCategories = (global) => {
   const categories = detected.categories;
   const taxonomy = moduleConfig.categories.taxonomy;
   if (!isNonEmptyArray(categories)) return;
+  // gptPreAuction sends segtax 6 entries of site.content.data to GAM as IAB_CONTENT_2_2 Publisher Provided Signals.
+  // GAM has no 1.0 equivalent.
+  if (taxonomy === CONSTANTS.CATTAX_IAB_CONTENT_2_2 && moduleConfig.categories.gamPps !== false) {
+    if (hasChromeAiData(global, taxonomy)) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} site.content.data already has a segtax ${taxonomy} '${CONSTANTS.SUBMODULE_NAME}' entry.`);
+    } else {
+      mergeDeep(global, { site: { content: { data: [{ name: CONSTANTS.SUBMODULE_NAME, ext: { segtax: taxonomy }, segment: categories.map(id => ({ id })) }] } } });
+    }
+  }
   const site = global.site || {};
   if (hasValue(site.pagecat)) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} site.pagecat already in auction ORTB2, no category enrichment.`);
@@ -720,8 +746,7 @@ const enrichCategories = (global) => {
 const enrichDecisions = (global) => {
   const segment = detected.decisions;
   if (!isNonEmptyArray(segment)) return;
-  const data = global.site?.content?.data;
-  if (isArray(data) && data.some(entry => entry?.name === CONSTANTS.SUBMODULE_NAME)) {
+  if (hasChromeAiData(global, undefined)) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} site.content.data already has a '${CONSTANTS.SUBMODULE_NAME}' entry, no decisions enrichment.`);
     return;
   }
