@@ -170,10 +170,14 @@ describe('previous auction info', () => {
   });
 
   describe('Prebid Server relay instruction', () => {
-    function withRelayFor(...requestIds) {
+    // testBidder2 and testBidder3 are Prebid Server bidders, testBidder1 is client-side
+    function s2sAuction(...flaggedRequestIds) {
       const details = JSON.parse(JSON.stringify(auctionDetails));
+      details.bidderRequests.forEach(bidderRequest => {
+        bidderRequest.src = bidderRequest.bidderCode === 'testBidder1' ? 'client' : 's2s';
+      });
       details.bidsReceived.forEach(bid => {
-        if (requestIds.includes(bid.requestId)) {
+        if (flaggedRequestIds.includes(bid.requestId)) {
           bid.relayPreviousAuctionInfo = true;
         }
       });
@@ -188,65 +192,124 @@ describe('previous auction info', () => {
       );
     }
 
-    it('records and injects a flagged bidder that is not in the bidders list', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(withRelayFor('bidabc'));
-      expect(Object.keys(previousAuctionInfo.auctionState)).to.have.members(['testBidder1', 'testBidder2']);
-      const injected = injectedInfo();
-      expect(Object.keys(injected)).to.have.members(['testBidder1', 'testBidder2']);
-      expect(injected.testBidder2).to.have.lengthOf(1);
-      expect(injected.testBidder2[0]).to.include({ bidId: 'bidabc', bidderCpm: 2 });
-      expect(injected.testBidder2[0]).to.not.have.property('transactionId');
-    });
-
-    it('keeps recording a flagged bidder in later auctions', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(withRelayFor('bidabc'));
-      injectedInfo();
-      previousAuctionInfo.onAuctionEndHandler(auctionDetails);
-      expect(Object.keys(injectedInfo())).to.have.members(['testBidder1', 'testBidder2']);
-    });
-
-    it('does not record an unflagged bidder that is not in the bidders list', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(withRelayFor('bidabc'));
-      expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder3');
-      expect(injectedInfo()).to.not.have.property('testBidder3');
-    });
-
-    it('treats a flag on a rejected bid as a relay instruction', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler({
-        ...auctionDetails,
-        bidsReceived: [],
-        bidsRejected: [{ requestId: 'bidabc', rejectionReason: REJECTION_REASON.FLOOR_NOT_MET, relayPreviousAuctionInfo: true }]
+    describe('with an explicit bidders list', () => {
+      it('does not record or inject a flagged bidder that is not listed', () => {
+        config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction('bidabc'));
+        expect(Object.keys(previousAuctionInfo.auctionState)).to.eql(['testBidder1']);
+        expect(Object.keys(injectedInfo())).to.eql(['testBidder1']);
       });
-      expect(previousAuctionInfo.auctionState.testBidder2[0]).to.include({
-        bidId: 'bidabc',
-        rejectionReason: REJECTION_REASON.FLOOR_NOT_MET
+
+      it('records and injects listed Prebid Server bidders, flagged or not', () => {
+        config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder2', 'testBidder3'] } });
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction('bidabc'));
+        const injected = injectedInfo();
+        expect(Object.keys(injected)).to.have.members(['testBidder2', 'testBidder3']);
+        expect(injected.testBidder2[0]).to.include({ bidId: 'bidabc', bidderCpm: 2 });
+        expect(injected.testBidder3[0]).to.include({ bidId: 'bidxyz', bidderCpm: 3 });
       });
     });
 
-    it('does not record flagged bids when the module is not enabled', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: false } });
-      events.emit(EVENTS.AUCTION_END, withRelayFor('bid123', 'bidabc', 'bidxyz'));
-      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
-      expect(previousAuctionInfo.auctionState).to.eql({});
+    describe('without a bidders list', () => {
+      beforeEach(() => {
+        config.setConfig({ [CONFIG_NS]: { enabled: true } });
+      });
+
+      it('records client-side bidders and flagged Prebid Server bidders, but not unflagged ones', () => {
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction('bidabc'));
+        expect(Object.keys(previousAuctionInfo.auctionState)).to.have.members(['testBidder1', 'testBidder2']);
+        const injected = injectedInfo();
+        expect(Object.keys(injected)).to.have.members(['testBidder1', 'testBidder2']);
+        expect(injected.testBidder2[0]).to.include({ bidId: 'bidabc', bidderCpm: 2 });
+        expect(injected.testBidder2[0]).to.not.have.property('transactionId');
+      });
+
+      it('keeps recording a flagged Prebid Server bidder in later auctions', () => {
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction('bidabc'));
+        injectedInfo();
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction());
+        expect(Object.keys(injectedInfo())).to.have.members(['testBidder1', 'testBidder2']);
+      });
+
+      it('treats a flag on a rejected bid as a relay instruction', () => {
+        previousAuctionInfo.onAuctionEndHandler({
+          ...s2sAuction(),
+          bidsReceived: [],
+          bidsRejected: [{ requestId: 'bidabc', bidderCode: 'testBidder2', rejectionReason: REJECTION_REASON.FLOOR_NOT_MET, relayPreviousAuctionInfo: true }]
+        });
+        expect(previousAuctionInfo.auctionState.testBidder2[0]).to.include({
+          bidId: 'bidabc',
+          rejectionReason: REJECTION_REASON.FLOOR_NOT_MET
+        });
+        expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder3');
+      });
+
+      it('forgets flagged bidders when the module is disabled', () => {
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction('bidabc'));
+        config.setConfig({ [CONFIG_NS]: { enabled: false } });
+        config.setConfig({ [CONFIG_NS]: { enabled: true } });
+        previousAuctionInfo.onAuctionEndHandler(s2sAuction());
+        expect(Object.keys(injectedInfo())).to.eql(['testBidder1']);
+      });
+
+      describe('stored impressions', () => {
+        // stored impressions are requested with a null bidder; the seats that answered are named in the response
+        function storedImpAuction(flagged) {
+          return {
+            auctionId: 'auction123',
+            bidsReceived: [
+              { requestId: 'stored1', bidderCode: 'seatA', cpm: 1, adUnitCode: 'adUnit1', currency: 'USD', relayPreviousAuctionInfo: flagged.includes('seatA') },
+              { requestId: 'stored1', bidderCode: 'seatB', cpm: 2, adUnitCode: 'adUnit1', currency: 'USD', relayPreviousAuctionInfo: flagged.includes('seatB') }
+            ],
+            bidsRejected: [],
+            bidderRequests: [{
+              bidderCode: null,
+              src: 's2s',
+              bidderRequestId: 'reqStored',
+              bids: [{ bidId: 'stored1', bidder: null, adUnitCode: 'adUnit1' }]
+            }],
+            timestamp: 1
+          };
+        }
+
+        it('attributes the relay flag to the seat that responded', () => {
+          previousAuctionInfo.onAuctionEndHandler(storedImpAuction(['seatB']));
+          expect(Object.keys(previousAuctionInfo.auctionState)).to.eql(['seatB']);
+          expect(previousAuctionInfo.auctionState.seatB[0]).to.include({
+            bidId: 'stored1',
+            bidderCpm: 2,
+            highestBidCpm: 2
+          });
+          expect(Object.keys(injectedInfo())).to.eql(['seatB']);
+        });
+
+        it('records nothing when no seat is flagged', () => {
+          previousAuctionInfo.onAuctionEndHandler(storedImpAuction([]));
+          expect(previousAuctionInfo.auctionState).to.eql({});
+        });
+
+        it('applies an explicit list to the responding seats', () => {
+          config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['seatA'] } });
+          previousAuctionInfo.onAuctionEndHandler(storedImpAuction(['seatB']));
+          expect(Object.keys(previousAuctionInfo.auctionState)).to.eql(['seatA']);
+          expect(previousAuctionInfo.auctionState.seatA[0]).to.include({ bidderCpm: 1 });
+        });
+      });
     });
 
-    it('records flagged bids from AUCTION_END when the module is enabled', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      events.emit(EVENTS.AUCTION_END, withRelayFor('bidabc'));
-      expect(Object.keys(previousAuctionInfo.auctionState)).to.have.members(['testBidder1', 'testBidder2']);
-    });
+    describe('when the module is not enabled', () => {
+      it('records nothing, even for flagged bids', () => {
+        config.setConfig({ [CONFIG_NS]: { enabled: false } });
+        events.emit(EVENTS.AUCTION_END, s2sAuction('bid123', 'bidabc', 'bidxyz'));
+        expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
+        expect(previousAuctionInfo.auctionState).to.eql({});
+      });
 
-    it('forgets flagged bidders when the module is disabled', () => {
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(withRelayFor('bidabc'));
-      config.setConfig({ [CONFIG_NS]: { enabled: false } });
-      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
-      previousAuctionInfo.onAuctionEndHandler(auctionDetails);
-      expect(Object.keys(injectedInfo())).to.eql(['testBidder1']);
+      it('records from AUCTION_END once enabled', () => {
+        config.setConfig({ [CONFIG_NS]: { enabled: true } });
+        events.emit(EVENTS.AUCTION_END, s2sAuction('bidabc'));
+        expect(Object.keys(previousAuctionInfo.auctionState)).to.have.members(['testBidder1', 'testBidder2']);
+      });
     });
   });
 

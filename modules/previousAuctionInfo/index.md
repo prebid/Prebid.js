@@ -25,6 +25,10 @@ pbjs.setConfig({
 
 A Prebid Server host can turn on `requestPreviousAuctionInfo` for a bidder. Prebid Server then marks that bidder's bids with `seatbid[].bid[].ext.prebid.relaypreviousauctioninfo: true`, which the Prebid Server Bid Adapter exposes as `bid.relayPreviousAuctionInfo`.
 
-When the module is enabled, a bidder whose bid carried the flag is treated as if it were listed in `bidders` for the rest of the page view. Its info reaches Prebid Server in `ext.prebid.bidderconfig`, like any other bidder-specific first party data.
+Previous auction info can help a bidder lower its bids, so the publisher's configuration decides who receives it. Prebid Server can only narrow that set, never widen it:
 
-The flag does not turn the module on: with `enabled` not set to `true`, it is ignored. When `bidders` is omitted every bidder is already enabled, so the flag changes nothing.
+- With a `bidders` list, exactly those bidders are recorded, whether or not Prebid Server flags them. A flagged bidder that is not listed gets nothing.
+- Without a `bidders` list, client-side bidders are all recorded. A Prebid Server bidder is recorded only once Prebid Server has flagged one of its bids, and from then on for the rest of the page view.
+- The flag never turns the module on. If `enabled` is not `true`, the flag is ignored.
+
+For stored impressions, which are requested without a bidder, the flag and the recorded info belong to the seat that responded. The info reaches Prebid Server in `ext.prebid.bidderconfig`, like any other bidder-specific first party data.
