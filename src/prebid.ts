@@ -1340,7 +1340,7 @@ function triggerBilling({ adId, adUnitCode }: {
     bill(adId);
   } else {
     // the publisher knows only the ad ID of an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
-    getBidToRender(adId, false, (bid) => bill(bid?.adId ?? adId));
+    getBidToRender(auctionManager.findBidByAdId(adId), false, (bid) => bill(bid?.adId ?? adId));
   }
 }
 addApiMethod('triggerBilling', triggerBilling);

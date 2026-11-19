@@ -173,33 +173,21 @@ describe('safeRendering', () => {
         config.resetConfig();
       });
 
-      Object.entries({
-        'synchronously': () => replacement,
-        'as a promise': () => Promise.resolve(replacement),
-      }).forEach(([t, replaceExpiredBid]) => {
-        it(`renders the replacement returned ${t}, and authorizes its frame`, async () => {
-          config.setConfig({ auctionOptions: { replaceExpiredBid } });
-          renderBid(bidHandle);
-          await new Promise((resolve) => setTimeout(resolve));
-          const { adId, token } = getRenderArgs(bid.element);
-          expect(adId).to.eql(replacement.adId);
-          expect(validateToken(replacement, token)).to.be.true;
-        });
+      it('sets up the frame for the expired bid, leaving the replacement to its render request', () => {
+        const replaceExpiredBid = sinon.stub().returns(replacement);
+        config.setConfig({ auctionOptions: { replaceExpiredBid } });
+        renderBid(bidHandle);
+        const { adId, token } = getRenderArgs(bid.element);
+        expect(adId).to.eql(bid.adId);
+        expect(validateToken(bid, token)).to.be.true;
+        sinon.assert.notCalled(replaceExpiredBid);
       });
 
-      it('does not render a replacement for a different ad unit, nor touch its element', () => {
-        const otherElement = document.createElement('div');
-        otherElement.innerHTML = '<span>other slot</span>';
-        document.body.appendChild(otherElement);
-        try {
-          Object.assign(replacement, { adUnitCode: 'other-au', element: otherElement });
-          config.setConfig({ auctionOptions: { replaceExpiredBid: () => replacement } });
-          renderBid(bidHandle);
-          expect(getRenderArgs(bid.element).adId).to.eql(bid.adId);
-          expect(otherElement.innerHTML).to.eql('<span>other slot</span>');
-        } finally {
-          document.body.removeChild(otherElement);
-        }
+      it('sets up the frame even if suppressExpiredRender is set', () => {
+        config.setConfig({ auctionOptions: { replaceExpiredBid: () => replacement, suppressExpiredRender: true } });
+        renderBid(bidHandle);
+        expect(getRenderArgs(bid.element).adId).to.eql(bid.adId);
+        sinon.assert.neverCalledWith(events.emit, EVENTS.EXPIRED_RENDER);
       });
     });
 
@@ -501,6 +489,33 @@ describe('safeRendering', () => {
         await render();
         await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
         sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid, intervention: { type: 'test' } }));
+      });
+
+      describe('when the bid has expired and auctionOptions.replaceExpiredBid is set', () => {
+        let replacement;
+        beforeEach(() => {
+          Object.assign(bid, { adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
+          replacement = { ...bid, adId: 'replacement-adid', responseTimestamp: Date.now(), ttl: 300 };
+          auctionManager.findBidByAdId.callsFake((adId) => [bid, replacement].find(b => b.adId === adId));
+        });
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        Object.entries({
+          'synchronously': () => replacement,
+          'as a promise': () => Promise.resolve(replacement),
+        }).forEach(([t, replaceExpiredBid]) => {
+          it(`renders the replacement returned ${t}, and handles its messages over the port`, async () => {
+            rendererSrc = `window.render = function(_, {sendMessage}) {
+              sendMessage('Prebid Event', { event: 'browserIntervention', intervention: { type: 'test' } });
+            }`;
+            config.setConfig({ auctionOptions: { replaceExpiredBid } });
+            await render();
+            await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, replacement);
+            sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid: replacement }));
+          });
+        });
       });
 
       it('ignores messages over the port for a different adId', async () => {

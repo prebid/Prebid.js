@@ -4199,7 +4199,7 @@ describe('Unit: Prebid Module', function () {
         bidExpiryStub.callsFake((b) => b !== expired);
         sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
         configObj.setConfig({ auctionOptions: { replaceExpiredBid: () => bid } });
-        getBidToRender('expired', true, () => {});
+        getBidToRender(expired, true, () => {});
       });
       afterEach(() => {
         configObj.resetConfig();

@@ -91,14 +91,14 @@ export function processMessage(data, bid, replier) {
 export function receiveMessage(ev, cb) {
   const data = parseMessage(ev);
   if (data && isMessageAllowed(ev, data)) {
-    getBidToRender(data.adId, isRenderRequest(data), (bid) => {
+    getBidToRender(getBidForMessage(data), isRenderRequest(data), (bid) => {
       processMessage(data, bid, getReplier(ev));
       cb && cb();
     });
   }
 }
 
-function isRenderRequest(data) {
+export function isRenderRequest(data) {
   // legacy native templates do not send a render request; they start by asking for assets
   return data.message === REQUEST || (data.message === NATIVE && ['assetRequest', 'allAssetRequest'].includes(data.action));
 }

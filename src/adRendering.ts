@@ -77,18 +77,16 @@ type Replacement = {
 const REPLACEMENTS = new WeakMap<Bid, Replacement>();
 
 /**
- * Look up the bid that should handle a request about `adId`, coming from a creative, `renderAd` or `renderBid`,
- * and pass it to `callback`.
+ * Pass to `callback` the bid that should handle a request about `bid`, coming from a creative, `renderAd` or `renderBid`.
  *
- * This may not be the bid identified by `adId`: if that has expired, and `auctionOptions.replaceExpiredBid` is set,
- * the first request that starts rendering (`forRender = true`) asks for a replacement, and all requests about that `adId`
- * resolve to it from then on - the creative only knows about the ad ID it was given by the ad server.
+ * If `bid` has expired and `auctionOptions.replaceExpiredBid` is set, the first request that starts rendering
+ * (`forRender = true`) asks for a replacement, and all requests about `bid` resolve to it from then on -
+ * the creative only knows about the ad ID it was given by the ad server.
  *
  * `callback` runs synchronously unless it has to wait for a replacement that is not available yet;
  * `legacyRender` relies on that to use `document.write`.
  */
-export const getBidToRender = hook('sync', function (adId: string, forRender: boolean, callback: (bid: Bid | undefined) => void) {
-  const bid = auctionManager.findBidByAdId(adId);
+export const getBidToRender = hook('sync', function (bid: Bid | undefined, forRender: boolean, callback: (bid: Bid | undefined) => void) {
   if (bid != null && forRender && !REPLACEMENTS.has(bid) && canReplaceExpiredBid(bid)) {
     replaceExpiredBid(bid);
   }
@@ -100,7 +98,7 @@ export const getBidToRender = hook('sync', function (adId: string, forRender: bo
   }
 });
 
-function canReplaceExpiredBid(bid: Bid) {
+export function canReplaceExpiredBid(bid: Bid) {
   // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply
   return isFn(config.getConfig('auctionOptions')?.replaceExpiredBid) &&
     bid.status !== BID_STATUS.RENDERED &&
@@ -111,12 +109,14 @@ function isValidReplacement(expiredBid: Bid, replacement: Bid) {
   // a bid that already won (e.g. one waiting for `triggerBilling`) belongs to some other slot;
   // a bid that defers rendering could only be released with an ad ID the publisher does not know about;
   // a bid of a different media type cannot be rendered by the creative that was set up for the expired one;
-  // a bid for a different ad unit was requested for another slot, and would be rendered or resized in its element
+  // a bid for a different ad unit was requested for another slot, and would be rendered or resized in its element;
+  // a bid with a renderer runs outside the creative frame that was set up for the expired one, or vice versa
   return replacement != null &&
     replacement !== expiredBid &&
     replacement.adUnitCode === expiredBid.adUnitCode &&
     replacement.mediaType === expiredBid.mediaType &&
     !replacement.deferRendering &&
+    usesLegacyRenderer(replacement) === usesLegacyRenderer(expiredBid) &&
     !WINNERS.has(replacement) &&
     bidFilters.isBidNotExpired(replacement) &&
     bidFilters.isUnusedBid(replacement);
@@ -670,7 +670,7 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      getBidToRender(adId, true, (bidResponse) => {
+      getBidToRender(auctionManager.findBidByAdId(adId), true, (bidResponse) => {
         bid = bidResponse;
         try {
           handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });

@@ -306,12 +306,12 @@ describe('adRendering', () => {
 
       function getBid(adId, forRender = true) {
         let result;
-        getBidToRender(adId, forRender, (bid) => { result = bid; });
+        getBidToRender(auctionManager.findBidByAdId(adId), forRender, (bid) => { result = bid; });
         return result;
       }
 
       function getBidAsync(adId, forRender = true) {
-        return new Promise((resolve) => getBidToRender(adId, forRender, resolve));
+        return new Promise((resolve) => getBidToRender(auctionManager.findBidByAdId(adId), forRender, resolve));
       }
 
       beforeEach(() => {
@@ -363,7 +363,7 @@ describe('adRendering', () => {
           let resolveReplacement;
           replaceExpiredBid.callsFake(() => new Promise((resolve) => { resolveReplacement = resolve; }));
           const callback = sinon.stub();
-          getBidToRender('expired', true, callback);
+          getBidToRender(expired, true, callback);
           await settled();
           sinon.assert.notCalled(callback);
           resolveReplacement(replacement);
@@ -374,8 +374,8 @@ describe('adRendering', () => {
         it('should still run the other waiting callbacks if one throws', async () => {
           replaceExpiredBid.callsFake(() => new Promise((resolve) => setTimeout(() => resolve(replacement))));
           const callback = sinon.stub();
-          getBidToRender('expired', true, () => { throw new Error(); });
-          getBidToRender('expired', true, callback);
+          getBidToRender(expired, true, () => { throw new Error(); });
+          getBidToRender(expired, true, callback);
           await settled();
           sinon.assert.calledWith(callback, replacement);
         });
@@ -410,6 +410,7 @@ describe('adRendering', () => {
           'returns a bid that defers rendering': () => { replacement.deferRendering = true; },
           'returns a bid of a different media type': () => { replacement.mediaType = 'native'; },
           'returns a bid for a different ad unit': () => { replacement.adUnitCode = 'other-au'; },
+          'returns a bid with a renderer that runs outside the creative frame': () => { replacement.renderer = { url: 'https://example.com/renderer.js' }; },
         }).forEach(([t, setup]) => {
           describe(`when replaceExpiredBid ${t}`, () => {
             beforeEach(setup);
