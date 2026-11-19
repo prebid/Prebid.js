@@ -676,6 +676,32 @@ describe('percentInView', () => {
       expect(percentInView(container.querySelector('#target'))).to.eql(50);
     });
 
+    Object.entries({
+      '<slot style="overflow:hidden"></slot>': 100,
+      '<slot style="display:block;overflow:hidden;width:50px;height:25px"></slot>': 50,
+      '<div style="overflow:hidden;width:50px;height:25px"><slot style="overflow:hidden"></slot></div>': 50,
+    }).forEach(([html, expected]) => {
+      it(`measures slotted content under ${html}`, () => {
+        container.innerHTML = `<div>${TARGET}</div>`;
+        container.firstElementChild.attachShadow({ mode: 'open' }).innerHTML = html;
+        expect(percentInView(container.querySelector('#target'))).to.eql(expected);
+      });
+    });
+
+    it('ignores overflow on a display:contents ancestor', () => {
+      expect(measure(`<div style="display:contents;overflow:hidden">${TARGET}</div>`)).to.eql(100);
+    });
+
+    it('does not use a display:contents ancestor as a containing block', () => {
+      expect(measure(
+        `<div style="overflow:hidden;width:0;height:0"><div style="display:contents;position:relative">${ABS_TARGET}</div></div>`
+      )).to.eql(100);
+    });
+
+    it('still clips against a zero-sized ancestor that has a box', () => {
+      expect(measure(`<div style="overflow:hidden;width:0;height:0">${TARGET}</div>`)).to.eql(0);
+    });
+
     it('returns 0 when its assigned slot is transparent', () => {
       container.innerHTML = `<div>${TARGET}</div>`;
       const root = container.firstElementChild.attachShadow({ mode: 'open' });
@@ -759,6 +785,18 @@ describe('percentInView', () => {
       const root = container.firstElementChild.attachShadow({ mode: 'open' });
       root.innerHTML = TARGET;
       expect(percentInView(root.querySelector('#target'), { w: 50, h: 50 })).to.eql(50);
+    });
+
+    Object.entries({
+      '<slot style="overflow:hidden"></slot>': 100,
+      '<slot style="display:block;overflow:hidden;width:50px;height:25px"></slot>': 50,
+      '<div style="overflow:hidden;width:50px;height:25px"><slot style="overflow:hidden"></slot></div>': 50,
+    }).forEach(([html, expected]) => {
+      it(`measures the overridden size under ${html}`, () => {
+        container.innerHTML = `<div>${TARGET}</div>`;
+        container.firstElementChild.attachShadow({ mode: 'open' }).innerHTML = html;
+        expect(percentInView(container.querySelector('#target'), { w: 50, h: 50 })).to.eql(expected);
+      });
     });
   });
 

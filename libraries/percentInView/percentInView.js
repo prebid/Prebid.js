@@ -20,7 +20,6 @@ function observerAllowed() {
 }
 
 function getComposedParentElement(node) {
-  // Updated by Codex, an AI bot, to follow slot and shadow-host ancestry.
   return node.assignedSlot ?? node.parentElement ?? node.getRootNode()?.host ?? null;
 }
 
@@ -183,7 +182,7 @@ function getClipRects(element) {
         }
         if (node === el) {
           position = style.position;
-        } else if (contains(style, position)) {
+        } else if (style.display !== 'contents' && contains(style, position)) {
           const clipX = style.overflowX !== 'visible';
           const clipY = style.overflowY !== 'visible';
           if (clipX || clipY) {
