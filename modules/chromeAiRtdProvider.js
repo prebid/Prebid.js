@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, mergeDeep, logMessage, deepSetValue, deepAccess, cyrb53Hash, isArray, isPlainObject, isStr } from '../src/utils.js';
+import { logError, logWarn, mergeDeep, logMessage, deepSetValue, deepAccess, cyrb53Hash, isArray, isPlainObject, isStr } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
@@ -17,7 +17,6 @@ export const CONSTANTS = Object.freeze({
   MIN_TEXT_LENGTH: 20,
   ACTIVATION_EVENTS: ['click', 'keydown', 'mousedown', 'touchend', 'pointerdown', 'pointerup'],
   MAX_TEXT_LENGTH: 1000, // Limit to prevent QuotaExceededError with Chrome AI APIs
-  CATTAX_IAB_CONTENT_3_1: 9, // AdCOM "Category Taxonomies": IAB Tech Lab Content Taxonomy 3.1
   DECISION_TYPES: ['boolean', 'choice', 'score'],
   DEFAULT_CONFIG: {
     languageDetector: {
@@ -43,7 +42,7 @@ export const CONSTANTS = Object.freeze({
       enabled: false,
       minScore: 0.5,
       maxCategories: 3,
-      promptFallback: false,
+      taxonomy: 6,
       cacheInLocalStorage: true
     },
     decisions: {
@@ -57,48 +56,77 @@ export const CONSTANTS = Object.freeze({
 });
 
 /**
- * Tier 1 of IAB Content Taxonomy 3.1 (unique ID to name). The Prompt API fallback for categories may only
- * answer with these IDs, so it can't return IDs that don't exist; the full taxonomy is too large to bundle.
+ * Tier 1 of each supported IAB content taxonomy (ID to name), keyed by AdCOM `cattax`. The model may only answer with
+ * these IDs; the full taxonomies are too large to bundle.
+ * - 1, Content Category Taxonomy 1.0: IAB1 - IAB23. IAB24 Uncategorized, IAB25 Non-Standard Content and
+ *   IAB26 Illegal Content are left out because they aren't page topics.
+ * - 6, Content Taxonomy 2.2: only tier 1 rows with a numeric ID from 1 to 680 inclusive, nothing past 680. The file's
+ *   other parentless rows, Sensitive Topics (v9i3On), Brand Suitability and Risk (MRkz4Q) and the Content
+ *   Channel/Type/Source/Media Format/Language/Source Geo extension dimensions (1000 - 1219), aren't page topics.
  */
-export const IAB_CONTENT_3_1_TIER_1 = Object.freeze({
-  '150': 'Attractions',
-  '1': 'Automotive',
-  '42': 'Books and Literature',
-  '52': 'Business and Finance',
-  '123': 'Careers',
-  '80DV8O': 'Communication',
-  '380': 'Crime',
-  '381': 'Disasters',
-  '132': 'Education',
-  'JLBCU7': 'Entertainment',
-  '8VZQHL': 'Events',
-  '186': 'Family and Relationships',
-  '201': 'Fine Art',
-  '210': 'Food & Drink',
-  'SPSHQ5': 'Genres',
-  '223': 'Healthy Living',
-  '239': 'Hobbies & Interests',
-  '1KXCLD': 'Holidays',
-  '274': 'Home & Garden',
-  '383': 'Law',
-  '286': 'Medical Health',
-  '163': 'Personal Celebrations & Life Events',
-  '391': 'Personal Finance',
-  '422': 'Pets',
-  '386': 'Politics',
-  '432': 'Pop Culture',
-  '441': 'Real Estate',
-  '453': 'Religion & Spirituality',
-  '464': 'Science',
-  'v9i3On': 'Sensitive Topics',
-  '473': 'Shopping',
-  '483': 'Sports',
-  '552': 'Style & Fashion',
-  '596': 'Technology & Computing',
-  '653': 'Travel',
-  '680': 'Video Gaming',
-  '389': 'War and Conflicts'
+export const TIER_1_CATEGORIES = Object.freeze({
+  1: {
+    'IAB1': 'Arts & Entertainment',
+    'IAB2': 'Automotive',
+    'IAB3': 'Business',
+    'IAB4': 'Careers',
+    'IAB5': 'Education',
+    'IAB6': 'Family & Parenting',
+    'IAB7': 'Health & Fitness',
+    'IAB8': 'Food & Drink',
+    'IAB9': 'Hobbies & Interests',
+    'IAB10': 'Home & Garden',
+    'IAB11': "Law, Gov't & Politics",
+    'IAB12': 'News',
+    'IAB13': 'Personal Finance',
+    'IAB14': 'Society',
+    'IAB15': 'Science',
+    'IAB16': 'Pets',
+    'IAB17': 'Sports',
+    'IAB18': 'Style & Fashion',
+    'IAB19': 'Technology & Computing',
+    'IAB20': 'Travel',
+    'IAB21': 'Real Estate',
+    'IAB22': 'Shopping',
+    'IAB23': 'Religion & Spirituality'
+  },
+  6: {
+    '1': 'Automotive',
+    '42': 'Books and Literature',
+    '52': 'Business and Finance',
+    '123': 'Careers',
+    '132': 'Education',
+    '150': 'Events and Attractions',
+    '186': 'Family and Relationships',
+    '201': 'Fine Art',
+    '210': 'Food & Drink',
+    '223': 'Healthy Living',
+    '239': 'Hobbies & Interests',
+    '274': 'Home & Garden',
+    '286': 'Medical Health',
+    '324': 'Movies',
+    '338': 'Music and Audio',
+    '379': 'News and Politics',
+    '391': 'Personal Finance',
+    '422': 'Pets',
+    '432': 'Pop Culture',
+    '441': 'Real Estate',
+    '453': 'Religion & Spirituality',
+    '464': 'Science',
+    '473': 'Shopping',
+    '483': 'Sports',
+    '552': 'Style & Fashion',
+    '596': 'Technology & Computing',
+    '640': 'Television',
+    '653': 'Travel',
+    '680': 'Video Gaming'
+  }
 });
+
+const TAXONOMY_NAMES = {
+  1: 'IAB Content Category Taxonomy 1.0',
+  6: 'IAB Content Taxonomy 2.2'
+};
 
 const DEFERRED = 'deferred';
 // Chrome warns when a LanguageModel session doesn't declare its output language.
@@ -466,8 +494,8 @@ export const extractKeywords = async (text, config, retry) => {
   return [...new Set(keywords)].slice(0, maxKeywords);
 };
 
-// --- Categories (Classifier API, opt-in Prompt API fallback) ---
-const getCategoriesSchema = (maxCategories) => ({
+// --- Categories (Prompt API) ---
+const getCategoriesSchema = (taxonomy, maxCategories) => ({
   type: 'object',
   properties: {
     categories: {
@@ -476,7 +504,7 @@ const getCategoriesSchema = (maxCategories) => ({
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', enum: Object.keys(IAB_CONTENT_3_1_TIER_1) },
+          id: { type: 'string', enum: Object.keys(TIER_1_CATEGORIES[taxonomy]) },
           confidence: { type: 'number', minimum: 0, maximum: 1 }
         },
         required: ['id', 'confidence'],
@@ -488,42 +516,32 @@ const getCategoriesSchema = (maxCategories) => ({
   additionalProperties: false
 });
 
-const getCategoriesPrompt = (text, maxCategories) =>
-  `Classify this web page text into at most ${maxCategories} IAB Content Taxonomy 3.1 categories, ` +
+const getCategoriesPrompt = (text, taxonomy, maxCategories) =>
+  `Classify this web page text into at most ${maxCategories} ${TAXONOMY_NAMES[taxonomy]} categories, ` +
   `each with your confidence between 0 and 1. Use only these category IDs (ID: name):\n` +
-  Object.entries(IAB_CONTENT_3_1_TIER_1).map(([id, name]) => `${id}: ${name}`).join('\n') +
+  Object.entries(TIER_1_CATEGORIES[taxonomy]).map(([id, name]) => `${id}: ${name}`).join('\n') +
   `\n\nPage text:\n${text}`;
 
 /**
- * Keeps the highest-scoring IDs that reach `minScore`, at most `maxCategories` of them.
+ * Keeps the highest-scoring tier 1 IDs of `taxonomy` that reach `minScore`, at most `maxCategories` of them.
  * @param {Array<{id: string, confidence: number}>} classifications
  */
-export const selectCategories = (classifications, { minScore, maxCategories }) => {
+export const selectCategories = (classifications, { taxonomy, minScore, maxCategories }) => {
+  const allowed = TIER_1_CATEGORIES[taxonomy] || {};
   const ids = (isArray(classifications) ? classifications : [])
-    .filter(c => isStr(c?.id) && c.id !== '' && typeof c.confidence === 'number' && c.confidence >= minScore)
+    .filter(c => isStr(c?.id) && Object.hasOwn(allowed, c.id) && typeof c.confidence === 'number' && c.confidence >= minScore)
     .sort((a, b) => b.confidence - a.confidence)
     .map(c => c.id);
   return [...new Set(ids)].slice(0, maxCategories);
 };
 
 export const classifyPage = async (text, config, retry) => {
-  const candidates = [{ name: 'Classifier' }];
-  if (config.promptFallback === true) {
-    candidates.push({ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS });
-  }
-  const api = await selectApi('Categories', candidates, retry);
+  const api = await selectApi('Categories', [{ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS }], retry);
   if (!api || api === DEFERRED) return api;
-  let classifications;
-  if (api.name === 'Classifier') {
-    const classifier = await createApiInstance('Classifier');
-    try {
-      classifications = await classifier.classify(text);
-    } finally {
-      classifier.destroy?.();
-    }
-  } else {
-    classifications = (await promptForJson(getCategoriesPrompt(text, config.maxCategories), getCategoriesSchema(config.maxCategories)))?.categories;
-  }
+  const classifications = (await promptForJson(
+    getCategoriesPrompt(text, config.taxonomy, config.maxCategories),
+    getCategoriesSchema(config.taxonomy, config.maxCategories)
+  ))?.categories;
   return selectCategories(classifications, config);
 };
 
@@ -626,10 +644,14 @@ const init = async (config) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer disabled by config.`);
   }
 
+  if (moduleConfig.categories?.enabled === true && !TIER_1_CATEGORIES[moduleConfig.categories.taxonomy]) {
+    logWarn(`${CONSTANTS.LOG_PRE_FIX} Unsupported categories.taxonomy ${moduleConfig.categories.taxonomy}; use 1 or 6. Categories disabled.`);
+    moduleConfig.categories.enabled = false;
+  }
   if (moduleConfig.categories?.enabled === true) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled. Initializing...`);
-    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage,
-      [moduleConfig.categories.minScore, moduleConfig.categories.maxCategories]));
+    const { taxonomy, minScore, maxCategories } = moduleConfig.categories;
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled (taxonomy ${taxonomy}). Initializing...`);
+    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage, [taxonomy, minScore, maxCategories]));
   }
 
   if (moduleConfig.decisions?.enabled === true) {
@@ -680,17 +702,18 @@ const getPublisherCattax = (site) => site.cattax ?? (hasValue(site.cat) || hasVa
 
 const enrichCategories = (global) => {
   const categories = detected.categories;
+  const taxonomy = moduleConfig.categories.taxonomy;
   if (!isNonEmptyArray(categories)) return;
   const site = global.site || {};
   if (hasValue(site.pagecat)) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} site.pagecat already in auction ORTB2, no category enrichment.`);
-  } else if (getPublisherCattax(site) != null && getPublisherCattax(site) !== CONSTANTS.CATTAX_IAB_CONTENT_3_1) {
+  } else if (getPublisherCattax(site) != null && getPublisherCattax(site) !== taxonomy) {
     // site.cattax also describes site.cat and site.sectioncat, so it can't be switched to another taxonomy.
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} site.cattax is ${getPublisherCattax(site)}, not IAB Content Taxonomy 3.1, no category enrichment.`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Publisher site categories are in taxonomy ${getPublisherCattax(site)}, not ${taxonomy}, no category enrichment.`);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Enriching site.pagecat with categories:`, categories);
     deepSetValue(global, 'site.pagecat', categories);
-    deepSetValue(global, 'site.cattax', CONSTANTS.CATTAX_IAB_CONTENT_3_1);
+    if (site.cattax == null) deepSetValue(global, 'site.cattax', taxonomy);
   }
 };
 

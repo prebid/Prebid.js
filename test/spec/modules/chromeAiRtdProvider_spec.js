@@ -528,154 +528,210 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     describe('categories', function () {
-      const classifications = [
-        { id: '45', confidence: 0.82 },
-        { id: '602', confidence: 0.98 },
-        { id: '597', confidence: 0.95 },
-        { id: '1', confidence: 0.3 }
+      const responses = [
+        { id: '483', confidence: 0.82 },
+        { id: '1', confidence: 0.98 },
+        { id: '640', confidence: 0.95 },
+        { id: '42', confidence: 0.3 }
       ];
-      let classifier;
+      let session;
+
+      const promptSession = (categories) => ({
+        prompt: sinon.stub().resolves(JSON.stringify({ categories })),
+        destroy: sinon.stub()
+      });
+      const allowedIds = () => session.prompt.firstCall.args[1].responseConstraint.properties.categories.items.properties.id.enum;
 
       beforeEach(function () {
-        classifier = { classify: sinon.stub().resolves(classifications), destroy: sinon.stub() };
+        session = promptSession(responses);
       });
 
-      it('writes Classifier IDs above minScore, highest first and at most maxCategories, with cattax 9', async function () {
-        const Classifier = mockApi('Classifier', classifier);
+      it('asks the Prompt API for Content Taxonomy 2.2 tier 1 by default and writes cattax 6', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
         expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2 } })).to.be.true;
-        expect(classifier.classify.calledWith('A page about cars and new electric vehicles.')).to.be.true;
-        expect(classifier.destroy.called).to.be.true;
-        expect(Classifier.create.firstCall.args[0].monitor).to.be.a('function');
-        const global = runAuction();
-        expect(global.site.pagecat).to.deep.equal(['602', '597']);
-        expect(global.site.cattax).to.equal(9);
+        expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
+        expect(LanguageModel.create.firstCall.args[0].monitor).to.be.a('function');
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt).to.include('IAB Content Taxonomy 2.2').and.to.include('640: Television');
+        expect(prompt).to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.categories.maxItems).to.equal(2);
+        expect(allowedIds()).to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(session.destroy.called).to.be.true;
+        expect(runAuction().site).to.deep.equal({ pagecat: ['1', '640'], cattax: 6 });
       });
 
-      it('caches the categories for the page URL', async function () {
-        mockApi('Classifier', classifier);
+      it('bundles only the 29 topical Content Taxonomy 2.2 tier 1 IDs, numeric and capped at 680', async function () {
+        const ids = Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]);
+        expect(ids).to.have.length(29);
+        ids.forEach(id => {
+          expect(id).to.match(/^\d+$/);
+          expect(Number(id)).to.be.within(1, 680);
+        });
+        ['v9i3On', 'MRkz4Q', '1000', '1010', '1022', '1030', '1215', '1219'].forEach(id => expect(ids).to.not.include(id));
+        mockApi('LanguageModel', session);
         await init({ categories: { enabled: true } });
-        expect(storedData().categories.value).to.deep.equal(['602', '597', '45']);
+        expect(allowedIds().every(id => /^\d+$/.test(id) && Number(id) >= 1 && Number(id) <= 680)).to.be.true;
+      });
+
+      it('uses Content Category Taxonomy 1.0 tier 1 without IAB24 - IAB26 for taxonomy 1', async function () {
+        session = promptSession([{ id: 'IAB2', confidence: 0.9 }, { id: 'IAB24', confidence: 0.9 }]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        expect(session.prompt.firstCall.args[0]).to.include('IAB Content Category Taxonomy 1.0').and.to.include('IAB2: Automotive');
+        expect(allowedIds()).to.deep.equal(Array.from({ length: 23 }, (_, i) => 'IAB' + (i + 1)));
+        expect(runAuction().site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
+      });
+
+      it('drops IDs outside the taxonomy list', async function () {
+        session = promptSession([
+          { id: '1000', confidence: 0.9 }, { id: '681', confidence: 0.9 }, { id: 'v9i3On', confidence: 0.9 }, { id: '1', confidence: 0.6 }
+        ]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('never uses the Classifier API', async function () {
+        const Classifier = mockApi('Classifier', {});
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(Classifier.availability.called).to.be.false;
+      });
+
+      it('rejects unsupported taxonomies', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        const logWarnStub = sandbox.stub(utils, 'logWarn');
+        await init({ categories: { enabled: true, taxonomy: 9 } });
+        expect(logWarnStub.calledWith(sinon.match('Unsupported categories.taxonomy 9'))).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
+      });
+
+      it('caches the categories with a hash of the settings', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(storedData().categories.value).to.deep.equal(['1', '640', '483']);
         expect(storedData().categories.settings).to.be.a('string');
       });
 
       it('uses cached categories without calling the API', async function () {
-        const Classifier = mockApi('Classifier', classifier);
+        const LanguageModel = mockApi('LanguageModel', session);
         await init({ categories: { enabled: true } });
         setCache({ categories: { ...storedData().categories, value: ['483'] } });
         await init({ categories: { enabled: true } });
-        expect(Classifier.availability.calledOnce).to.be.true;
+        expect(LanguageModel.availability.calledOnce).to.be.true;
         expect(runAuction().site.pagecat).to.deep.equal(['483']);
       });
 
+      it('does not reuse cached categories after minScore or maxCategories change', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: storedData().categories });
+        await init({ categories: { enabled: true, maxCategories: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('does not reuse cached categories from another taxonomy', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: storedData().categories });
+        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['IAB2']);
+      });
+
       it('does not cache when cacheInLocalStorage is false', async function () {
-        mockApi('Classifier', classifier);
+        mockApi('LanguageModel', session);
         await init({ categories: { enabled: true, cacheInLocalStorage: false } });
         expect(mockStorage.setDataInLocalStorage.called).to.be.false;
         expect(runAuction().site.pagecat).to.have.length(3);
       });
 
-      it('does not use the Prompt API when the Classifier is unavailable, unless promptFallback is set', async function () {
-        mockApi('Classifier', classifier, 'unavailable');
-        const LanguageModel = mockApi('LanguageModel', {});
+      it('does nothing when LanguageModel is unavailable', async function () {
+        mockApi('LanguageModel', session, 'unavailable');
         expect(await init({ categories: { enabled: true } })).to.be.false;
-        expect(classifier.classify.called).to.be.false;
-        expect(LanguageModel.availability.called).to.be.false;
+        expect(session.prompt.called).to.be.false;
         expect(runAuction().site).to.be.undefined;
       });
 
-      it('falls back to the Prompt API, constrained to tier 1 IDs, when the Classifier is missing', async function () {
-        const session = {
-          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '483', confidence: 0.2 }] })),
-          destroy: sinon.stub()
-        };
-        const LanguageModel = mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true, promptFallback: true } });
-        expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
-        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
-        expect(prompt).to.include('1: Automotive');
-        expect(responseConstraint.properties.categories.maxItems).to.equal(3);
-        expect(responseConstraint.properties.categories.items.properties.id.enum)
-          .to.deep.equal(Object.keys(chromeAiRtdProvider.IAB_CONTENT_3_1_TIER_1));
-        expect(session.destroy.called).to.be.true;
-        expect(runAuction().site).to.deep.equal({ pagecat: ['1'], cattax: 9 });
-      });
-
       it('waits for user activation before a model download', async function () {
-        const Classifier = mockApi('Classifier', classifier, 'downloadable');
+        const LanguageModel = mockApi('LanguageModel', session, 'downloadable');
         expect(await init({ categories: { enabled: true } })).to.be.false;
-        expect(Classifier.create.called).to.be.false;
+        expect(LanguageModel.create.called).to.be.false;
 
         window.dispatchEvent(new Event('click'));
         await flush();
-        expect(Classifier.create.called, 'still inactive').to.be.false;
+        expect(LanguageModel.create.called, 'still inactive').to.be.false;
 
         setUserActive(true);
         window.dispatchEvent(new Event('click'));
         await flush();
-        expect(Classifier.create.calledOnce).to.be.true;
-        expect(runAuction().site.pagecat).to.deep.equal(['602', '597', '45']);
+        expect(LanguageModel.create.calledOnce).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['1', '640', '483']);
       });
 
       it('creates the model when downloadable and the user is active', async function () {
-        const Classifier = mockApi('Classifier', classifier, 'downloadable');
+        const LanguageModel = mockApi('LanguageModel', session, 'downloadable');
         setUserActive(true);
         expect(await init({ categories: { enabled: true } })).to.be.true;
-        expect(Classifier.create.calledOnce).to.be.true;
+        expect(LanguageModel.create.calledOnce).to.be.true;
       });
 
       it('does not overwrite publisher site.pagecat', async function () {
-        mockApi('Classifier', classifier);
+        mockApi('LanguageModel', session);
         await init({ categories: { enabled: true } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
         expect(runAuction().site).to.deep.equal({ pagecat: ['IAB1'], cattax: 1 });
       });
 
       it('does not change a publisher site.cattax of another taxonomy', async function () {
-        mockApi('Classifier', classifier);
+        mockApi('LanguageModel', session);
         await init({ categories: { enabled: true } });
-        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 6 } };
-        expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 6 });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 7 } };
+        expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 7 });
       });
 
       ['cat', 'sectioncat'].forEach(field => {
-        it(`does not set site.cattax when the publisher has site.${field} without it`, async function () {
-          mockApi('Classifier', classifier);
+        it('skips taxonomy 6 when the publisher has site.' + field + ' without cattax, which means taxonomy 1', async function () {
+          mockApi('LanguageModel', session);
           await init({ categories: { enabled: true } });
           reqBidsConfigObj.ortb2Fragments.global = { site: { [field]: ['IAB1-1'] } };
           expect(runAuction().site).to.deep.equal({ [field]: ['IAB1-1'] });
         });
       });
 
-      it('adds site.pagecat next to publisher site.cat in taxonomy 3.1', async function () {
-        mockApi('Classifier', classifier);
-        await init({ categories: { enabled: true } });
-        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['483'], cattax: 9 } };
-        expect(runAuction().site).to.deep.equal({ cat: ['483'], cattax: 9, pagecat: ['602', '597', '45'] });
+      it('adds pagecat next to publisher site.cat without cattax when the taxonomy is 1', async function () {
+        session = promptSession([{ id: 'IAB2', confidence: 0.9 }]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1-1'] } };
+        expect(runAuction().site).to.deep.equal({ cat: ['IAB1-1'], pagecat: ['IAB2'], cattax: 1 });
       });
 
-      it('does not reuse cached categories after minScore or maxCategories change', async function () {
-        mockApi('Classifier', classifier);
+      it('keeps a matching publisher site.cattax', async function () {
+        mockApi('LanguageModel', session);
         await init({ categories: { enabled: true } });
-        setCache({ categories: storedData().categories });
-        await init({ categories: { enabled: true, maxCategories: 1 } });
-        expect(classifier.classify.calledTwice).to.be.true;
-        expect(runAuction().site.pagecat).to.deep.equal(['602']);
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cattax: 6, sectioncat: ['483'] } };
+        expect(runAuction().site).to.deep.equal({ cattax: 6, sectioncat: ['483'], pagecat: ['1', '640', '483'] });
       });
 
-      it('logs classify errors', async function () {
-        classifier.classify.rejects(new Error('too long'));
-        mockApi('Classifier', classifier);
+      it('logs prompt errors', async function () {
+        session.prompt.rejects(new Error('too long'));
+        mockApi('LanguageModel', session);
         expect(await init({ categories: { enabled: true } })).to.be.false;
         expect(logErrorStub.calledWith(sinon.match("Error detecting 'categories'"))).to.be.true;
       });
     });
 
     describe('selectCategories', function () {
-      it('drops entries without a string id or numeric confidence, and duplicates', function () {
+      it('drops IDs not in the taxonomy, entries without a numeric confidence, and duplicates', function () {
         expect(chromeAiRtdProvider.selectCategories([
-          { id: '1', confidence: 0.9 }, { id: 1, confidence: 0.9 }, { id: '2' }, { id: '1', confidence: 0.8 }, null
-        ], { minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
-        expect(chromeAiRtdProvider.selectCategories(undefined, { minScore: 0, maxCategories: 5 })).to.deep.equal([]);
+          { id: '1', confidence: 0.9 }, { id: 1, confidence: 0.9 }, { id: '42' }, { id: '1', confidence: 0.8 },
+          { id: 'IAB1', confidence: 0.9 }, { id: 'toString', confidence: 0.9 }, null
+        ], { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
+        expect(chromeAiRtdProvider.selectCategories(undefined, { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal([]);
       });
     });
 

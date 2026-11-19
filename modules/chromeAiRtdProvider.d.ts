@@ -41,21 +41,23 @@ export interface ChromeAiKeywordsParams {
   cacheInLocalStorage?: boolean;
 }
 
+/**
+ * AdCOM `cattax` of the supported taxonomies: 1 is IAB Content Category Taxonomy 1.0, 6 is IAB Content Taxonomy 2.2.
+ */
+export type ChromeAiCategoryTaxonomy = 1 | 6;
+
 export interface ChromeAiCategoriesParams {
   /**
-   * Classifies the page into IAB Content Taxonomy 3.1 categories with the Classifier API, written to `site.pagecat`
-   * with `site.cattax` 9. Defaults to `false`.
+   * Classifies the page into tier 1 categories of `taxonomy` with the Prompt API, written to `site.pagecat`.
+   * Defaults to `false`.
    */
   enabled?: boolean;
-  /** Minimum score (0 - 1) of a category. Defaults to `0.5`. */
+  /** Defaults to `6`. */
+  taxonomy?: ChromeAiCategoryTaxonomy;
+  /** Minimum confidence (0 - 1) the model gives a category. Defaults to `0.5`. */
   minScore?: number;
   /** Defaults to `3`. */
   maxCategories?: number;
-  /**
-   * Falls back to the Prompt API, which picks from the tier 1 categories, when the Classifier API is unavailable.
-   * Defaults to `false`.
-   */
-  promptFallback?: boolean;
   /** Defaults to `true`. */
   cacheInLocalStorage?: boolean;
 }

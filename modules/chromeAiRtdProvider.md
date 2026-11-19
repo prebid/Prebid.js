@@ -6,7 +6,7 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds 
 
 - detect the page language with the [Language Detector API](https://developer.chrome.com/docs/ai/language-detection), written to `site.content.language`;
 - extract keywords with the [Prompt API](https://github.com/webmachinelearning/prompt-api) (`LanguageModel`), falling back to the [Summarizer API](https://developer.chrome.com/docs/ai/summarizer-api), written to `site.content.keywords`;
-- classify the page into IAB Content Taxonomy 3.1 categories with the [Classifier API](https://github.com/explainers-by-googlers/classifier-api), optionally falling back to the Prompt API, written to `site.pagecat` with `site.cattax: 9`;
+- classify the page into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Prompt API, written to `site.pagecat`;
 - answer publisher-defined questions about the page with the [Decisions API](https://github.com/explainers-by-googlers/decisions-api) (`DecisionModel`), falling back to the Prompt API, written to `site.content.data`.
 
 ## API availability
@@ -15,8 +15,7 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds 
 |-----|----------|--------|
 | Language Detector | `languageDetector` | Chrome 138+ stable |
 | Summarizer | `summarizer`, `keywords` fallback | Chrome 138+ stable |
-| Prompt API (`LanguageModel`) | `keywords`, `categories` and `decisions` fallbacks | Chrome 148+ stable on the web |
-| Classifier | `categories` | Experimental explainer; the explainer says it is no longer pursued. Use `promptFallback` to get categories today |
+| Prompt API (`LanguageModel`) | `keywords`, `categories`, `decisions` fallback | Chrome 148+ stable on the web |
 | Decisions (`DecisionModel`) | `decisions` | Experimental explainer; its dev trial prototype is behind a flag |
 
 Every API is feature detected: when one is missing or `unavailable`, the module uses the next one in line or skips that feature. Other browsers get no data from this module.
@@ -63,7 +62,7 @@ pbjs.setConfig({
           enabled: true,
           minScore: 0.5,
           maxCategories: 3,
-          promptFallback: true
+          taxonomy: 6
         },
         decisions: {
           enabled: true,
@@ -106,10 +105,10 @@ pbjs.setConfig({
 | `summarizer.length` | String | `'short'`, `'medium'` or `'long'` | `'short'` |
 | `summarizer.ortb2Path` | String | Where to write the summary, as an array of one string | `'site.content.keywords'` |
 | `summarizer.cacheInLocalStorage` | Boolean | Cache the summary in localStorage | `true` |
-| `categories.enabled` | Boolean | Classify the page into IAB Content Taxonomy 3.1 categories | `false` |
-| `categories.minScore` | Number | Minimum score of a category (0 - 1) | `0.5` |
+| `categories.enabled` | Boolean | Classify the page into IAB tier 1 categories with the Prompt API | `false` |
+| `categories.taxonomy` | Number | AdCOM `cattax` of the categories: `6` (Content Taxonomy 2.2) or `1` (Content Category Taxonomy 1.0) | `6` |
+| `categories.minScore` | Number | Minimum confidence the model gives a category (0 - 1) | `0.5` |
 | `categories.maxCategories` | Number | Maximum number of categories | `3` |
-| `categories.promptFallback` | Boolean | Use the Prompt API when the Classifier API is unavailable | `false` |
 | `categories.cacheInLocalStorage` | Boolean | Cache the categories in localStorage | `true` |
 | `decisions.enabled` | Boolean | Answer `decisions.questions` about the page | `false` |
 | `decisions.questions` | Array | Questions in the Decisions API schema shape, see below | `[]` |
@@ -139,11 +138,16 @@ Configurations that only set `summarizer.enabled: true` keep their behaviour: on
 
 ### Categories (`categories`)
 
-The Classifier API returns IAB Content Taxonomy 3.1 unique IDs with scores. The module keeps the IDs scoring at least `minScore`, highest first, up to `maxCategories`, and writes them to `site.pagecat` with `site.cattax: 9` (IAB Content Taxonomy 3.1 in the AdCOM list).
+The Prompt API classifies the page into tier 1 categories of the configured taxonomy, each with a confidence. A JSON schema `responseConstraint` limits its answers to the bundled IDs, and the module drops any other ID. It keeps the IDs with a confidence of at least `minScore`, highest first, up to `maxCategories`, and writes them to `site.pagecat`. It sets `site.cattax` to the taxonomy only when the auction has no `site.cattax`.
 
-With `promptFallback: true`, the Prompt API is used when the Classifier API is unavailable. It may only answer with the tier 1 categories of the taxonomy, enforced by the response constraint, with a self-reported confidence that `minScore` applies to. The fallback is opt-in because it downloads a much larger model and only knows tier 1.
+The bundled tier 1 lists come from the IAB Tech Lab taxonomy files:
 
-Categories are not written when the auction already has `site.pagecat`, or when the publisher's site categories are in another taxonomy: a `site.cattax` other than 9, or `site.cat` or `site.sectioncat` without `site.cattax` (which OpenRTB reads as taxonomy 1). `site.cattax` also describes `site.cat` and `site.sectioncat`, so it can't be changed.
+- `taxonomy: 6`, Content Taxonomy 2.2: the 29 topical categories, with numeric IDs from 1 to 680. IDs above 680 are never used. The file's other parentless rows are left out: Sensitive Topics (`v9i3On`), Brand Suitability and Risk (`MRkz4Q`), and the Content Channel, Type, Source, Media Format, Language and Source Geo extension dimensions (1000 - 1219).
+- `taxonomy: 1`, Content Category Taxonomy 1.0: `IAB1` - `IAB23`. `IAB24` Uncategorized, `IAB25` Non-Standard Content and `IAB26` Illegal Content are left out because they aren't page topics.
+
+The module doesn't use the [Classifier API](https://github.com/explainers-by-googlers/classifier-api): its explainer says it is no longer pursued.
+
+Categories are not written when the auction already has `site.pagecat`, or when the publisher's site categories are in another taxonomy than `categories.taxonomy`: a different `site.cattax`, or, for taxonomy 6, `site.cat` or `site.sectioncat` without `site.cattax` (which OpenRTB reads as taxonomy 1). When they match, `site.pagecat` is added next to the publisher's categories. `site.cattax` also describes `site.cat` and `site.sectioncat`, so it can't be changed.
 
 ### Publisher questions (`decisions`)
 
@@ -177,7 +181,7 @@ No entry is added when `site.content.data` already has one named `chromeAi`.
 
 All results are stored in localStorage under the `chromeAi_detected_data` key, as an object keyed by page URL, when storage is allowed for the module by the activity controls (for example, the `storage` activity and TCF consent).
 
-Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords`; `minScore` and `maxCategories`; the questions and `minConfidence`), and detected again when those settings change.
+Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords`; `taxonomy`, `minScore` and `maxCategories`; the questions and `minConfidence`), and detected again when those settings change.
 
 ## Requirements
 
@@ -187,5 +191,4 @@ Keywords, categories and answers are stored with a hash of the settings that sha
 ## Limitations
 
 - Results depend on the on-device models and the first 1000 characters of the page text.
-- The Classifier explainer only covers English.
-- The Prompt API category fallback only returns tier 1 categories.
+- Categories are tier 1 only.
