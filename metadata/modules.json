@@ -5857,11 +5857,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "adxpremium",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "agma",
       "gvlid": 1122
     },
