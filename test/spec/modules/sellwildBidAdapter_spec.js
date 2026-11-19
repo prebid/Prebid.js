@@ -210,6 +210,7 @@ describe('Sellwild bid adapter', () => {
       });
       expect(bid.burl).to.equal('https://exchange.sellwild.com/win/x?p=${AUCTION_PRICE}');
       expect(bid.meta.advertiserDomains).to.deep.equal(['brand.com']);
+      expect(bid.deferRendering).to.not.equal(true);
     });
 
     if (FEATURES.VIDEO) {
@@ -219,6 +220,7 @@ describe('Sellwild bid adapter', () => {
           seatbid: [{ bid: [{ id: 'v1', impid: 'bid-video', price: 8, adm: '<VAST version="4.0"><Ad/></VAST>', crid: 'cr2', mtype: 2 }] }],
         }));
         expect(bid).to.include({ requestId: 'bid-video', mediaType: 'video', vastXml: '<VAST version="4.0"><Ad/></VAST>' });
+        expect(bid.deferRendering).to.equal(true);
       });
     }
 

@@ -4,7 +4,7 @@ import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
 import { politeTriggerPixel, replaceAuctionPrice } from '../src/utils.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
-interface SellwildBidParams {
+export interface SellwildBidParams {
   /**
    * Partner code assigned by Sellwild.
    */
@@ -38,11 +38,16 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     // The exchange passes on mtype only when its demand set it. Without it, take the media type
     // from the ad unit when it has one format, else from the markup. The context is per imp and
     // shared by every bid on it, so pass the inferred type on a copy.
+    let bidContext = context;
     if (!bid.mtype) {
       const mediaType = inferMediaType(bid.adm, context.bidRequest?.mediaTypes);
-      if (mediaType) return buildBidResponse(bid, { ...context, mediaType });
+      if (mediaType) bidContext = { ...context, mediaType };
     }
-    return buildBidResponse(bid, context);
+    const bidResponse = buildBidResponse(bid, bidContext);
+    // A video creative bills itself (its VAST carries the win <Impression>), so when the
+    // publisher defers billing, rendering must wait for pbjs.triggerBilling() too.
+    if (bidResponse.mediaType === VIDEO) bidResponse.deferRendering = true;
+    return bidResponse;
   },
 });
 
