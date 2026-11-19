@@ -48,7 +48,10 @@ export function newAuctionManager() {
       const bids = au.getBidsReceived();
       if (bids.length === 0) {
         const minTTL = getMinBidCacheTTL();
-        return minTTL == null ? null : minTTL * 1000;
+        // a non-finite minTTL is the Infinity opt-out: ttlCollection's null
+        // sentinel means "never expires" (an infinite delay would overflow
+        // its purge timer instead)
+        return minTTL == null || !Number.isFinite(minTTL) ? null : minTTL * 1000;
       }
       const ttls = bids.map(bid => {
         const minTTL = getEffectiveMinBidCacheTTL(bid);

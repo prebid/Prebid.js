@@ -2534,6 +2534,35 @@ describe('adapterManager tests', function () {
         });
       });
 
+      it('does not forward raw userId on the ad units copy made for Prebid Server', () => {
+        const userId = { sharedid: { id: 'abc123' } };
+        const adUnit = {
+          code: 'mockau',
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: { configName: 'one' },
+              userId
+            },
+            {
+              bidder: 'A',
+              userId,
+              userIdAsEids: [{ source: 'sharedid.org', uids: [{ id: 'abc123' }] }]
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs.length).to.equal(1);
+        const copy = reqs[0].adUnitsS2SCopy[0];
+        expect(copy.s2sBid.userId).to.not.exist;
+        expect(copy.bids.length).to.equal(1);
+        expect(copy.bids[0].userId).to.not.exist;
+        expect(copy.bids[0].bidder).to.equal('A');
+        // only the S2S copy is stripped - the publisher's ad unit is unchanged
+        expect(adUnit.bids[0].userId).to.eql(userId);
+        expect(adUnit.bids[1].userId).to.eql(userId);
+      });
+
       it('applies module-level ortb2Imp to "normal" s2s requests', () => {
         const adUnit = {
           code: 'mockau',
