@@ -459,6 +459,36 @@ describe('consentManagementGcm', () => {
       sinon.assert.calledWith(listener, { ad_storage: 'granted', analytics_storage: 'denied' });
     });
 
+    it('does not let a superseded lookup overwrite later configuration', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted', wait_for_update: 100 });
+      setConsentConfig({ gcm: { timeout: 5 } });
+      await clock.tickAsync(5);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      await setConsentConfig({ gcm: { cmpApi: 'static', consentData: { ad_storage: 'denied' } } });
+      await clock.tickAsync(100);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+    });
+
+    it('computes a hash for the initial consent data', async () => {
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      await setConsentConfig({ gcm: {} });
+      expect(gcmDataHandler.hash).to.not.be.null;
+    });
+
+    it('keeps notifying allConsent after being disabled and re-enabled', async () => {
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      await setConsentConfig({ gcm: {} });
+      await setConsentConfig({ gcm: { enabled: false } });
+      await setConsentConfig({ gcm: {} });
+      const listener = sinon.stub();
+      allConsent.onChange(listener);
+      gtag('consent', 'update', { ad_storage: 'denied' });
+      sinon.assert.calledWith(listener, sinon.match({ gcm: { ad_storage: 'denied' } }));
+    });
+
     it('accepts static consent data, keeping only signals', async () => {
       gtag('consent', 'update', { ad_storage: 'granted' });
       await setConsentConfig({

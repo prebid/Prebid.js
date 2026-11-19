@@ -67,6 +67,7 @@ let seen = new WeakSet<object>();
 let watched: { dataLayer: unknown[]; push: unknown[]['push']; wrapper: unknown[]['push'] } | null = null;
 let commandListeners: (() => void)[] = [];
 let regionWarningLogged = false;
+let cancelPendingLookup = () => {};
 
 function toCommand(entry: any): ConsentCommand | null {
   if (entry != null && typeof entry === 'object' && entry[0] === 'consent' &&
@@ -288,16 +289,24 @@ function refreshConsent() {
 }
 
 function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null) => void) {
+  cancelPendingLookup();
   return new PbPromise<void>((resolve) => {
     let waitTimer = null;
+    let finished = false;
     let stop = () => null;
-    function done() {
+    function cancel() {
+      finished = true;
       stop();
       if (waitTimer != null) clearTimeout(waitTimer);
+    }
+    function done() {
+      if (finished) return;
+      cancel();
       gcmDataHandler.setConsentData(currentConsent().state);
       resolve();
     }
     function check() {
+      if (finished) return;
       const { state, updated, waitForUpdate } = currentConsent();
       if (updated) {
         done();
@@ -310,6 +319,8 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
       }
     }
     stop = onCommand(check);
+    // a lookup still waiting when the configuration changes must not overwrite what the new one sets
+    cancelPendingLookup = cancel;
     watchDataLayer();
     check();
   });
@@ -348,6 +359,7 @@ export function refreshConsentHook(next, reqBidsConfigObj) {
 }
 
 export function setConsentConfig(cmConfig) {
+  cancelPendingLookup();
   const cfg = cmConfig?.[CONSENT_GCM];
   gcmConfig = {
     defaultWhenAbsent: cfg?.defaultWhenAbsent === 'denied' ? 'denied' : null,
@@ -377,6 +389,7 @@ onCommand(refreshConsent);
  * restoring the dataLayer's `push` if it's still the module's wrapper.
  */
 export function resetConsentData() {
+  cancelPendingLookup();
   consentConfig = {};
   gcmConfig = {};
   gcmDataHandler.reset();
