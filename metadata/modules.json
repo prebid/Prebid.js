@@ -5987,11 +5987,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "pubwise",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "pulsepoint",
       "gvlid": null
     },
