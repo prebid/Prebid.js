@@ -592,7 +592,6 @@ We also set the bidder (and global, if no specific bidders are set on `sendToBid
 * AdMixer
 * Adnuntius
 * Adrelevantis
-* adxcg
 * AMX RTB
 * Avocet
 * BeOp
