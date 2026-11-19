@@ -149,10 +149,15 @@ export function resolveTierUserIds(tiers, bidRequest) {
   }, {});
 }
 
-function getGptSlotFromAdUnit(adUnitId, { index = auctionManager.index } = {}) {
-  const adUnit = index.getAdUnit({ adUnitId });
+function getGamAdSlot(adUnit) {
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
+}
+
+function getGptSlotFromAdUnit(bidRequest, bidResponse, { index = auctionManager.index } = {}) {
+  const obj = bidRequest || bidResponse;
+  // in requestBidsHook there is no adUnitId (nor auction to look it up in) yet; the object matched is built from the ad unit itself
+  return getGamAdSlot(obj.adUnitId == null ? obj : index.getAdUnit({ adUnitId: obj.adUnitId }));
 }
 
 function getAdUnitCode(request, response, { index = auctionManager.index } = {}) {
@@ -166,7 +171,7 @@ export const fieldMatchingFunctions = {
   [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).adUnitId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit(bidRequest, bidResponse) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 } as const;
@@ -306,9 +311,55 @@ type GetFloorParams = {
   size?: Size | '*';
 };
 
+export type MatchedFloorRule = {
+  /**
+   * The rule key that matched, or undefined if the schema's `default` floor was used.
+   */
+  floorRule?: string;
+  /**
+   * The value of the matched rule. `null` means the rule explicitly sets no floor.
+   */
+  floorRuleValue: number | null;
+  /**
+   * The greater of `floorRuleValue` and `floorMin`, in `floorCurrency`, before any bidder-specific bid adjustment.
+   */
+  floorValue: number;
+  floorCurrency: Currency;
+  modelVersion?: string;
+};
+
+/**
+ * Matched rules keyed by media type. Each is the rule that `getFloor({mediaType, size: '*'})` matches for the ad unit,
+ * not necessarily the floor a given bidder used: adapters call getFloor with their own media type and size.
+ */
+export type MatchedFloorRules = { [K in MediaType]?: MatchedFloorRule };
+
+/**
+ * Floors information attached to bid requests at request time, for bid and analytics adapters.
+ */
+export type BidRequestFloorData = {
+  noFloorSignaled?: boolean;
+  skipped?: boolean;
+  skipRate?: number;
+  skippedReason?: string;
+  floorMin?: number;
+  modelVersion?: string;
+  modelWeight?: number;
+  modelTimestamp?: string | number;
+  location?: string;
+  floorProvider?: string;
+  fetchStatus?: string;
+  /**
+   * Set only when floors data is available, floors were not skipped for the auction,
+   * and the bidder is not in `noFloorSignalBidders`. Media types with no matching rule are left out.
+   */
+  matchedRules?: MatchedFloorRules;
+};
+
 declare module '../src/adapterManager' {
   interface BaseBidRequest {
     getFloor: typeof getFloor;
+    floorData?: BidRequestFloorData;
   }
 }
 
@@ -444,12 +495,46 @@ function getNoFloorSignalBidersArray(floorData) {
 }
 
 /**
+ * @summary For each media type the ad unit declares, the rule matched by a `getFloor({mediaType, size: '*'})` query.
+ */
+function getMatchedRulesForAdUnit(adUnit, floorData): MatchedFloorRules | undefined {
+  if (floorData.skipped || !floorData.data?.values) return;
+  const context = {
+    adUnitCode: adUnit.code,
+    mediaTypes: adUnit.mediaTypes,
+    ortb2Imp: adUnit.ortb2Imp
+  };
+  const matchedRules: MatchedFloorRules = {};
+  (Object.keys(adUnit.mediaTypes || {}) as MediaType[])
+    .filter(mediaType => ALL_MEDIATYPES.includes(mediaType))
+    .forEach(mediaType => {
+      try {
+        const { size } = updateRequestParamsFromContext(context, { mediaType, size: '*' });
+        const floorInfo = getFirstMatchingFloor(floorData.data, context, { mediaType, size });
+        if (floorInfo.floorRuleValue === undefined) return;
+        matchedRules[mediaType] = {
+          floorRule: floorInfo.matchingRule,
+          floorRuleValue: floorInfo.floorRuleValue,
+          floorValue: floorInfo.matchingFloor,
+          floorCurrency: floorData.data.currency,
+          modelVersion: floorData.data.modelVersion
+        };
+      } catch (e) {
+        // custom schema fields may expect bidder-specific bid request properties
+        logWarn(`${MODULE_NAME}: unable to determine the matched floor rule for ad unit '${adUnit.code}' and media type '${mediaType}'`, e);
+      }
+    });
+  return Object.keys(matchedRules).length > 0 ? matchedRules : undefined;
+}
+
+/**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
 export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   const noFloorSignalBiddersArray = getNoFloorSignalBidersArray(floorData);
 
   adUnits.forEach((adUnit) => {
+    const matchedRules = adUnit.bids?.length ? getMatchedRulesForAdUnit(adUnit, floorData) : undefined;
     // adUnit.bids can be undefined
     adUnit.bids?.forEach(bid => {
       // check if the bidder is in the no signal list
@@ -475,6 +560,11 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
         floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
       };
+      if (matchedRules && !isNoFloorSignaled) {
+        bid.floorData.matchedRules = Object.fromEntries(
+          Object.entries(matchedRules).map(([mediaType, rule]) => [mediaType, { ...rule }])
+        );
+      }
     });
   });
 }
