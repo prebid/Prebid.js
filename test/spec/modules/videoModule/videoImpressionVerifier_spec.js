@@ -1,4 +1,4 @@
-import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, videoImpressionVerifierFactory, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
+import { baseImpressionVerifier, cachedVideoImpressionVerifier, videoImpressionVerifier, videoImpressionVerifierFactory, PB_PREFIX, tracker, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
 import { vastXmlEditorFactory } from 'libraries/video/shared/vastXmlEditor.js';
 import { updateVast } from 'src/videoCache.js';
 
@@ -393,5 +393,212 @@ describe('Video Impression Verifier Factory', function () {
     const result = nextVerifier.getBidIdentifiers('bidder_ad_id', bid.vastUrl, []);
 
     expect(result).to.deep.equal({ adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' });
+  });
+});
+
+describe('video impression tracking', function () {
+  let bid;
+  let bidTracker;
+  let xmlEditor;
+
+  beforeEach(function () {
+    bid = { adId: 'ad-1', adUnitCode: 'video-slot', requestId: 'request-1', auctionId: 'auction-1' };
+    bidTracker = tracker();
+    xmlEditor = {
+      getVastXmlWithTracking: sinon.stub().returns('<VAST>tracked inline ad</VAST>'),
+      buildVastWrapper: sinon.stub().returns('<VAST>tracked wrapper</VAST>')
+    };
+  });
+
+  describe('identifier lookup', function () {
+    let verifier;
+
+    beforeEach(function () {
+      verifier = baseImpressionVerifier(bidTracker);
+    });
+
+    it('stores only bid identifiers and consumes them after the first successful match', function () {
+      const expected = { ...bid };
+      bid.vastXml = 'creative content';
+      const id = verifier.trackBid(bid);
+
+      expect(verifier.getBidIdentifiers(id)).to.deep.equal(expected);
+      expect(verifier.getBidIdentifiers(id)).to.be.undefined;
+    });
+
+    it('prefers a matching ad ID without consuming URL or wrapper matches', function () {
+      const first = verifier.trackBid(bid);
+      const secondBid = { ...bid, adId: 'ad-2' };
+      const second = verifier.trackBid(secondBid);
+      const url = `https://example.com/vast?${UUID_MARKER}=${second}`;
+
+      expect(verifier.getBidIdentifiers(first, url, [second])).to.deep.equal(bid);
+      expect(verifier.getBidIdentifiers(second)).to.deep.equal(secondBid);
+    });
+
+    [null, 'not a URL', 'https://example.com/vast', 'https://example.com/vast?pb_uuid=unknown'].forEach(url => {
+      it(`falls back to wrapper IDs when the ad tag URL is ${JSON.stringify(url)}`, function () {
+        const id = verifier.trackBid(bid);
+        expect(verifier.getBidIdentifiers('unknown-ad', url, ['unknown-wrapper', id])).to.deep.equal(bid);
+      });
+    });
+
+    [undefined, [], ['unknown-wrapper']].forEach(wrapperIds => {
+      it(`returns no identifiers for unmatched wrappers ${JSON.stringify(wrapperIds)}`, function () {
+        expect(verifier.getBidIdentifiers('unknown', null, wrapperIds)).to.be.undefined;
+      });
+    });
+
+    it('consumes only the first matching wrapper', function () {
+      const first = verifier.trackBid(bid);
+      const secondBid = { ...bid, adId: 'ad-2' };
+      const second = verifier.trackBid(secondBid);
+
+      expect(verifier.getBidIdentifiers(null, null, [first, second])).to.deep.equal(bid);
+      expect(verifier.getBidIdentifiers(second)).to.deep.equal(secondBid);
+    });
+  });
+
+  describe('uncached videos', function () {
+    let verifier;
+
+    beforeEach(function () {
+      verifier = videoImpressionVerifier(xmlEditor, bidTracker);
+    });
+
+    it('does not track bids with neither VAST XML nor a VAST URL', function () {
+      const store = sinon.spy(bidTracker, 'store');
+      expect(verifier.trackBid(bid)).to.be.undefined;
+      expect(store.called).to.be.false;
+      expect(xmlEditor.getVastXmlWithTracking.called).to.be.false;
+    });
+
+    it('adds tracking to inline XML and replaces the bid creative with the result', function () {
+      bid.vastXml = '<VAST>original</VAST>';
+      const id = verifier.trackBid(bid);
+
+      expect(xmlEditor.getVastXmlWithTracking.calledOnceWithExactly('<VAST>original</VAST>', id)).to.be.true;
+      expect(bid.vastXml).to.equal('<VAST>tracked inline ad</VAST>');
+      expect(verifier.getBidIdentifiers(id)).to.deep.equal({
+        adId: 'ad-1', adUnitCode: 'video-slot', requestId: 'request-1', auctionId: 'auction-1'
+      });
+    });
+
+    it('uses the URL when a bid includes both XML and a URL', function () {
+      bid.vastXml = '<VAST>original</VAST>';
+      bid.vastUrl = 'https://example.com/vast';
+      const id = verifier.trackBid(bid);
+
+      expect(new URL(bid.vastUrl).searchParams.get(UUID_MARKER)).to.equal(id);
+      expect(bid.vastXml).to.equal('<VAST>original</VAST>');
+      expect(xmlEditor.getVastXmlWithTracking.called).to.be.false;
+    });
+  });
+
+  describe('cached videos', function () {
+    let verifier;
+
+    beforeEach(function () {
+      verifier = cachedVideoImpressionVerifier(xmlEditor, bidTracker);
+    });
+
+    function adUnit(tracking = {}) {
+      return { code: bid.adUnitCode, video: { adServer: { tracking } } };
+    }
+
+    it('passes configured impression and error callbacks to the inline XML editor', function () {
+      bid.vastXml = '<VAST>original</VAST>';
+      const impressionUrl = 'https://tracker.example/impression';
+      const errorUrl = 'https://tracker.example/error';
+      const getImpressionUrl = sinon.stub().returns(impressionUrl);
+      const getErrorUrl = sinon.stub().returns(errorUrl);
+      const id = verifier.trackBid(bid, adUnit({
+        impression: { id: 'custom-impression', getUrl: getImpressionUrl },
+        error: { getUrl: getErrorUrl }
+      }));
+
+      expect(getImpressionUrl.calledOnceWithExactly(bid)).to.be.true;
+      expect(getErrorUrl.calledOnceWithExactly(bid)).to.be.true;
+      expect(xmlEditor.getVastXmlWithTracking.calledOnceWithExactly(
+        '<VAST>original</VAST>', id, impressionUrl, 'custom-impression', errorUrl
+      )).to.be.true;
+      expect(bid.vastXml).to.equal('<VAST>tracked inline ad</VAST>');
+      expect(xmlEditor.buildVastWrapper.called).to.be.false;
+    });
+
+    it('wraps the marked VAST URL and defaults the impression ID to the bid ad ID', function () {
+      bid.vastUrl = 'https://example.com/vast';
+      const id = verifier.trackBid(bid, adUnit({
+        impression: { getUrl: () => 'https://tracker.example/impression' }
+      }));
+
+      expect(bid.vastUrl).to.equal(`https://example.com/vast?${UUID_MARKER}=${id}`);
+      expect(xmlEditor.buildVastWrapper.calledOnceWithExactly(
+        id, bid.vastUrl, 'https://tracker.example/impression', 'ad-1-impression', undefined
+      )).to.be.true;
+      expect(bid.vastXml).to.equal('<VAST>tracked wrapper</VAST>');
+      expect(xmlEditor.getVastXmlWithTracking.called).to.be.false;
+    });
+
+    it('adds its identifier to XML when no optional tracking callbacks are configured', function () {
+      bid.vastXml = '<VAST>original</VAST>';
+      bid.vastUrl = 'https://example.com/vast';
+      const id = verifier.trackBid(bid, adUnit());
+
+      expect(xmlEditor.getVastXmlWithTracking.calledOnceWithExactly(
+        '<VAST>original</VAST>', id, undefined, undefined, undefined
+      )).to.be.true;
+      expect(xmlEditor.buildVastWrapper.called).to.be.false;
+    });
+
+    [undefined, 'https://tracker.example/not-a-callback'].forEach(getUrl => {
+      it(`ignores an invalid error URL callback ${JSON.stringify(getUrl)}`, function () {
+        bid.vastXml = '<VAST>original</VAST>';
+        const id = verifier.trackBid(bid, adUnit({ error: { getUrl } }));
+
+        expect(xmlEditor.getVastXmlWithTracking.calledOnceWithExactly(
+          '<VAST>original</VAST>', id, undefined, undefined, undefined
+        )).to.be.true;
+      });
+    });
+  });
+
+  describe('factory wiring', function () {
+    const vastXml = '<VAST version="3.0"><Ad id="original"><InLine/></Ad></VAST>';
+
+    it('builds an uncached verifier that rewrites XML and recognizes the replacement ad ID', function () {
+      const verifier = videoImpressionVerifierFactory(false, bidTracker);
+      bid.vastXml = vastXml;
+      const id = verifier.trackBid(bid);
+      const xml = new DOMParser().parseFromString(bid.vastXml, 'application/xml');
+
+      expect(xml.querySelector('Ad').id).to.equal(id);
+      expect(verifier.getBidIdentifiers(id)).to.deep.equal({
+        adId: 'ad-1', adUnitCode: 'video-slot', requestId: 'request-1', auctionId: 'auction-1'
+      });
+    });
+
+    it('builds a cached verifier that creates a real VAST wrapper', function () {
+      const verifier = videoImpressionVerifierFactory(true, bidTracker);
+      bid.vastUrl = 'https://example.com/vast';
+      const id = verifier.trackBid(bid, { code: bid.adUnitCode, video: { adServer: { tracking: {} } } });
+      const xml = new DOMParser().parseFromString(bid.vastXml, 'application/xml');
+
+      expect(xml.querySelector('Ad').id).to.equal(id);
+      expect(xml.querySelector('VASTAdTagURI').textContent).to.equal(bid.vastUrl);
+      expect(verifier.getBidIdentifiers(null, null, [id])).to.deep.equal({
+        adId: 'ad-1', adUnitCode: 'video-slot', requestId: 'request-1', auctionId: 'auction-1'
+      });
+    });
+
+    it('keeps tracking state separate between verifiers with separate trackers', function () {
+      const first = videoImpressionVerifierFactory(false, bidTracker);
+      const second = videoImpressionVerifierFactory(false, tracker());
+      bid.vastUrl = 'https://example.com/vast';
+      const id = first.trackBid(bid);
+
+      expect(second.getBidIdentifiers(id)).to.be.undefined;
+      expect(first.getBidIdentifiers(id).adId).to.equal(bid.adId);
+    });
   });
 });
