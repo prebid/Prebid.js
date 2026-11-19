@@ -539,6 +539,13 @@ const stripRefPointer = (uid) => {
  * @param {Object} response Targeting response
  * @returns {Object} Response in cache format
  */
+/**
+ * Strip ext.optable.ref pointers and `_`-prefixed metadata from an EID
+ * @param {Object} eid ORTB2 EID
+ * @returns {Object} EID safe to send to bidders
+ */
+const cleanEid = (eid) => ({ ...withoutPrivateKeys(eid), uids: (eid.uids || []).map(stripRefPointer) });
+
 export const toCacheFormat = (response) => {
   const user = response?.ortb2?.user;
   const eids = Array.isArray(user?.eids) ? user.eids : [];
@@ -561,7 +568,7 @@ export const toCacheFormat = (response) => {
       ...response.ortb2,
       user: {
         ...user,
-        eids: eids.map((eid) => ({ ...withoutPrivateKeys(eid), uids: (eid.uids || []).map(stripRefPointer) })),
+        eids: eids.map(cleanEid),
       },
     };
   }
@@ -842,12 +849,15 @@ export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, opt
 
   if (targetingData.ortb2) {
     targetingData = toCacheFormat(targetingData);
-    const { eids: optableEids, ...user } = targetingData.ortb2.user ?? {};
-    const eidCount = optableEids?.length || 0;
+    // A response can carry EIDs under user.eids, user.ext.eids or both; keep them all
+    const { eids: userEids, ext: userExt, ...user } = targetingData.ortb2.user ?? {};
+    const { eids: extEids, ...ext } = userExt ?? {};
+    const optableEids = [...(userEids || []), ...(extEids || []).map(cleanEid)];
+    const eidCount = optableEids.length;
     logMessage(`targetingHandleRtd: received targeting data with ${eidCount} EIDs`);
 
     let eids = optableEids;
-    if (options.skipMergeIfUid2Exists && eids) {
+    if (options.skipMergeIfUid2Exists && eids.length) {
       const globalUser = reqBidsConfigObj.ortb2Fragments?.global?.user;
       if (hasUid2Eid(globalUser?.ext?.eids) || hasUid2Eid(globalUser?.eids)) {
         eids = eids.filter(eid => eid.source !== UID2_SOURCE);
@@ -856,11 +866,12 @@ export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, opt
     }
 
     // Prebid has already normalized EIDs to user.ext.eids by the time RTD runs
+    const mergedExt = eids.length ? { ...ext, eids } : ext;
     mergeFn(reqBidsConfigObj.ortb2Fragments.global, {
       ...targetingData.ortb2,
-      user: eids ? { ...user, ext: { ...user.ext, eids } } : user,
+      user: Object.keys(mergedExt).length ? { ...user, ext: mergedExt } : user,
     });
-    logMessage(`EIDs merged into ortb2Fragments.global.user.ext.eids (${eids?.length || 0} EIDs)`);
+    logMessage(`EIDs merged into ortb2Fragments.global.user.ext.eids (${eids.length} EIDs)`);
   }
 
   if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
@@ -950,7 +961,8 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     }
 
     // The RTD framework stops waiting after auctionDelay
-    if (timeout && Date.now() - startedAt >= timeout) {
+    // 0 means the auction is not delayed, so it has already moved on
+    if (timeout != null && Date.now() - startedAt >= timeout) {
       logWarn('Targeting API answered after auctionDelay, cached for the next auction');
       callback();
       return;

@@ -912,6 +912,35 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal([{ source: 'existing.com' }]);
     });
 
+    it('merges EIDs from both user.eids and user.ext.eids in the response', function () {
+      const targetingData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'optable.co', uids: [{ id: 'a' }] }],
+            ext: { foo: 'bar', eids: [{ source: 'id5-sync.com', _id5: { signature: 'sig' }, uids: [{ id: 'b', ext: { optable: { ref: 'r1' } } }] }] }
+          }
+        }
+      };
+
+      targetingHandleRtd(reqBidsConfigObj, targetingData, mergeFn);
+      expect(mergeFn.firstCall.args[1].user).to.deep.equal({
+        ext: {
+          foo: 'bar',
+          eids: [
+            { source: 'optable.co', uids: [{ id: 'a' }] },
+            { source: 'id5-sync.com', uids: [{ id: 'b' }] }
+          ]
+        }
+      });
+    });
+
+    it('keeps EIDs that are only under user.ext.eids when user.eids is empty', function () {
+      const targetingData = { ortb2: { user: { eids: [], ext: { eids: [{ source: 'optable.co', uids: [{ id: 'a' }] }] } } } };
+
+      targetingHandleRtd(reqBidsConfigObj, targetingData, mergeFn);
+      expect(mergeFn.firstCall.args[1].user.ext.eids).to.deep.equal([{ source: 'optable.co', uids: [{ id: 'a' }] }]);
+    });
+
     it('skips Optable UID2 EIDs when user.ext.eids already has one', function () {
       reqBidsConfigObj.ortb2Fragments.global = { user: { ext: { eids: [{ source: 'uidapi.com', uids: [{ id: 'pub-uid2' }] }] } } };
       const targetingData = {
@@ -1309,6 +1338,21 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledOnce).to.be.true;
     });
 
+    it('caches but does not merge an API response when the auction is not delayed', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      const handleRtd = sinon.spy();
+      moduleConfig.params.handleRtd = handleRtd;
+      ajaxStub.callsFake((url, options) => {
+        setTimeout(() => options.success('{"ortb2":{"user":{"eids":[{"source":"late.com"}]}}}'), 0);
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 0);
+
+      expect(handleRtd.called).to.be.false;
+      expect(callback.calledOnce).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.true;
+    });
+
     it('caches a response that arrives after auctionDelay without merging it', async function () {
       storage.getDataFromLocalStorage.returns(null);
       const handleRtd = sinon.spy();
@@ -1404,7 +1448,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
     });
 
     it('waits for an async handleRtd before releasing the auction', async function () {
-      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [] } } }));
+      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [{ source: 'cached.com', uids: [{ id: 'x' }] }] } } }));
       ajaxStub.callsFake(() => {});
       let handled = false;
       moduleConfig.params.handleRtd = () => new Promise(resolve => setTimeout(() => {
