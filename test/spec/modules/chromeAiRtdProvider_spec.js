@@ -22,6 +22,8 @@ describe('Chrome AI RTD Provider', function () {
   // Original globals
   let originalLanguageDetector;
   let originalSummarizer;
+  let originalLanguageModel;
+  let mockLanguageModelSession;
 
   // Stubs
   let logMessageStub, logErrorStub; // Removed deepAccessStub, deepSetValueStub
@@ -35,6 +37,7 @@ describe('Chrome AI RTD Provider', function () {
     // Save original globals
     originalLanguageDetector = self.LanguageDetector;
     originalSummarizer = self.Summarizer;
+    originalLanguageModel = self.LanguageModel;
 
     // Create stubs
     logMessageStub = sandbox.stub(utils, 'logMessage');
@@ -89,6 +92,15 @@ describe('Chrome AI RTD Provider', function () {
     MockSummarizerFn.availability = sandbox.stub().resolves('available'); // Default to 'available'
     MockSummarizerFn.create = sandbox.stub().resolves(mockSummarizerInstance);
     self.Summarizer = MockSummarizerFn;
+
+    mockLanguageModelSession = {
+      prompt: sandbox.stub().resolves(JSON.stringify({ keywords: ['ev', 'cars'] })),
+      destroy: sandbox.stub()
+    };
+    const MockLanguageModelFn = function () {};
+    MockLanguageModelFn.availability = sandbox.stub().resolves('available');
+    MockLanguageModelFn.create = sandbox.stub().resolves(mockLanguageModelSession);
+    self.LanguageModel = MockLanguageModelFn;
   });
 
   afterEach(function () {
@@ -103,6 +115,12 @@ describe('Chrome AI RTD Provider', function () {
       self.Summarizer = originalSummarizer;
     } else {
       delete self.Summarizer;
+    }
+
+    if (originalLanguageModel) {
+      self.LanguageModel = originalLanguageModel;
+    } else {
+      delete self.LanguageModel;
     }
 
     // Restore sandbox
@@ -219,7 +237,7 @@ describe('Chrome AI RTD Provider', function () {
       sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
       self.LanguageDetector.availability.resolves('unavailable');
       return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function (result) {
-        // The init might still resolve to true if other features (like summarizer if enabled & available) initialize successfully.
+        // The init might still resolve to true if other features (like keywords) initialize successfully.
         // We are checking that the specific error for LanguageDetector being unavailable is logged.
         expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: LanguageDetector is unavailable.'))).to.be.true;
       });
@@ -240,30 +258,15 @@ describe('Chrome AI RTD Provider', function () {
       expect(mockLanguageDetectorInstance.detect.called).to.be.true;
     });
 
-    it('should handle Summarizer API unavailability (when availability() returns unavailable)', function () {
-      self.Summarizer.availability.resolves('unavailable');
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function (result) {
-        expect(logMessageStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer availability: unavailable.'))).to.be.true;
-        expect(self.Summarizer.create.called).to.be.false;
-      });
-    });
-
-    it('should attempt model download if Summarizer availability is "after-download"', function () {
-      self.Summarizer.availability.resolves('after-download');
-      // Mock active user to allow download
-      try {
-        Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true, writable: true });
-      } catch (e) { }
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(() => {
-        expect(self.Summarizer.create.called).to.be.true;
-        const monitor = self.Summarizer.create.firstCall.args[0].monitor;
-        const monitorTarget = { addEventListener: sinon.stub() };
-        monitor(monitorTarget);
-        monitorTarget.addEventListener.firstCall.args[1]({ loaded: 0.5, total: 1 });
-        expect(logMessageStub.calledWith(sinon.match('Summarizer model download: 50%'))).to.be.true;
-      });
+    it('logs model download progress through the create() monitor', async function () {
+      self.LanguageModel.availability.resolves('downloadable');
+      Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true, writable: true });
+      await chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: false }, keywords: { enabled: true } } });
+      const monitor = self.LanguageModel.create.firstCall.args[0].monitor;
+      const monitorTarget = { addEventListener: sinon.stub() };
+      monitor(monitorTarget);
+      monitorTarget.addEventListener.firstCall.args[1]({ loaded: 0.5, total: 1 });
+      expect(logMessageStub.calledWith(sinon.match('LanguageModel model download: 50%'))).to.be.true;
     });
 
     it('should return a promise', function () {
@@ -280,7 +283,7 @@ describe('Chrome AI RTD Provider', function () {
             ortb2Path: 'custom.language.path',
             confidence: 0.7
           },
-          summarizer: {
+          keywords: {
             enabled: true,
             ortb2Path: 'custom.keywords.path',
             cacheInLocalStorage: true
@@ -298,14 +301,14 @@ describe('Chrome AI RTD Provider', function () {
       const disabledConfig = {
         params: {
           languageDetector: { enabled: false },
-          summarizer: { enabled: false }
+          keywords: { enabled: false }
         }
       };
 
       return chromeAiRtdProvider.chromeAiSubmodule.init(disabledConfig).then(function (result) {
         expect(result).to.be.true;
         expect(logMessageStub.calledWith(sinon.match('Language detection disabled by config'))).to.be.true;
-        expect(logMessageStub.calledWith(sinon.match('Summarizer disabled by config.'))).to.be.true;
+        expect(logMessageStub.calledWith(sinon.match('Keywords disabled by config.'))).to.be.true;
       });
     });
   });
@@ -332,13 +335,6 @@ describe('Chrome AI RTD Provider', function () {
       it('should return null if no data in localStorage for the URL', function () {
         mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ 'other/url': {} }));
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
-      });
-    });
-    describe('chromeAiRtdProvider.storeDetectedKeywords', function () {
-      it('should return false if keywords are not provided or empty', function () {
-        expect(chromeAiRtdProvider.storeDetectedKeywords(null, mockPageUrl)).to.be.false;
-        expect(chromeAiRtdProvider.storeDetectedKeywords([], mockPageUrl)).to.be.false;
-        expect(logMessageStub.calledWith(sinon.match('No valid keywords array to store'))).to.be.true;
       });
     });
   });
@@ -375,7 +371,7 @@ describe('Chrome AI RTD Provider', function () {
       await chromeAiRtdProvider.chromeAiSubmodule.init({
         params: {
           languageDetector: { enabled: true, ortb2Path: 'site.content.language' },
-          summarizer: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false }
+          keywords: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false }
         }
       });
 
@@ -413,16 +409,15 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     it('should enrich with detected keywords if not in auction ORTB2', async function () {
-      mockSummarizerInstance.summarize.resolves('newly detected summary');
-      await chromeAiRtdProvider.chromeAiSubmodule.init({ // Re-init to trigger summarizer with mocks
+      await chromeAiRtdProvider.chromeAiSubmodule.init({
         params: {
-          summarizer: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false },
+          keywords: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false },
           languageDetector: { enabled: false } // Disable lang to isolate test
         }
       });
 
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.deep.equal(['newly detected summary']);
+      expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.equal('ev,cars');
     });
 
     it('should not enrich keywords if already present in auction ORTB2', function () {
@@ -448,13 +443,11 @@ describe('Chrome AI RTD Provider', function () {
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, langPath)).to.be.undefined;
     });
 
-    it('should handle summarizer disabled', function () {
-      chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: false } } }); // Re-init with summarizer disabled
+    it('should handle keywords disabled', function () {
+      chromeAiRtdProvider.chromeAiSubmodule.init({ params: { keywords: { enabled: false } } });
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      expect(logMessageStub.calledWith(sinon.match('Summarizer disabled, no keyword enrichment.'))).to.be.true;
-      // Check that no keyword enrichment was attempted
-      const keywordPath = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.summarizer.ortb2Path; // or the configured one
-      // Verify that keywords were not set by checking the path
+      expect(logMessageStub.calledWith(sinon.match('Keywords disabled, no keyword enrichment.'))).to.be.true;
+      const keywordPath = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.keywords.ortb2Path;
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, keywordPath)).to.be.undefined;
     });
   });
@@ -1009,13 +1002,12 @@ describe('Chrome AI RTD Provider', function () {
         expect(runAuction().site.content.kwarray).to.deep.equal(['cars', 'electric vehicles']);
       });
 
-      it('falls back to the Summarizer, with the summarizer options, when LanguageModel is unavailable', async function () {
+      it('does nothing when LanguageModel is unavailable, without falling back to the Summarizer', async function () {
         mockApi('LanguageModel', session, 'unavailable');
-        await init({ keywords: { enabled: true }, summarizer: { type: 'key-points', length: 'medium' } });
+        expect(await init({ keywords: { enabled: true } })).to.be.false;
         expect(session.prompt.called).to.be.false;
-        expect(self.Summarizer.availability.firstCall.args[0]).to.deep.equal({ type: 'key-points', format: 'markdown', length: 'medium' });
-        expect(mockSummarizerInstance.summarize.called).to.be.true;
-        expect(runAuction().site.content.keywords).to.equal('Test summary');
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
       });
 
       it('does not overwrite publisher keywords', async function () {
@@ -1043,35 +1035,44 @@ describe('Chrome AI RTD Provider', function () {
         expect(runAuction().site.content.keywords).to.equal('cars');
       });
 
-      it('runs only the keywords feature when summarizer is also enabled', async function () {
+      it('ignores summarizer settings when keywords are configured', async function () {
         mockApi('LanguageModel', session);
-        await init({ keywords: { enabled: true }, summarizer: { enabled: true } });
+        await init({ keywords: { enabled: false }, summarizer: { enabled: true } });
+        expect(session.prompt.called).to.be.false;
         expect(self.Summarizer.availability.called).to.be.false;
-        expect(runAuction().site.content.keywords).to.equal('cars,electric vehicles');
       });
     });
 
-    describe('existing summarizer config', function () {
-      it('keeps using only the Summarizer, writing an array of one summary', async function () {
-        const LanguageModel = mockApi('LanguageModel', {});
-        await init({ summarizer: { enabled: true } });
-        expect(LanguageModel.availability.called).to.be.false;
-        expect(storedData().keywords).to.deep.equal(['Test summary']);
-        expect(runAuction().site.content.keywords).to.deep.equal(['Test summary']);
+    describe('summarizer config (no longer supported)', function () {
+      let logWarnStub;
+
+      beforeEach(function () {
+        logWarnStub = sandbox.stub(utils, 'logWarn');
       });
 
-      it('uses keywords cached by earlier versions', async function () {
-        setCache({ keywords: ['old summary'] });
-        await init({ summarizer: { enabled: true } });
+      it('warns and maps summarizer.enabled, ortb2Path and cacheInLocalStorage to keywords', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ summarizer: { enabled: true, type: 'teaser', ortb2Path: 'site.ext.data.summary', cacheInLocalStorage: false } });
+        expect(logWarnStub.calledOnceWith(sinon.match('params.summarizer is no longer supported; use params.keywords.'))).to.be.true;
         expect(self.Summarizer.availability.called).to.be.false;
-        expect(runAuction().site.content.keywords).to.deep.equal(['old summary']);
+        expect(session.prompt.calledOnce).to.be.true;
+        expect(mockStorage.setDataInLocalStorage.called).to.be.false;
+        expect(runAuction().site.ext.data.summary).to.equal('ev');
       });
 
-      it('waits for user activation before a Summarizer download', async function () {
-        self.Summarizer.availability.resolves('downloadable');
-        expect(await init({ summarizer: { enabled: true } })).to.be.false;
-        expect(self.Summarizer.create.called).to.be.false;
-        expect(logMessageStub.calledWith(sinon.match('Summarizer needs a model download but the user is inactive'))).to.be.true;
+      it('warns without enabling keywords when summarizer is not enabled', async function () {
+        const LanguageModel = mockApi('LanguageModel', {});
+        await init({ summarizer: { type: 'teaser' } });
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+      });
+
+      it('does not override keywords settings the publisher set', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ summarizer: { enabled: true, ortb2Path: 'site.ext.data.summary' }, keywords: { ortb2Path: 'site.content.kwarray' } });
+        expect(runAuction().site.content.kwarray).to.deep.equal(['ev']);
       });
     });
   });

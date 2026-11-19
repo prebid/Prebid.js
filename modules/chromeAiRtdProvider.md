@@ -5,7 +5,7 @@
 The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds first party data about the page using Chrome's built-in, on-device AI APIs. Page text never leaves the browser. It can:
 
 - detect the page language with the [Language Detector API](https://developer.chrome.com/docs/ai/language-detection), written to `site.content.language`;
-- extract keywords with the [Prompt API](https://github.com/webmachinelearning/prompt-api) (`LanguageModel`), falling back to the [Summarizer API](https://developer.chrome.com/docs/ai/summarizer-api), written to `site.content.keywords`;
+- extract keywords with the [Prompt API](https://github.com/webmachinelearning/prompt-api) (`LanguageModel`), written to `site.content.keywords`;
 - classify the page into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Prompt API, written to `site.pagecat`. With Content Taxonomy 2.2, the categories also reach Google Ad Manager as Publisher Provided Signals (`IAB_CONTENT_2_2`) through the `gptPreAuction` module, with no extra setup beyond GPT targeting;
 - answer publisher-defined questions about the page with the [Decisions API](https://github.com/explainers-by-googlers/decisions-api) (`DecisionModel`), falling back to the Prompt API, written to `site.content.data`.
 
@@ -14,7 +14,6 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds 
 | API | Used for | Status |
 |-----|----------|--------|
 | Language Detector | `languageDetector` | Chrome 138+ stable |
-| Summarizer | `summarizer`, `keywords` fallback | Chrome 138+ stable |
 | Prompt API (`LanguageModel`) | `keywords`, `categories`, `decisions` fallback | Chrome 148+ stable on the web |
 | Decisions (`DecisionModel`) | `decisions` | Experimental explainer; its dev trial prototype is behind a flag |
 
@@ -95,17 +94,11 @@ pbjs.setConfig({
 | `languageDetector.enabled` | Boolean | Detect the page language | `true` |
 | `languageDetector.confidence` | Number | Minimum confidence of the detected language (0 - 1) | `0.8` |
 | `languageDetector.ortb2Path` | String | Where to write the language | `'site.content.language'` |
-| `keywords.enabled` | Boolean | Extract keywords with the Prompt API, falling back to the Summarizer | `false` |
+| `keywords.enabled` | Boolean | Extract keywords with the Prompt API | `false` |
 | `keywords.maxKeywords` | Number | Maximum number of keywords | `10` |
 | `keywords.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
 | `keywords.ortb2Path` | String | Where to write the keywords: a comma-separated string, or an array when the path ends in `kwarray` | `'site.content.keywords'` |
 | `keywords.cacheInLocalStorage` | Boolean | Cache the keywords in localStorage | `true` |
-| `summarizer.enabled` | Boolean | Use only the Summarizer for keywords. Ignored when `keywords.enabled` is `true` | `false` |
-| `summarizer.type` | String | `'headline'`, `'key-points'`, `'tldr'` or `'teaser'` | `'headline'` |
-| `summarizer.format` | String | `'plain-text'` or `'markdown'` | `'markdown'` |
-| `summarizer.length` | String | `'short'`, `'medium'` or `'long'` | `'short'` |
-| `summarizer.ortb2Path` | String | Where to write the summary, as an array of one string | `'site.content.keywords'` |
-| `summarizer.cacheInLocalStorage` | Boolean | Cache the summary in localStorage | `true` |
 | `categories.enabled` | Boolean | Classify the page into IAB tier 1 categories with the Prompt API | `false` |
 | `categories.taxonomy` | Number | AdCOM `cattax` of the categories: `6` (Content Taxonomy 2.2) or `1` (Content Category Taxonomy 1.0) | `6` |
 | `categories.minScore` | Number | Minimum confidence the model gives a category (0 - 1) | `0.5` |
@@ -135,9 +128,9 @@ The top language detected with at least `confidence` is written to `languageDete
 
 ### Keywords (`keywords`)
 
-The Prompt API returns up to `maxKeywords` keywords through a JSON schema `responseConstraint`. When `LanguageModel` is unavailable, the Summarizer (with the `summarizer` options) is used and its summary becomes a single keyword. The result is written to `keywords.ortb2Path` as a comma-separated string, which is the OpenRTB type of `keywords`, or as an array for a `kwarray` path.
+The Prompt API returns up to `maxKeywords` keywords through a JSON schema `responseConstraint`. The result is written to `keywords.ortb2Path` as a comma-separated string, which is the OpenRTB type of `keywords`, or as an array for a `kwarray` path.
 
-Configurations that only set `summarizer.enabled: true` keep their behaviour: only the Summarizer runs, and the summary is written as an array of one string.
+The module no longer uses the Summarizer API: it runs on the same on-device model as the Prompt API, and its one-sentence summary made a poor keyword. `summarizer` params log a warning. `summarizer.enabled: true` turns on `keywords` instead (unless `keywords.enabled` is set), with `summarizer.ortb2Path` and `summarizer.cacheInLocalStorage` if `keywords` doesn't set them; the other `summarizer` options are ignored. The keywords are now written as a comma-separated string rather than an array of one summary, unless the path ends in `kwarray`.
 
 ### Categories (`categories`)
 

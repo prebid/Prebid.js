@@ -10,26 +10,19 @@ export interface ChromeAiLanguageDetectorParams {
   ortb2Path?: string;
 }
 
+/**
+ * @deprecated The Summarizer API is no longer used; use `keywords`. `enabled: true` turns on `keywords` (unless
+ * `keywords.enabled` is set) with this `ortb2Path` and `cacheInLocalStorage`, and logs a warning.
+ */
 export interface ChromeAiSummarizerParams {
-  /**
-   * Generates keywords with the Summarizer API. Ignored when `keywords.enabled` is `true`: the Summarizer is then
-   * only the fallback for keywords, with the options below. Defaults to `false`.
-   */
   enabled?: boolean;
-  /** Summarizer `type`, e.g. `'headline'`, `'key-points'`, `'tldr'` or `'teaser'`. Defaults to `'headline'`. */
-  type?: string;
-  /** Summarizer `format`, `'markdown'` or `'plain-text'`. Defaults to `'markdown'`. */
-  format?: string;
-  /** Summarizer `length`, `'short'`, `'medium'` or `'long'`. Defaults to `'short'`. */
-  length?: string;
-  /** Path of the keywords array. Defaults to `'site.content.keywords'`. */
   ortb2Path?: string;
-  /** Defaults to `true`. */
   cacheInLocalStorage?: boolean;
+  [key: string]: unknown;
 }
 
 export interface ChromeAiKeywordsParams {
-  /** Extracts keywords with the Prompt API, falling back to the Summarizer API. Defaults to `false`. */
+  /** Extracts keywords with the Prompt API. Defaults to `false`. */
   enabled?: boolean;
   /** Defaults to `10`. */
   maxKeywords?: number;
@@ -111,6 +104,7 @@ export interface ChromeAiDecisionsParams {
 
 export interface ChromeAiRtdParams {
   languageDetector?: ChromeAiLanguageDetectorParams;
+  /** @deprecated Use `keywords`. */
   summarizer?: ChromeAiSummarizerParams;
   keywords?: ChromeAiKeywordsParams;
   categories?: ChromeAiCategoriesParams;

@@ -25,14 +25,6 @@ export const CONSTANTS = Object.freeze({
       confidence: 0.8,
       ortb2Path: 'site.content.language' // Default path for language
     },
-    summarizer: {
-      enabled: false,
-      type: 'headline', // 'headline' or 'paragraph'
-      format: 'markdown', // 'markdown' or 'plaintext'
-      length: 'short', // 'short', 'medium', or 'long'
-      ortb2Path: 'site.content.keywords', // Default path for keywords
-      cacheInLocalStorage: true // Whether to cache detected keywords in localStorage
-    },
     keywords: {
       enabled: false,
       maxKeywords: 10,
@@ -368,31 +360,6 @@ export const detectLanguage = async (text) => {
   }
 };
 
-const getSummarizerOptions = (config) => ({
-  type: config.type,
-  format: config.format,
-  length: config.length,
-});
-
-/**
- * Summarizes `text`; callers must have checked Summarizer availability and user activation.
- */
-export const detectSummary = async (text, config) => {
-  const summaryOptions = getSummarizerOptions(config);
-  const summarizer = await createApiInstance('Summarizer', summaryOptions);
-  try {
-    const summaryResult = await summarizer.summarize(text);
-    if (!summaryResult) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} No summary result from API.`);
-      return null;
-    }
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary generated (type: ${summaryOptions.type}, len: ${summaryOptions.length}):`, summaryResult.substring(0, 100) + '...');
-    return summaryResult;
-  } finally {
-    summarizer.destroy?.();
-  }
-};
-
 const initLanguageDetector = async () => {
   const existingLanguage = getPrioritizedLanguageData(null);
   if (existingLanguage && existingLanguage.source === 'localStorage') {
@@ -411,28 +378,20 @@ const initLanguageDetector = async () => {
   return storeDetectedLanguage(detectionResult.language, detectionResult.confidence, getCurrentUrl());
 };
 
-export const storeDetectedKeywords = (keywords, url) => {
-  if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid keywords array to store`);
-    return false;
-  }
-  return _storeChromeAiDataInLocalStorage(url, { keywords: keywords });
-};
-
 const isNonEmptyArray = (value) => isArray(value) && value.length > 0;
 
 /**
  * Fills `detected[key]` (a non-empty array) from the localStorage cache for this URL, or else by running `detect`
  * on the page text. `detect` returns DEFERRED when it will call the retry it is given once the user activates the page.
- * With `cacheSettings`, the settings that shape the result, the cache entry is `{ settings: <hash>, value }` and is
- * only reused while those settings are unchanged; without them (legacy summarizer keywords) it is the bare value.
+ * The cache entry is `{ settings: <hash of cacheSettings>, value }`, reused only while the settings that shape the
+ * result are unchanged.
  */
 const initFeature = async (key, config, detect, cacheSettings) => {
   const useCache = config.cacheInLocalStorage !== false;
-  const settingsHash = cacheSettings && cyrb53Hash(JSON.stringify(cacheSettings));
+  const settingsHash = cyrb53Hash(JSON.stringify(cacheSettings));
   if (useCache) {
     const entry = _getChromeAiDataFromLocalStorage()?.[key];
-    const cached = settingsHash ? (entry?.settings === settingsHash ? entry.value : null) : entry;
+    const cached = entry?.settings === settingsHash ? entry.value : null;
     if (isNonEmptyArray(cached)) {
       detected[key] = cached;
       logMessage(`${CONSTANTS.LOG_PRE_FIX} '${key}' found in localStorage.`, cached);
@@ -449,7 +408,7 @@ const initFeature = async (key, config, detect, cacheSettings) => {
     }
     detected[key] = value;
     logMessage(`${CONSTANTS.LOG_PRE_FIX} '${key}' detected:`, value);
-    if (useCache) _storeChromeAiDataInLocalStorage(getCurrentUrl(), { [key]: settingsHash ? { settings: settingsHash, value } : value });
+    if (useCache) _storeChromeAiDataInLocalStorage(getCurrentUrl(), { [key]: { settings: settingsHash, value } });
     return true;
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error detecting '${key}':`, error);
@@ -457,16 +416,7 @@ const initFeature = async (key, config, detect, cacheSettings) => {
   }
 };
 
-// --- Summarizer (legacy keywords) ---
-const summarizeToKeywords = async (text, config, retry) => {
-  const api = await selectApi('Summarizer', [{ name: 'Summarizer', options: getSummarizerOptions(config) }], retry);
-  if (!api || api === DEFERRED) return api;
-  // The summary is a single string, used as a single keyword.
-  const summary = await detectSummary(text, config);
-  return summary ? [summary] : null;
-};
-
-// --- Keywords (Prompt API, Summarizer fallback) ---
+// --- Keywords (Prompt API) ---
 const getKeywordsSchema = (maxKeywords) => ({
   type: 'object',
   properties: {
@@ -477,16 +427,8 @@ const getKeywordsSchema = (maxKeywords) => ({
 });
 
 export const extractKeywords = async (text, config, retry) => {
-  const summarizerConfig = moduleConfig.summarizer;
-  const api = await selectApi('Keywords', [
-    { name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS },
-    { name: 'Summarizer', options: getSummarizerOptions(summarizerConfig) }
-  ], retry);
+  const api = await selectApi('Keywords', [{ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS }], retry);
   if (!api || api === DEFERRED) return api;
-  if (api.name === 'Summarizer') {
-    const summary = await detectSummary(text, summarizerConfig);
-    return summary ? [summary] : null;
-  }
   const maxKeywords = config.maxKeywords;
   const response = await promptForJson(
     (config.prompt ?? `List up to ${maxKeywords} short keywords that describe the topic of this web page text.`) +
@@ -625,6 +567,22 @@ export const answerQuestions = async (text, config, retry) => {
 const init = async (config) => {
   moduleConfig = mergeModuleConfig(config);
   detected = {};
+  const summarizer = moduleConfig.summarizer;
+  if (summarizer) {
+    // The Summarizer API is no longer used: its one-sentence summary made a poor keyword, and the Prompt API runs
+    // on the same on-device model.
+    const keywordsParams = config.params.keywords || {};
+    const migrate = summarizer.enabled === true && keywordsParams.enabled === undefined;
+    logWarn(`${CONSTANTS.LOG_PRE_FIX} params.summarizer is no longer supported; use params.keywords.` +
+      (migrate ? ' Enabling keywords with summarizer.ortb2Path and summarizer.cacheInLocalStorage.' : ''));
+    if (migrate) {
+      moduleConfig.keywords.enabled = true;
+      ['ortb2Path', 'cacheInLocalStorage'].forEach(key => {
+        if (summarizer[key] !== undefined && keywordsParams[key] === undefined) moduleConfig.keywords[key] = summarizer[key];
+      });
+    }
+    delete moduleConfig.summarizer;
+  }
   ['keywords', 'categories'].forEach(feature => {
     const prompt = moduleConfig[feature]?.prompt;
     if (prompt !== undefined && !(isStr(prompt) && prompt.trim() !== '')) {
@@ -647,14 +605,8 @@ const init = async (config) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords enabled. Initializing...`);
     activeInitializations.push(initFeature('extractedKeywords', moduleConfig.keywords, extractKeywords,
       [moduleConfig.keywords.maxKeywords, moduleConfig.keywords.prompt ?? null]));
-    if (moduleConfig.summarizer?.enabled === true) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} keywords is enabled, so the Summarizer only runs as its fallback.`);
-    }
-  } else if (moduleConfig.summarizer?.enabled === true) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer enabled. Initializing...`);
-    activeInitializations.push(initFeature('keywords', moduleConfig.summarizer, summarizeToKeywords));
   } else {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer disabled by config.`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords disabled by config.`);
   }
 
   if (moduleConfig.categories?.enabled === true && !TIER_1_CATEGORIES[moduleConfig.categories.taxonomy]) {
@@ -784,10 +736,8 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     const path = moduleConfig.keywords.ortb2Path;
     // OpenRTB `keywords` is a comma-separated string; `kwarray` is the array form.
     enrichKeywords(global, path, detected.extractedKeywords, keywords => (/(^|\.)kwarray$/.test(path) ? keywords : keywords.join(',')));
-  } else if (moduleConfig.summarizer?.enabled === true) {
-    enrichKeywords(global, moduleConfig.summarizer.ortb2Path, detected.keywords, keywords => keywords);
   } else {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer disabled, no keyword enrichment.`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords disabled, no keyword enrichment.`);
   }
 
   if (moduleConfig.categories?.enabled === true) enrichCategories(global);
