@@ -136,23 +136,3 @@ var adUnits = [{
   }]
 }];
 ```
-
-### User Ids
-
-Opera Ads Bid Adapter uses `operaId`, please refer to [`Opera ID System`](./operaadsIdSystem.md).
-
-```javascript
-pbjs.setConfig({
-  ...,
-  userSync: {
-    userIds: [{
-      name: 'operaId',
-      storage: {
-        name: 'operaId',
-        type: 'html5',
-        expires: 14
-      }
-    }]
-  }
-});
-```
