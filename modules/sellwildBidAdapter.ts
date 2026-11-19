@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, type MediaType } from '../src/mediaTypes.js';
-import { replaceAuctionPrice, triggerPixel } from '../src/utils.js';
+import { politeTriggerPixel, replaceAuctionPrice } from '../src/utils.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 interface SellwildBidParams {
@@ -108,7 +108,8 @@ const interpretResponse: BidderSpec<typeof BIDDER_CODE>['interpretResponse'] = (
 const onBidBillable: BidderSpec<typeof BIDDER_CODE>['onBidBillable'] = (bid) => {
   const burl = bid.burl;
   if (!burl || bid.mediaType === VIDEO) return;
-  triggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
+  // Off the render path, as core does for impression trackers (a keepalive fetch).
+  politeTriggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
 };
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {

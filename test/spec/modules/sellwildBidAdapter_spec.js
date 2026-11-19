@@ -314,29 +314,29 @@ describe('Sellwild bid adapter', () => {
   });
 
   describe('onBidBillable', () => {
-    let triggerPixelStub;
+    let pixelStub;
 
     beforeEach(() => {
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      pixelStub = sinon.stub(utils, 'politeTriggerPixel');
     });
 
     afterEach(() => {
-      triggerPixelStub.restore();
+      pixelStub.restore();
     });
 
     it('fires burl with the auction price for banner', () => {
       spec.onBidBillable({ mediaType: 'banner', burl: 'https://exchange.sellwild.com/win/x?p=${AUCTION_PRICE}', cpm: 2, originalCpm: 2.5 });
-      expect(triggerPixelStub.calledOnceWith('https://exchange.sellwild.com/win/x?p=2.5')).to.be.true;
+      expect(pixelStub.calledOnceWith('https://exchange.sellwild.com/win/x?p=2.5')).to.be.true;
     });
 
     it('does not fire for video, whose VAST carries the win impression', () => {
       spec.onBidBillable({ mediaType: 'video', burl: 'https://exchange.sellwild.com/win/x', cpm: 2 });
-      expect(triggerPixelStub.called).to.be.false;
+      expect(pixelStub.called).to.be.false;
     });
 
     it('does nothing without burl', () => {
       spec.onBidBillable({ mediaType: 'banner', cpm: 2 });
-      expect(triggerPixelStub.called).to.be.false;
+      expect(pixelStub.called).to.be.false;
     });
   });
 });
