@@ -137,11 +137,7 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
-      transactionId: 't1',
-      userId: {
-        pubcid: 'pub-cid-code',
-        pubProvidedId: 'pub-provided-id'
-      }
+      transactionId: 't1'
     }, {
       bidId: 'b2',
       bidder: BIDDER_CODE,
@@ -519,9 +515,9 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
     });
 
-    it('sends all Placement Ids and userId', function () {
+    it('does not send a raw userId', function () {
       const request = spec.buildRequests(bidRequestsWithUserId, bidderRequestWithPageInfo);
-      expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
+      expect(JSON.parse(request.data.bidParamsJson)).to.not.have.property('userId');
     });
 
     it('sends undefined lid when no cookie', function () {

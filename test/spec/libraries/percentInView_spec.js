@@ -1,6 +1,7 @@
 import {
   getViewportOffset,
   intersections,
+  isViewabilityMeasurable,
   mkIntersectionHook,
   mkPrewarmHook,
   percentInView,
@@ -12,6 +13,7 @@ import { enable, disable, enableFrameRect, disableFrameRect } from 'test/mocks/p
 import { defer } from 'src/utils/promise.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 describe('percentInView', () => {
   before(() => {
@@ -318,6 +320,40 @@ describe('percentInView', () => {
     });
   });
 
+  describe('detached elements', () => {
+    let element;
+    beforeEach(() => {
+      element = document.createElement('div');
+      element.style.cssText = 'width:50px;height:50px';
+    });
+
+    it('measure as 0 when there is no intersection entry', () => {
+      sandbox.stub(viewportIntersections, 'getIntersection').returns(undefined);
+      sandbox.stub(viewportIntersections, 'observe');
+      expect(percentInView(element, { w: 50, h: 50 })).to.eql(0);
+    });
+
+    it('measure as 0 even if an intersection entry reports them in view', () => {
+      sandbox.stub(viewportIntersections, 'getIntersection').returns({
+        boundingClientRect: { width: 50, height: 50 },
+        isIntersecting: true,
+        intersectionRatio: 1
+      });
+      expect(percentInView(element)).to.eql(0);
+    });
+
+    it('are not measurable', () => {
+      sandbox.stub(utils, 'inIframe').returns(false);
+      expect(isViewabilityMeasurable(element)).to.be.false;
+      document.body.appendChild(element);
+      try {
+        expect(isViewabilityMeasurable(element)).to.be.true;
+      } finally {
+        element.remove();
+      }
+    });
+  });
+
   describe('viewabilityMeasurement', () => {
     afterEach(() => {
       config.resetConfig();
@@ -328,7 +364,7 @@ describe('percentInView', () => {
       const getIntersection = sandbox.stub(viewportIntersections, 'getIntersection');
       sandbox.stub(viewportIntersections, 'observe');
       sandbox.stub(bbox, 'getBoundingClientRect').returns({ width: 1, height: 1, left: 0, top: 0, right: 1, bottom: 1 });
-      percentInView(document.createElement('div'));
+      percentInView({});
       return getIntersection.called;
     }
 

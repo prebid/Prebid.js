@@ -71,9 +71,6 @@ export function createTag(bidRequests, adapterRequest) {
   if (deepAccess(adapterRequest, 'ortb2.source.ext.schain')) {
     tag.Schain = deepAccess(adapterRequest, 'ortb2.source.ext.schain');
   }
-  if (deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = deepAccess(bidRequests[0], 'userId');
-  }
   if (deepAccess(bidRequests[0], 'userIdAsEids')) {
     tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   }
