@@ -73,6 +73,39 @@ describe('Utils', function () {
     });
   });
 
+  describe('generateUUID', function () {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    it('should use crypto.randomUUID when available', function () {
+      expect(window.crypto.randomUUID).to.be.a('function');
+      const randomUUID = sinon.spy(window.crypto, 'randomUUID');
+      try {
+        const uuid = utils.generateUUID();
+        expect(uuid).to.match(UUID_REGEX);
+        sinon.assert.calledOnce(randomUUID);
+        expect(randomUUID.returnValues[0]).to.equal(uuid);
+        expect(utils.generateUUID()).to.not.equal(uuid);
+      } finally {
+        randomUUID.restore();
+      }
+    });
+
+    it('should fall back to getRandomValues when crypto.randomUUID is not available', function () {
+      Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true });
+      const getRandomValues = sinon.spy(window.crypto, 'getRandomValues');
+      try {
+        const uuid = utils.generateUUID();
+        expect(uuid).to.match(UUID_REGEX);
+        sinon.assert.callCount(getRandomValues, 31);
+        expect(utils.generateUUID()).to.not.equal(uuid);
+      } finally {
+        getRandomValues.restore();
+        delete window.crypto.randomUUID;
+      }
+      expect(window.crypto.randomUUID).to.be.a('function');
+    });
+  });
+
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
