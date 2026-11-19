@@ -6134,11 +6134,6 @@
       "componentType": "analytics",
       "componentName": "medianetAnalytics",
       "gvlid": 142
-    },
-    {
-      "componentType": "analytics",
-      "componentName": "oolo",
-      "gvlid": null
     }
   ]
 }
