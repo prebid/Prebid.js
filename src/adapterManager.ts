@@ -928,26 +928,18 @@ const adapterManager = {
         });
       } else {
         try {
-          let newAdapter;
           const supportedMediaTypes = getSupportedMediaTypes(bidderCode);
-          // Have kept old code to support backward compatibilitiy.
-          // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
-          if (bidAdapter.constructor.prototype !== Object.prototype) {
-            newAdapter = new bidAdapter.constructor();
-            newAdapter.setBidderCode(alias);
-          } else {
-            const { useBaseGvlid = false } = options || {};
-            const spec = bidAdapter.getSpec();
-            const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
-            const acpId = useBaseGvlid ? spec.acpId : options?.acpId;
-            if (gvlid == null && spec.gvlid != null) {
-              logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`);
-            }
-
-            const skipPbsAliasing = options && options.skipPbsAliasing;
-            newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, acpId, skipPbsAliasing }));
-            _aliasRegistry[alias] = bidderCode;
+          const { useBaseGvlid = false } = options || {};
+          const spec = bidAdapter.getSpec();
+          const gvlid = useBaseGvlid ? spec.gvlid : options?.gvlid;
+          const acpId = useBaseGvlid ? spec.acpId : options?.acpId;
+          if (gvlid == null && spec.gvlid != null) {
+            logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`);
           }
+
+          const skipPbsAliasing = options && options.skipPbsAliasing;
+          const newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, acpId, skipPbsAliasing }));
+          _aliasRegistry[alias] = bidderCode;
           adapterManager.registerBidAdapter(newAdapter, alias, {
             supportedMediaTypes
           });

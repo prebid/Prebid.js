@@ -3539,22 +3539,39 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('registerBidAdapter', function () {
-    it('should register bidAdaptor with adapterManager', function () {
+    it('should register a bidder spec with adapterManager', function () {
       var registerBidAdapterSpy = sinon.spy(adapterManager, 'registerBidAdapter');
-      pbjs.registerBidAdapter(Function, 'biddercode');
-      assert.ok(registerBidAdapterSpy.called, 'called adapterManager.registerBidAdapter');
+      pbjs.registerBidAdapter(null, 'biddercode', { code: 'biddercode', isBidRequestValid: () => true, buildRequests: () => [], interpretResponse: () => [] });
+      assert.ok(registerBidAdapterSpy.calledOnce, 'called adapterManager.registerBidAdapter');
+      assert.equal(registerBidAdapterSpy.firstCall.args[1], 'biddercode');
+      assert.isFunction(registerBidAdapterSpy.firstCall.args[0].callBids);
       adapterManager.registerBidAdapter.restore();
+    });
+
+    it('should not accept an adapter function without a spec', function () {
+      var registerBidAdapterSpy = sinon.spy(adapterManager, 'registerBidAdapter');
+      var spyLogError = sinon.spy(utils, 'logError');
+      var bidderAdaptor = sinon.stub().returns({ callBids: sinon.stub() });
+
+      pbjs.registerBidAdapter(bidderAdaptor, 'biddercode');
+
+      sinon.assert.notCalled(bidderAdaptor);
+      sinon.assert.notCalled(registerBidAdapterSpy);
+      assert.ok(spyLogError.calledOnce, 'logged an error');
+      adapterManager.registerBidAdapter.restore();
+      utils.logError.restore();
     });
 
     it('should catch thrown errors', function () {
       var spyLogError = sinon.spy(utils, 'logError');
-      var errorObject = { message: 'bidderAdaptor error' };
-      var bidderAdaptor = sinon.stub().throws(errorObject);
+      var errorObject = { message: 'registration error' };
+      sinon.stub(adapterManager, 'registerBidAdapter').throws(errorObject);
 
-      pbjs.registerBidAdapter(bidderAdaptor, 'biddercode');
+      pbjs.registerBidAdapter(null, 'biddercode', { code: 'biddercode', isBidRequestValid: () => true, buildRequests: () => [], interpretResponse: () => [] });
 
       var errorMessage = 'Error registering bidder adapter : ' + errorObject.message;
       assert.ok(spyLogError.calledWith(errorMessage), 'expected error was caught');
+      adapterManager.registerBidAdapter.restore();
       utils.logError.restore();
     });
   });
