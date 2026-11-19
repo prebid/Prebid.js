@@ -6,7 +6,6 @@ export default {
   adqueryIdSystem: 'qid',
   cleanioRtdProvider: 'clean.io',
   deepintentDpesIdSystem: 'deepintentId',
-  experianRtdProvider: 'experian_rtid',
   gravitoIdSystem: 'gravitompId',
   intentIqAnalyticsAdapter: 'iiqAnalytics',
   mobianRtdProvider: 'mobianBrandSafety',
