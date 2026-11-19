@@ -76,21 +76,34 @@ describe('Utils', function () {
   describe('generateUUID', function () {
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-    it('should use crypto.randomUUID when available', function () {
-      expect(window.crypto.randomUUID).to.be.a('function');
-      const randomUUID = sinon.spy(window.crypto, 'randomUUID');
+    if (window.isSecureContext) {
+      it('should use crypto.randomUUID when available', function () {
+        const randomUUID = sinon.spy(window.crypto, 'randomUUID');
+        try {
+          const uuid = utils.generateUUID();
+          expect(uuid).to.match(UUID_REGEX);
+          sinon.assert.calledOnce(randomUUID);
+          expect(randomUUID.returnValues[0]).to.equal(uuid);
+          expect(utils.generateUUID()).to.not.equal(uuid);
+        } finally {
+          randomUUID.restore();
+        }
+      });
+    }
+
+    it('should return the value of crypto.randomUUID', function () {
+      const randomUUID = sinon.stub().returns('11111111-2222-4333-8444-555555555555');
+      Object.defineProperty(window.crypto, 'randomUUID', { value: randomUUID, configurable: true });
       try {
-        const uuid = utils.generateUUID();
-        expect(uuid).to.match(UUID_REGEX);
+        expect(utils.generateUUID()).to.equal('11111111-2222-4333-8444-555555555555');
         sinon.assert.calledOnce(randomUUID);
-        expect(randomUUID.returnValues[0]).to.equal(uuid);
-        expect(utils.generateUUID()).to.not.equal(uuid);
       } finally {
-        randomUUID.restore();
+        delete window.crypto.randomUUID;
       }
     });
 
     it('should fall back to getRandomValues when crypto.randomUUID is not available', function () {
+      const original = window.crypto.randomUUID;
       Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true });
       const getRandomValues = sinon.spy(window.crypto, 'getRandomValues');
       try {
@@ -102,7 +115,7 @@ describe('Utils', function () {
         getRandomValues.restore();
         delete window.crypto.randomUUID;
       }
-      expect(window.crypto.randomUUID).to.be.a('function');
+      expect(window.crypto.randomUUID).to.equal(original);
     });
   });
 
