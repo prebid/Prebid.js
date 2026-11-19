@@ -56,10 +56,10 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
   missing from the build, not housekeeping.
 - **In a new git worktree, do not symlink `node_modules`.** webpack resolves the symlink to the
   main checkout, so the build's `node_modules` excludes (which use the worktree's path) stop
-  matching and babel compiles dependencies, failing with `exports is not defined`. Run `npm ci`
-  instead, or make a real copy (a plain `cp -r`, or a copy-on-write one such as
-  `cp -r --reflink=auto`). Do not hard-link a copy with `cp -al`: hard links share file contents with
-  the main checkout, so anything that writes to a file in place in either tree changes both.
+  matching and babel compiles dependencies, failing with `exports is not defined`. Hard-link a copy
+  instead: `cp -al <main checkout>/node_modules .` takes about a second and no extra disk space.
+  Hard links share file contents with the main checkout, so before adding, removing or upgrading a
+  dependency in a worktree, run `npm ci` first.
 - If you add tests, make sure they pass in this environment, not just in principle.
 
 ## Code Comments
