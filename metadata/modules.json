@@ -5967,11 +5967,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "oxxion",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "pgamdirect",
       "gvlid": 1353
     },
