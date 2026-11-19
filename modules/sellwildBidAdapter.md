@@ -25,6 +25,8 @@ Outstream video needs a renderer from the publisher (on the ad unit or `mediaTyp
 
 # Test Parameters
 
+These parameters reach a Sellwild test partner that always returns a canned bid: a 300x250 banner at $0.50 and an instream video at $2.00. The key is public by design.
+
 ```js
 var adUnits = [
   {
@@ -34,7 +36,7 @@ var adUnits = [
     },
     bids: [{
       bidder: 'sellwild',
-      params: { partnerCode: 'acme', key: 'pub-key' }
+      params: { partnerCode: 'prebid-review', key: '96cfc5631735b2b9665bf5eed03bae4b366130493cf14a4398429b3e3db2c143' }
     }]
   },
   {
@@ -50,7 +52,7 @@ var adUnits = [
     },
     bids: [{
       bidder: 'sellwild',
-      params: { partnerCode: 'acme', key: 'pub-key' }
+      params: { partnerCode: 'prebid-review', key: '96cfc5631735b2b9665bf5eed03bae4b366130493cf14a4398429b3e3db2c143' }
     }]
   }
 ];
