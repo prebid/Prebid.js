@@ -618,6 +618,78 @@ describe('percentInView', () => {
         expect(measure(`<div style="${css}">${TARGET}</div>`)).to.eql(0);
       });
     });
+
+    it('allows a visible descendant to override an ancestor visibility:hidden', () => {
+      expect(measure(
+        '<div style="visibility:hidden"><div id="target" style="visibility:visible;width:50px;height:50px"></div></div>'
+      )).to.eql(100);
+    });
+
+    it('still applies ancestor opacity when the target overrides visibility', () => {
+      expect(measure(
+        '<div style="visibility:hidden;opacity:0"><div id="target" style="visibility:visible;width:50px;height:50px"></div></div>'
+      )).to.eql(0);
+    });
+
+    Object.entries({
+      'clip visible': 50,
+      'visible clip': 50,
+      'clip clip': 25,
+      // visible computes to auto when the other axis is hidden, so both axes clip
+      'hidden visible': 25,
+      'visible hidden': 25,
+    }).forEach(([overflow, expected]) => {
+      it(`clips the correct axes for overflow: ${overflow}`, () => {
+        expect(measure(`<div style="overflow:${overflow};width:25px;height:25px">${TARGET}</div>`)).to.eql(expected);
+      });
+    });
+
+    ['open', 'closed'].forEach(mode => {
+      it(`is clipped by a ${mode} shadow root's host`, () => {
+        container.innerHTML = '<div style="overflow:hidden;width:50px;height:25px"></div>';
+        const root = container.firstElementChild.attachShadow({ mode });
+        root.innerHTML = TARGET;
+        expect(percentInView(root.querySelector('#target'))).to.eql(50);
+      });
+
+      it(`returns 0 under a transparent ${mode} shadow root's host`, () => {
+        container.innerHTML = '<div style="opacity:0"></div>';
+        const root = container.firstElementChild.attachShadow({ mode });
+        root.innerHTML = TARGET;
+        expect(percentInView(root.querySelector('#target'))).to.eql(0);
+      });
+    });
+
+    it('walks through nested shadow roots to a clipping ancestor above their hosts', () => {
+      container.innerHTML = '<div style="overflow:hidden;width:50px;height:25px"><div></div></div>';
+      const outer = container.firstElementChild.firstElementChild.attachShadow({ mode: 'open' });
+      outer.innerHTML = '<div></div>';
+      const inner = outer.firstElementChild.attachShadow({ mode: 'closed' });
+      inner.innerHTML = TARGET;
+      expect(percentInView(inner.querySelector('#target'))).to.eql(50);
+    });
+
+    it('is clipped by a wrapper around the slot it is assigned to', () => {
+      container.innerHTML = `<div>${TARGET}</div>`;
+      const root = container.firstElementChild.attachShadow({ mode: 'open' });
+      root.innerHTML = '<div style="overflow:hidden;width:50px;height:25px"><slot></slot></div>';
+      expect(percentInView(container.querySelector('#target'))).to.eql(50);
+    });
+
+    it('returns 0 when its assigned slot is transparent', () => {
+      container.innerHTML = `<div>${TARGET}</div>`;
+      const root = container.firstElementChild.attachShadow({ mode: 'open' });
+      root.innerHTML = '<slot style="display:block;opacity:0"></slot>';
+      expect(percentInView(container.querySelector('#target'))).to.eql(0);
+    });
+
+    it('returns 0 inside a hidden iframe even when its target overrides visibility', () => {
+      container.innerHTML = '<iframe style="visibility:hidden;width:100px;height:100px;border:0"></iframe>';
+      const frame = container.firstElementChild;
+      frame.contentDocument.body.style.margin = '0';
+      frame.contentDocument.body.innerHTML = '<div id="target" style="visibility:visible;width:50px;height:50px"></div>';
+      expect(percentInView(frame.contentDocument.querySelector('#target'))).to.eql(0);
+    });
   });
 
   describe('percentInView, with a size override for a collapsed element', () => {
@@ -670,6 +742,23 @@ describe('percentInView', () => {
 
     it('returns 0 for an element under a hidden ancestor', () => {
       expect(measure(`<div style="visibility:hidden">${TARGET}</div>`)).to.eql(0);
+    });
+
+    it('allows a collapsed target to override ancestor visibility', () => {
+      expect(measure(
+        '<div style="visibility:hidden"><div id="target" style="visibility:visible;width:0;height:0"></div></div>'
+      )).to.eql(100);
+    });
+
+    it('clips the overridden size only along the overflowing axis', () => {
+      expect(measure(`<div style="overflow:clip visible;width:25px;height:25px">${TARGET}</div>`)).to.eql(50);
+    });
+
+    it('clips the overridden size against a shadow host', () => {
+      container.innerHTML = '<div style="overflow:hidden;width:50px;height:25px"></div>';
+      const root = container.firstElementChild.attachShadow({ mode: 'open' });
+      root.innerHTML = TARGET;
+      expect(percentInView(root.querySelector('#target'), { w: 50, h: 50 })).to.eql(50);
     });
   });
 
