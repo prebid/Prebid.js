@@ -497,12 +497,12 @@ describe('linaBidAdapter', function () {
     expect(requestWithoutCurrency.data).not.to.have.property('currency');
   });
 
-  it('preserves extensions without duplicating SSP currency policy', function () {
+  it('synthesizes one request currency from the Prebid ad server currency', function () {
     const request = spec.buildRequests([BID_REQUEST], {
       ...BIDDER_REQUEST,
       ortb2: { ext: { prebid: { adServerCurrency: 'JPY' } } },
     });
-    expect(request.data.ortb2).not.to.have.property('cur');
+    expect(request.data.ortb2.cur).to.deep.equal(['JPY']);
     expect(request.data.ortb2.ext).to.deep.equal({ prebid: { adServerCurrency: 'JPY' } });
   });
 
@@ -514,27 +514,96 @@ describe('linaBidAdapter', function () {
     expect(ortb2).to.deep.include({ cur: ['KRW'], tmax: 3000 });
   });
 
-  it('does not manufacture a floor using the client floor module', function () {
+  it('maps the client wildcard floor module result to one OpenRTB floor per bid', function () {
+    let floorOptions;
     const requestWithFloor = spec.buildRequests([{
       ...BID_REQUEST,
       params: { publisherId: 'pub-10001', placementId: '550e8400-e29b-41d4-a716-446655440000' },
-      getFloor: () => ({ floor: 1000, currency: 'KRW' }),
-    }], BIDDER_REQUEST);
+      ortb2Imp: { ...BID_REQUEST.ortb2Imp, bidfloor: 0.1, bidfloorcur: 'USD' },
+      getFloor: (options) => {
+        floorOptions = options;
+        return { floor: 1000, currency: 'KRW' };
+      },
+    }], { ...BIDDER_REQUEST, ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] } });
     expect(requestWithFloor.data.publisherId).to.equal('pub-10001');
     expect(requestWithFloor.data.bids[0].ortb2Imp.tagid).to.equal('550e8400-e29b-41d4-a716-446655440000');
-    expect(requestWithFloor.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
-    expect(requestWithFloor.data.bids[0].ortb2Imp).not.to.have.property('bidfloorcur');
+    expect(floorOptions).to.deep.equal({ currency: 'KRW', mediaType: '*', size: '*' });
+    expect(requestWithFloor.data.bids[0].ortb2Imp).to.include({ bidfloor: 1000, bidfloorcur: 'KRW' });
 
     const requestWithZeroFloor = spec.buildRequests([{
       ...BID_REQUEST,
       getFloor: () => ({ floor: 0, currency: 'KRW' }),
-    }], BIDDER_REQUEST);
-    const request = spec.buildRequests([{
+    }], { ...BIDDER_REQUEST, ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] } });
+    expect(requestWithZeroFloor.data.bids[0].ortb2Imp).to.include({ bidfloor: 0, bidfloorcur: 'KRW' });
+
+    const invalidFloorRequest = spec.buildRequests([{
       ...BID_REQUEST,
       getFloor: () => ({ floor: Number.NaN, currency: 'KRW' }),
-    }], BIDDER_REQUEST);
-    expect(requestWithZeroFloor.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
-    expect(request.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
+    }], { ...BIDDER_REQUEST, ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] } });
+    expect(invalidFloorRequest).to.deep.equal([]);
+  });
+
+  it('skips bids with unusable client floor module results', function () {
+    [
+      () => ({ floor: -1, currency: 'USD' }),
+      () => ({ floor: 1, currency: 'usd' }),
+      () => ({ floor: Infinity, currency: 'USD' }),
+      () => { throw new Error('floor unavailable'); },
+    ].forEach((getFloor) => {
+      const request = spec.buildRequests([{ ...BID_REQUEST, getFloor }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+      expect(request).to.deep.equal([]);
+    });
+  });
+
+  it('skips a bid when the floor currency differs from the request currency', function () {
+    const request = spec.buildRequests([{
+      ...BID_REQUEST,
+      getFloor: () => ({ floor: 1000, currency: 'USD' }),
+    }], {
+      ...BIDDER_REQUEST,
+      ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] },
+    });
+
+    expect(request).to.deep.equal([]);
+  });
+
+  it('does not synthesize a floor when ad server and request currencies conflict', function () {
+    let getFloorCalled = false;
+    const request = spec.buildRequests([{
+      ...BID_REQUEST,
+      getFloor: () => {
+        getFloorCalled = true;
+        return { floor: 1000, currency: 'KRW' };
+      },
+    }], {
+      ...BIDDER_REQUEST,
+      ortb2: {
+        ...BIDDER_REQUEST.ortb2,
+        cur: ['KRW'],
+        ext: { prebid: { adServerCurrency: 'USD' } },
+      },
+    });
+
+    expect(getFloorCalled).to.equal(false);
+    expect(request).to.deep.equal([]);
+  });
+
+  it('keeps a static floor when the Floors Module has no matching rule', function () {
+    [{}, null].forEach((floorResult) => {
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        ortb2Imp: { ...BID_REQUEST.ortb2Imp, bidfloor: 500, bidfloorcur: 'KRW' },
+        getFloor: () => floorResult,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] },
+      });
+
+      expect(request.data.bids[0].ortb2Imp).to.include({ bidfloor: 500, bidfloorcur: 'KRW' });
+    });
   });
 
   it('rejects invalid sizes and unsupported media types', function () {
@@ -820,7 +889,7 @@ describe('linaBidAdapter', function () {
     })).to.equal(false);
   });
 
-  it('sends one multi-format LINA bid without client floor policy', function () {
+  it('sends one multi-format LINA bid with a single wildcard client floor', function () {
     const multiFormatBid = {
       ...BID_REQUEST,
       mediaTypes: {
@@ -831,7 +900,10 @@ describe('linaBidAdapter', function () {
       sizes: undefined,
       getFloor: () => ({ floor: 1250, currency: 'KRW' }),
     };
-    const request = spec.buildRequests([multiFormatBid], BIDDER_REQUEST);
+    const request = spec.buildRequests([multiFormatBid], {
+      ...BIDDER_REQUEST,
+      ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] },
+    });
 
     expect(request.data.bids).to.have.lengthOf(1);
     expect(request.data.bids[0].ortb2Imp).to.deep.include({
@@ -844,8 +916,7 @@ describe('linaBidAdapter', function () {
         },
       } : {}),
     });
-    expect(request.data.bids[0].ortb2Imp).not.to.have.property('bidfloor');
-    expect(request.data.bids[0].ortb2Imp).not.to.have.property('bidfloorcur');
+    expect(request.data.bids[0].ortb2Imp).to.include({ bidfloor: 1250, bidfloorcur: 'KRW' });
 
     const bids = spec.interpretResponse({
       body: {
