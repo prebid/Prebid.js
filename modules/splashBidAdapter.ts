@@ -7,6 +7,8 @@ import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getOS } from '../libraries/userAgentUtils/index.js';
+import { osTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 import {
   buildInterstitialDocument,
   createCreativeFrame,
@@ -277,14 +279,24 @@ function addEventTrackers(bidResponse, bid) {
 }
 
 function createRenderer(format: SplashDisplayFormat, bidRequest: SplashBidRequest, sizes: ParallaxSizes) {
+  let deliveryDocument: Document | undefined;
   const renderer = Renderer.install({
     id: bidRequest.bidId,
     adUnitCode: bidRequest.adUnitCode,
     renderNow: true,
+    config: format === PARALLAX ? {
+      documentResolver: (_bid, sourceDocument, renderDocument) => {
+        // Keep the delivery frame's identity while rendering in the publisher document.
+        deliveryDocument = renderDocument;
+        return sourceDocument;
+      },
+    } : undefined,
   });
   renderer.setRender((bid, doc) => {
+    const deliveredIn = deliveryDocument || doc;
+    deliveryDocument = undefined;
     try {
-      if (format === PARALLAX) renderParallax(bid, sizes);
+      if (format === PARALLAX) renderParallax(bid, sizes, deliveredIn);
       else renderInterstitial(bid, doc);
     } catch (e) {
       logError(`${BIDDER_CODE}: ${format} render failed`, e);
@@ -296,7 +308,7 @@ function createRenderer(format: SplashDisplayFormat, bidRequest: SplashBidReques
 
 function creativeMarkup(bid): string {
   // Core substitutes these macros for its own renderer; custom renderers receive the raw markup.
-  return replaceMacros(bid.ad, { AUCTION_PRICE: bid.originalCpm || bid.cpm, CLICKTHROUGH: '' }) || '';
+  return replaceMacros(bid.ad, { AUCTION_PRICE: bid.originalCpm || bid.cpm, CLICKTHROUGH: bid.clickUrl || '' }) || '';
 }
 
 const RENDERER_OWNER = generateUUID();
@@ -459,15 +471,28 @@ function createClipSvg(doc: Document, clipId: string): SVGSVGElement {
   return svg;
 }
 
-function renderParallax(bid, sizes: ParallaxSizes) {
+function deliveryFrameInSlot(doc: Document | undefined, slot: HTMLElement): HTMLIFrameElement | null {
+  try {
+    while (doc && doc !== slot.ownerDocument) {
+      const frame = doc.defaultView?.frameElement;
+      if (!frame || frame.tagName !== 'IFRAME') return null;
+      if (frame.ownerDocument === slot.ownerDocument) {
+        return frame !== slot && slot.contains(frame) ? frame as HTMLIFrameElement : null;
+      }
+      doc = frame.ownerDocument;
+    }
+  } catch (e) {
+    // Cross-origin delivery does not grant ownership of a publisher frame.
+  }
+  return null;
+}
+
+function renderParallax(bid, sizes: ParallaxSizes, deliveryDocument?: Document) {
   const slot = getAdUnitElement(bid);
   if (!slot) throw new Error(`${BIDDER_CODE}: slot element not found for ${bid.adUnitCode}`);
   const doc = slot.ownerDocument;
   injectStyles(doc, PARALLAX_STYLE_ID, PARALLAX_CSS);
-  slot.querySelectorAll('.sp-frame[data-sp-owner="' + RENDERER_OWNER + '"]').forEach(previous => {
-    const destroy = destroyers.get(previous);
-    if (destroy) destroy();
-  });
+  destroyers.get(slot)?.();
 
   const frame = doc.createElement('div');
   frame.className = 'sp-frame splitboard';
@@ -481,9 +506,7 @@ function renderParallax(bid, sizes: ParallaxSizes) {
   const iframe = createCreativeFrame(doc, 'sp-creative', 'Splash parallax creative');
   stage.appendChild(iframe);
   frame.appendChild(stage);
-  slot.appendChild(frame);
   const clipSvg = createClipSvg(doc, clipId);
-  slot.appendChild(clipSvg);
 
   const cleanups: Array<() => void> = [];
   let destroyed = false;
@@ -491,12 +514,27 @@ function renderParallax(bid, sizes: ParallaxSizes) {
     if (destroyed) return;
     destroyed = true;
     cleanups.forEach(cleanup => cleanup());
-    destroyers.delete(frame);
+    if (destroyers.get(slot) === destroy) destroyers.delete(slot);
     if (frame.parentNode) frame.parentNode.removeChild(frame);
     if (clipSvg.parentNode) clipSvg.parentNode.removeChild(clipSvg);
   }
-  destroyers.set(frame, destroy);
+  destroyers.set(slot, destroy);
   try {
+    const delivery = deliveryFrameInSlot(deliveryDocument, slot);
+    if (delivery) {
+      const value = delivery.style.getPropertyValue('display');
+      const priority = delivery.style.getPropertyPriority('display');
+      delivery.style.setProperty('display', 'none', 'important');
+      cleanups.push(() => {
+        if (delivery.style.getPropertyValue('display') !== 'none' || delivery.style.getPropertyPriority('display') !== 'important') return;
+        if (value) delivery.style.setProperty('display', value, priority);
+        else delivery.style.removeProperty('display');
+      });
+      delivery.parentNode.insertBefore(frame, delivery);
+    } else {
+      slot.appendChild(frame);
+    }
+    slot.appendChild(clipSvg);
     iframe.srcdoc = unwrapCreativeHtml(creativeMarkup(bid));
     const pointerGuard = installSafariPointerGuard(frame, stage, iframe);
     if (pointerGuard) cleanups.push(pointerGuard.destroy);
@@ -666,7 +704,7 @@ function canUseNativeParallax(win: typeof window, doc: Document, parents: HTMLEl
  * Other layouts retain the physically clipped, event-driven absolute frame.
  */
 function installSafariPointerGuard(frame: HTMLElement, stage: HTMLElement, iframe: HTMLIFrameElement): { refresh: () => void, destroy: () => void } | null {
-  if (!isSafariBrowser() && !isChromeIOSBrowser()) return null;
+  if (!isSafariBrowser() && !isChromeIOSBrowser() && getOS() !== osTypes.IOS) return null;
   const win = frame.ownerDocument.defaultView || window;
   const doc = frame.ownerDocument;
   // eslint-disable-next-line prebid/no-synchronous-layout-read -- used only as the target of scroll and resize events

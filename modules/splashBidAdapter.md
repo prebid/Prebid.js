@@ -41,7 +41,9 @@ Response format fields (`ext.splash.format` and `ext.general.display_format`) ar
 
 Both Splash renderers' toolbars show the Softpaywall logo, an optional countdown and **Pomiń** in one row. The logo loads from `https://cdn.splashandroll.com/fractatemp/0/softpaywall-logo.svg`. Splash's built-in creative toolbar is hidden; its timer continues running and reports bounded numeric state through source-checked messages. The host counter mirrors this state, including waiting for quiz completion when configured, and cannot disable or delay the host skip button. Creative timers, CTA and close messages remain active.
 
-With the top-window renderer, Safari and iOS Chrome keep the Parallax frame physically clipped for input and visibility measurement. Compatible root-scrolling layouts use native sticky vertical positioning; nested scroll containers, transformed ancestors and browsers without `overflow: clip` support retain event-driven absolute alignment. Geometry updates are coalesced after viewport and observed layout changes, with no idle animation loop. Continuous CSS position or transform animations of the ad unit's ancestors are not tracked.
+With the top-window renderer, Safari and iOS browsers, including Firefox, keep the Parallax frame physically clipped for input and visibility measurement. Compatible root-scrolling layouts use native sticky vertical positioning; nested scroll containers, transformed ancestors and browsers without `overflow: clip` support retain event-driven absolute alignment. Geometry updates are coalesced after viewport and observed layout changes, with no idle animation loop. Continuous CSS position or transform animations of the ad unit's ancestors are not tracked.
+
+For same-origin iframe delivery, Parallax occupies the identified delivery frame's position only when core provides its accessible document. It temporarily hides only that frame and restores its previous display style on cleanup unless the publisher changed it. Other frames and placements are left unchanged. Automatic delivery-frame positioning is not supported on message-based PUC/GAM paths that do not provide this document.
 
 ## Test Parameters
 

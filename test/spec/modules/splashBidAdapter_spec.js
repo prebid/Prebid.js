@@ -12,6 +12,8 @@ import { BANNER } from 'src/mediaTypes.js';
 import { Renderer } from 'src/Renderer.js';
 import * as winDimensions from 'src/utils/winDimensions.js';
 import * as utils from 'src/utils.js';
+import * as userAgentUtils from 'libraries/userAgentUtils/index.js';
+import { osTypes } from 'libraries/userAgentUtils/userAgentTypes.enums.js';
 
 const PROD_URL = 'https://ssp.splashandroll.com/auction/splash';
 const STG_URL = 'https://ssp.emisja.stg.froc.mc2.rocks/auction/splash';
@@ -785,6 +787,7 @@ describe('splashBidAdapter', () => {
       // Keep renderer behaviour independent of the browser running the suite.
       sandbox.stub(utils, 'isSafariBrowser').returns(false);
       sandbox.stub(utils, 'isChromeIOSBrowser').returns(false);
+      sandbox.stub(userAgentUtils, 'getOS').returns(osTypes.MAC);
       root = document.createElement('div');
       slot = document.createElement('div');
       slot.id = 'splash-spec-slot';
@@ -945,6 +948,156 @@ describe('splashBidAdapter', () => {
         expect(frameRect.width).to.equal(slotRect.width);
         expect(creativeRect.left).to.equal(0);
         expect(document.documentElement.scrollWidth).to.be.at.most(before);
+      });
+
+      function deliverInto(doc, bid = parallaxBid()) {
+        doRender({ renderFn: sandbox.stub(), resizeFn: sandbox.stub(), bidResponse: bid, doc });
+        return ownFrame();
+      }
+
+      function deliveryFrame(parent = slot) {
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'display:block;width:300px;height:250px';
+        parent.appendChild(iframe);
+        return iframe;
+      }
+
+      it('renders in place of its delivery iframe inside a fixed-height clipped slot', () => {
+        slot.style.cssText = 'height:240px;overflow:hidden';
+        const delivery = deliveryFrame();
+        const foreign = deliveryFrame();
+        const originalForeignStyle = foreign.style.cssText;
+        const frame = deliverInto(delivery.contentDocument, parallaxBid({ ext: { splash: { slot: { height: 240 } } } }));
+        expect(frame.getBoundingClientRect().top).to.equal(slot.getBoundingClientRect().top);
+        expect(frame.getBoundingClientRect().bottom).to.be.at.most(slot.getBoundingClientRect().bottom);
+        expect(getComputedStyle(delivery).display).to.equal('none');
+        expect(delivery.isConnected).to.equal(true);
+        expect(foreign.style.cssText).to.equal(originalForeignStyle);
+      });
+
+      it('reuses the delivery position through nested same-origin frames without changing publisher wrappers', () => {
+        const wrapper = slot.appendChild(document.createElement('div'));
+        wrapper.style.cssText = 'height:240px;overflow:hidden';
+        const outer = deliveryFrame(wrapper);
+        const inner = outer.contentDocument.body.appendChild(outer.contentDocument.createElement('iframe'));
+        const frame = deliverInto(inner.contentDocument);
+        expect(frame.parentElement).to.equal(wrapper);
+        expect(frame.getBoundingClientRect().top).to.equal(wrapper.getBoundingClientRect().top);
+        expect(getComputedStyle(outer).display).to.equal('none');
+        expect(wrapper.style.cssText).to.equal('height: 240px; overflow: hidden;');
+        expect(inner.style.display).to.equal('');
+      });
+
+      it('does not collapse a delivery frame belonging to another slot', () => {
+        const foreign = deliveryFrame(otherSlot);
+        const original = foreign.style.cssText;
+        deliverInto(foreign.contentDocument);
+        expect(foreign.style.cssText).to.equal(original);
+      });
+
+      it('leaves publisher frames unchanged when core provides no delivery document', () => {
+        const delivery = deliveryFrame();
+        const original = delivery.style.cssText;
+        const frame = deliverInto(undefined);
+        expect(frame.parentElement).to.equal(slot);
+        expect(delivery.style.cssText).to.equal(original);
+        expect(frame.previousElementSibling).to.equal(delivery);
+      });
+
+      ['null', 'throws'].forEach(access => {
+        it(`leaves publisher frames unchanged when delivery frameElement ${access}`, () => {
+          const delivery = deliveryFrame();
+          const doc = delivery.contentDocument;
+          const original = delivery.style.cssText;
+          sandbox.stub(doc.defaultView, 'frameElement').get(() => {
+            if (access === 'throws') throw new DOMException('Frame access denied', 'SecurityError');
+            return null;
+          });
+          const frame = deliverInto(doc);
+          expect(frame.parentElement).to.equal(slot);
+          expect(delivery.style.cssText).to.equal(original);
+          expect(frame.previousElementSibling).to.equal(delivery);
+        });
+      });
+
+      it('restores the absence of an inline display property on delivery cleanup', async () => {
+        const delivery = deliveryFrame();
+        delivery.style.removeProperty('display');
+        const original = delivery.style.cssText;
+        const originalDisplay = getComputedStyle(delivery).display;
+        const frame = deliverInto(delivery.contentDocument);
+        expect(getComputedStyle(delivery).display).to.equal('none');
+        frame.remove();
+        await tick();
+        expect(delivery.style.getPropertyValue('display')).to.equal('');
+        expect(delivery.style.getPropertyPriority('display')).to.equal('');
+        expect(delivery.style.cssText).to.equal(original);
+        expect(getComputedStyle(delivery).display).to.equal(originalDisplay);
+      });
+
+      it('keeps the delivery frame hidden across a synchronous refresh after aperture removal', async () => {
+        const delivery = deliveryFrame();
+        delivery.style.setProperty('display', 'inline-block', 'important');
+        const original = delivery.style.cssText;
+        deliverInto(delivery.contentDocument).remove();
+        const replacement = deliverInto(delivery.contentDocument);
+        await tick();
+        expect(getComputedStyle(delivery).display).to.equal('none');
+        replacement.remove();
+        await tick();
+        expect(delivery.style.cssText).to.equal(original);
+      });
+
+      it('refreshes only its own slot, preserving a nested independent placement', () => {
+        slot.appendChild(otherSlot);
+        render();
+        const other = parallaxBid();
+        other.element = otherSlot;
+        other.renderer.render(other, document);
+        const nestedFrame = ownFrame(otherSlot);
+        render();
+        expect(nestedFrame.isConnected).to.equal(true);
+        expect(ownFrame(otherSlot)).to.equal(nestedFrame);
+      });
+
+      it('keeps the source document context and does not reuse delivery context on a direct render', () => {
+        const sibling = slot.appendChild(document.createElement('button'));
+        sibling.textContent = 'Publisher control';
+        const delivery = deliveryFrame();
+        const bid = parallaxBid();
+        const frame = deliverInto(delivery.contentDocument, bid);
+        expect(bid.renderer.documentContext).to.equal(document);
+        expect(sibling.nextElementSibling).to.equal(frame);
+        expect(frame.nextElementSibling).to.equal(delivery);
+        bid.renderer.render(bid, document);
+        expect(delivery.style.display).to.equal('block');
+        expect(sibling.isConnected).to.equal(true);
+      });
+
+      it('restores only its own delivery display change on removal and after render failure', async () => {
+        const delivery = deliveryFrame();
+        delivery.style.setProperty('display', 'inline-block', 'important');
+        const original = delivery.style.cssText;
+        let frame = deliverInto(delivery.contentDocument);
+        expect(getComputedStyle(delivery).display).to.equal('none');
+        frame.remove();
+        await tick();
+        expect(delivery.style.cssText).to.equal(original);
+
+        frame = deliverInto(delivery.contentDocument);
+        delivery.style.setProperty('display', 'block');
+        frame.remove();
+        await tick();
+        expect(delivery.style.display).to.equal('block');
+
+        failIframeWrite();
+        const failed = parallaxBid();
+        const emit = sandbox.spy(events, 'emit');
+        deliverInto(delivery.contentDocument, failed);
+        await tick();
+        sinon.assert.calledWith(emit, EVENTS.AD_RENDER_FAILED, sinon.match({ message: 'iframe write failed' }));
+        expect(delivery.style.display).to.equal('block');
+        expect(ownFrame()).to.equal(null);
       });
 
       it('gives an auto-width inline-block slot an intrinsic width limited to its container', async () => {
@@ -1151,6 +1304,14 @@ describe('splashBidAdapter', () => {
 
       it('prefers originalCpm for the price macro', () => {
         expect(srcdocFor('<p>${AUCTION_PRICE}</p>', { originalCpm: 4.2 })).to.equal('<p>4.2</p>');
+      });
+
+      it('preserves the publisher click-through URL in the creative', () => {
+        const url = 'https://publisher.example/click?target=https%3A%2F%2Fadvertiser.example&source=prebid';
+        const html = srcdocFor('<a href="${CLICKTHROUGH}">${AUCTION_PRICE}</a>', { clickUrl: url, originalCpm: 4.2 });
+        const link = new DOMParser().parseFromString(html, 'text/html').querySelector('a');
+        expect(link.getAttribute('href')).to.equal(url);
+        expect(link.textContent).to.equal('4.2');
       });
 
       it('keeps the markup unchanged when it cannot be parsed', () => {
@@ -1786,6 +1947,21 @@ describe('splashBidAdapter', () => {
           expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('fixed');
         });
 
+        it('physically clips Firefox on iOS without including desktop Firefox', () => {
+          utils.isSafariBrowser.returns(false);
+          utils.isChromeIOSBrowser.returns(false);
+          userAgentUtils.getOS.restore();
+          const userAgent = sandbox.stub(navigator, 'userAgent').value('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/125.0 Mobile/15E148 Safari/605.1.15');
+          let frame = render().frame;
+          expect(frame.classList.contains('sp-pointer-guarded')).to.equal(true);
+          expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('absolute');
+          frame.remove();
+          userAgent.value('Mozilla/5.0 (Macintosh; Intel Mac OS X 14.0; rv:125.0) Gecko/20100101 Firefox/125.0');
+          frame = render().frame;
+          expect(frame.classList.contains('sp-pointer-guarded')).to.equal(false);
+          expect(getComputedStyle(frame.querySelector('iframe')).position).to.equal('fixed');
+        });
+
         [
           ['for coarse pointers', () => sandbox.stub(window, 'matchMedia').returns({ matches: false })],
           ['without matchMedia', () => sandbox.stub(window, 'matchMedia').value(undefined)],
@@ -1853,6 +2029,17 @@ describe('splashBidAdapter', () => {
     });
 
     describe('Interstitial', () => {
+      it('preserves the publisher click-through URL without changing price substitution', () => {
+        const url = 'https://publisher.example/click?target=https%3A%2F%2Fadvertiser.example&source=prebid';
+        const bid = bidFor('interstitial', { adm: '<a href="${CLICKTHROUGH}">${AUCTION_PRICE}</a>' });
+        Object.assign(bid, { clickUrl: url, originalCpm: 4.2 });
+        bid.renderer.render(bid, document);
+        const html = overlay().querySelector('iframe').getAttribute('srcdoc');
+        const link = new DOMParser().parseFromString(html, 'text/html').querySelector('a');
+        expect(link.getAttribute('href')).to.equal(url);
+        expect(link.textContent).to.equal('4.2');
+      });
+
       function overlay(doc = document) {
         return doc.querySelector('.sp-interstitial-overlay[data-splash-renderer="interstitial"]');
       }
