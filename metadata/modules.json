@@ -5337,12 +5337,6 @@
     },
     {
       "componentType": "rtd",
-      "componentName": "growthCodeRtd",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "rtd",
       "componentName": "weborama",
       "gvlid": 284,
       "disclosureURL": null
