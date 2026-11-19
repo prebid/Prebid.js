@@ -3625,13 +3625,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "opamarketplace",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "programmaticX",
       "aliasOf": null,
       "gvlid": 1344,
