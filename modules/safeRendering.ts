@@ -15,7 +15,6 @@ import {
   isRenderSuppressed,
   usesLegacyRenderer
 } from "../src/adRendering.ts";
-import { auctionManager } from "../src/auctionManager.js";
 import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
 
 declare module '../src/prebidGlobal.ts' {
@@ -83,7 +82,7 @@ function findDepth(win) {
  * By default, a bid's element is document.getElementById(bid.adUnitCode); override this with adUnit.element.
  */
 export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) {
-  const actualBid = bid?.adId == null ? null : auctionManager.findBidByAdId(bid.adId);
+  let actualBid = null;
   function fail(reason, message) {
     emitAdRenderFail({
       bid: actualBid,
@@ -96,7 +95,8 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, 'missing adId');
     return;
   }
-  if (actualBid == null) {
+  actualBid = getBidForMessage(bid);
+  if (actualBid?.adId == null) {
     fail(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD, `Cannot find ad '${bid.adId}'`);
     return;
   }
