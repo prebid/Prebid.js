@@ -9,7 +9,8 @@ import {
   logWarn,
   isFn,
   isPlainObject,
-  getBidIdParameter
+  getBidIdParameter,
+  deepSetValue
 } from '../src/utils.js';
 import {
   Renderer
@@ -25,6 +26,8 @@ import { getDNT } from '../libraries/dnt/index.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./smartxBidAdapter.d.ts').SmartxBidderParams} SmartxBidderParams
+ * @typedef {BidRequest & { params: SmartxBidderParams }} SmartxBidRequest
  */
 
 const BIDDER_CODE = 'smartx';
@@ -84,7 +87,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
    *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {SmartxBidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
@@ -100,25 +103,46 @@ export const spec = {
       const sitekey = getBidIdParameter('sitekey', bid.params);
       const domain = getBidIdParameter('domain', bid.params);
       const cat = getBidIdParameter('cat', bid.params) || [''];
+      // Prebid core keeps only one of app and site, app first, so an app request
+      // carries no ortb2.site and goes out with an app object instead of a site.
+      const fpdApp = deepAccess(bid, 'ortb2.app');
+      const isApp = !isEmpty(fpdApp);
+      const fpdKey = isApp ? 'app' : 'site';
+      const fpdContent = deepAccess(bid, `ortb2.${fpdKey}.content`) || {};
+      const eids = deepAccess(bid, 'ortb2.user.ext.eids');
       let pubcid = null;
-      const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-      const contentWidth = playerSize[0][0];
-      const contentHeight = playerSize[0][1];
+      const videoMediaType = deepAccess(bid, 'mediaTypes.video') || {};
+      const [contentWidth, contentHeight] = getPlayerSize(bid);
+      // bidder params override the ad unit, which overrides our defaults. ?? and
+      // not ||, because 0 is a real value here (skip: 0, pos: 0). An empty string
+      // counts as not set.
+      const notEmpty = value => value === '' ? undefined : value;
+      const videoParam = (name, defaultValue) => notEmpty(bid.params?.[name]) ?? notEmpty(videoMediaType[name]) ?? defaultValue;
       const secure = +(isPageSecure || (getBidIdParameter('secure', bid.params) ? 1 : 0));
       const ext = {
         sdk_name: 'Prebid 1+'
       };
-      const mimes = getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
-      const linearity = getBidIdParameter('linearity', bid.params) || 1;
-      const minduration = getBidIdParameter('minduration', bid.params) || 0;
-      const maxduration = getBidIdParameter('maxduration', bid.params) || 500;
-      const startdelay = getBidIdParameter('startdelay', bid.params) || 0;
-      const minbitrate = getBidIdParameter('minbitrate', bid.params) || 0;
-      const maxbitrate = getBidIdParameter('maxbitrate', bid.params) || 3500;
-      const delivery = getBidIdParameter('delivery', bid.params) || [2];
-      const pos = getBidIdParameter('pos', bid.params) || 1;
-      const api = getBidIdParameter('api', bid.params) || [2];
-      const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
+      const mimes = videoParam('mimes', ['application/javascript', 'video/mp4', 'video/webm']);
+      const linearity = videoParam('linearity', 1);
+      const minduration = videoParam('minduration', 0);
+      const maxduration = videoParam('maxduration', 500);
+      const startdelay = videoParam('startdelay', 0);
+      const minbitrate = videoParam('minbitrate', 0);
+      const maxbitrate = videoParam('maxbitrate', 3500);
+      const delivery = videoParam('delivery', [2]);
+      const pos = videoParam('pos', 1);
+      const api = videoParam('api', [2]);
+      const protocols = videoParam('protocols', [2, 3, 5, 6]);
+      // only sent when they are set on the ad unit or the params. Note that core
+      // fills in plcmt for outstream and for muted playbackmethods, so it can be
+      // set even when the publisher did not declare it.
+      const optional = {};
+      ['plcmt', 'skip', 'skipmin', 'skipafter', 'battr', 'playbackend', 'playbackmethod'].forEach(name => {
+        const value = videoParam(name);
+        if (value != null) {
+          optional[name] = value;
+        }
+      });
 
       const smartxReq = [{
         id: bid.bidId,
@@ -139,6 +163,7 @@ export const spec = {
           delivery: delivery,
           pos: pos,
           api: api,
+          ...optional,
           ext: ext
         },
         tagid: tagId,
@@ -166,10 +191,40 @@ export const spec = {
 
       const cur = getBidIdParameter('cur', bid.params) || ['EUR'];
 
+      const content = {
+        ...fpdContent,
+        ext: {
+          ...fpdContent.ext,
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          },
+          ...(sitekey ? { sitekey } : {})
+        }
+      };
+
       const requestPayload = {
         id: generateUUID(),
         imp: smartxReq,
-        site: {
+        device: device,
+        at: at,
+        cur: cur,
+        ext: {}
+      };
+
+      if (isApp) {
+        // the publisher's app, with siteId and publisherId set the way they are on site
+        requestPayload.app = {
+          ...fpdApp,
+          id: siteId,
+          publisher: {
+            ...fpdApp.publisher,
+            id: publisherId
+          },
+          content: content
+        };
+      } else {
+        requestPayload.site = {
           id: siteId,
           page: page,
           cat: cat,
@@ -177,20 +232,16 @@ export const spec = {
           publisher: {
             id: publisherId
           },
-          content: {
-            ext: {
-              prebid: {
-                name: 'pbjs',
-                version: '$prebid.version$'
-              }
-            }
-          }
-        },
-        device: device,
-        at: at,
-        cur: cur,
-        ext: {}
-      };
+          content: content
+        };
+      }
+
+      // Set inventorypartnerdomain if available
+      // Read 2.6 location and fallback to 2.5
+      const ipd = deepAccess(bid, `ortb2.${fpdKey}.inventorypartnerdomain`) ?? deepAccess(bid, `ortb2.${fpdKey}.ext.inventorypartnerdomain`);
+      if (ipd) {
+        requestPayload[fpdKey].ext = { ...requestPayload[fpdKey].ext, inventorypartnerdomain: ipd };
+      }
 
       const userExt = {};
 
@@ -206,14 +257,22 @@ export const spec = {
         }
       }
 
-      // Add sitekey if available
-      if (sitekey) {
-        requestPayload.site.content.ext.sitekey = sitekey;
+      // Add regs.ext.dsa if available
+      const dsa = deepAccess(bid, 'ortb2.regs.ext.dsa');
+      if (dsa) {
+        // regs.ext could already exist if GDPR applies. deepSetValue will
+        // create the object if its missing.
+        deepSetValue(requestPayload, 'regs.ext.dsa', dsa);
       }
 
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
+      }
+
+      // Add extended identifiers if available
+      if (isArray(eids) && eids.length) {
+        userExt.eids = eids;
       }
 
       // Add schain object if available from the new location
@@ -313,26 +372,31 @@ export const spec = {
             vastXml: smartxBid.adm,
             mediaType: VIDEO,
             width: smartxBid.w,
-            height: smartxBid.h
+            height: smartxBid.h,
+            meta: {}
           };
 
-          bid.meta = bid.meta || {};
           if (smartxBid && smartxBid.adomain && smartxBid.adomain.length > 0) {
             bid.meta.advertiserDomains = smartxBid.adomain;
+          }
+
+          const dsa = deepAccess(smartxBid, 'ext.dsa');
+          if (dsa) {
+            bid.meta.dsa = dsa;
           }
 
           const context = deepAccess(currentBidRequest, 'mediaTypes.video.context');
 
           if (context === 'outstream') {
-            const playersize = deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
+            const playersize = getPlayerSize(currentBidRequest);
             const renderer = Renderer.install({
               id: 0,
               url: 'https://dco.smartclip.net/?plc=7777779',
               adUnitCode: currentBidRequest.adUnitCode,
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
-                player_width: playersize[0][0],
-                player_height: playersize[0][1],
+                player_width: playersize[0],
+                player_height: playersize[1],
                 content_page_url: deepAccess(bidderRequest, 'data.site.page'),
                 ad_mute: +!!deepAccess(currentBidRequest, 'params.ad_mute'),
                 hide_skin: +!!deepAccess(currentBidRequest, 'params.hide_skin'),
@@ -451,6 +515,18 @@ function createOutstreamConfig(bid) {
     logError('[SMARTX][renderer] Error caught: ' + e);
   }
   return playerConfig;
+}
+
+/**
+ * Read the player size off the ad unit. Core normalises this to [[w, h]], but the
+ * flat [w, h] form still reaches adapters that are called directly.
+ * @param bid A valid bid object
+ * @returns {Array} [w, h]
+ */
+function getPlayerSize(bid) {
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+
+  return playerSize.flat();
 }
 
 /**
