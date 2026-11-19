@@ -86,7 +86,7 @@ const REPLACEMENTS = new WeakMap<Bid, Replacement>();
  * `callback` runs synchronously unless it has to wait for a replacement that is not available yet;
  * `legacyRender` relies on that to use `document.write`.
  */
-export const getBidToRender = hook('sync', function (bid: Bid | undefined, forRender: boolean, callback: (bid: Bid | undefined) => void) {
+export function getBidToRender(bid: Bid | undefined, forRender: boolean, callback: (bid: Bid | undefined) => void) {
   if (bid != null && forRender && !REPLACEMENTS.has(bid) && canReplaceExpiredBid(bid)) {
     replaceExpiredBid(bid);
   }
@@ -96,7 +96,7 @@ export const getBidToRender = hook('sync', function (bid: Bid | undefined, forRe
   } else {
     callback(replacement?.bid ?? bid);
   }
-});
+}
 
 export function canReplaceExpiredBid(bid: Bid) {
   // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply
