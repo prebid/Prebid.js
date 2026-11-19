@@ -392,6 +392,17 @@ describe('adRendering', () => {
           sinon.assert.calledOnce(replaceExpiredBid);
         });
 
+        it('should not ask again when replaceExpiredBid renders the same ad', () => {
+          let nested;
+          replaceExpiredBid.callsFake(() => {
+            nested = getBid('expired');
+            return replacement;
+          });
+          expect(getBid('expired')).to.equal(replacement);
+          expect(nested).to.equal(expired);
+          sinon.assert.calledOnce(replaceExpiredBid);
+        });
+
         it('should ask for it only once while a replacement is pending', async () => {
           replaceExpiredBid.callsFake(() => new Promise((resolve) => setTimeout(() => resolve(replacement))));
           const bids = await Promise.all([getBidAsync('expired'), getBidAsync('expired', false)]);

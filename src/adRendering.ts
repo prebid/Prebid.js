@@ -60,16 +60,7 @@ declare module './events' {
   }
 }
 
-type Replacement = {
-  /**
-   * The bid that is rendered in place of the expired one - itself, if it was not replaced. Set once the replacement is known.
-   */
-  bid?: Bid;
-  /**
-   * Callbacks waiting on the replacement; cleared once it is known.
-   */
-  waiting?: ((bid: Bid) => void)[];
-};
+type Replacement = { bid: Bid } | { pending: Promise<Bid> };
 
 /**
  * Tracks expired bids that have been passed to `auctionOptions.replaceExpiredBid`.
@@ -90,11 +81,11 @@ export function getBidToRender(bid: Bid | undefined, forRender: boolean, callbac
   if (bid != null && forRender && !REPLACEMENTS.has(bid) && canReplaceExpiredBid(bid)) {
     replaceExpiredBid(bid);
   }
-  const replacement = REPLACEMENTS.get(bid);
-  if (replacement?.waiting != null) {
-    replacement.waiting.push(callback);
+  const replacement = REPLACEMENTS.get(bid) ?? { bid };
+  if ('pending' in replacement) {
+    replacement.pending.then(callback).catch(logError);
   } else {
-    callback(replacement?.bid ?? bid);
+    callback(replacement.bid);
   }
 }
 
@@ -124,38 +115,28 @@ function isValidReplacement(expiredBid: Bid, replacement: Bid) {
 
 function replaceExpiredBid(expiredBid: Bid) {
   const { adId } = expiredBid;
-  const state: Replacement = { waiting: [] };
-  REPLACEMENTS.set(expiredBid, state);
 
-  function fail(e) {
-    logError(`Could not replace expired ad id ${adId}`, e);
-    resolve(null);
-  }
-
-  function resolve(replacement) {
-    if (state.waiting == null) return;
+  function settle(replacement) {
+    let bid = expiredBid;
     if (isValidReplacement(expiredBid, replacement)) {
       logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
       events.emit(EXPIRED_RENDER, expiredBid);
-      state.bid = replacement;
-    } else {
-      if (replacement != null) {
-        logWarn(`Replacement for expired ad id ${adId} is not usable, ignoring it`);
-      }
-      // the expired bid is rendered as usual, which emits EXPIRED_RENDER and honors `suppressExpiredRender`
-      state.bid = expiredBid;
+      bid = replacement;
+    } else if (replacement != null) {
+      logWarn(`Replacement for expired ad id ${adId} is not usable, ignoring it`);
     }
-    const { waiting } = state;
-    delete state.waiting;
-    waiting.forEach((callback) => {
-      try {
-        callback(state.bid);
-      } catch (e) {
-        logError(e);
-      }
-    });
+    // an expired bid that was not replaced is rendered as usual, which emits EXPIRED_RENDER and honors `suppressExpiredRender`
+    REPLACEMENTS.set(expiredBid, { bid });
+    return bid;
   }
 
+  function fail(e) {
+    logError(`Could not replace expired ad id ${adId}`, e);
+    return settle(null);
+  }
+
+  // in case replaceExpiredBid renders this same ad synchronously
+  REPLACEMENTS.set(expiredBid, { bid: expiredBid });
   let result;
   try {
     result = config.getConfig('auctionOptions').replaceExpiredBid(expiredBid);
@@ -164,9 +145,9 @@ function replaceExpiredBid(expiredBid: Bid) {
     return;
   }
   if (isFn(result?.then)) {
-    result.then(resolve, fail);
+    REPLACEMENTS.set(expiredBid, { pending: PbPromise.resolve(result).then(settle, fail) });
   } else {
-    resolve(result);
+    settle(result);
   }
 }
 
