@@ -6007,11 +6007,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "roxot",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "scaleable",
       "gvlid": null
     },
