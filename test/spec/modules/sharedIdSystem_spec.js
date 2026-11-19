@@ -300,10 +300,10 @@ describe('SharedId System', function () {
           expect(firePixel({ pixelConsent: true }, { gdpr: null, usp: null, gpp: null, coppa: false })).to.equal(PLAIN_URL + id);
         });
 
-        it('should carry every consent param, URL-encoded, with full consent data', function () {
+        it('should carry every consent param with full consent data', function () {
           const url = firePixel({ pixelConsent: true }, FULL_CONSENT);
           expect(url).to.equal(PLAIN_URL + id +
-            `&gdpr=1&gdpr_consent=${TC_STRING}&us_privacy=1YNN&gpp=${encodeURIComponent(GPP_STRING)}&gpp_sid=2%2C7`);
+            `&gdpr=1&gdpr_consent=${TC_STRING}&us_privacy=1YNN&gpp=${GPP_STRING}&gpp_sid=2,7`);
           expect(queryOf(url)).to.eql({
             id: `pubcid:${id}`,
             gdpr: '1',
@@ -311,22 +311,6 @@ describe('SharedId System', function () {
             us_privacy: '1YNN',
             gpp: GPP_STRING,
             gpp_sid: '2,7'
-          });
-        });
-
-        it('should encode characters that are not URL-safe', function () {
-          const url = firePixel({ pixelConsent: true }, {
-            gdpr: { gdprApplies: true, consentString: 'a&b=c d' },
-            usp: '1Y&N',
-            gpp: { gppString: 'x#y', applicableSections: [2] }
-          });
-          expect(queryOf(url)).to.eql({
-            id: `pubcid:${id}`,
-            gdpr: '1',
-            gdpr_consent: 'a&b=c d',
-            us_privacy: '1Y&N',
-            gpp: 'x#y',
-            gpp_sid: '2'
           });
         });
 

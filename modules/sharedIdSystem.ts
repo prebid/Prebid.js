@@ -139,7 +139,7 @@ function getIdCallback(pubcid, pixelUrl, getPixelParams?: () => Record<string, s
 }
 
 /**
- * The extra `pixelUrl` query params, URL-encoded: the page's consent data when `pixelConsent` is set, and the
+ * The extra `pixelUrl` query params: the page's consent data when `pixelConsent` is set, and the
  * cookie domain when `pixelCookieDomain` is set. Empty values are left out.
  */
 function pixelParams(
@@ -151,14 +151,13 @@ function pixelParams(
     Object.entries(getUserSyncParams(consentData?.gdpr, consentData?.usp, consentData?.gpp))
       .filter(([, value]) => value != null && value !== '')
       .forEach(([key, value]) => {
-        // getUserSyncParams encodes us_privacy already
-        params[key] = key === 'us_privacy' ? String(value) : encodeURIComponent(String(value));
+        params[key] = String(value);
       });
   }
   if (pixelCookieDomain) {
     // the domain the User ID module writes the ID cookie on. Only probed when asked for: the probe writes test cookies
     const domain = sharedIdSystemSubmodule.domainOverride();
-    if (domain) params.cookie_domain = encodeURIComponent(domain);
+    if (domain) params.cookie_domain = domain;
   }
   return params;
 }
