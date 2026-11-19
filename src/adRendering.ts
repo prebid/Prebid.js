@@ -3,6 +3,7 @@ import {
   createInvisibleIframe,
   inIframe,
   insertElement,
+  isFn,
   logError,
   logWarn,
   politeTriggerPixel,
@@ -56,6 +57,100 @@ declare module './events' {
     [EVENTS.BROWSER_INTERVENTION]: [BrowserInterventionData];
     [EVENTS.BID_CLICK]: [BidClickData & { method: 'creativeClick' | 'nativeClick' }];
     [EVENTS.BID_CLICK_INFERRED]: [BidClickData & { method: 'iframeFocus' }];
+  }
+}
+
+type Replacement = { bid: Bid } | { pending: Promise<Bid> };
+
+/**
+ * Tracks expired bids that have been passed to `auctionOptions.replaceExpiredBid`.
+ */
+const REPLACEMENTS = new WeakMap<Bid, Replacement>();
+
+/**
+ * Pass to `callback` the bid that should handle a request about `bid`, coming from a creative, `renderAd` or `renderBid`.
+ *
+ * If `bid` has expired and `auctionOptions.replaceExpiredBid` is set, the first request that starts rendering
+ * (`forRender = true`) asks for a replacement, and all requests about `bid` resolve to it from then on -
+ * the creative only knows about the ad ID it was given by the ad server.
+ *
+ * `callback` runs synchronously unless it has to wait for a replacement that is not available yet;
+ * `legacyRender` relies on that to use `document.write`.
+ */
+export function getBidToRender(bid: Bid | undefined, forRender: boolean, callback: (bid: Bid | undefined) => void) {
+  if (bid != null && forRender && !REPLACEMENTS.has(bid) && canReplaceExpiredBid(bid)) {
+    replaceExpiredBid(bid);
+  }
+  const replacement = REPLACEMENTS.get(bid) ?? { bid };
+  if ('pending' in replacement) {
+    replacement.pending.then(callback).catch(logError);
+  } else {
+    callback(replacement.bid);
+  }
+}
+
+export function canReplaceExpiredBid(bid: Bid) {
+  // a bid that was already rendered goes through the usual path, so that STALE_RENDER / `suppressStaleRender` apply;
+  // a deferred or winning bid is waiting for (or was billed by) `triggerBilling` on its own ad ID
+  return isFn(config.getConfig('auctionOptions')?.replaceExpiredBid) &&
+    bid.status !== BID_STATUS.RENDERED &&
+    !bid.deferRendering &&
+    !WINNERS.has(bid) &&
+    !bidFilters.isBidNotExpired(bid);
+}
+
+function isValidReplacement(expiredBid: Bid, replacement: Bid) {
+  // a bid that already won (e.g. one waiting for `triggerBilling`) belongs to some other slot;
+  // a bid that defers rendering could only be released with an ad ID the publisher does not know about;
+  // a bid of a different media type cannot be rendered by the creative that was set up for the expired one;
+  // a bid for a different ad unit was requested for another slot, and would be rendered or resized in its element;
+  // a bid with a renderer runs outside the creative frame that was set up for the expired one, or vice versa
+  return replacement != null &&
+    replacement !== expiredBid &&
+    replacement.adUnitCode === expiredBid.adUnitCode &&
+    replacement.mediaType === expiredBid.mediaType &&
+    !replacement.deferRendering &&
+    usesLegacyRenderer(replacement) === usesLegacyRenderer(expiredBid) &&
+    !WINNERS.has(replacement) &&
+    bidFilters.isBidNotExpired(replacement) &&
+    bidFilters.isUnusedBid(replacement);
+}
+
+function replaceExpiredBid(expiredBid: Bid) {
+  const { adId } = expiredBid;
+
+  function settle(replacement) {
+    let bid = expiredBid;
+    if (isValidReplacement(expiredBid, replacement)) {
+      logWarn(`Ad id ${adId} has been expired, rendering ad id ${replacement.adId} in its place`);
+      events.emit(EXPIRED_RENDER, expiredBid);
+      bid = replacement;
+    } else if (replacement != null) {
+      logWarn(`Replacement for expired ad id ${adId} is not usable, ignoring it`);
+    }
+    // an expired bid that was not replaced is rendered as usual, which emits EXPIRED_RENDER and honors `suppressExpiredRender`
+    REPLACEMENTS.set(expiredBid, { bid });
+    return bid;
+  }
+
+  function fail(e) {
+    logError(`Could not replace expired ad id ${adId}`, e);
+    return settle(null);
+  }
+
+  // in case replaceExpiredBid renders this same ad synchronously
+  REPLACEMENTS.set(expiredBid, { bid: expiredBid });
+  let result;
+  try {
+    result = config.getConfig('auctionOptions').replaceExpiredBid(expiredBid);
+  } catch (e) {
+    fail(e);
+    return;
+  }
+  if (isFn(result?.then)) {
+    REPLACEMENTS.set(expiredBid, { pending: PbPromise.resolve(result).then(settle, fail) });
+  } else {
+    settle(result);
   }
 }
 
@@ -559,8 +654,14 @@ export const renderAdDirect = yieldsIf(() => !legacyRender, function renderAdDir
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      bid = auctionManager.findBidByAdId(adId);
-      handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+      getBidToRender(auctionManager.findBidByAdId(adId), true, (bidResponse) => {
+        bid = bidResponse;
+        try {
+          handleRender({ renderFn, resizeFn, adId, options: { clickUrl: options?.clickThrough, viewUrl: options?.viewUrl }, bidResponse: bid, doc });
+        } catch (e) {
+          fail(EXCEPTION, e.message);
+        }
+      });
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
