@@ -5927,11 +5927,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "invisiblyAnalytics",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "kargo",
       "gvlid": null
     },
