@@ -49,6 +49,13 @@ describe('Consent data handler', () => {
       handler.setConsentData(true);
       sinon.assert.notCalled(listener);
     });
+    it('should keep listeners across reset', () => {
+      handler.onChange(listener);
+      handler.reset();
+      handler.enable();
+      handler.setConsentData('after reset');
+      sinon.assert.calledWith(listener, 'after reset');
+    });
     describe('using hashFields', () => {
       beforeEach(() => {
         handler = consentHandler({ hashFields: ['tcString'] });
@@ -220,6 +227,17 @@ describe('multiHandler', () => {
     });
   });
   describe('onChange', () => {
+    it('does not forward changes twice after reset', () => {
+      handlers.h1.reset = sinon.stub();
+      handlers.h2.reset = sinon.stub();
+      handlers.h1.getConsentData = () => 'one';
+      handlers.h2.getConsentData = () => 'two';
+      multi.reset();
+      const listener = sinon.stub();
+      multi.onChange(listener);
+      handlers.h1.onChange.args.forEach(([fn]) => fn());
+      sinon.assert.calledOnce(listener);
+    });
     ['h1', 'h2'].forEach((handler, i) => {
       it(`triggers when handler #${i + 1} changes`, () => {
         handlers.h1.getConsentData = () => 'one';
@@ -236,8 +254,49 @@ describe('multiHandler', () => {
   });
 });
 
+describe('consentHandler hash', () => {
+  let handler;
+  beforeEach(() => {
+    handler = consentHandler();
+    handler.enable();
+  });
+
+  it('reflects a change even if the same data is set again before the hash is read', () => {
+    const before = handler.hash;
+    handler.setConsentData({ a: 1 });
+    handler.setConsentData({ a: 1 });
+    expect(handler.hash).to.not.be.null;
+    expect(handler.hash).to.not.equal(before);
+  });
+
+  it('is computed after reset, even when the first data set is null', () => {
+    handler.setConsentData({ a: 1 });
+    const withData = handler.hash;
+    handler.reset();
+    handler.enable();
+    handler.setConsentData(null);
+    expect(handler.hash).to.not.be.null;
+    expect(handler.hash).to.not.equal(withData);
+  });
+});
+
 describe('allConsent', () => {
   afterEach(() => gcmDataHandler.reset());
+
+  [['gdpr', gdprDataHandler], ['gpp', gppDataHandler], ['gcm', gcmDataHandler]].forEach(([name, handler]) => {
+    it(`keeps forwarding ${name} changes after the handler is reset (module disabled and re-enabled)`, () => {
+      const listener = sinon.stub();
+      allConsent.onChange(listener);
+      try {
+        handler.reset();
+        handler.enable();
+        handler.setConsentData({ marker: name });
+        sinon.assert.calledWith(listener, sinon.match({ [name]: { marker: name } }));
+      } finally {
+        handler.reset();
+      }
+    });
+  });
 
   it('includes gcm', () => {
     expect(allConsent.getConsentData()).to.have.property('gcm');

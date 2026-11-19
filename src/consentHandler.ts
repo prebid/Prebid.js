@@ -56,7 +56,8 @@ export interface DefaultConsentMeta {
 export interface ConsentHandler<T, M> {
   readonly generatedTime: number,
   /**
-   * reset this handler (mainly for tests)
+   * Reset this handler's consent data and state, as when its module is disabled. Listeners registered through
+   * `onChange` are kept, so that consumers wired up once (such as `allConsent`) see it again once re-enabled.
    */
   reset(): void;
   getConsentData(): T;
@@ -102,7 +103,7 @@ export function consentHandler<T, M>(
   let hash;
   let error;
   let hasError;
-  let listeners;
+  const listeners = [];
   function reset() {
     df = defer();
     enabled = false;
@@ -113,7 +114,6 @@ export function consentHandler<T, M>(
     hash = null;
     error = null;
     hasError = false;
-    listeners = [];
   }
 
   function getHashData(consentData) {
@@ -124,29 +124,35 @@ export function consentHandler<T, M>(
     return !deepEqual(getHashData(consentData), getHashData(newConsentData));
   }
 
-  function notifyListeners() {
-    if (dirty) {
+  function update(data) {
+    const changed = hasConsentChanged(data);
+    // `dirty` means the hash is stale; it stays so until the hash is computed, even if the same data is set again
+    dirty = dirty || changed;
+    consentData = data;
+    return changed;
+  }
+
+  function notifyListeners(changed) {
+    if (changed) {
       listeners.forEach(l => l(consentData));
     }
   }
 
   function resolve(data) {
-    dirty = hasConsentChanged(data);
-    consentData = data;
+    const changed = update(data);
     hasError = false;
     error = null;
     ready = true;
     df.resolve(data);
-    notifyListeners();
+    notifyListeners(changed);
   }
   function reject(err) {
-    dirty = hasConsentChanged(null);
-    consentData = null;
+    const changed = update(null);
     ready = true;
     error = err;
     hasError = true;
     df.reject(err);
-    notifyListeners();
+    notifyListeners(changed);
   }
   reset();
 
@@ -376,14 +382,11 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
   }
   const getConsentData = collector('getConsentData');
   const resetAll = collector('reset');
-  let listeners;
-  function reset() {
-    listeners = [];
-    Object.values(handlers).forEach(handler => handler.onChange(() => {
-      listeners.forEach((listener) => listener(getConsentData()));
-    }));
-  }
-  reset();
+  let listeners = [];
+  // handlers keep their listeners across their own reset, so this is registered only once
+  Object.values(handlers).forEach(handler => handler.onChange(() => {
+    listeners.forEach((listener) => listener(getConsentData()));
+  }));
 
   return {
     getConsentData,
@@ -405,7 +408,7 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
     getConsentMeta: collector('getConsentMeta'),
     reset() {
       resetAll();
-      reset();
+      listeners = [];
     }
   };
 }
