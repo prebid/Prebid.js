@@ -52,17 +52,6 @@
         bidsBackHandler: sendAdserverRequest,
         timeout: PREBID_TIMEOUT
       });
-      pbjs.enableAnalytics({
-        provider: 'growthCodeAnalytics',
-        options: {
-          pid: 'TEST01',
-          //url: 'http://localhost:8080/v3/pb/analytics',
-          trackEvents: [
-            'auctionEnd',
-            'bidWon',
-            ]
-        }
-      });
       pbjs.setConfig({
         debugging: {
           enabled: true,
