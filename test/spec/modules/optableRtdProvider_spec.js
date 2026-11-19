@@ -1432,13 +1432,43 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(callback.calledOnce).to.be.true;
     });
 
-    it('handles invalid config gracefully', async function () {
+    it('uses the cached SDK targeting for a partial direct API configuration', async function () {
       moduleConfig.params.host = null;
+      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: { user: { eids } } }));
 
-      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       expect(ajaxStub.called).to.be.false;
       expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('waits for the API instead of serving the empty cache placeholder a bundle wrote', async function () {
+      const eids = [{ source: 'optable.co', uids: [{ id: 'fresh-id' }] }];
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
+      ajaxStub.callsFake((url, options) => options.success(JSON.stringify({ ortb2: { user: { eids } } })));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('leaves the cache alone when the SDK loads before the direct response arrives', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      let respond;
+      ajaxStub.callsFake((url, options) => { respond = options.success; });
+
+      const pending = getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+      window.optable = { instance: { targeting: sinon.stub() } };
+      respond('{"ortb2":{"user":{"eids":[]}}}');
+      await pending;
+
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+      expect(storage.setDataInLocalStorage.calledWith(sinon.match(/^OPTABLE_TARGETING_/))).to.be.false;
+      delete window.optable;
     });
 
     it('updates SDK-compatible targeting cache after successful API call', async function () {

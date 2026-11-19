@@ -754,6 +754,11 @@ const targetingRequestKey = (apiParams) => {
  * @param {Object} data Targeting response
  */
 const storeTargeting = (apiParams, data) => {
+  // Once the SDK has loaded, the cache holds the bundle's merged data; a direct response must not replace it
+  if (isSDKAvailable(apiParams.instance)) {
+    logMessage('Optable SDK has loaded, leaving the targeting cache to it');
+    return;
+  }
   setCachedTargeting(apiParams.cacheKey, data);
   setSDKTargetingCache(apiParams.host, apiParams.node, data);
 };
@@ -899,9 +904,7 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
 
     const sdkAvailable = isSDKAvailable(instance);
     if (!sdkAvailable && !hasDirectApiConfig && (host || node || site)) {
-      logError('host, node and site are all required for direct API calls, skipping Optable RTD');
-      callback();
-      return;
+      logWarn('host, node and site are all required for direct API calls, using the Optable Web SDK instead');
     }
 
     if (sdkAvailable || !hasDirectApiConfig) {
@@ -923,13 +926,13 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const consent = extractConsent(userConsent);
     const { ids, hids } = extractIdentifiers(configIds, configHids);
     const passport = getPassport(host, node);
-    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout, cacheKey };
+    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout, cacheKey, instance };
 
     logMessage(`Direct API mode: host=${host}, node=${node}, site=${site}, cookies=${cookies}, timeout=${effectiveTimeout}`);
 
     // Serve the cache immediately and refresh it in the background, once per page load for these
     // parameters; once that refresh has answered, serve its answer, as the shared cache may hold another's
-    const cachedData = reuseTargeting(apiParams) || getCachedTargeting(cacheKey);
+    const cachedData = reuseTargeting(apiParams) || readUsableCache(cacheKey);
     if (cachedData) {
       fetchTargeting(apiParams);
       await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
