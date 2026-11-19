@@ -2,6 +2,7 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import { targetingConfigApi } from 'test/mocks/gpt.js';
 import {
   intentIqIdSubmodule,
   handleClientHints,
@@ -91,23 +92,12 @@ async function waitForClientHints() {
 
 const testAPILink = 'https://new-test-api.intentiq.com';
 const syncTestAPILink = 'https://new-test-sync.intentiq.com';
-const mockGAM = () => {
-  const targetingObject = {};
-  return {
-    cmd: [],
-    pubads: () => ({
-      setTargeting: (key, value) => {
-        targetingObject[key] = value;
-      },
-      getTargeting: (key) => {
-        return [targetingObject[key]];
-      },
-      getTargetingKeys: () => {
-        return Object.keys(targetingObject);
-      }
-    })
-  };
-};
+const mockGAM = () => ({
+  cmd: [],
+  ...targetingConfigApi()
+});
+const getGamTargeting = (gam, key) => gam.getConfig('targeting').targeting[key];
+const getGamTargetingKeys = (gam) => Object.keys(gam.getConfig('targeting').targeting);
 
 const regionCases = [
   { name: 'no region (default)', region: undefined, expected: 'https://api.intentiq.com' },
@@ -208,7 +198,7 @@ describe('IntentIQ tests', function () {
     expect(submodule).to.be.undefined;
   });
 
-  it('should use setConfig when available in setGamReporting', function () {
+  it('should use setConfig in setGamReporting', function () {
     const setConfigSpy = sinon.spy();
     const pubadsSetTargetingSpy = sinon.spy();
     const mockGAM = {
@@ -230,22 +220,6 @@ describe('IntentIQ tests', function () {
       }
     });
     expect(pubadsSetTargetingSpy.called).to.equal(false);
-  });
-
-  it('should fall back to pubads.setTargeting when setConfig is missing', function () {
-    const pubadsSetTargetingSpy = sinon.spy();
-    const mockGAM = {
-      cmd: [],
-      pubads: () => ({
-        setTargeting: pubadsSetTargetingSpy
-      })
-    };
-
-    setGamReporting(mockGAM, 'intent_iq_group', 'B');
-    mockGAM.cmd.forEach((fn) => fn());
-
-    expect(pubadsSetTargetingSpy.calledOnce).to.equal(true);
-    expect(pubadsSetTargetingSpy.firstCall.args).to.deep.equal(['intent_iq_group', 'B']);
   });
 
   it('should not save data in cookie if relevant type not set', async function () {
@@ -389,17 +363,7 @@ describe('IntentIQ tests', function () {
     const expectedGamParameterName = 'intent_iq_group';
     defaultConfigParams.params.abPercentage = 0; // "B" provided percentage by user
 
-    const originalPubads = mockGamObject.pubads;
-    const setTargetingSpy = sinon.spy();
-    mockGamObject.pubads = function () {
-      const obj = { ...originalPubads.apply(this, arguments) };
-      const originalSetTargeting = obj.setTargeting;
-      obj.setTargeting = function (...args) {
-        setTargetingSpy(...args);
-        return originalSetTargeting.apply(this, args);
-      };
-      return obj;
-    };
+    const setTargetingSpy = sinon.spy(mockGamObject, 'setConfig');
 
     defaultConfigParams.params.gamObjectReference = mockGamObject;
 
@@ -411,14 +375,14 @@ describe('IntentIQ tests', function () {
     mockGamObject.cmd.forEach(cb => cb());
     mockGamObject.cmd = [];
 
-    const groupBeforeResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
+    const groupBeforeResponse = getGamTargeting(mockGamObject, expectedGamParameterName);
 
     request.respond(200, responseHeader, JSON.stringify({ tc: 20 }));
 
     mockGamObject.cmd.forEach(cb => cb());
     mockGamObject.cmd = [];
 
-    const groupAfterResponse = mockGamObject.pubads().getTargeting(expectedGamParameterName);
+    const groupAfterResponse = getGamTargeting(mockGamObject, expectedGamParameterName);
 
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39');
     expect(groupBeforeResponse).to.deep.equal([WITHOUT_IIQ]);
@@ -438,11 +402,11 @@ describe('IntentIQ tests', function () {
 
     const req = server.requests[0];
     mockGam.cmd.forEach(fn => fn());
-    const before = mockGam.pubads().getTargeting('intent_iq_group');
+    const before = getGamTargeting(mockGam, 'intent_iq_group');
 
     req.respond(200, responseHeader, JSON.stringify({ tc: 41 }));
     mockGam.cmd.forEach(fn => fn());
-    const after = mockGam.pubads().getTargeting('intent_iq_group');
+    const after = getGamTargeting(mockGam, 'intent_iq_group');
 
     expect(before).to.deep.equal([WITH_IIQ]);
     expect(after).to.deep.equal([WITHOUT_IIQ]);
@@ -462,7 +426,7 @@ describe('IntentIQ tests', function () {
     await waitForClientHints();
 
     mockGam.cmd.forEach(fn => fn());
-    const group = mockGam.pubads().getTargeting('intent_iq_group');
+    const group = getGamTargeting(mockGam, 'intent_iq_group');
 
     expect(group).to.deep.equal([WITHOUT_IIQ]);
   });
@@ -478,7 +442,7 @@ describe('IntentIQ tests', function () {
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     mockGamObject.cmd.forEach(cb => cb());
-    const targetingKeys = mockGamObject.pubads().getTargetingKeys();
+    const targetingKeys = getGamTargetingKeys(mockGamObject);
 
     expect(targetingKeys).to.include(customParamName);
   });
@@ -486,15 +450,7 @@ describe('IntentIQ tests', function () {
   it('should NOT call GAM setTargeting when current browser is in browserBlackList', function () {
     const usedBrowser = 'chrome';
     const gam = mockGAM();
-    const pa = gam.pubads();
-    sinon.stub(gam, 'pubads').returns(pa);
-
-    const originalSetTargeting = pa.setTargeting;
-    let setTargetingCalls = 0;
-    pa.setTargeting = function (...args) {
-      setTargetingCalls++;
-      return originalSetTargeting.apply(this, args);
-    };
+    const setConfigSpy = sinon.spy(gam, 'setConfig');
 
     localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({
       pcid: 'pcid-1',
@@ -517,8 +473,8 @@ describe('IntentIQ tests', function () {
     gam.cmd.forEach(fn => fn());
     const currentBrowserLowerCase = detectBrowser();
     if (currentBrowserLowerCase === usedBrowser) {
-      expect(setTargetingCalls).to.equal(0);
-      expect(pa.getTargetingKeys()).to.not.include('custom_gam_param');
+      sinon.assert.notCalled(setConfigSpy);
+      expect(getGamTargetingKeys(gam)).to.not.include('custom_gam_param');
     }
   });
 

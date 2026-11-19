@@ -436,8 +436,7 @@ describe('RelaidoAdapter', function () {
 
     it('should get pagekvt', function () {
       mockGpt.enable();
-      window.googletag.pubads().clearTargeting();
-      window.googletag.pubads().setTargeting('testkey', ['testvalue']);
+      window.googletag.setConfig({ targeting: { testkey: ['testvalue'] } });
       bidRequest.adUnitCode = 'test-adunit-code-1';
       window.googletag.pubads().setSlots([mockGpt.makeSlot({ code: bidRequest.adUnitCode })]);
       const bidRequests = spec.buildRequests([bidRequest], bidderRequest);

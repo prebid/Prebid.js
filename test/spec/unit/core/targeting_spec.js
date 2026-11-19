@@ -1875,7 +1875,7 @@ describe('targeting tests', function () {
         slot = {
           getAdUnitPath: sinon.stub().returns('/slot/path'),
           getSlotElementId: sinon.stub().returns(adUnitCode),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         slots = [slot];
         presetGPTTargetingStub = sandbox.stub(targetingInstance, 'presetGPTTargeting');
@@ -1913,7 +1913,7 @@ describe('targeting tests', function () {
         slot = {
           getAdUnitPath: sinon.stub().returns('/slot/path'),
           getSlotElementId: sinon.stub().returns(adUnitCode),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         slots = [slot];
         listeners = {};
@@ -2034,7 +2034,7 @@ describe('targeting tests', function () {
         const otherSlot = {
           getAdUnitPath: sinon.stub().returns('/slot/path2'),
           getSlotElementId: sinon.stub().returns('div-2'),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         slots.push(otherSlot);
         instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
@@ -2089,7 +2089,7 @@ describe('targeting tests', function () {
         slots.push({
           getAdUnitPath: sinon.stub().returns('/slot/path2'),
           getSlotElementId: sinon.stub().returns('div-2'),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         });
         instance.updateGPTTargeting({ 'div-2': { hb_adid: 'other-ad' } }, 'set', null, { 'div-2': new Set(['other-ad']) });
         clock.tick(102);
@@ -2168,7 +2168,7 @@ describe('targeting tests', function () {
         slot = {
           getAdUnitPath: sinon.stub().returns(adUnitCode),
           getSlotElementId: sinon.stub().returns(adUnitCode),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         slots = [slot];
         sandbox.stub(bidFilters, 'isBidNotExpired').returns(true);
@@ -2212,12 +2212,12 @@ describe('targeting tests', function () {
         const slotA = {
           getAdUnitPath: sinon.stub().returns(adUnitA),
           getSlotElementId: sinon.stub().returns(adUnitA),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         const slotB = {
           getAdUnitPath: sinon.stub().returns(adUnitB),
           getSlotElementId: sinon.stub().returns(adUnitB),
-          updateTargetingFromMap: sinon.stub()
+          setConfig: sinon.stub()
         };
         slots = [slotA, slotB];
 
