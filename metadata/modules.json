@@ -5013,12 +5013,6 @@
     },
     {
       "componentType": "rtd",
-      "componentName": "airgrid",
-      "gvlid": 101,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "rtd",
       "componentName": "anonymised",
       "gvlid": 1116,
       "disclosureURL": null

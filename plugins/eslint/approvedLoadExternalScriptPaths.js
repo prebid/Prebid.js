@@ -8,7 +8,6 @@ const APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS = [
   'modules/adagioRtdProvider.js',
   'modules/adlooxAnalyticsAdapter.js',
   'modules/arcspanRtdProvider.js',
-  'modules/airgridRtdProvider.js',
   'modules/browsiRtdProvider.js',
   'modules/brandmetricsRtdProvider.js',
   'modules/cleanioRtdProvider.js',
