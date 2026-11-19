@@ -1268,6 +1268,16 @@ describe('floxisBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
+    let backgroundStub;
+
+    beforeEach(function () {
+      backgroundStub = sinon.stub(utils, 'runBackgroundTask').callsFake((task) => task());
+    });
+
+    afterEach(function () {
+      backgroundStub.restore();
+    });
+
     const beaconRequest = (i = 0) => server.requests[i].fetch.request;
     const beaconUrl = (i = 0) => server.requests[i].url;
     const beaconUrls = () => server.requests.map(({ url }) => url);
@@ -1314,26 +1324,35 @@ describe('floxisBidAdapter', function () {
       expect(url).not.to.match(/[?&]auctionId=/);
     });
 
-    it('sends the beacon at once as a cookieless keepalive fetch, not on the background task queue', function () {
-      const politeStub = sinon.stub(utils, 'politeTriggerPixel');
-      const backgroundStub = sinon.stub(utils, 'runBackgroundTask');
+    it('sends the beacon from a background task as a cookieless keepalive fetch', function () {
+      const tasks = [];
+      backgroundStub.callsFake((task) => tasks.push(task));
       const pixelStub = sinon.stub(utils, 'triggerPixel');
       try {
         spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000, auctionId: 'a1' }]);
+        expect(server.requests).to.be.empty;
+        tasks.forEach((task) => task());
         expect(server.requests).to.have.lengthOf(1);
         const request = beaconRequest();
         expect(request.method).to.equal('GET');
         expect(request.mode).to.equal('no-cors');
-        expect(request.credentials).to.equal('omit'); // no Floxis sync cookie rides along
+        expect(request.credentials).to.equal('omit');
         expect(request.keepalive).to.be.true;
-        expect(politeStub.called).to.be.false;
-        expect(backgroundStub.called).to.be.false;
         expect(pixelStub.called).to.be.false;
       } finally {
-        politeStub.restore();
-        backgroundStub.restore();
         pixelStub.restore();
       }
+    });
+
+    it('sends beacons still queued when the page is hidden, once', function () {
+      const tasks = [];
+      backgroundStub.callsFake((task) => tasks.push(task));
+      spec.onTimeout([{ params: { seat: 'Gmtb', region: 'us-e' }, timeout: 2000 }]);
+      window.dispatchEvent(new Event('pagehide'));
+      expect(beaconUrls()).to.deep.equal(['https://px-us-e.floxis.tech/event?event=timeout&seat=Gmtb&region=us-e&duration=2000']);
+      tasks.forEach((task) => task());
+      window.dispatchEvent(new Event('pagehide'));
+      expect(server.requests).to.have.lengthOf(1);
     });
 
     it('never falls back to a cookie-carrying image pixel when the fetch fails', async function () {

@@ -791,13 +791,16 @@ describe('adapexBidAdapter', function () {
 
   describe('telemetry', function () {
     let politeStub;
+    let backgroundStub;
 
     beforeEach(function () {
       politeStub = sinon.stub(utils, 'politeTriggerPixel');
+      backgroundStub = sinon.stub(utils, 'runBackgroundTask').callsFake((task) => task());
     });
 
     afterEach(function () {
       politeStub.restore();
+      backgroundStub.restore();
       config.resetConfig();
     });
 

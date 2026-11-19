@@ -9,7 +9,7 @@ import type { GPPConsentData } from '../../src/types/consent/gpp.d.ts';
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { ortbConverter } from '../ortbConverter/converter.js';
 import { fetch as prebidFetch } from '../../src/ajax.js';
-import { triggerPixel, politeTriggerPixel, mergeDeep, replaceAuctionPrice, generateUUID, deepAccess } from '../../src/utils.js';
+import { triggerPixel, politeTriggerPixel, runBackgroundTask, mergeDeep, replaceAuctionPrice, generateUUID, deepAccess } from '../../src/utils.js';
 import { isActivityAllowed } from '../../src/activities/rules.js';
 import { activityParams } from '../../src/activities/activityParams.js';
 import { MODULE_TYPE_BIDDER } from '../../src/activities/modules.js';
@@ -142,12 +142,32 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
     }
   }
 
-  // Sent at once rather than on the background task queue, which loses beacons from pages whose main thread is
-  // busy; credentials are omitted and there is no image fallback, so the beacon never carries cookies.
-  function sendBeaconNow(url: string) {
+  // Flushed on page hide so a busy page that closes before the background task runs still reports.
+  const pendingTimeoutBeacons = new Set<{ url: string }>();
+  let flushOnHideRegistered = false;
+
+  function sendTimeoutBeacon(beacon: { url: string }) {
+    if (!pendingTimeoutBeacons.delete(beacon)) return;
     try {
-      prebidFetch(url, { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true }).catch(() => {});
+      prebidFetch(beacon.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', keepalive: true }).catch(() => {});
     } catch (e) { }
+  }
+
+  function flushTimeoutBeacons() {
+    pendingTimeoutBeacons.forEach(sendTimeoutBeacon);
+  }
+
+  function queueTimeoutBeacon(url: string) {
+    if (!flushOnHideRegistered) {
+      flushOnHideRegistered = true;
+      window.addEventListener('pagehide', flushTimeoutBeacons);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushTimeoutBeacons();
+      });
+    }
+    const beacon = { url };
+    pendingTimeoutBeacons.add(beacon);
+    runBackgroundTask(() => sendTimeoutBeacon(beacon));
   }
 
   function isValidStoredId(id: string | null): boolean {
@@ -415,7 +435,7 @@ export function createFloxisSpec<B extends 'floxis' | 'adapex'>(config: FloxisSp
             ...(timeout != null ? { duration: timeout } : {}),
             ...(bidIds.length ? { bidIds: bidIds.join(',') } : {})
           };
-          sendBeaconNow(buildEventUrl('timeout', { seat, region }, extras, ''));
+          queueTimeoutBeacon(buildEventUrl('timeout', { seat, region }, extras, ''));
         });
       } catch (e) { }
     },
