@@ -24,6 +24,7 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../modules/userId/spec.js').IdHandle} IdHandle
  * @typedef {import('./lotamePanoramaIdSystem.d.ts').LotamePanoramaIdSystemModuleName} LotamePanoramaIdSystemModuleName
  */
 
@@ -215,12 +216,27 @@ function checkConfigHasErrorsAndReport(config) {
     if (typeof config.storage.name !== 'undefined' && config.storage.name !== KEY_ID) {
       logError(`Misconfigured ${READABLE_MODULE_NAME}, "storage.name" is expected to be "${KEY_ID}", actual is "${config.storage.name}"`);
       error = true;
-    } else if (config.storage.type !== 'undefined' && !PERMITTED_STORAGE_TYPES.includes(config.storage.type)) {
+    } else if (typeof config.storage.type !== 'undefined' && !PERMITTED_STORAGE_TYPES.includes(config.storage.type)) {
       logError(`Misconfigured ${READABLE_MODULE_NAME}, "storage.type" is expected to be one of "${PERMITTED_STORAGE_TYPES.join(', ')}", actual is "${config.storage.type}"`);
     }
   }
   return error;
 }
+/**
+ * Delete what the User ID module stored under the same storage name before this module managed storage.
+ * @param {IdHandle} handle
+ */
+function removeCoreCopy(handle) {
+  // the core's copy can't be told apart from Lotame's own `panoramaId` (same name), but its _cst key can
+  if (getFromStorage(`${KEY_ID}_cst`) == null) return;
+  const ownLocalValue = storage.hasLocalStorage() ? storage.getDataFromLocalStorage(KEY_ID) : null;
+  handle.remove();
+  // remove() also deletes Lotame's own localStorage `panoramaId`
+  if (ownLocalValue != null) {
+    storage.setDataInLocalStorage(KEY_ID, ownLocalValue);
+  }
+}
+
 /** @type {IdProviderSpec<LotamePanoramaIdSystemModuleName>} */
 export const lotamePanoramaIdSubmodule = {
   /**
@@ -252,14 +268,20 @@ export const lotamePanoramaIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @param {(Object|undefined)} cacheIdObj
+   * @param {IdHandle} [handle]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData, cacheIdObj) {
+  getId(config, consentData, cacheIdObj, handle) {
     config = config || {};
     if (checkConfigHasErrorsAndReport(config)) {
       return;
     }
     cookieDomain = lotamePanoramaIdSubmodule.findRootDomain();
+    if (config.storage) {
+      // Lotame's cache logic decides, not the User ID module's copy
+      handle.manage();
+      removeCoreCopy(handle);
+    }
     const configParams = (config && config.params) || {};
     const clientId = configParams.clientId;
     const hasCustomClientId = !isEmpty(clientId);
@@ -390,6 +412,15 @@ export const lotamePanoramaIdSubmodule = {
     };
 
     return { callback: resolveIdFunction };
+  },
+  extendId(...args) {
+    return lotamePanoramaIdSubmodule.getId(...args);
+  },
+  onDataDeletionRequest(config) {
+    cookieDomain = lotamePanoramaIdSubmodule.findRootDomain();
+    const clientId = config?.params?.clientId;
+    [KEY_ID, KEY_EXPIRY, KEY_PROFILE, !isEmpty(clientId) && `${KEY_EXPIRY}_${clientId}`]
+      .forEach(key => clearLotameCache(key, defaultStorageConfig));
   },
   eids: {
     lotamePanoramaId: {
