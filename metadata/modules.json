@@ -6047,11 +6047,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "yuktamedia",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "zeta_global_ssp",
       "gvlid": 833
     },
