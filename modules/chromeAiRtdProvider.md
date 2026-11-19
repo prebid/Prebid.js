@@ -143,7 +143,7 @@ The Classifier API returns IAB Content Taxonomy 3.1 unique IDs with scores. The 
 
 With `promptFallback: true`, the Prompt API is used when the Classifier API is unavailable. It may only answer with the tier 1 categories of the taxonomy, enforced by the response constraint, with a self-reported confidence that `minScore` applies to. The fallback is opt-in because it downloads a much larger model and only knows tier 1.
 
-Categories are not written when the auction already has `site.pagecat`, or a `site.cattax` other than 9, because `site.cattax` also describes `site.cat` and `site.sectioncat`.
+Categories are not written when the auction already has `site.pagecat`, or when the publisher's site categories are in another taxonomy: a `site.cattax` other than 9, or `site.cat` or `site.sectioncat` without `site.cattax` (which OpenRTB reads as taxonomy 1). `site.cattax` also describes `site.cat` and `site.sectioncat`, so it can't be changed.
 
 ### Publisher questions (`decisions`)
 
@@ -171,11 +171,13 @@ The answers are added to `site.content.data` as one entry:
 }
 ```
 
-Cached answers are reused only while the questions stay the same. No entry is added when `site.content.data` already has one named `chromeAi`.
+No entry is added when `site.content.data` already has one named `chromeAi`.
 
 ## Storage
 
 All results are stored in localStorage under the `chromeAi_detected_data` key, as an object keyed by page URL, when storage is allowed for the module by the activity controls (for example, the `storage` activity and TCF consent).
+
+Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords`; `minScore` and `maxCategories`; the questions and `minConfidence`), and detected again when those settings change.
 
 ## Requirements
 

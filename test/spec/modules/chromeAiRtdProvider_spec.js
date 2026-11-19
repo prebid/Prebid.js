@@ -554,14 +554,16 @@ describe('Chrome AI RTD Provider', function () {
       it('caches the categories for the page URL', async function () {
         mockApi('Classifier', classifier);
         await init({ categories: { enabled: true } });
-        expect(storedData().categories).to.deep.equal(['602', '597', '45']);
+        expect(storedData().categories.value).to.deep.equal(['602', '597', '45']);
+        expect(storedData().categories.settings).to.be.a('string');
       });
 
       it('uses cached categories without calling the API', async function () {
         const Classifier = mockApi('Classifier', classifier);
-        setCache({ categories: ['483'] });
         await init({ categories: { enabled: true } });
-        expect(Classifier.availability.called).to.be.false;
+        setCache({ categories: { ...storedData().categories, value: ['483'] } });
+        await init({ categories: { enabled: true } });
+        expect(Classifier.availability.calledOnce).to.be.true;
         expect(runAuction().site.pagecat).to.deep.equal(['483']);
       });
 
@@ -633,6 +635,31 @@ describe('Chrome AI RTD Provider', function () {
         await init({ categories: { enabled: true } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 6 } };
         expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 6 });
+      });
+
+      ['cat', 'sectioncat'].forEach(field => {
+        it(`does not set site.cattax when the publisher has site.${field} without it`, async function () {
+          mockApi('Classifier', classifier);
+          await init({ categories: { enabled: true } });
+          reqBidsConfigObj.ortb2Fragments.global = { site: { [field]: ['IAB1-1'] } };
+          expect(runAuction().site).to.deep.equal({ [field]: ['IAB1-1'] });
+        });
+      });
+
+      it('adds site.pagecat next to publisher site.cat in taxonomy 3.1', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['483'], cattax: 9 } };
+        expect(runAuction().site).to.deep.equal({ cat: ['483'], cattax: 9, pagecat: ['602', '597', '45'] });
+      });
+
+      it('does not reuse cached categories after minScore or maxCategories change', async function () {
+        mockApi('Classifier', classifier);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: storedData().categories });
+        await init({ categories: { enabled: true, maxCategories: 1 } });
+        expect(classifier.classify.calledTwice).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['602']);
       });
 
       it('logs classify errors', async function () {
@@ -744,7 +771,7 @@ describe('Chrome AI RTD Provider', function () {
         const DecisionModel = mockApi('DecisionModel', model);
         await init({ decisions: { enabled: true, questions } });
         const cached = storedData().decisions;
-        expect(cached.segment).to.have.length(3);
+        expect(cached.value).to.have.length(3);
 
         setCache({ decisions: cached });
         await init({ decisions: { enabled: true, questions } });
@@ -752,6 +779,15 @@ describe('Chrome AI RTD Provider', function () {
 
         await init({ decisions: { enabled: true, questions: questions.slice(0, 1) } });
         expect(DecisionModel.create.calledTwice).to.be.true;
+      });
+
+      it('does not reuse cached answers after minConfidence changes', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        setCache({ decisions: storedData().decisions });
+        await init({ decisions: { enabled: true, questions, minConfidence: 0.8 } });
+        expect(DecisionModel.create.calledTwice).to.be.true;
+        expect(runAuction().site.content.data[0].segment).to.deep.equal([{ id: 'is_review', value: 'true' }]);
       });
 
       it('does not add a second chromeAi entry to site.content.data', async function () {
@@ -779,7 +815,7 @@ describe('Chrome AI RTD Provider', function () {
         const [, { responseConstraint }] = session.prompt.firstCall.args;
         expect(responseConstraint.properties.keywords).to.deep.equal({ type: 'array', items: { type: 'string' }, maxItems: 5 });
         expect(self.Summarizer.availability.called).to.be.false;
-        expect(storedData().extractedKeywords).to.deep.equal(['cars', 'electric vehicles']);
+        expect(storedData().extractedKeywords.value).to.deep.equal(['cars', 'electric vehicles']);
         expect(runAuction().site.content.keywords).to.equal('cars,electric vehicles');
       });
 
@@ -807,10 +843,20 @@ describe('Chrome AI RTD Provider', function () {
 
       it('uses cached keywords without calling the API', async function () {
         const LanguageModel = mockApi('LanguageModel', session);
-        setCache({ extractedKeywords: ['cached'] });
         await init({ keywords: { enabled: true } });
-        expect(LanguageModel.availability.called).to.be.false;
+        setCache({ extractedKeywords: { ...storedData().extractedKeywords, value: ['cached'] } });
+        await init({ keywords: { enabled: true } });
+        expect(LanguageModel.availability.calledOnce).to.be.true;
         expect(runAuction().site.content.keywords).to.equal('cached');
+      });
+
+      it('does not reuse cached keywords after maxKeywords changes', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true } });
+        setCache({ extractedKeywords: storedData().extractedKeywords });
+        await init({ keywords: { enabled: true, maxKeywords: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.content.keywords).to.equal('cars');
       });
 
       it('runs only the keywords feature when summarizer is also enabled', async function () {

@@ -392,14 +392,18 @@ export const storeDetectedKeywords = (keywords, url) => {
 const isNonEmptyArray = (value) => isArray(value) && value.length > 0;
 
 /**
- * Fills `detected[key]` from the localStorage cache for this URL, or else by running `detect` on the page text.
- * `detect` returns DEFERRED when it will call the retry it is given once the user activates the page.
+ * Fills `detected[key]` (a non-empty array) from the localStorage cache for this URL, or else by running `detect`
+ * on the page text. `detect` returns DEFERRED when it will call the retry it is given once the user activates the page.
+ * With `cacheSettings`, the settings that shape the result, the cache entry is `{ settings: <hash>, value }` and is
+ * only reused while those settings are unchanged; without them (legacy summarizer keywords) it is the bare value.
  */
-const initFeature = async (key, config, detect, isUsable = isNonEmptyArray) => {
+const initFeature = async (key, config, detect, cacheSettings) => {
   const useCache = config.cacheInLocalStorage !== false;
+  const settingsHash = cacheSettings && cyrb53Hash(JSON.stringify(cacheSettings));
   if (useCache) {
-    const cached = _getChromeAiDataFromLocalStorage()?.[key];
-    if (isUsable(cached)) {
+    const entry = _getChromeAiDataFromLocalStorage()?.[key];
+    const cached = settingsHash ? (entry?.settings === settingsHash ? entry.value : null) : entry;
+    if (isNonEmptyArray(cached)) {
       detected[key] = cached;
       logMessage(`${CONSTANTS.LOG_PRE_FIX} '${key}' found in localStorage.`, cached);
       return true;
@@ -408,14 +412,14 @@ const initFeature = async (key, config, detect, isUsable = isNonEmptyArray) => {
   const pageText = getPageText();
   if (!pageText) return false;
   try {
-    const value = await detect(pageText, config, () => initFeature(key, config, detect, isUsable));
-    if (value === DEFERRED || !isUsable(value)) {
+    const value = await detect(pageText, config, () => initFeature(key, config, detect, cacheSettings));
+    if (value === DEFERRED || !isNonEmptyArray(value)) {
       if (value !== DEFERRED) logMessage(`${CONSTANTS.LOG_PRE_FIX} No '${key}' detected.`);
       return false;
     }
     detected[key] = value;
     logMessage(`${CONSTANTS.LOG_PRE_FIX} '${key}' detected:`, value);
-    if (useCache) _storeChromeAiDataInLocalStorage(getCurrentUrl(), { [key]: value });
+    if (useCache) _storeChromeAiDataInLocalStorage(getCurrentUrl(), { [key]: settingsHash ? { settings: settingsHash, value } : value });
     return true;
   } catch (error) {
     logError(`${CONSTANTS.LOG_PRE_FIX} Error detecting '${key}':`, error);
@@ -563,8 +567,6 @@ const getDecisionsPrompt = (text, questions) =>
   }).join('\n') +
   `\n\nPage text:\n${text}`;
 
-const getQuestionsHash = (questions) => cyrb53Hash(JSON.stringify(questions));
-
 export const answerQuestions = async (text, config, retry) => {
   const questions = getValidQuestions(config.questions);
   if (!questions.length) return null;
@@ -594,11 +596,8 @@ export const answerQuestions = async (text, config, retry) => {
   const segment = questions
     .filter(question => getAnswerLabels(question).includes(answers?.[question.id]))
     .map(question => ({ id: question.id, value: answers[question.id] }));
-  return segment.length ? { questionsHash: getQuestionsHash(questions), segment } : null;
+  return segment;
 };
-
-const isUsableDecisions = (value) => isPlainObject(value) && isNonEmptyArray(value.segment) &&
-  value.questionsHash === getQuestionsHash(getValidQuestions(moduleConfig.decisions.questions));
 
 const init = async (config) => {
   moduleConfig = mergeModuleConfig(config);
@@ -616,7 +615,7 @@ const init = async (config) => {
 
   if (moduleConfig.keywords?.enabled === true) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords enabled. Initializing...`);
-    activeInitializations.push(initFeature('extractedKeywords', moduleConfig.keywords, extractKeywords));
+    activeInitializations.push(initFeature('extractedKeywords', moduleConfig.keywords, extractKeywords, [moduleConfig.keywords.maxKeywords]));
     if (moduleConfig.summarizer?.enabled === true) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} keywords is enabled, so the Summarizer only runs as its fallback.`);
     }
@@ -629,12 +628,14 @@ const init = async (config) => {
 
   if (moduleConfig.categories?.enabled === true) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled. Initializing...`);
-    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage));
+    activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage,
+      [moduleConfig.categories.minScore, moduleConfig.categories.maxCategories]));
   }
 
   if (moduleConfig.decisions?.enabled === true) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Decisions enabled. Initializing...`);
-    activeInitializations.push(initFeature('decisions', moduleConfig.decisions, answerQuestions, isUsableDecisions));
+    activeInitializations.push(initFeature('decisions', moduleConfig.decisions, answerQuestions,
+      [getValidQuestions(moduleConfig.decisions.questions), moduleConfig.decisions.minConfidence]));
   }
 
   if (activeInitializations.length === 0) {
@@ -671,15 +672,21 @@ const enrichKeywords = (global, path, keywords, format) => {
   }
 };
 
+/**
+ * The taxonomy of the publisher's site categories. OpenRTB 2.6 defaults an omitted `cattax` to 1, which only
+ * matters when `cat` or `sectioncat` is present.
+ */
+const getPublisherCattax = (site) => site.cattax ?? (hasValue(site.cat) || hasValue(site.sectioncat) ? 1 : null);
+
 const enrichCategories = (global) => {
   const categories = detected.categories;
   if (!isNonEmptyArray(categories)) return;
   const site = global.site || {};
   if (hasValue(site.pagecat)) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} site.pagecat already in auction ORTB2, no category enrichment.`);
-  } else if (site.cattax != null && site.cattax !== CONSTANTS.CATTAX_IAB_CONTENT_3_1) {
+  } else if (getPublisherCattax(site) != null && getPublisherCattax(site) !== CONSTANTS.CATTAX_IAB_CONTENT_3_1) {
     // site.cattax also describes site.cat and site.sectioncat, so it can't be switched to another taxonomy.
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} site.cattax is ${site.cattax}, not IAB Content Taxonomy 3.1, no category enrichment.`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} site.cattax is ${getPublisherCattax(site)}, not IAB Content Taxonomy 3.1, no category enrichment.`);
   } else {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Enriching site.pagecat with categories:`, categories);
     deepSetValue(global, 'site.pagecat', categories);
@@ -688,7 +695,7 @@ const enrichCategories = (global) => {
 };
 
 const enrichDecisions = (global) => {
-  const segment = detected.decisions?.segment;
+  const segment = detected.decisions;
   if (!isNonEmptyArray(segment)) return;
   const data = global.site?.content?.data;
   if (isArray(data) && data.some(entry => entry?.name === CONSTANTS.SUBMODULE_NAME)) {
