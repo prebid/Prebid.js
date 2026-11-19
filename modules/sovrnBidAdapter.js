@@ -19,6 +19,7 @@ import { COMMON_ORTB_VIDEO_PARAMS } from '../libraries/deepintentUtils/index.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./sovrnBidAdapter.d.ts').SovrnBidParams} SovrnBidParams
  */
 
 const ORTB_VIDEO_PARAMS = {

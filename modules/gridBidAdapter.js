@@ -23,6 +23,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('./gridBidAdapter.d.ts').GridBidParams} GridBidParams
  */
 
 const BIDDER_CODE = 'grid';

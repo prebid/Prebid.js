@@ -13,6 +13,7 @@ import { convertCurrency } from '../libraries/currencyUtils/currency.js';
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('./improvedigitalBidAdapter.d.ts').ImprovedigitalBidParams} ImprovedigitalBidParams
  */
 
 const BIDDER_CODE = 'improvedigital';

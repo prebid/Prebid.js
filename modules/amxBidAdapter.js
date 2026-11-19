@@ -19,6 +19,10 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { getGlobalVarName } from '../src/buildOptions.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('./amxBidAdapter.d.ts').AmxBidParams} AmxBidParams
+ */
+
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;

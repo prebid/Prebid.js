@@ -10,6 +10,7 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./teadsBidAdapter.d.ts').TeadsBidParams} TeadsBidParams
  */
 
 const BIDDER_CODE = 'teads';
