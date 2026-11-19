@@ -5689,13 +5689,6 @@
     },
     {
       "componentType": "userId",
-      "componentName": "operaId",
-      "gvlid": null,
-      "disclosureURL": null,
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
       "componentName": "pairId",
       "gvlid": [
         97,

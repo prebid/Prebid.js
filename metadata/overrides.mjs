@@ -12,7 +12,6 @@ export default {
   mobianRtdProvider: 'mobianBrandSafety',
   neuwoRtdProvider: 'NeuwoRTDModule',
   oneKeyIdSystem: 'oneKeyData',
-  operaadsIdSystem: 'operaId',
   relevadRtdProvider: 'RelevadRTDModule',
   sirdataRtdProvider: 'SirdataRTDModule',
   fanBidAdapter: 'freedomadnetwork',
