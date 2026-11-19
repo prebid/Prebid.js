@@ -110,9 +110,11 @@ function canReplaceExpiredBid(bid: Bid) {
 function isValidReplacement(expiredBid: Bid, replacement: Bid) {
   // a bid that already won (e.g. one waiting for `triggerBilling`) belongs to some other slot;
   // a bid that defers rendering could only be released with an ad ID the publisher does not know about;
-  // a bid of a different media type cannot be rendered by the creative that was set up for the expired one
+  // a bid of a different media type cannot be rendered by the creative that was set up for the expired one;
+  // a bid for a different ad unit was requested for another slot, and would be rendered or resized in its element
   return replacement != null &&
     replacement !== expiredBid &&
+    replacement.adUnitCode === expiredBid.adUnitCode &&
     replacement.mediaType === expiredBid.mediaType &&
     !replacement.deferRendering &&
     !WINNERS.has(replacement) &&

@@ -315,8 +315,8 @@ describe('adRendering', () => {
       }
 
       beforeEach(() => {
-        expired = { adId: 'expired', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 };
-        replacement = { adId: 'replacement', mediaType: 'banner', responseTimestamp: Date.now(), ttl: 300 };
+        expired = { adId: 'expired', adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 };
+        replacement = { adId: 'replacement', adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now(), ttl: 300 };
         sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, replacement].find((bid) => bid.adId === adId));
         sandbox.stub(auctionManager, 'addWinningBid');
         replaceExpiredBid = sinon.stub().callsFake(() => replacement);
@@ -409,6 +409,7 @@ describe('adRendering', () => {
           'returns a bid that already won': () => { markWinner(replacement); },
           'returns a bid that defers rendering': () => { replacement.deferRendering = true; },
           'returns a bid of a different media type': () => { replacement.mediaType = 'native'; },
+          'returns a bid for a different ad unit': () => { replacement.adUnitCode = 'other-au'; },
         }).forEach(([t, setup]) => {
           describe(`when replaceExpiredBid ${t}`, () => {
             beforeEach(setup);

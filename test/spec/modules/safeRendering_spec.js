@@ -165,8 +165,8 @@ describe('safeRendering', () => {
     describe('when the bid has expired and auctionOptions.replaceExpiredBid is set', () => {
       let replacement;
       beforeEach(() => {
-        Object.assign(bid, { mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
-        replacement = { adId: 'replacement-adid', mediaType: 'banner', element: bid.element, responseTimestamp: Date.now(), ttl: 300 };
+        Object.assign(bid, { adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
+        replacement = { adId: 'replacement-adid', adUnitCode: 'au', mediaType: 'banner', element: bid.element, responseTimestamp: Date.now(), ttl: 300 };
         auctionManager.findBidByAdId.callsFake((adId) => [bid, replacement].find((b) => b.adId === adId));
       });
       afterEach(() => {
@@ -185,6 +185,21 @@ describe('safeRendering', () => {
           expect(adId).to.eql(replacement.adId);
           expect(validateToken(replacement, token)).to.be.true;
         });
+      });
+
+      it('does not render a replacement for a different ad unit, nor touch its element', () => {
+        const otherElement = document.createElement('div');
+        otherElement.innerHTML = '<span>other slot</span>';
+        document.body.appendChild(otherElement);
+        try {
+          Object.assign(replacement, { adUnitCode: 'other-au', element: otherElement });
+          config.setConfig({ auctionOptions: { replaceExpiredBid: () => replacement } });
+          renderBid(bidHandle);
+          expect(getRenderArgs(bid.element).adId).to.eql(bid.adId);
+          expect(otherElement.innerHTML).to.eql('<span>other slot</span>');
+        } finally {
+          document.body.removeChild(otherElement);
+        }
       });
     });
 

@@ -144,7 +144,8 @@ export interface AuctionOptionsConfig {
    * Called when a bid that is about to be rendered has expired; it may return (a promise to) another bid to render
    * in its place, for example from a fresh auction. This is useful for slots that cannot be refreshed in the ad server,
    * such as interstitials. If it returns nothing, an expired bid, a bid that already won or was rendered, a bid
-   * with `deferRendering`, or a bid of a different media type, the expired bid is handled as usual (see `suppressExpiredRender`).
+   * with `deferRendering`, or a bid for a different ad unit or of a different media type, the expired bid is handled as usual
+   * (see `suppressExpiredRender`).
    *
    * It is called at most once for each expired bid. From then on, everything the creative sends under the expired bid's
    * ad ID (native asset requests and trackers, resize requests, render events), as well as `triggerBilling`, applies to the replacement.

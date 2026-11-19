@@ -4194,7 +4194,7 @@ describe('Unit: Prebid Module', function () {
 
     describe('when invoked with the adId of an expired bid that was replaced', () => {
       beforeEach(() => {
-        const expired = { adId: 'expired' };
+        const expired = { adId: 'expired', adUnitCode: bid.adUnitCode };
         // isBidNotExpired is stubbed to always return true for this whole spec
         bidExpiryStub.callsFake((b) => b !== expired);
         sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => [expired, bid].find((b) => b.adId === adId));
