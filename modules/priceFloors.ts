@@ -281,9 +281,12 @@ export function calculateAdjustedFloor(oldFloor, newFloor) {
 /**
  * @summary gets the prebid set sizes depending on the input mediaType
  */
+// requestBidsHook runs before ad unit validation turns a single [w, h] into [[w, h]]
+const asSizeArray = (sizes) => typeof sizes?.[0] === 'number' ? [sizes] : sizes || [];
+
 const getMediaTypesSizes = {
-  banner: (bid) => deepAccess(bid, 'mediaTypes.banner.sizes') || [],
-  video: (bid) => deepAccess(bid, 'mediaTypes.video.playerSize') || [],
+  banner: (bid) => asSizeArray(bid.mediaTypes?.banner?.sizes),
+  video: (bid) => asSizeArray(bid.mediaTypes?.video?.playerSize),
   native: (bid) => deepAccess(bid, 'mediaTypes.native.image.sizes') ? [deepAccess(bid, 'mediaTypes.native.image.sizes')] : []
 };
 
@@ -504,13 +507,16 @@ function getMatchedRulesForAdUnit(adUnit, floorData): MatchedFloorRules | undefi
     mediaTypes: adUnit.mediaTypes,
     ortb2Imp: adUnit.ortb2Imp
   };
+  // a private rule cache: getFirstMatchingFloor caches floorMin by rule inputs only, and the ad unit's ortb2Imp floorMin
+  // can differ from the bidder-level one getFloor and addBidResponseHook see
+  const data = { ...floorData.data, matchingInputs: undefined };
   const matchedRules: MatchedFloorRules = {};
   (Object.keys(adUnit.mediaTypes || {}) as MediaType[])
     .filter(mediaType => ALL_MEDIATYPES.includes(mediaType))
     .forEach(mediaType => {
       try {
         const { size } = updateRequestParamsFromContext(context, { mediaType, size: '*' });
-        const floorInfo = getFirstMatchingFloor(floorData.data, context, { mediaType, size });
+        const floorInfo = getFirstMatchingFloor(data, context, { mediaType, size });
         if (floorInfo.floorRuleValue === undefined) return;
         matchedRules[mediaType] = {
           floorRule: floorInfo.matchingRule,

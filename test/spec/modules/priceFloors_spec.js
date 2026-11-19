@@ -1085,6 +1085,40 @@ describe('the price floors module', function () {
         expect(bid.getFloor({ currency: 'USD', mediaType: 'banner', size: [300, 250] }).floor).to.equal(1.1);
       });
 
+      it('should resolve size "*" for a single, not yet normalized, [w, h] size', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['mediaType', 'size'] },
+            values: { 'video|640x480': 6, 'video|*': 4, 'banner|300x250': 1.1, 'banner|*': 1.5 }
+          }
+        });
+        const adUnit = { ...multiFormatAdUnit(), mediaTypes: { video: { playerSize: [640, 480] }, banner: { sizes: [300, 250] } } };
+        runStandardAuction([adUnit]);
+        const { matchedRules } = adUnit.bids[0].floorData;
+        expect(matchedRules.video).to.include({ floorRule: 'video|640x480', floorRuleValue: 6 });
+        expect(matchedRules.banner).to.include({ floorRule: 'banner|300x250', floorRuleValue: 1.1 });
+      });
+
+      it('should not affect the floors bidders get through the auction rule cache', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: { ...basicFloorData, values: { banner: 1 } }
+        });
+        const adUnit = {
+          ...multiFormatAdUnit(),
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          bids: [{ bidder: 'someBidder', ortb2Imp: { ext: { prebid: { floors: { floorMin: 5 } } } } }]
+        };
+        runStandardAuction([adUnit]);
+        expect(adUnit.bids[0].floorData.matchedRules.banner).to.include({ floorRuleValue: 1, floorValue: 1 });
+        expect(_floorDataForAuction[basicBidRequest.auctionId].data.matchingInputs).to.be.undefined;
+        // adapterManager merges bidder-level ortb2Imp into the bid request
+        const bidRequest = { ...adUnit.bids[0], mediaTypes: adUnit.mediaTypes };
+        expect(bidRequest.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }).floor).to.equal(5);
+      });
+
       it('should use the ad unit code and floorMin from ortb2Imp', () => {
         handleSetFloorsConfig({
           ...basicFloorConfig,
