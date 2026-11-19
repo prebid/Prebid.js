@@ -3,7 +3,7 @@
 ```
 Module Name:  Melvad Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   a.stukolkin@melvad.com
+Maintainer:   support@melvad.com
 ```
 
 # Description
