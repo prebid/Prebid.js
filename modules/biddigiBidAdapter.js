@@ -33,7 +33,23 @@ import { isNumber, isStr, logWarn } from '../src/utils.js';
  * workers.dev URL is fully functional in the meantime).
  */
 const BIDDER_CODE = 'biddigi';
-const DEFAULT_CURRENCY = 'INR'; // BidDigi's own endpoint bids natively in INR to match GAM/adServerCurrency (see packages/wrapper), avoiding a lossy USD->INR round trip that third-party bidders need.
+// The currency this adapter DECLARES to BidDigi, and the fallback it labels a response with when
+// that response omits `cur`.
+//
+// This was 'INR', on the reasoning that BidDigi's endpoint bid natively in INR and so avoided a
+// lossy round trip. That is no longer true, and it was costing publishers bids: Prebid's currency
+// module drops a bid it cannot convert when no conversion is configured, so a publisher whose
+// adServerCurrency is USD, GBP or EUR silently lost every BidDigi bid, with nothing in their logs
+// pointing at the cause.
+//
+// NOTE FOR ANYONE CHANGING THIS: it cannot be changed alone. BidDigi's endpoint returns a bare
+// number in whatever currency IT resolved, and honours the `cur` this adapter declares below. The
+// two must agree. Setting this to a currency the endpoint does not answer in would relabel the
+// price rather than convert it -- at the current USD/INR rate that would overstate every bid by
+// roughly 93x. The endpoint answers USD or INR; it converts to USD when USD is declared and an FX
+// rate is available, and falls back to INR when one is not, saying so in `ortbResponse.cur`, which
+// interpretResponse always honours over this default.
+const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_TTL = 300;
 
 const BIDDIGI_AUCTION_URL = 'https://biddigi-auction-service.biddigi25.workers.dev/openrtb2/auction';
