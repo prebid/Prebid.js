@@ -102,8 +102,6 @@ export const spec = {
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
-      delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
-      delete fpd.experianRtidKey;
       payload.fpd = JSON.stringify(fpd);
     }
 
