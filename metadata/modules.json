@@ -5852,11 +5852,6 @@
     },
     {
       "componentType": "analytics",
-      "componentName": "advRed",
-      "gvlid": null
-    },
-    {
-      "componentType": "analytics",
       "componentName": "agma",
       "gvlid": 1122
     },
