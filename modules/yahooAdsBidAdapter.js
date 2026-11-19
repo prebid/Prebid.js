@@ -49,7 +49,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'novatiq.com',
   'pubcid.org',
   'quantcast.com',
-  'tapad.com',
   'uidapi.com',
   'yahoo.com',
   'zeotap.com'

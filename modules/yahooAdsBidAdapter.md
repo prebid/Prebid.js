@@ -380,7 +380,7 @@ User-level consent and identity fields are at the top-level of the `user` object
 
 These are populated by Prebid modules and do not require manual configuration.
 
-The adapter passes EIDs from the following supported User ID sources: `admixer.net`, `adserver.org`, `adtelligent.com`, `amxdt.net`, `audigent.com`, `britepool.com`, `criteo.com`, `crwdcntrl.net`, `deepintent.com`, `epsilon.com`, `hcn.health`, `id5-sync.com`, `idx.lat`, `intentiq.com`, `intimatemerger.com`, `liveintent.com`, `liveramp.com`, `mediawallahscript.com`, `merkleinc.com`, `netid.de`, `neustar.biz`, `nextroll.com`, `novatiq.com`, `pubcid.org`, `quantcast.com`, `tapad.com`, `uidapi.com`, `yahoo.com`, `zeotap.com`.
+The adapter passes EIDs from the following supported User ID sources: `admixer.net`, `adserver.org`, `adtelligent.com`, `amxdt.net`, `audigent.com`, `britepool.com`, `criteo.com`, `crwdcntrl.net`, `deepintent.com`, `epsilon.com`, `hcn.health`, `id5-sync.com`, `idx.lat`, `intentiq.com`, `intimatemerger.com`, `liveintent.com`, `liveramp.com`, `mediawallahscript.com`, `merkleinc.com`, `netid.de`, `neustar.biz`, `nextroll.com`, `novatiq.com`, `pubcid.org`, `quantcast.com`, `uidapi.com`, `yahoo.com`, `zeotap.com`.
 
 # Optional: Schain module support
 The Yahoo Advertising bid adapter supports the Prebid.org Schain module and will pass it through to our bid endpoint.
