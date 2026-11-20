@@ -102,6 +102,11 @@ config.getConfig('s2sConfig', config => {
 // the s2sConfig each S2S bidder request was built for, so that callBids sends it to that server
 const s2sConfigForRequest = new WeakMap<BidderRequest<any>, any>();
 
+function isS2SConfigUsable(s2sConfig): boolean {
+  const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
+  return s2sAdapter != null && (s2sAdapter.isConfigValid?.(s2sConfig) ?? true);
+}
+
 export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 function getConfigName(s2sConfig) {
@@ -378,9 +383,10 @@ export const filterBidsForAdUnit = hook('sync', function(bids, s2sConfig, { getS
       if (!serverBidders.has(bid.bidder)) return false;
       if (bid.s2sConfigName == null) {
         // several configs may list a bidder so that `s2sConfigName` can choose between them;
-        // a bid that does not choose goes only to the first one
-        return !s2sConfigs.includes(s2sConfig) ||
-          s2sConfigs.find(cfg => cfg?.enabled && getS2SBidders(cfg).has(bid.bidder)) === s2sConfig;
+        // a bid that does not choose goes only to the first one whose adapter can serve it
+        if (!s2sConfigs.includes(s2sConfig)) return true;
+        const candidates = s2sConfigs.filter(cfg => cfg?.enabled && getS2SBidders(cfg).has(bid.bidder));
+        return (candidates.find(isS2SConfigUsable) ?? candidates[0]) === s2sConfig;
       }
       const configName = getConfigName(s2sConfig);
       const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];

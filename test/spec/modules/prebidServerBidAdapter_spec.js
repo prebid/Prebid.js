@@ -4313,6 +4313,16 @@ describe('S2S Adapter', function () {
       expect(biddersSentTo('b')).to.eql([]);
     });
 
+    it('sends a bid without s2sConfigName past an invalid config to the first valid one', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      const [invalid, valid] = config.getConfig('s2sConfig');
+      delete invalid.accountId;
+      config.setConfig({ s2sConfig: [invalid, valid] });
+      runAuction([adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 } }])]);
+      expect(biddersSentTo('a')).to.eql([]);
+      expect(biddersSentTo('b')).to.eql([['appnexus']]);
+    });
+
     it('sends bidders listed by a single config to that config', () => {
       setS2SConfigs({ a: ['appnexus'], b: ['appnexus', 'rubicon'] });
       runAuction([adUnit('au', [

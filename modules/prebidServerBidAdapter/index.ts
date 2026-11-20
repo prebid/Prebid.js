@@ -196,14 +196,20 @@ function updateConfigDefaults(s2sConfig: S2SConfig) {
   return true;
 }
 
+const REQUIRED_CONFIG_PROPS = ['accountId', 'endpoint'] as const;
+
 function validateConfigRequiredProps(s2sConfig: S2SConfig) {
-  for (const key of ['accountId', 'endpoint']) {
+  for (const key of REQUIRED_CONFIG_PROPS) {
     if (s2sConfig[key] == null) {
       logError(key + ' missing in server to server config');
       return false;
     }
   }
   return true;
+}
+
+function hasRequiredProps(s2sConfig: S2SConfig) {
+  return REQUIRED_CONFIG_PROPS.every(key => s2sConfig[key] != null);
 }
 
 // temporary change to modify the s2sConfig for new format used for endpoint URLs;
@@ -570,6 +576,7 @@ export function PrebidServer() {
   Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
+    isConfigValid: hasRequiredProps,
     type: TYPE
   });
 }
