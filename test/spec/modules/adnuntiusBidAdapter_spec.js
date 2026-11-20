@@ -1315,6 +1315,42 @@ describe('adnuntiusBidAdapter', function() {
       expect(data.adUnits[0]).to.not.have.property('kv');
     });
 
+    it('should send excludedLineItems and excludedCreatives on the request, not the ad unit', function() {
+      const req = deepClone(bidderRequests);
+      req[0].params.excludedLineItems = ['li1', 'li2'];
+      req[0].params.excludedCreatives = ['cr1'];
+      req[1].params.excludedLineItems = ['li2', 'li3'];
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, {}));
+      expect(request.length).to.equal(1);
+      const data = JSON.parse(request[0].data);
+      expect(data.excludedLineItems).to.deep.equal(['li1', 'li2', 'li3']);
+      expect(data.excludedCreatives).to.deep.equal(['cr1']);
+      data.adUnits.forEach(adUnit => {
+        expect(adUnit).to.not.have.property('excludedLineItems');
+        expect(adUnit).to.not.have.property('excludedCreatives');
+      });
+    });
+
+    it('should keep exclusions separate per network', function() {
+      const req = deepClone(bidderRequests);
+      req[0].params.excludedLineItems = ['li1'];
+      req[1].params.network = 'other';
+      req[1].params.excludedLineItems = ['li2'];
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, {}));
+      expect(request.length).to.equal(2);
+      expect(request.map(r => JSON.parse(r.data).excludedLineItems)).to.deep.equal([['li1'], ['li2']]);
+    });
+
+    it('should not send exclusions when they are empty or not arrays', function() {
+      const req = deepClone(bidderRequests);
+      req[0].params.excludedLineItems = [];
+      req[1].params.excludedCreatives = 'cr1';
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, {}));
+      const data = JSON.parse(request[0].data);
+      expect(data).to.not.have.property('excludedLineItems');
+      expect(data).to.not.have.property('excludedCreatives');
+    });
+
     it('should skip segments in config if not either id or array of strings', function() {
       const ortb2 = {
         user: {
