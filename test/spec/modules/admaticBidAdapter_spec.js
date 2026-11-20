@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/admaticBidAdapter.js';
+import { spec, resetUserSync } from 'modules/admaticBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 
@@ -792,6 +792,36 @@ describe('admaticBidAdapter', () => {
       expect(request.data.imp[0].floors.native).to.deep.equal({
         '*': { 'currency': 'USD', 'floor': 1 }
       });
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    beforeEach(function () {
+      resetUserSync();
+      spec.buildRequests(validRequest, bidderRequest);
+    });
+
+    it('returns an iframe sync with consent params only once', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CONSENT' },
+        '1YNN',
+        { gppString: 'GPP', applicableSections: [7] }
+      );
+      expect(syncs.type).to.equal('iframe');
+      const url = new URL(syncs.url);
+      expect(url.pathname.endsWith('/sync.html')).to.equal(true);
+      expect(url.searchParams.get('gdpr')).to.equal('1');
+      expect(url.searchParams.get('gdpr_consent')).to.equal('CONSENT');
+      expect(url.searchParams.get('us_privacy')).to.equal('1YNN');
+      expect(url.searchParams.get('gpp')).to.equal('GPP');
+      expect(url.searchParams.get('gpp_sid')).to.equal('7');
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.be.undefined;
+    });
+
+    it('returns nothing when iframe syncs are disabled', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false }, [])).to.be.undefined;
     });
   });
 
