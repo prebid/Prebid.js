@@ -11,14 +11,10 @@ Maintainer: support@streamads.media
 Connects to StreamAds exchange for bids.
 StreamAds bid adapter supports Banner, Video (instream and outstream) and Native.
 
-# Media Type Selection
+# Multiformat Ad Units
 
-Set `params.mediaType` to `banner`, `video`, or `native` when an ad unit offers
-multiple supported formats. StreamAds requests only the selected format.
-Bids without a selection on multiformat ad units, or with a selection absent
-from `mediaTypes`, are rejected. For single-format ad units this parameter is optional.
-
-Example bidder parameters: `{ placementId: 'testVideo', mediaType: 'video' }`.
+StreamAds sends one format per placement. When an ad unit offers multiple formats,
+the adapter selects banner first, then video, then native.
 
 # Test Parameters
 ```
