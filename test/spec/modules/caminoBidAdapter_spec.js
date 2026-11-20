@@ -162,17 +162,23 @@ describe('caminoBidAdapter', function () {
         }
       };
 
-      it('sends only the video when the video part is complete', function () {
+      it('sends only the banner', function () {
         const imp = JSON.parse(spec.buildRequests([multiBid], bidderRequest).data).imp[0];
-        expect(imp.video.w).to.equal(640);
-        expect(imp.video.mimes).to.deep.equal(['video/mp4']);
-        expect(imp.banner).to.be.undefined;
+        expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+        expect(imp.video).to.be.undefined;
       });
 
       it('sends only the banner when the video part is incomplete', function () {
         const bid = { ...multiBid, mediaTypes: { ...multiBid.mediaTypes, video: { context: 'instream', playerSize: [[640, 480]] } } };
         const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
         expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
+        expect(imp.video).to.be.undefined;
+      });
+
+      it('takes from ortb2Imp only the media object of the format sent', function () {
+        const bid = { ...multiBid, ortb2Imp: { banner: { battr: [1] }, video: { battr: [2] } } };
+        const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+        expect(imp.banner.battr).to.deep.equal([1]);
         expect(imp.video).to.be.undefined;
       });
     });
@@ -182,6 +188,59 @@ describe('caminoBidAdapter', function () {
       expect(data.site.domain).to.equal('example.com');
       expect(data.site.page).to.equal('https://example.com/article');
       expect(data.site.publisher.id).to.equal('987');
+    });
+
+    it('keeps the publisher ortb2.site and replaces only publisher.id with the param', function () {
+      const site = {
+        cat: ['IAB1'],
+        keywords: 'news',
+        content: { title: 'Article' },
+        publisher: { id: 'other-platform-id', name: 'Example Media' }
+      };
+      const request = spec.buildRequests([bannerBid], { ...bidderRequest, ortb2: { site } });
+      const data = JSON.parse(request.data);
+      expect(data.site.cat).to.deep.equal(['IAB1']);
+      expect(data.site.keywords).to.equal('news');
+      expect(data.site.content).to.deep.equal({ title: 'Article' });
+      expect(data.site.publisher).to.deep.equal({ id: '987', name: 'Example Media' });
+      expect(site.publisher.id).to.equal('other-platform-id');
+    });
+
+    it('forwards the publisher bcat, badv and bapp', function () {
+      const ortb2 = { bcat: ['IAB25'], badv: ['blocked.com'], bapp: ['com.blocked.app'] };
+      const data = JSON.parse(spec.buildRequests([bannerBid], { ...bidderRequest, ortb2 }).data);
+      expect(data.bcat).to.deep.equal(['IAB25']);
+      expect(data.badv).to.deep.equal(['blocked.com']);
+      expect(data.bapp).to.deep.equal(['com.blocked.app']);
+    });
+
+    it('omits bcat, badv and bapp when the publisher sets none', function () {
+      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      expect(data).to.not.have.any.keys('bcat', 'badv', 'bapp');
+    });
+
+    it('keeps the publisher ortb2Imp fields on the imp', function () {
+      const bid = {
+        ...bannerBid,
+        ortb2Imp: { instl: 1, ext: { gpid: '/123/banner', data: { pbadslot: 'slot' } }, banner: { battr: [1, 3], pos: 1 } }
+      };
+      const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+      expect(imp.instl).to.equal(1);
+      expect(imp.ext.gpid).to.equal('/123/banner');
+      expect(imp.ext.data).to.deep.equal({ pbadslot: 'slot' });
+      expect(imp.ext.placementId).to.equal('12345');
+      expect(imp.banner.battr).to.deep.equal([1, 3]);
+      expect(imp.banner.pos).to.equal(1);
+      expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
+      expect(imp.banner.ext.viewability).to.equal('na');
+    });
+
+    it('keeps the publisher ortb2Imp.video fields on a video imp', function () {
+      const bid = { ...videoBid, ortb2Imp: { video: { battr: [6], w: 1, h: 1 } } };
+      const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+      expect(imp.video.battr).to.deep.equal([6]);
+      expect(imp.video.w).to.equal(640);
+      expect(imp.video.h).to.equal(480);
     });
 
     it('forwards tmax', function () {

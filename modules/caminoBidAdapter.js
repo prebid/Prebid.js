@@ -1,5 +1,6 @@
 import {
   deepAccess,
+  deepClone,
   deepSetValue,
   generateUUID,
   getWinDimensions,
@@ -19,6 +20,12 @@ import { isSlotMatchingAdUnitCode } from "../libraries/gptUtils/gptUtils.js";
 import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
 import { percentInView } from "../libraries/percentInView/percentInView.js";
 import { getUserSyncParams } from "../libraries/userSyncUtils/userSyncUtils.js";
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./caminoBidAdapter.d.ts').CaminoBidderParams} CaminoBidderParams
+ * @typedef {BidRequest & { params: CaminoBidderParams }} CaminoBidRequest
+ */
 
 const BIDDER_CODE = "camino";
 const GVLID = 1670;
@@ -59,6 +66,9 @@ export const spec = {
   disclosureURL: "local://modules/caminoBidAdapterDisclosure.json",
   supportedMediaTypes: [BANNER, VIDEO],
 
+  /**
+   * @param {CaminoBidRequest} bid
+   */
   isBidRequestValid(bid) {
     if (!deepAccess(bid, "params.publisherId")) {
       return false;
@@ -75,6 +85,9 @@ export const spec = {
     return true;
   },
 
+  /**
+   * @param {CaminoBidRequest[]} bidRequests
+   */
   buildRequests(bidRequests, bidderRequest) {
     const ortb = {
       id: bidderRequest?.bidderRequestId,
@@ -84,6 +97,14 @@ export const spec = {
       tmax: bidderRequest?.timeout,
       ext: { session: buildSession() },
     };
+
+    // The publisher's block lists, forwarded as set.
+    ["bcat", "badv", "bapp"].forEach((field) => {
+      const value = deepAccess(bidderRequest, `ortb2.${field}`);
+      if (value) {
+        ortb[field] = value;
+      }
+    });
 
     const gdpr = bidderRequest?.gdprConsent;
     if (gdpr) {
@@ -180,10 +201,17 @@ export const spec = {
 };
 
 function buildImp(bidRequest) {
+  // Starts from the publisher's impression-level OpenRTB data (gpid, battr,
+  // ...). Its media objects are only taken for the format this imp is sent as.
+  const { banner: ortbBanner, video: ortbVideo, ...ortbImp } = deepClone(
+    bidRequest.ortb2Imp || {},
+  );
   const imp = {
+    ...ortbImp,
     id: bidRequest.bidId,
     tagid: String(bidRequest.adUnitCode),
     ext: {
+      ...ortbImp.ext,
       // Prebid frequency counters for this ad unit during the page view
       bidRequestCount: bidRequest.bidRequestsCount || 0,
       bidderRequestCount: bidRequest.bidderRequestsCount || 0,
@@ -196,26 +224,24 @@ function buildImp(bidRequest) {
     imp.ext.placementId = String(placementId);
   }
 
-  const gpid = deepAccess(bidRequest, "ortb2Imp.ext.gpid");
-  if (gpid) {
-    imp.ext.gpid = gpid;
-  }
-
-  // One media type per imp: the bidder labels any imp with a banner as banner
-  // and only runs the VPAID slideshow on video-only imps. A banner+video ad unit
-  // sends its video, or its banner when the video part is incomplete.
+  // One media type per imp: the bidder only runs the VPAID slideshow on
+  // video-only imps. A banner+video ad unit sends its banner.
   const video = deepAccess(bidRequest, "mediaTypes.video");
   let mediaType;
   let sizes;
-  if (video && isVideoComplete(video)) {
-    imp.video = buildVideo(video);
+  if (video && !deepAccess(bidRequest, "mediaTypes.banner")) {
+    imp.video = { ...ortbVideo, ...buildVideo(video) };
     mediaType = VIDEO;
     sizes = [[imp.video.w, imp.video.h]];
   } else {
     const format = bannerFormats(bidRequest);
     imp.banner = {
+      ...ortbBanner,
       format,
-      ext: measureSlot(bidRequest.adUnitCode, format[0]),
+      ext: {
+        ...ortbBanner?.ext,
+        ...measureSlot(bidRequest.adUnitCode, format[0]),
+      },
     };
     mediaType = BANNER;
     sizes = format.map((size) => [size.w, size.h]);
@@ -300,18 +326,18 @@ function buildSession() {
 }
 
 function buildSite(bidRequests, bidderRequest) {
+  // Starts from the publisher's ortb2.site (content, cat, keywords, ...). The
+  // publisherId param replaces only publisher.id: it is the Camino-issued
+  // account id, not the id other platforms put in ortb2.site.publisher.id.
   const referer = bidderRequest?.refererInfo || {};
   const site = {
+    ...deepClone(deepAccess(bidderRequest, "ortb2.site") || {}),
     domain: referer.domain,
     page: referer.page,
   };
   const publisherId = deepAccess(bidRequests[0], "params.publisherId");
   if (publisherId) {
-    site.publisher = { id: String(publisherId) };
-  }
-  const content = deepAccess(bidderRequest, "ortb2.site.content");
-  if (content) {
-    site.content = content;
+    site.publisher = { ...site.publisher, id: String(publisherId) };
   }
   return site;
 }

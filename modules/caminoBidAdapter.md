@@ -13,8 +13,7 @@ Built with manual OpenRTB request construction.
 
 - Supported media types: **banner**, **video** (instream, or outstream with a
   publisher-defined renderer; requires `playerSize`, `context`, `mimes` and
-  `protocols`). A banner+video ad unit sends its video, or its banner when the
-  video part is incomplete.
+  `protocols`). A banner+video ad unit sends its banner.
 - Privacy: GDPR (TCF, IAB Europe GVL vendor ID 1670), US Privacy (CCPA), GPP, COPPA
 - Supply chain (schain): supported
 - User IDs (eids): supported
