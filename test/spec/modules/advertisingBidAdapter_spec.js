@@ -325,6 +325,8 @@ describe('advertisingBidAdapter ', function () {
       expect(req.data).to.exist.and.to.be.an('object');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([expectedDataImp1]);
+      expect(req.options?.contentType).to.be.undefined;
+      expect(req.options.withCredentials).to.equal(true);
 
       // video test
       const reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo);
@@ -1001,7 +1003,6 @@ describe('advertisingBidAdapter ', function () {
       },
       method: 'POST',
       options: {
-        contentType: 'application/json',
         withCredentials: true
       },
       url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
@@ -1035,7 +1036,6 @@ describe('advertisingBidAdapter ', function () {
         },
         method: 'POST',
         options: {
-          contentType: 'application/json',
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
@@ -1205,7 +1205,6 @@ describe('advertisingBidAdapter ', function () {
         },
         method: 'POST',
         options: {
-          contentType: 'application/json',
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
@@ -1271,7 +1270,6 @@ describe('advertisingBidAdapter ', function () {
         },
         method: 'POST',
         options: {
-          contentType: 'application/json',
           withCredentials: true
         },
         url: 'https://prebid.technoratimedia.com/openrtb/bids/prebid?src=prebid_prebid_3.27.0-pre'
