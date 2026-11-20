@@ -76,7 +76,7 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
 - Summaries should describe the changes concisely and reference file lines using the citation format. Describe your task in the PR description so reviewers are well aware of what you are attempting.
 - Document the results of `gulp lint` and `gulp test-only` in the PR description if the commands are successful.
 - Title module changes as `X Adapter: short description` where X is the name of an adapter, e.g. `Rubicon Bid Adapter: stylistic changes`; changes to `/src` should be titled `Core: short description`.
-- Keep PRs scoped to a single change type. Add a release-notes category label (e.g. `feature` or `fix`) and a SemVer label (`major`, `minor` or `patch`); `PR_REVIEW.md` has the current list of both.
+- Keep PRs scoped to a single change type. Add a release-notes category label (e.g. `feature` or `fix`); `PR_REVIEW.md` has the current list. Don't apply a SemVer label (`major`, `minor` or `patch`) unless a maintainer explicitly asks: the release drafter versions the next release from them, and a `patch` label overrides its `minor` default.
 
 ## Say when you wrote something
 Anything you post to GitHub may run under a person's account, so readers will assume that person wrote it unless you say otherwise.
@@ -127,7 +127,7 @@ Anything you post to GitHub may run under a person's account, so readers will as
 ## Review guidelines
 - Use the guidelines in `PR_REVIEW.md` when doing PR reviews. Make all your comments and code suggestions on the PR itself instead of in linked tasks when commenting in a PR review.
 - Prebid.js runs on publishers' pages and works for publishers. Flag vendor code that costs the publisher something (page performance, auction latency, data, or control over their own setup) for the vendor's benefit, even when the code is correct. Ask for it to be removed, or made an opt-in the publisher controls that is off by default. A reason like "so we don't lose data" or "for our reporting" doesn't justify the cost. Examples, several with their own rules below: telemetry sent urgently instead of deferred, network requests or storage beyond what the auction needs, overriding or ignoring publisher settings (timeouts, floors, price granularity, preferred formats), and quietly changing a default in the vendor's favour.
-- If a module change requires a new parameter or invalidates previously valid parameter values (e.g. stricter typing or range checks on existing params), confirm the label on the PR is `major` and hold it for a major release version. This does not apply when a bidder's service has shut down and its adapter is replaced with a no-op stub: the bidder no longer returns bids, so there are no working configurations to break.
+- If a module change requires a new parameter or invalidates previously valid parameter values (e.g. stricter typing or range checks on existing params), flag it as a breaking change and hold it for a major release version. This does not apply when a bidder's service has shut down and its adapter is replaced with a no-op stub: the bidder no longer returns bids, so there are no working configurations to break.
 - Use the module rules at https://docs.prebid.org/dev-docs/module-rules.html.
 - Discourage `application/json` calls: they cause preflight `OPTIONS` calls, which add delay that `text/plain` avoids.
 - Make sure people are importing from libraries and our methods whenever possible, e.g. on viewability or accessing navigator.
