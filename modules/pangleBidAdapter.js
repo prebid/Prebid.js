@@ -83,7 +83,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: ENDPOINT,
     data,
-    options: { contentType: 'application/json', withCredentials: true }
+    options: { withCredentials: true }
   };
 }
 
