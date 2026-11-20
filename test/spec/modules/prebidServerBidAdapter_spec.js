@@ -993,6 +993,22 @@ describe('S2S Adapter', function () {
       expect(server.requests.length).to.equal(0);
     });
 
+    it('should not throw and should finish when a later config drops the endpoint', function () {
+      config.setConfig({ s2sConfig: CONFIG });
+      const badConfig = utils.deepClone(CONFIG);
+      delete badConfig.endpoint;
+      // Validation rejects this, so the adapter keeps the earlier config and still tries to bid.
+      config.setConfig({ s2sConfig: badConfig });
+
+      const badCfgRequest = utils.deepClone(REQUEST);
+      badCfgRequest.s2sConfig = badConfig;
+
+      expect(() => adapter.callBids(badCfgRequest, BID_REQUESTS, addBidResponse, done, ajax)).to.not.throw();
+      expect(server.requests.length).to.equal(0);
+      sinon.assert.calledOnce(done);
+      expect(done.firstCall.args[0]).to.equal(false);
+    });
+
     it('filters ad units without bidders when filterBidderlessCalls is true', function () {
       const cfg = { ...CONFIG, filterBidderlessCalls: true };
       config.setConfig({ s2sConfig: cfg });

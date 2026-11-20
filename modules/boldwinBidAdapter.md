@@ -1,68 +1,101 @@
 # Overview
 
 ```
-Module Name: boldwin Bidder Adapter
-Module Type: boldwin Bidder Adapter
+Module Name: Boldwin Bidder Adapter
+Module Type: Bidder Adapter
+Maintainer: info@bold-win.com, support@bold-win.com
 ```
 
 # Description
 
-Module that connects to boldwin demand sources
+Connects to the Boldwin endpoint that the `endpointId` param selects. Supports banner,
+video (instream; outstream needs the publisher's own renderer) and native (ORTB native request).
+
+Contact info@bold-win.com or support@bold-win.com to get an `endpointId`. The ad units of one
+`endpointId` go into one request, one impression each.
+
+Bids are net CPMs in USD. Price floors are sent in USD; a floor in another currency is left
+out of the request, and Prebid still enforces it on the bids.
+
+The adapter fills in `${AUCTION_PRICE}` in the markup and in the notice URLs. For video it puts
+`burl` and `nurl` into the VAST as `<Impression>` pixels, so the player fires them when the ad
+starts, whoever plays it. For banner and native it hands them to Prebid as event trackers:
+Prebid fires `burl` when the bid becomes billable and native `nurl` when the bid wins. For
+banners Prebid adds `nurl` to the markup as a pixel.
+
+User sync is an image pixel. It carries the GDPR, US Privacy and GPP signals Prebid has, and
+no sync is made when COPPA applies.
+
+# Bid Params
+
+| Name         | Scope    | Description                   | Example   | Type                 |
+|--------------|----------|-------------------------------|-----------|----------------------|
+| `endpointId` | required | Endpoint ID issued by Boldwin | `'12345'` | `string` or `number` |
 
 # Test Parameters
-```
-    var adUnits = [
-                // Will return static test banner
-                {
-                    code: 'placementId_0',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [[300, 250]],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'boldwin',
-                            params: {
-                                placementId: 'testBanner',
-                            }
-                        }
-                    ]
-                },
-                // Will return test vast xml. All video params are stored under placement in publishers UI
-                {
-                    code: 'placementId_0',
-                    mediaTypes: {
-                        video: {
-                            playerSize: [640, 480],
-                            context: 'instream'
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'boldwin',
-                            params: {
-                                placementId: 'testVideo',
-                            }
-                        }
-                    ]
-                }
-                // Will return static test banner
-                {
-                    code: 'endpointId_0',
-                    mediaTypes: {
-                        banner: {
-                            sizes: [[300, 250]],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'boldwin',
-                            params: {
-                                endpointId: 'testBanner',
-                            }
-                        }
-                    ]
-                },
-            ];
+
+The `endpointId` below is a Boldwin test endpoint that returns test ads. In production, replace it
+with the value issued by Boldwin. Instream video bids return VAST XML, so they need Prebid Cache
+(`cache: { url: ... }` or `cache: { useLocal: true }`).
+
+```js
+var adUnits = [
+  // Banner
+  {
+    code: 'test-banner',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [728, 90]]
+      }
+    },
+    bids: [{
+      bidder: 'boldwin',
+      params: {
+        endpointId: '20132'
+      }
+    }]
+  },
+  // Video, instream
+  {
+    code: 'test-video',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [2, 3, 5, 6],
+        plcmt: 1
+      }
+    },
+    bids: [{
+      bidder: 'boldwin',
+      params: {
+        endpointId: '20132'
+      }
+    }]
+  },
+  // Native
+  {
+    code: 'test-native',
+    mediaTypes: {
+      native: {
+        ortb: {
+          ver: '1.2',
+          assets: [
+            { id: 1, required: 1, title: { len: 90 } },
+            { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+            { id: 3, required: 1, data: { type: 1 } },
+            { id: 4, required: 0, data: { type: 2 } }
+          ]
+        }
+      }
+    },
+    bids: [{
+      bidder: 'boldwin',
+      params: {
+        endpointId: '20132'
+      }
+    }]
+  }
+];
 ```

@@ -3,6 +3,7 @@ import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { deviceTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax, sendBeacon } from '../src/ajax.js';
+import type { GVLIDs } from '../src/consentHandler.js';
 import { EVENTS } from '../src/constants.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { logError } from '../src/utils.js';
@@ -10,6 +11,8 @@ import { logError } from '../src/utils.js';
 const CODE = 'xe';
 const GVLID = 1383;
 const ENDPOINT = 'https://pbjs.xe.works/analytics';
+// Prebid Direct domains of the XE family exchanges, kept in line with XE_BIDDERS
+const XE_HOSTS = ['pbjs.xe.works', 'prebid.adipolo.live', 'prebid-eu.adipolo.live', 'prebid.anyclip.com', 'pbjs.anzu-rtb.live', 'pbjs.driftpixel.live', 'pbjs.iqzonertb.live', 'pbjs.league-m.media', 'pbjs.kiviads.live', 'pbjs.bematterfull.com', 'pbjs.revealonmedia.live', 'pbjs.rbstsystems.live'];
 // Bid adapters of the XE family (libraries/xeUtils): their params carry the XE placement id
 const XE_BIDDERS = ['xe', 'xeworks', 'adipolo', 'anyclip', 'anzuDSP', 'driftpixel', 'iqx', 'leagueM', 'lm_kiviads', 'kivi', 'matterfull', 'revealon', 'robustApps'];
 const AUCTION_DELAY = 3000;
@@ -31,6 +34,14 @@ export interface XeAnalyticsOptions {
    * Bidder codes whose params carry an XE placement id (`pid`), on top of the XE family bidders and their aliases.
    */
   bidders?: string[];
+  /**
+   * GVL ID(s) checked for purpose 7 consent instead of XE's 1383, for publishers that list their own vendor in the CMP.
+   */
+  gvlid?: GVLIDs;
+  /**
+   * Host name to send to instead of pbjs.xe.works, for an exchange that runs XE on its own domain: one of XE_HOSTS.
+   */
+  host?: string;
 }
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
@@ -88,6 +99,7 @@ export const dep = {
 
 let ourCodes = new Set(XE_BIDDERS);
 let sampling = 1;
+let endpoint = ENDPOINT;
 let deviceType = 0;
 let auctions = new Map<string, AuctionState>();
 let bidStates = new Map<string, BidState>();
@@ -316,7 +328,7 @@ function post(body: string, size: number, keepalive: boolean) {
   const done = () => {
     if (keepalive && sentIn === generation) inflight -= size;
   };
-  dep.ajax(ENDPOINT, {
+  dep.ajax(endpoint, {
     success: done,
     error(_: string, xhr: any) {
       done();
@@ -331,7 +343,7 @@ function send(events: Payload[], unloading = false) {
   bodies(events).forEach(([body, size]) => {
     const keepalive = size <= quota;
     if (keepalive || unloading) quota -= size;
-    if (unloading && dep.sendBeacon(ENDPOINT, body)) return;
+    if (unloading && dep.sendBeacon(endpoint, body)) return;
     post(body, size, keepalive);
   });
 }
@@ -535,9 +547,20 @@ function reset() {
   inflight = 0;
   ourCodes = new Set(XE_BIDDERS);
   sampling = 1;
+  endpoint = ENDPOINT;
+}
+
+function isGvlid(gvlid: unknown): gvlid is GVLIDs {
+  const valid = (id: unknown) => Number.isInteger(id) && (id as number) > 0;
+  return valid(gvlid) || (Array.isArray(gvlid) && gvlid.length > 0 && gvlid.every(valid));
 }
 
 const xeAnalytics = Object.assign(adapter<'xe'>({ analyticsType: 'endpoint' }), {
+  disclosureURL: 'https://xe.works/tcf.json',
+  gvlid(config?: AnalyticsConfig<'xe'>): GVLIDs {
+    const gvlid = config?.options?.gvlid;
+    return isGvlid(gvlid) ? gvlid : GVLID;
+  },
   track({ eventType, args }: { eventType: string; args: any }) {
     const handler = handlers[eventType];
     if (!handler || !args) return;
@@ -558,6 +581,8 @@ xeAnalytics.enableAnalytics = function (config?: AnalyticsConfig<'xe'>) {
   ourCodes = new Set([...XE_BIDDERS, ...extra]);
   const rate = Number(options.sampling);
   sampling = rate > 0 && rate < 1 ? rate : 1;
+  const host = typeof options.host === 'string' ? options.host.toLowerCase() : '';
+  endpoint = XE_HOSTS.includes(host) ? `https://${host}/analytics` : ENDPOINT;
   window.addEventListener('pagehide', onHide);
   document.addEventListener('visibilitychange', onHide);
   baseEnable.call(this, config);
@@ -572,8 +597,7 @@ xeAnalytics.disableAnalytics = function () {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: xeAnalytics,
-  code: CODE,
-  gvlid: GVLID
+  code: CODE
 });
 
 export default xeAnalytics;

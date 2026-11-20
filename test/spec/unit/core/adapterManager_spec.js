@@ -792,6 +792,36 @@ describe('adapterManager tests', function () {
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
+
+    it('should catch an s2s adapter error and still call client bidders', function () {
+      prebidServerAdapterMock.callBids.throws(new Error('bad s2s config'));
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      rubiconAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetBehavior();
+      sandbox.stub(utils, 'logError');
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[300, 250]],
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 'id' } },
+          { bidder: 'rubicon', params: { accountId: 1111, siteId: 2222, zoneId: 3333 } }
+        ]
+      }];
+      const bidRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 's2s-throw', 1000);
+      const doneBidders = [];
+      function mockDoneCB() {
+        doneBidders.push(this.bidderCode);
+      }
+
+      expect(() => adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, () => {})).to.not.throw();
+      sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      sinon.assert.calledOnce(rubiconAdapterMock.callBids);
+      expect(doneBidders).to.include('appnexus');
+      sinon.assert.calledWithMatch(utils.logError, 'prebidServer Bid Adapter emitted an uncaught error when parsing their bidRequest');
+
+      delete adapterManager.bidderRegistry['rubicon'];
+    });
   }); // end s2s tests
 
   describe('Multiple S2S tests', function () {
