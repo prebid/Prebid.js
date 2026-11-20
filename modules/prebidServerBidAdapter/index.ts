@@ -433,6 +433,11 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent, hostGvlid?: string) {
+  // A string endpoint is rewritten to {p1Consent, noP1Consent} by formatUrlParams.
+  // A missing endpoint is left null and must not throw: the caller skips the request.
+  if (urlProp == null || typeof urlProp !== 'object') {
+    return;
+  }
   const hasPurpose = hostGvlid
     ? hasVendorPurposeConsent(gdprConsent, 1, hostGvlid)
     : hasPurpose1Consent(gdprConsent);
@@ -667,6 +672,8 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
     }
   } else {
     logError('PBS request not made.  Check endpoints.');
+    // Without this, the s2s bidder never calls done() and the auction waits out its timeout.
+    onError('PBS request not made.  Check endpoints.', { timedOut: false });
   }
 }, 'processPBSRequest');
 
