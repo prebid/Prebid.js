@@ -4323,6 +4323,31 @@ describe('S2S Adapter', function () {
       expect(biddersSentTo('b')).to.eql([['appnexus']]);
     });
 
+    it('sends stored impressions without s2sConfigName to every server', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      const storedImp = adUnit('stored', [{ bidder: null }]);
+      storedImp.ortb2Imp = { ext: { prebid: { storedrequest: { id: 'stored-imp' } } } };
+      runAuction([storedImp]);
+      ['a', 'b'].forEach(name => {
+        expect(requestsTo(name).map(body => body.imp.map(imp => imp.ext.prebid.storedrequest?.id)), name).to.eql([['stored-imp']]);
+      });
+    });
+
+    it('still sends and completes requests when s2sConfig is replaced before callBids', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['rubicon'] });
+      const adUnits = [adUnit('au', [
+        { bidder: 'appnexus', params: { placementId: 1 } },
+        { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } }
+      ])];
+      const bidderRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 'auction-id', 1000, [], {});
+      config.setConfig({ s2sConfig: config.getConfig('s2sConfig').map(cfg => deepClone(cfg)) });
+      adapterManager.callBids(adUnits, bidderRequests, addBidResponse, done, undefined, 1000, sinon.stub(), {});
+      expect(biddersSentTo('a')).to.eql([['appnexus']]);
+      expect(biddersSentTo('b')).to.eql([['rubicon']]);
+      server.requests.forEach(req => req.respond(200, {}, JSON.stringify({ id: 'resp', seatbid: [] })));
+      expect(done.getCalls().map(call => call.thisValue.bidderCode)).to.have.members(['appnexus', 'rubicon']);
+    });
+
     it('sends bidders listed by a single config to that config', () => {
       setS2SConfigs({ a: ['appnexus'], b: ['appnexus', 'rubicon'] });
       runAuction([adUnit('au', [
