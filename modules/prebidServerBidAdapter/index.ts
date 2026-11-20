@@ -229,7 +229,6 @@ export function validateConfig(options: S2SConfig[]) {
     return;
   }
   options = Array.isArray(options) ? options : [options];
-  const activeBidders = new Set();
   return options.filter(s2sConfig => {
     formatUrlParams(s2sConfig);
     if (
@@ -238,11 +237,12 @@ export function validateConfig(options: S2SConfig[]) {
       s2sConfig.enabled
     ) {
       if (Array.isArray(s2sConfig.bidders)) {
+        const configBidders = new Set();
         s2sConfig.bidders = s2sConfig.bidders.filter(bidder => {
-          if (activeBidders.has(bidder)) {
+          if (configBidders.has(bidder)) {
             return false;
           } else {
-            activeBidders.add(bidder);
+            configBidders.add(bidder);
             return true;
           }
         });
