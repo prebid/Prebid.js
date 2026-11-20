@@ -2,7 +2,7 @@ import { attachIdSystem, coreStorage, init, setSubmoduleRegistry } from 'modules
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule, storage as uid2Storage } from 'modules/uid2IdSystem.js';
-import { Uid2ApiClient } from 'libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+import { Uid2ApiClient, Uid2GetId } from 'libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import { requestBids } from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -734,6 +734,182 @@ describe(`UID2 module`, function () {
       expectNoIdentity(bid);
     });
   });
+  describe('Uid2GetId token refresh bookkeeping', function () {
+    const storageName = '__uid2_shared_lib_test';
+    const now = Date.UTC(2026, 0, 1);
+    const hour = 60 * 60 * 1000;
+    let store; let refreshes; let sandbox; let logWarn;
+
+    // An in-memory stand-in for the Prebid storage manager (local storage only).
+    const prebidStorage = {
+      cookiesAreEnabled: () => false,
+      getCookie: () => null,
+      setCookie: () => {},
+      localStorageIsEnabled: () => true,
+      getDataFromLocalStorage: (key) => store[key] ?? null,
+      setDataInLocalStorage: (key, value) => { store[key] = value; },
+    };
+    const getStored = () => JSON.parse(store[storageName]);
+    const setStored = (value) => { store[storageName] = JSON.stringify(value); };
+    const makeToken = (advertisingToken, { identityExpires = now + hour, refreshFrom = now + hour / 2 } = {}) => ({
+      advertising_token: advertisingToken,
+      refresh_token: `${advertisingToken}-refresh-token`,
+      identity_expires: identityExpires,
+      refresh_from: refreshFrom,
+      refresh_expires: now + 24 * hour,
+      refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==',
+    });
+    const expiredToken = (advertisingToken) => makeToken(advertisingToken, { identityExpires: now - 1000, refreshFrom: now - 2000 });
+    const getId = (params) => Uid2GetId({ apiBaseUrl: 'https://prod.uidapi.com', clientId: 'test-client', internalStorage: storageName, storage: 'localStorage', ...params }, prebidStorage, () => {}, logWarn);
+    const runCallback = (result) => new Promise((resolve) => result.callback(resolve));
+    const respondToRefresh = (index, identity) => refreshes[index].resolve({ status: 'success', identity });
+
+    beforeEach(function () {
+      store = {};
+      refreshes = [];
+      sandbox = sinon.createSandbox();
+      sandbox.useFakeTimers({ now, toFake: ['Date'] });
+      logWarn = sandbox.spy();
+      sandbox.stub(Uid2ApiClient.prototype, 'callRefreshApi').callsFake((token) => new Promise((resolve) => refreshes.push({ token, resolve })));
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('keeps the publisher-supplied token as originalToken across repeated refreshes', async function () {
+      const supplied = makeToken('supplied-token', { refreshFrom: now - 1000 });
+
+      // Page 1: the supplied token is due for a refresh.
+      const page1 = getId({ paramToken: supplied });
+      expect(page1.id.latestToken.advertising_token).to.equal('supplied-token');
+      respondToRefresh(0, makeToken('refreshed-1', { identityExpires: now + 2 * hour, refreshFrom: now - 1000 }));
+      await runCallback(page1);
+      expect(getStored().originalToken.advertising_token).to.equal('supplied-token');
+
+      // Page 2: the publisher still supplies the same token; the stored one is newer and is refreshed again.
+      const page2 = getId({ paramToken: supplied });
+      expect(page2.id.latestToken.advertising_token).to.equal('refreshed-1');
+      expect(refreshes[1].token.advertising_token).to.equal('refreshed-1');
+      respondToRefresh(1, makeToken('refreshed-2', { identityExpires: now + 3 * hour }));
+      await runCallback(page2);
+      expect(getStored().originalToken.advertising_token).to.equal('supplied-token');
+      expect(getStored().latestToken.advertising_token).to.equal('refreshed-2');
+
+      // Page 3: the stored tokens still match the supplied token, so the newest one is used.
+      const page3 = getId({ paramToken: supplied });
+      expect(page3.id.latestToken.advertising_token).to.equal('refreshed-2');
+      expect(refreshes).to.have.length(2);
+    });
+
+    it('keeps the stored originalToken when an expired stored token is refreshed', async function () {
+      const supplied = makeToken('supplied-token', { identityExpires: now - 2000, refreshFrom: now - 3000 });
+      setStored({ originalToken: supplied, latestToken: expiredToken('refreshed-1') });
+
+      const result = getId({ paramToken: supplied });
+      expect(refreshes[0].token.advertising_token).to.equal('refreshed-1');
+      respondToRefresh(0, makeToken('refreshed-2'));
+      await runCallback(result);
+      expect(getStored().originalToken.advertising_token).to.equal('supplied-token');
+      expect(getStored().latestToken.advertising_token).to.equal('refreshed-2');
+    });
+
+    it('records a new publisher-supplied token as originalToken, also when it has to be refreshed first', async function () {
+      setStored({ originalToken: makeToken('old-supplied-token'), latestToken: makeToken('old-refreshed-token', { identityExpires: now + 5 * hour }) });
+
+      const result = getId({ paramToken: expiredToken('new-supplied-token') });
+      expect(refreshes[0].token.advertising_token).to.equal('new-supplied-token');
+      respondToRefresh(0, makeToken('new-refreshed-token'));
+      const tokens = await runCallback(result);
+      expect(tokens.originalToken.advertising_token).to.equal('new-supplied-token');
+      expect(getStored().originalToken.advertising_token).to.equal('new-supplied-token');
+      expect(getStored().latestToken.advertising_token).to.equal('new-refreshed-token');
+    });
+
+    it('discards a refresh if a different token was stored while it was in flight', async function () {
+      const otherUser = { originalToken: makeToken('token-b'), latestToken: makeToken('token-b') };
+
+      const result = getId({ paramToken: expiredToken('token-a') });
+      setStored(otherUser);
+      respondToRefresh(0, makeToken('refreshed-a'));
+      const tokens = await runCallback(result);
+
+      expect(getStored()).to.eql(otherUser);
+      expect(tokens).to.eql(otherUser);
+      sinon.assert.calledWithMatch(logWarn, /Stored identity changed/);
+    });
+
+    it('discards a refresh if a refresh for a different token was started after it', async function () {
+      // Neither expired token is written to storage before its refresh, so storage alone can't tell them apart.
+      const resultA = getId({ paramToken: expiredToken('token-a') });
+      const resultB = getId({ paramToken: expiredToken('token-b') });
+      respondToRefresh(0, makeToken('refreshed-a'));
+      const tokensA = await runCallback(resultA);
+      expect(tokensA).to.equal(null);
+      expect(store[storageName]).to.equal(undefined);
+
+      respondToRefresh(1, makeToken('refreshed-b'));
+      const tokensB = await runCallback(resultB);
+      expect(tokensB.latestToken.advertising_token).to.equal('refreshed-b');
+      expect(getStored().originalToken.advertising_token).to.equal('token-b');
+      expect(getStored().latestToken.advertising_token).to.equal('refreshed-b');
+    });
+
+    it('stores a refresh if the same identity was refreshed elsewhere while it was in flight', async function () {
+      const supplied = expiredToken('token-a');
+      setStored({ originalToken: supplied, latestToken: supplied });
+
+      const result = getId({ paramToken: supplied });
+      setStored({ originalToken: supplied, latestToken: makeToken('refreshed-elsewhere') });
+      respondToRefresh(0, makeToken('refreshed-a'));
+      await runCallback(result);
+
+      expect(getStored().originalToken.advertising_token).to.equal('token-a');
+      expect(getStored().latestToken.advertising_token).to.equal('refreshed-a');
+      sinon.assert.neverCalledWithMatch(logWarn, /Stored identity changed/);
+    });
+
+    if (FEATURES.UID2_CSTG) {
+      it('does not give a refreshed CSTG token the identity of a user who logged in while it was in flight', async function () {
+        setStored({ originalIdentity: makeOriginalIdentity('a@example.com'), latestToken: expiredToken('token-a') });
+        const otherUser = { originalIdentity: makeOriginalIdentity('b@example.com', 2), latestToken: makeToken('token-b') };
+
+        const result = getId({ cstg: { ...cstgConfigParams, email: 'a@example.com' } });
+        expect(refreshes[0].token.advertising_token).to.equal('token-a');
+        setStored(otherUser);
+        respondToRefresh(0, makeToken('refreshed-a'));
+        const tokens = await runCallback(result);
+
+        expect(getStored()).to.eql(otherUser);
+        expect(tokens).to.eql(otherUser);
+        sinon.assert.calledWithMatch(logWarn, /Stored identity changed/);
+      });
+
+      it('keeps the CSTG originalIdentity on a refreshed token', async function () {
+        const originalIdentity = makeOriginalIdentity('a@example.com');
+        setStored({ originalIdentity, latestToken: expiredToken('token-a') });
+
+        const result = getId({ cstg: { ...cstgConfigParams, email: 'a@example.com' } });
+        respondToRefresh(0, makeToken('refreshed-a'));
+        await runCallback(result);
+
+        expect(getStored().originalIdentity).to.eql(originalIdentity);
+        expect(getStored().latestToken.advertising_token).to.equal('refreshed-a');
+      });
+
+      // 44 Base64 characters with no padding encode 33 bytes, too many for a SHA-256 hash.
+      const base64Of33Bytes = btoa(String.fromCharCode(...new Array(33).fill(7)));
+
+      ['emailHash', 'phoneHash'].forEach((param) => {
+        it(`rejects a ${param} that decodes to 33 bytes`, function () {
+          expect(base64Of33Bytes).to.have.length(44);
+          getId({ cstg: { ...cstgConfigParams, [param]: base64Of33Bytes } });
+          sinon.assert.calledWith(logWarn, `CSTG opts.${param} is invalid`);
+        });
+      });
+    }
+  });
+
   describe('eid', () => {
     it('uid2', function() {
       const userId = {
