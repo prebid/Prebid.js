@@ -31,6 +31,7 @@ const CONTEXT = {
   winrBidAdapter: APN_TEST,
   prebidServerBidAdapter: { cls: 'out of scope', note: "headers come from the publisher's s2sConfig.customHeaders" },
   liveIntentIdSystem: { note: 'X-LI-Provided-User-Agent is sent only when providedUserAgent is configured' },
+  revcontentBidAdapter: { cls: 'inconclusive', note: 'the spec fixture overrides the endpoint param; the default host is trends.revcontent.com' },
   semantiqRtdProvider: { note: 'application/json is on the clickstream event collector, not the keywords request' },
   symitriDapRtdProvider: { cls: 'inconclusive', note: "the host is publisher configuration (api_hostname); this one is the spec fixture's" },
 }
