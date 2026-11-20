@@ -1,5 +1,7 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec, OPTIMIZATIONS_STORAGE_KEY, getOptimizationsFromLocalStorage } from 'modules/mediaConsortiumBidAdapter.js';
+import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const BANNER_BID = {
@@ -93,6 +95,40 @@ const MULTI_MEDIATYPES_WITH_INVALID_VIDEO_CONTEXT = {
     }
   }
 };
+
+function buildRenderableVideoBid(videoParams = {}) {
+  const bidRequest = { ...VIDEO_BID_WITH_CONFIG, params: { video: videoParams } };
+
+  const serverResponse = {
+    body: {
+      id: 'requestId',
+      bids: [{
+        id: 'bid-123',
+        impressionId: bidRequest.bidId,
+        price: { cpm: 1, currency: 'JPY' },
+        ad: {
+          creative: {
+            id: 'CREATIVE_ID',
+            mediaType: 'video',
+            size: { width: 320, height: 250 },
+            markup: '<VAST></VAST>'
+          }
+        }
+      }]
+    }
+  };
+
+  const params = {
+    data: { impressions: [{ id: bidRequest.bidId, adUnitCode: 'video' }] },
+    internal: { bidRequests: { [bidRequest.bidId]: bidRequest } }
+  };
+
+  const [bid] = spec.interpretResponse(serverResponse, params);
+
+  bid.renderer.loaded = true;
+
+  return bid;
+}
 
 describe('Media Consortium Bid Adapter', function () {
   before(function () {
@@ -364,6 +400,40 @@ describe('Media Consortium Bid Adapter', function () {
 
       expect(syncRequest.data).to.deep.equal(builtSyncRequest);
       expect(auctionRequest.data).to.deep.equal(builtBidRequest);
+    });
+
+    it('should accept any bid request as valid', function () {
+      expect(spec.isBidRequestValid({})).to.equal(true);
+    });
+
+    it('should send the consent string, the profile api option and the 1plusX id when enabled', function () {
+      const bids = [BANNER_BID];
+      const gdprConsent = { gdprApplies: true, consentString: 'CONSENT_STRING' };
+
+      localStorage.setItem('ope_fpid', 'FP_ID');
+      config.setConfig({ useProfileApi: true, readOnePlusXId: true });
+
+      try {
+        const [syncRequest, auctionRequest] = spec.buildRequests(bids, { ...bidderRequest, bids, gdprConsent });
+
+        expect(syncRequest.data).to.deep.equal({ gdpr: true, ad_unit_codes: BANNER_BID.adUnitCode, gdpr_consent: 'CONSENT_STRING' });
+        expect(auctionRequest.data.regulations.gdpr).to.deep.equal({ applies: true, consentString: 'CONSENT_STRING' });
+        expect(auctionRequest.data.options.useProfileApi).to.equal(true);
+        expect(auctionRequest.data.user.ids).to.deep.equal({ '1plusX': 'FP_ID' });
+      } finally {
+        localStorage.removeItem('ope_fpid');
+        config.setConfig({ useProfileApi: false, readOnePlusXId: false });
+      }
+    });
+
+    it('should ignore stored optimizations that cannot be parsed', function () {
+      localStorage.setItem(OPTIMIZATIONS_STORAGE_KEY, 'NOT_JSON');
+
+      try {
+        expect(getOptimizationsFromLocalStorage()).to.deep.equal({});
+      } finally {
+        localStorage.removeItem(OPTIMIZATIONS_STORAGE_KEY);
+      }
     });
 
     describe('placementCode', function () {
@@ -657,6 +727,24 @@ describe('Media Consortium Bid Adapter', function () {
 
       expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal(formattedUserSyncs);
     });
+
+    it('should ignore user syncs with an unknown type or without url', function () {
+      const serverResponses = [
+        {
+          body: {
+            bidders: [
+              { type: 'unknown', url: 'https://test-url.com' },
+              { type: 'image' }
+            ]
+          }
+        },
+        {
+          body: 'BID-RESPONSE-DATA'
+        }
+      ];
+
+      expect(spec.getUserSyncs(null, serverResponses)).to.deep.equal([]);
+    });
   });
 
   describe('renderer integration', function () {
@@ -826,6 +914,76 @@ describe('Media Consortium Bid Adapter', function () {
       expect(formattedResponse).to.have.length(1);
       expect(formattedResponse[0].renderer.config).to.have.property('selector');
       expect(formattedResponse[0].renderer.config.selector).to.include('video-unit-with-special-chars');
+    });
+  });
+
+  describe('outstream rendering', function () {
+    let container;
+
+    beforeEach(function () {
+      container = document.createElement('div');
+      container.id = 'video';
+      document.body.appendChild(container);
+      window.HbvPlayer = { playOutstream: sinon.spy() };
+    });
+
+    afterEach(function () {
+      container.remove();
+      delete window.HbvPlayer;
+    });
+
+    it('should play the video in the container matching the selector', function () {
+      const bid = buildRenderableVideoBid();
+
+      bid.renderer._render(bid);
+
+      const [playerContainer, options] = window.HbvPlayer.playOutstream.firstCall.args;
+
+      expect(playerContainer).to.equal(container);
+      expect(options).to.include({ vastXml: '<VAST></VAST>', targetWidth: 320, targetHeight: 250, expand: 'when-visible' });
+      expect(options.selector).to.equal('#video');
+      expect(() => {
+        options.onEvent('impression');
+        options.onEvent('error');
+        options.onEvent('other');
+      }).to.not.throw();
+    });
+
+    it('should resolve the container from a selector function', function () {
+      const bid = buildRenderableVideoBid({ selector: () => container });
+
+      bid.renderer._render(bid);
+
+      expect(window.HbvPlayer.playOutstream.firstCall.args[0]).to.equal(container);
+    });
+
+    it('should use the container directly when the selector is neither a string nor a function', function () {
+      const bid = buildRenderableVideoBid({ selector: container });
+
+      bid.renderer._render(bid);
+
+      expect(window.HbvPlayer.playOutstream.firstCall.args[0]).to.equal(container);
+    });
+
+    it('should call the player without container when it cannot be found', function () {
+      const missingSelector = buildRenderableVideoBid({ selector: '#missing' });
+      const missingFromFunction = buildRenderableVideoBid({ selector: () => null });
+
+      missingSelector.renderer._render(missingSelector);
+      missingFromFunction.renderer._render(missingFromFunction);
+
+      expect(window.HbvPlayer.playOutstream.firstCall.args[0]).to.equal(undefined);
+      expect(window.HbvPlayer.playOutstream.secondCall.args[0]).to.equal(undefined);
+    });
+
+    it('should not play the video when the player is not loaded', function () {
+      const bid = buildRenderableVideoBid();
+      const playOutstream = window.HbvPlayer.playOutstream;
+
+      delete window.HbvPlayer;
+
+      expect(() => bid.renderer._render(bid)).to.not.throw();
+      expect(playOutstream.called).to.equal(false);
     });
   });
 });
