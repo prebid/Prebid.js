@@ -591,6 +591,7 @@ describe('admaticBidAdapter', () => {
       const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
+      expect(request.options?.contentType).to.be.undefined;
     });
 
     it('should not populate GDPR if for non-EEA users', function () {
