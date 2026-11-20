@@ -542,9 +542,9 @@ export function PrebidServer() {
         onError(msg, error) {
           const { p1Consent = '', noP1Consent = '' } = s2sBidRequest?.s2sConfig?.endpoint || {};
           if (p1Consent === noP1Consent) {
-            logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"}`, error);
+            logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"`, error);
           } else {
-            logError(`Prebid server call failed: '${msg}'. Endpoints: p1Consent "${p1Consent}", noP1Consent "${noP1Consent}"}`, error);
+            logError(`Prebid server call failed: '${msg}'. Endpoints: p1Consent "${p1Consent}", noP1Consent "${noP1Consent}"`, error);
           }
           bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest }));
           done(error.timedOut);
@@ -671,7 +671,6 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       sendUncompressed();
     }
   } else {
-    logError('PBS request not made.  Check endpoints.');
     // Without this, the s2s bidder never calls done() and the auction waits out its timeout.
     onError('PBS request not made.  Check endpoints.', { timedOut: false });
   }
