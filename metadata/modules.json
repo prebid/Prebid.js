@@ -1683,6 +1683,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "boldwin",
+      "aliasOf": null,
+      "gvlid": 1151,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "brainx",
       "aliasOf": null,
       "gvlid": null,
@@ -2680,13 +2687,6 @@
       "componentName": "bidfuse",
       "aliasOf": null,
       "gvlid": 1466,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "boldwin",
-      "aliasOf": null,
-      "gvlid": 1151,
       "disclosureURL": null
     },
     {
@@ -5919,7 +5919,7 @@
       "componentType": "rtd",
       "componentName": "optable",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/optableRtdProvider.json"
     },
     {
       "componentType": "rtd",

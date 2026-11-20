@@ -832,13 +832,20 @@ const adapterManager = {
             });
 
             // make bid requests
-            s2sAdapter.callBids(
-              s2sBidRequest,
-              uniqueServerRequests,
-              addBidResponse,
-              (timedOut) => doneCbs.forEach(done => done(timedOut)),
-              s2sAjax
-            );
+            try {
+              s2sAdapter.callBids(
+                s2sBidRequest,
+                uniqueServerRequests,
+                addBidResponse,
+                (timedOut) => doneCbs.forEach(done => done(timedOut)),
+                s2sAjax
+              );
+            } catch (e) {
+              // Client adapters already isolate a throw so the next bidder still runs.
+              // yieldAll stops the queue when this call throws, which drops every later bidder.
+              logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
+              doneCbs.forEach(done => done(false));
+            }
           }
         } else {
           logError('missing ' + s2sConfig.adapter);

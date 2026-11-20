@@ -3,7 +3,7 @@
 ```
 Module Name: ucfunnel Analytics Adapter
 Module Type: Analytics Adapter
-Maintainer: cliff.liu@ucfunnel.com
+Maintainer: support@ucfunnel.com
 ```
 
 # Description

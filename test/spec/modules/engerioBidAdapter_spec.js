@@ -1,5 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/engerioBidAdapter.js';
+import { config } from 'src/config.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
+import * as sinon from 'sinon';
 
 import { server } from 'test/mocks/xhr.js';
 
@@ -328,6 +332,17 @@ describe('engerioBidAdapter', () => {
       expect(spec.interpretResponse({}, validBidRequest)).to.deep.equal([]);
     });
 
+    it('logs the no-bid reason and returns an empty array', () => {
+      const logInfoStub = sinon.stub(utils, 'logInfo');
+      try {
+        const resp = { body: { id: 'req-001', seatbid: [], nbr: 2, ext: { nobid: 'no eligible campaign' } } };
+        expect(spec.interpretResponse(resp, validBidRequest)).to.deep.equal([]);
+        expect(logInfoStub.calledWith('engerio: no bid', 'no eligible campaign')).to.be.true;
+      } finally {
+        logInfoStub.restore();
+      }
+    });
+
     it('skips bids with empty adm', () => {
       const resp = {
         body: {
@@ -377,6 +392,205 @@ describe('engerioBidAdapter', () => {
 
     it('does nothing when nurl is absent', () => {
       spec.onBidWon({ cpm: 1.5 });
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  // ── first-party data ─────────────────────────────────────────────────────────
+
+  describe('first-party data', () => {
+    const bidderRequest = {
+      refererInfo: { page: 'https://example.com/article', domain: 'example.com' },
+      ortb2: {
+        site: { content: { data: [{ id: 'publisher-taxonomy', segment: [{ id: 'sports' }] }] } },
+        user: { data: [{ id: 'audience-provider', segment: [{ id: 'in-market-auto' }] }] },
+      },
+    };
+
+    it('passes page- and user-level first-party data through', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.site.content.data[0].id).to.equal('publisher-taxonomy');
+      expect(payload.user.data[0].id).to.equal('audience-provider');
+    });
+
+    it('merges ad-unit-level first-party data into the imp', () => {
+      const bid = { ...validBid, ortb2Imp: { ext: { data: { placementType: 'in-article' } } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.data).to.deep.equal({ placementType: 'in-article' });
+    });
+
+    it('keeps our own imp fields when ortb2Imp would collide', () => {
+      const bid = { ...validBid, ortb2Imp: { id: 'attacker-supplied', ext: { adUnitCode: 'wrong' } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].id).to.equal('bid-001');
+      expect(payload.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
+    });
+
+    it('takes sizes from mediaTypes.banner rather than ortb2Imp', () => {
+      const bid = { ...validBid, ortb2Imp: { banner: { format: [{ w: 1, h: 1 }] } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+    });
+
+    // A multi-format ad unit carries its other formats in ortb2Imp too; we serve banner only.
+    it('drops media sections other than banner that ortb2Imp carries', () => {
+      const bid = {
+        ...validBid,
+        ortb2Imp: {
+          video: { mimes: ['video/mp4'], w: 640, h: 480 },
+          native: { request: '{}' },
+          audio: { mimes: ['audio/mp4'] },
+          ext: { data: { placementType: 'in-article' } },
+        },
+      };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0]).to.not.have.any.keys('video', 'native', 'audio');
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+      expect(payload.imp[0].ext.data).to.deep.equal({ placementType: 'in-article' });
+    });
+  });
+
+  // ── viewability ──────────────────────────────────────────────────────────────
+
+  describe('viewability', () => {
+    // `bidderRequest` in the buildRequests block is scoped to it; this is the minimum the
+    // adapter needs to build a request here.
+    const bidderRequest = {
+      refererInfo: { page: 'https://example.com/article', domain: 'example.com' },
+    };
+
+    // Pinned rather than left to the build, which registers whatever modules the loaded specs import.
+    let installedModulesSandbox;
+    let installedModulesStub;
+
+    beforeEach(() => {
+      installedModulesSandbox = sinon.createSandbox();
+      installedModulesStub = installedModulesSandbox.stub(getGlobal(), 'installedModules')
+        .value(['bidViewability', 'bidViewabilityIO']);
+    });
+
+    afterEach(() => {
+      installedModulesSandbox.restore();
+      config.resetConfig();
+    });
+
+    it('reports viewability as measured when bidViewability is enabled', () => {
+      config.setConfig({ bidViewability: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+    });
+
+    it('reports viewability as measured when bidViewabilityIO is enabled', () => {
+      config.setConfig({ bidViewabilityIO: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+    });
+
+    // bidViewabilityIO registers nothing without IntersectionObserver, so no viewable event
+    // can follow; reporting "measured" would turn unmeasured impressions into unviewed ones.
+    describe('without IntersectionObserver', () => {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(window, 'IntersectionObserver').value(undefined);
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('reports viewability as unmeasured when bidViewabilityIO is the only module enabled', () => {
+        config.setConfig({ bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+      });
+
+      it('still reports viewability as measured when bidViewability is enabled too', () => {
+        config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+      });
+    });
+
+    // The whole point of the flag: Engerio uses it to tell "measured, not viewed" apart from
+    // "never measured". A module present but switched off measures nothing.
+    it('reports viewability as unmeasured when no module is enabled', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('reports viewability as unmeasured when the module is present but disabled', () => {
+      config.setConfig({ bidViewability: { enabled: false } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    // setConfig accepts both topics whether or not the module is in the build; without the
+    // module nothing listens for the render, so no viewable event can follow.
+    it('reports viewability as unmeasured when the enabled modules are not in the build', () => {
+      installedModulesStub.value([]);
+      config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('requires the enabled module itself to be in the build, not just either one', () => {
+      installedModulesStub.value(['bidViewabilityIO']);
+      config.setConfig({ bidViewability: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('passes vurl and eventtrackers through to the Prebid bid', () => {
+      const vurl = 'https://api.engerio.sk/api/v1/adserver/prebid/viewable/abc-123/';
+      const resp = {
+        body: {
+          id: 'req-1',
+          cur: 'EUR',
+          seatbid: [{
+            bid: [{
+              id: 'bid-1',
+              impid: 'bid-id-1',
+              price: 1.5,
+              adm: '<div>ad</div>',
+              vurl,
+              eventtrackers: [{ event: 2, method: 1, url: vurl }],
+            }],
+          }],
+        },
+      };
+      const [bid] = spec.interpretResponse(resp);
+      expect(bid.vurl).to.equal(vurl);
+      expect(bid.eventtrackers).to.deep.equal([{ event: 2, method: 1, url: vurl }]);
+    });
+
+    it('fires a GET request to the vurl when the bid becomes viewable', () => {
+      const bid = {
+        vurl: 'https://api.engerio.sk/api/v1/adserver/prebid/viewable/abc-123/',
+      };
+      spec.onBidViewable(bid);
+      const requests = server.requests.filter((req) => req.url === bid.vurl);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].fetch.request.keepalive).to.be.true;
+    });
+
+    it('does nothing when vurl is absent', () => {
+      spec.onBidViewable({ cpm: 1.5 });
       expect(server.requests.length).to.equal(0);
     });
   });
