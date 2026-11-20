@@ -23,7 +23,6 @@ export const spec = {
     });
 
     const options = {
-      contentType: 'application/json',
       withCredentials: false,
     };
 
