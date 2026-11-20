@@ -23,6 +23,7 @@ or cookies.
 |------|-------|-------------|---------|------|
 | bidders | optional | Other bidder codes whose params carry an XE placement id | `['myXeAlias']` | string[] |
 | sampling | optional | Share of page views to report, 0 to 1 (default 1) | `0.5` | number |
+| gvlid | optional | GVL ID (or IDs) checked for purpose 7 consent instead of XE's 1383, for publishers that list their own vendor in the CMP | `1234` | number or number[] |
 
 # Events
 
@@ -47,6 +48,17 @@ pbjs.enableAnalytics({
   provider: 'xe',
   options: {
     bidders: ['myXeAlias']
+  }
+});
+```
+
+A publisher whose CMP lists its own vendor instead of XE:
+
+```javascript
+pbjs.enableAnalytics({
+  provider: 'xe',
+  options: {
+    gvlid: 1234
   }
 });
 ```

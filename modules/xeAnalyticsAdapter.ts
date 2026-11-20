@@ -3,6 +3,7 @@ import { getDeviceType } from '../libraries/userAgentUtils/index.js';
 import { deviceTypes } from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax, sendBeacon } from '../src/ajax.js';
+import type { GVLIDs } from '../src/consentHandler.js';
 import { EVENTS } from '../src/constants.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { logError } from '../src/utils.js';
@@ -31,6 +32,10 @@ export interface XeAnalyticsOptions {
    * Bidder codes whose params carry an XE placement id (`pid`), on top of the XE family bidders and their aliases.
    */
   bidders?: string[];
+  /**
+   * GVL ID(s) checked for purpose 7 consent instead of XE's 1383, for publishers that list their own vendor in the CMP.
+   */
+  gvlid?: GVLIDs;
 }
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
@@ -537,7 +542,17 @@ function reset() {
   sampling = 1;
 }
 
+function isGvlid(gvlid: unknown): gvlid is GVLIDs {
+  const valid = (id: unknown) => typeof id === 'number' && id > 0;
+  return valid(gvlid) || (Array.isArray(gvlid) && gvlid.length > 0 && gvlid.every(valid));
+}
+
 const xeAnalytics = Object.assign(adapter<'xe'>({ analyticsType: 'endpoint' }), {
+  disclosureURL: 'https://xe.works/tcf.json',
+  gvlid(config?: AnalyticsConfig<'xe'>): GVLIDs {
+    const gvlid = config?.options?.gvlid;
+    return isGvlid(gvlid) ? gvlid : GVLID;
+  },
   track({ eventType, args }: { eventType: string; args: any }) {
     const handler = handlers[eventType];
     if (!handler || !args) return;
@@ -572,8 +587,7 @@ xeAnalytics.disableAnalytics = function () {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: xeAnalytics,
-  code: CODE,
-  gvlid: GVLID
+  code: CODE
 });
 
 export default xeAnalytics;
