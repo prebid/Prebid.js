@@ -5,6 +5,7 @@ import type { ModuleType } from "./activities/modules.ts";
 import type { TCFConsentData } from "./types/consent/tcf.d.ts";
 import type { GPPConsentData } from "./types/consent/gpp.d.ts";
 import type { USPConsentData } from "./types/consent/usp.d.ts";
+import type { GCMConsentData } from "./types/consent/gcm.d.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -17,7 +18,8 @@ export const CONSENT_GDPR = 'gdpr';
 export const CONSENT_GPP = 'gpp';
 export const CONSENT_USP = 'usp';
 export const CONSENT_COPPA = 'coppa';
-export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
+export const CONSENT_GCM = 'gcm';
+export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA | typeof CONSENT_GCM;
 
 /**
  * Consent data by framework. Every member type is declared in core, so it is known whether or not
@@ -29,6 +31,7 @@ export interface ConsentData {
   [CONSENT_GPP]: GPPConsentData;
   [CONSENT_USP]: USPConsentData;
   [CONSENT_COPPA]: boolean;
+  [CONSENT_GCM]: GCMConsentData;
 }
 
 export type ConsentDataForKey<K extends ConsentType> = ConsentData[K];
@@ -53,7 +56,8 @@ export interface DefaultConsentMeta {
 export interface ConsentHandler<T, M> {
   readonly generatedTime: number,
   /**
-   * reset this handler (mainly for tests)
+   * Reset this handler's consent data and state, as when its module is disabled. Listeners registered through
+   * `onChange` are kept, so that consumers wired up once (such as `allConsent`) see it again once re-enabled.
    */
   reset(): void;
   getConsentData(): T;
@@ -99,7 +103,7 @@ export function consentHandler<T, M>(
   let hash;
   let error;
   let hasError;
-  let listeners;
+  const listeners = [];
   function reset() {
     df = defer();
     enabled = false;
@@ -110,7 +114,6 @@ export function consentHandler<T, M>(
     hash = null;
     error = null;
     hasError = false;
-    listeners = [];
   }
 
   function getHashData(consentData) {
@@ -121,29 +124,35 @@ export function consentHandler<T, M>(
     return !deepEqual(getHashData(consentData), getHashData(newConsentData));
   }
 
-  function notifyListeners() {
-    if (dirty) {
+  function update(data) {
+    const changed = hasConsentChanged(data);
+    // `dirty` means the hash is stale; it stays so until the hash is computed, even if the same data is set again
+    dirty = dirty || changed;
+    consentData = data;
+    return changed;
+  }
+
+  function notifyListeners(changed) {
+    if (changed) {
       listeners.forEach(l => l(consentData));
     }
   }
 
   function resolve(data) {
-    dirty = hasConsentChanged(data);
-    consentData = data;
+    const changed = update(data);
     hasError = false;
     error = null;
     ready = true;
     df.resolve(data);
-    notifyListeners();
+    notifyListeners(changed);
   }
   function reject(err) {
-    dirty = hasConsentChanged(null);
-    consentData = null;
+    const changed = update(null);
     ready = true;
     error = err;
     hasError = true;
     df.reject(err);
-    notifyListeners();
+    notifyListeners(changed);
   }
   reset();
 
@@ -220,6 +229,8 @@ export const gdprDataHandler = consentHandler({
 export const gppDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GPP>, DefaultConsentMeta>({
   hashFields: ['applicableSections', 'gppString'],
 });
+
+export const gcmDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GCM>, DefaultConsentMeta>();
 
 export const coppaDataHandler = (() => {
   const handler = ((handler) => Object.assign(handler, {
@@ -345,7 +356,12 @@ const ALL_HANDLERS = {
   [CONSENT_USP]: uspDataHandler,
   [CONSENT_GPP]: gppDataHandler,
   [CONSENT_COPPA]: coppaDataHandler,
+  [CONSENT_GCM]: gcmDataHandler,
 } as const;
+
+// hashed only once their module enables them, so that adding them leaves the combined hash (which userId
+// stores to detect consent changes) as it was for publishers who do not use them
+const HASHED_ONLY_WHEN_ENABLED: ReadonlySet<unknown> = new Set([gcmDataHandler]);
 
 export type AllConsentData = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
@@ -366,14 +382,11 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
   }
   const getConsentData = collector('getConsentData');
   const resetAll = collector('reset');
-  let listeners;
-  function reset() {
-    listeners = [];
-    Object.values(handlers).forEach(handler => handler.onChange(() => {
-      listeners.forEach((listener) => listener(getConsentData()));
-    }));
-  }
-  reset();
+  let listeners = [];
+  // handlers keep their listeners across their own reset, so this is registered only once
+  Object.values(handlers).forEach(handler => handler.onChange(() => {
+    listeners.forEach((listener) => listener(getConsentData()));
+  }));
 
   return {
     getConsentData,
@@ -385,12 +398,17 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
         .then(entries => Object.fromEntries(entries));
     },
     get hash() {
-      return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'));
+      return cyrb53Hash(
+        entries
+          .filter(([_, handler]) => handler.enabled || !HASHED_ONLY_WHEN_ENABLED.has(handler))
+          .map(([_, handler]) => handler.hash)
+          .join(':')
+      );
     },
     getConsentMeta: collector('getConsentMeta'),
     reset() {
       resetAll();
-      reset();
+      listeners = [];
     }
   };
 }
