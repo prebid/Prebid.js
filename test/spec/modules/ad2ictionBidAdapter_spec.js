@@ -117,6 +117,8 @@ describe('ad2ictionBidAdapter', function () {
 
       expect(request.url).to.equal(API_ENDPOINT);
       expect(request.method).to.equal('POST');
+      expect(request.options?.contentType).to.be.undefined;
+      expect(request.options.withCredentials).to.equal(false);
     });
 
     it('should send bid request with API version', function () {
