@@ -3,19 +3,26 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 import { getHook } from '../src/hook.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import {
-  deepAccess,
   deepSetValue,
   isAdUnitCodeMatchingSlot,
   isGptPubadsDefined,
+  logError,
   logInfo,
   logWarn,
+  mergeDeep,
   pick,
   uniques
 } from '../src/utils.js';
 import type { AdUnit } from '../src/adUnits.ts';
+import type { GptSlot } from '../src/types/gpt.d.ts';
 
 const MODULE_NAME = 'GPT Pre-Auction';
+const REQUEST_HOOK_ID = 'gpt-pre-auction-v$prebid.version$';
+const REQUEST_BIDS_STUB_PRIORITY = 100;
+export const INTERNAL_REQUEST_SYM = Symbol('gptPreAuctionInternalRequest');
+
 export let _currentConfig: any = {};
 let hooksAdded = false;
 
@@ -134,7 +141,7 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
     adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
     const context = adUnit.ortb2Imp.ext;
 
-    const adserverSlot = deepAccess(context, 'data.adserver.adslot');
+    const adserverSlot = context.data?.adserver?.adslot;
 
     // @todo: check if should have precedence over customPreAuction and defaultPreAuction
     if (context.gpid) return;
@@ -162,7 +169,22 @@ const setPpsConfigFromTargetingSet = (next, targetingSet) => {
   next(targetingSet);
 };
 
-type GPTPreAuctionConfig = {
+export type GPTPreAuctionRequestHookConfig = {
+  /**
+   * Controls GPT Request Hook integration:
+   * - 'disabled' (default): Does not register a GPT request hook.
+   * - 'test': Opt-in evaluation mode that registers the GPT request hook and stubs
+   *   external pbjs.requestBids() calls targeting GPT slots, resolving their
+   *   bidsBackHandler asynchronously with empty bids so GPT display()/refresh()
+   *   triggers the hook auction. Instream-only video calls pass through un-stubbed,
+   *   as do requests whose ad units match no defined GPT slot once
+   *   googletag.pubads().getSlots() is populated. Calls made before GPT slots exist
+   *   are intercepted and auctioned when GPT later requests matching slots.
+   */
+  mode?: 'disabled' | 'test';
+};
+
+export type GPTPreAuctionConfig = {
   /**
    * allows turning off of module. Default value is true
    */
@@ -182,6 +204,10 @@ type GPTPreAuctionConfig = {
    * Removes extra network IDs when Multiple Customer Management is active. Default is false.
    */
   mcmEnabled?: boolean;
+  /**
+   * Optional GPT Request Hook integration settings.
+   */
+  requestHook?: GPTPreAuctionRequestHookConfig;
 };
 
 declare module '../src/config' {
@@ -190,11 +216,341 @@ declare module '../src/config' {
   }
 }
 
+type InterceptedOptions = {
+  labels?: string[];
+  ortb2?: Record<string, any>;
+  timeout?: number;
+  ttlBuffer?: number;
+};
+
+type InterceptedCodeEntry = {
+  adUnits?: AdUnit[];
+  options?: InterceptedOptions;
+};
+
+type InterceptStore = {
+  codes: () => string[];
+  capture: (codes: string[], incomingAdUnits: AdUnit[], globalAdUnits: AdUnit[], reqBidOptions: any) => void;
+  evict: (adUnitCode?: string | string[]) => void;
+  applyToHookRequest: (adUnitCodes: string[], globalAdUnits: AdUnit[]) => Record<string, any>;
+};
+
+type RequestHookSession = {
+  store: InterceptStore;
+  syncWithGpt: () => void;
+  dispose: () => void;
+};
+
+let activeSession: RequestHookSession | null = null;
+
+const isInstreamOnly = (adUnit?: AdUnit) => {
+  const mediaTypes: any = adUnit?.mediaTypes;
+  return mediaTypes?.video?.context === 'instream' && !mediaTypes.banner && !mediaTypes.native;
+};
+
+const matchAdUnitCodesForSlots = (slots: GptSlot[] | undefined, candidateCodes: string[]) =>
+  (slots || [])
+    .flatMap(slot => candidateCodes.filter(isAdUnitCodeMatchingSlot(slot)))
+    .filter(uniques);
+
+const getInterceptCodes = (reqBidOptions: any): string[] | null => {
+  if (reqBidOptions?.[INTERNAL_REQUEST_SYM]) {
+    return null;
+  }
+  const incomingAdUnits: AdUnit[] = Array.isArray(reqBidOptions?.adUnits) ? reqBidOptions.adUnits : [];
+  const targetedCodes: string[] = Array.isArray(reqBidOptions?.adUnitCodes)
+    ? reqBidOptions.adUnitCodes.filter(Boolean)
+    : [];
+
+  const nonInstreamCodes = targetedCodes.filter((code) => {
+    const unitsForCode = incomingAdUnits.filter(adUnit => adUnit?.code === code);
+    return unitsForCode.length === 0 || unitsForCode.some(adUnit => !isInstreamOnly(adUnit));
+  });
+
+  if (targetedCodes.length > 0 && nonInstreamCodes.length === 0) {
+    return null;
+  }
+
+  const gptSlots = isGptPubadsDefined() ? (window.googletag.pubads().getSlots() || []) : [];
+  if (gptSlots.length > 0 && nonInstreamCodes.length > 0 && matchAdUnitCodesForSlots(gptSlots, nonInstreamCodes).length === 0) {
+    return null;
+  }
+
+  return nonInstreamCodes;
+};
+
+const pickAuctionOptions = (reqBidOptions: any): InterceptedOptions => {
+  const options: InterceptedOptions = {};
+  if (Array.isArray(reqBidOptions?.labels)) {
+    options.labels = reqBidOptions.labels.slice();
+  }
+  if (reqBidOptions?.ortb2 && typeof reqBidOptions.ortb2 === 'object') {
+    options.ortb2 = mergeDeep({}, reqBidOptions.ortb2);
+  }
+  if (typeof reqBidOptions?.timeout === 'number') {
+    options.timeout = reqBidOptions.timeout;
+  }
+  if (typeof reqBidOptions?.ttlBuffer === 'number') {
+    options.ttlBuffer = reqBidOptions.ttlBuffer;
+  }
+  return options;
+};
+
+const mergeAuctionOptions = (optionsList: InterceptedOptions[]): InterceptedOptions => {
+  const merged: InterceptedOptions = {};
+  optionsList.forEach((opts) => {
+    if (opts.labels) {
+      merged.labels = (merged.labels || []).concat(opts.labels).filter(uniques);
+    }
+    if (opts.ortb2) {
+      merged.ortb2 = mergeDeep(merged.ortb2 || {}, opts.ortb2);
+    }
+    if (opts.timeout != null) {
+      merged.timeout = merged.timeout == null ? opts.timeout : Math.max(merged.timeout, opts.timeout);
+    }
+    if (opts.ttlBuffer != null) {
+      merged.ttlBuffer = merged.ttlBuffer == null ? opts.ttlBuffer : Math.min(merged.ttlBuffer, opts.ttlBuffer);
+    }
+  });
+  return merged;
+};
+
+const createInterceptStore = (): InterceptStore => {
+  let entriesByCode: Record<string, InterceptedCodeEntry> = Object.create(null);
+  let fallbackOptions: InterceptedOptions | null = null;
+
+  return {
+    codes: () => Object.keys(entriesByCode).filter(code => Boolean(entriesByCode[code]?.adUnits)),
+
+    capture: (codes, incomingAdUnits, globalAdUnits, reqBidOptions) => {
+      const options = pickAuctionOptions(reqBidOptions);
+      if (codes.length === 0) {
+        fallbackOptions = options;
+        return;
+      }
+      codes.forEach((code) => {
+        const adHocUnits = incomingAdUnits.filter(
+          adUnit => adUnit?.code === code && !globalAdUnits.includes(adUnit)
+        );
+        entriesByCode[code] = {
+          adUnits: adHocUnits.length > 0 ? adHocUnits : undefined,
+          options
+        };
+      });
+    },
+
+    evict: (adUnitCode) => {
+      if (!adUnitCode) {
+        entriesByCode = Object.create(null);
+        fallbackOptions = null;
+        return;
+      }
+      (Array.isArray(adUnitCode) ? adUnitCode : [adUnitCode]).forEach((code) => {
+        if (code) {
+          delete entriesByCode[code];
+        }
+      });
+    },
+
+    applyToHookRequest: (adUnitCodes, globalAdUnits) => {
+      const overrides: Record<string, any> = {};
+      if (adUnitCodes.some(code => Boolean(entriesByCode[code]?.adUnits))) {
+        overrides.adUnits = adUnitCodes.flatMap(code =>
+          entriesByCode[code]?.adUnits ||
+          globalAdUnits.filter(adUnit => adUnit.code === code)
+        );
+      }
+
+      const optionsList = adUnitCodes
+        .map(code => entriesByCode[code]?.options || fallbackOptions)
+        .filter((opts): opts is InterceptedOptions => Boolean(opts))
+        .filter(uniques);
+
+      return Object.assign(overrides, mergeAuctionOptions(optionsList));
+    }
+  };
+};
+
+const patchRemoveAdUnit = (
+  pbjs: any,
+  onRemove: (adUnitCode?: string | string[]) => void
+): (() => void) => {
+  const original = pbjs.removeAdUnit;
+  const wrapped = function (this: any, ...args: any[]) {
+    onRemove(args[0]);
+    return original.apply(this, args);
+  };
+  pbjs.removeAdUnit = wrapped;
+  return () => {
+    if (pbjs.removeAdUnit === wrapped) {
+      pbjs.removeAdUnit = original;
+    }
+  };
+};
+
+const resolveStubbedRequest = (pbjs: any, reqBidOptions: any) => {
+  Promise.resolve().then(() => {
+    if (typeof reqBidOptions?.bidsBackHandler === 'function') {
+      try {
+        reqBidOptions.bidsBackHandler.call(pbjs, {}, false, undefined);
+      } catch (e) {
+        logError(`${MODULE_NAME}: Error executing bidsBackHandler in requestBids stub`, e);
+      }
+    }
+
+    reqBidOptions?.defer?.resolve({
+      bids: {},
+      timedOut: false,
+      auctionId: undefined
+    });
+  });
+};
+
+export const gptRequestHook = async ({ slots }: { slots: GptSlot[] }) => {
+  const pbjs: any = getGlobal();
+  if (typeof pbjs.requestBids !== 'function') {
+    return;
+  }
+
+  const globalAdUnits: AdUnit[] = Array.isArray(pbjs.adUnits) ? pbjs.adUnits : [];
+  const candidateCodes = [
+    ...globalAdUnits.map(adUnit => adUnit.code),
+    ...(activeSession?.store.codes() || [])
+  ].filter(uniques);
+
+  const adUnitCodes = matchAdUnitCodesForSlots(slots, candidateCodes);
+  if (adUnitCodes.length === 0) {
+    return;
+  }
+
+  await pbjs.requestBids({
+    adUnitCodes,
+    [INTERNAL_REQUEST_SYM]: true,
+    ...activeSession?.store.applyToHookRequest(adUnitCodes, globalAdUnits)
+  });
+
+  if (typeof pbjs.setTargetingForGPTAsync === 'function') {
+    pbjs.setTargetingForGPTAsync(adUnitCodes);
+  }
+};
+
+export const requestBidsStub = (next, reqBidOptions) => {
+  if (!activeSession) {
+    return next(reqBidOptions);
+  }
+
+  const codes = getInterceptCodes(reqBidOptions);
+  if (!codes) {
+    return next(reqBidOptions);
+  }
+
+  const pbjs: any = getGlobal();
+  const globalAdUnits: AdUnit[] = Array.isArray(pbjs.adUnits) ? pbjs.adUnits : [];
+  const incomingAdUnits: AdUnit[] = Array.isArray(reqBidOptions?.adUnits) ? reqBidOptions.adUnits : [];
+  activeSession.store.capture(codes, incomingAdUnits, globalAdUnits, reqBidOptions);
+
+  logWarn(`${MODULE_NAME}: External pbjs.requestBids() call intercepted because requestHook.mode is 'test'.`);
+  resolveStubbedRequest(pbjs, reqBidOptions);
+  return next.bail(undefined);
+};
+
+const disableRequestHookTestMode = () => {
+  const session = activeSession;
+  activeSession = null;
+  session?.dispose();
+};
+
+const createRequestHookSession = (onUnsupported: () => void): RequestHookSession => {
+  const store = createInterceptStore();
+  const cleanups: Array<() => void> = [];
+  let disposed = false;
+  let hookRegistered = false;
+  let queuedCmd: any = null;
+
+  getHook('requestBids').before(requestBidsStub, REQUEST_BIDS_STUB_PRIORITY);
+  cleanups.push(() => {
+    getHook('requestBids').getHooks({ hook: requestBidsStub }).remove();
+  });
+
+  const pbjs: any = getGlobal();
+  if (typeof pbjs?.removeAdUnit === 'function') {
+    cleanups.push(patchRemoveAdUnit(pbjs, store.evict));
+  }
+
+  const registerGptHook = () => {
+    if (disposed || hookRegistered) {
+      return;
+    }
+    if (!isGptPubadsDefined() || typeof window.googletag.pubads().registerRequestHook !== 'function') {
+      logWarn(`${MODULE_NAME}: googletag.pubads().registerRequestHook is not available; disabling requestHook test mode.`);
+      onUnsupported();
+      return;
+    }
+    cleanups.push(window.googletag.pubads().registerRequestHook(gptRequestHook, REQUEST_HOOK_ID));
+    hookRegistered = true;
+  };
+
+  const syncWithGpt = () => {
+    if (disposed || hookRegistered) {
+      return;
+    }
+    if (isGptPubadsDefined()) {
+      registerGptHook();
+      return;
+    }
+
+    const googletagBootstrap: any = (window.googletag = window.googletag || ({ cmd: [] } as any));
+    const cmdQueue = (googletagBootstrap.cmd = googletagBootstrap.cmd || []);
+    if (queuedCmd === cmdQueue) {
+      return;
+    }
+    queuedCmd = cmdQueue;
+
+    const registerWhenReady = () => {
+      if (queuedCmd === cmdQueue) {
+        queuedCmd = null;
+      }
+      registerGptHook();
+    };
+
+    if (Array.isArray(cmdQueue)) {
+      cmdQueue.unshift(registerWhenReady);
+    } else {
+      cmdQueue.push(registerWhenReady);
+    }
+  };
+
+  const dispose = () => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    for (let i = cleanups.length - 1; i >= 0; i--) {
+      cleanups[i]();
+    }
+    cleanups.length = 0;
+  };
+
+  return { store, syncWithGpt, dispose };
+};
+
+const enableRequestHookTestMode = () => {
+  if (!activeSession) {
+    if (isGptPubadsDefined() && typeof window.googletag.pubads().registerRequestHook !== 'function') {
+      logWarn(`${MODULE_NAME}: googletag.pubads().registerRequestHook is not available; skipping requestHook test mode.`);
+      return;
+    }
+    activeSession = createRequestHookSession(disableRequestHookTestMode);
+  }
+  activeSession.syncWithGpt();
+};
+
 const handleSetGptConfig = moduleConfig => {
   _currentConfig = pick(moduleConfig, [
     'enabled', enabled => enabled !== false,
     'customPreAuction', customPreAuction => typeof customPreAuction === 'function' && customPreAuction,
     'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction ?? true,
+    'requestHook', requestHook => requestHook?.mode === 'test' ? { mode: 'test' } : undefined
   ]);
 
   if (_currentConfig.enabled) {
@@ -203,12 +559,18 @@ const handleSetGptConfig = moduleConfig => {
       getHook('targetingDone').after(setPpsConfigFromTargetingSet);
       hooksAdded = true;
     }
+    if (_currentConfig.requestHook?.mode === 'test') {
+      enableRequestHookTestMode();
+    } else {
+      disableRequestHookTestMode();
+    }
   } else {
     logInfo(`${MODULE_NAME}: Turning off module`);
     _currentConfig = {};
     getHook('makeBidRequests').getHooks({ hook: makeBidRequestsHook }).remove();
     getHook('targetingDone').getHooks({ hook: setPpsConfigFromTargetingSet }).remove();
     hooksAdded = false;
+    disableRequestHookTestMode();
   }
 };
 

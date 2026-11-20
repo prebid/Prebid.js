@@ -81,7 +81,7 @@
     "@babel/preset-typescript": "^8.0.1",
     "@babel/runtime-corejs3": "^8.0.6",
     "@eslint/compat": "^1.4.1",
-    "@types/google-publisher-tag": "^1.20250210.0",
+    "@types/google-publisher-tag": "^1.20261102.0",
     "@types/node": "^24.0.0",
     "@vitest/browser-playwright": "5.0.5",
     "@vitest/browser-webdriverio": "5.0.0",
