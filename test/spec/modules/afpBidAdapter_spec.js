@@ -197,6 +197,10 @@ describe('AFP Adapter', function() {
       expect(request.method).to.equal(REQUEST_METHOD);
     });
 
+    it('should not set a contentType, so no CORS preflight is triggered', function() {
+      expect(request.options?.contentType).to.be.undefined;
+    });
+
     describe('Common data request should be correct', function() {
       it('pageUrl should be correct', function() {
         expect(request.data.pageUrl).to.equal(pageUrl);
