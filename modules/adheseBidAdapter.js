@@ -55,10 +55,7 @@ export const spec = {
       method: 'POST',
       url: uri,
       data: JSON.stringify(payload),
-      bids: validBidRequests,
-      options: {
-        contentType: 'application/json'
-      }
+      bids: validBidRequests
     };
   },
 
