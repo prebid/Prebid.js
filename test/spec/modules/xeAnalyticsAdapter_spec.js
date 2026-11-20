@@ -345,6 +345,31 @@ describe('xe analytics adapter', function () {
     expect(sentOf('auction')[0].smp).to.equal(0.25);
   });
 
+  it('sends to the host from the options', function () {
+    enable({ host: 'prebid.example.live' });
+    fullAuction();
+    clock.tick(3000);
+    expect(ajax.firstCall.args[0]).to.equal('https://prebid.example.live/analytics');
+  });
+
+  ['https://prebid.example.live', 'prebid.example.live/x', 'localhost', 42].forEach(host => {
+    it(`ignores the host ${JSON.stringify(host)}`, function () {
+      enable({ host });
+      fullAuction();
+      clock.tick(3000);
+      expect(ajax.firstCall.args[0]).to.equal(ENDPOINT);
+    });
+  });
+
+  it('goes back to the default host after disableAnalytics', function () {
+    enable({ host: 'prebid.example.live' });
+    xeAnalytics.disableAnalytics();
+    enable();
+    fullAuction();
+    clock.tick(3000);
+    expect(ajax.firstCall.args[0]).to.equal(ENDPOINT);
+  });
+
   it('falls back to the user agent device type and keeps going after a bad event', function () {
     enable();
     events.emit(EVENTS.BID_TIMEOUT, {});

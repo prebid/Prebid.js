@@ -11,6 +11,7 @@ import { logError } from '../src/utils.js';
 const CODE = 'xe';
 const GVLID = 1383;
 const ENDPOINT = 'https://pbjs.xe.works/analytics';
+const HOST = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
 // Bid adapters of the XE family (libraries/xeUtils): their params carry the XE placement id
 const XE_BIDDERS = ['xe', 'xeworks', 'adipolo', 'anyclip', 'anzuDSP', 'driftpixel', 'iqx', 'leagueM', 'lm_kiviads', 'kivi', 'matterfull', 'revealon', 'robustApps'];
 const AUCTION_DELAY = 3000;
@@ -36,6 +37,10 @@ export interface XeAnalyticsOptions {
    * GVL ID(s) checked for purpose 7 consent instead of XE's 1383, for publishers that list their own vendor in the CMP.
    */
   gvlid?: GVLIDs;
+  /**
+   * Host name to send to instead of pbjs.xe.works, for an exchange that runs XE on its own domain.
+   */
+  host?: string;
 }
 
 declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
@@ -93,6 +98,7 @@ export const dep = {
 
 let ourCodes = new Set(XE_BIDDERS);
 let sampling = 1;
+let endpoint = ENDPOINT;
 let deviceType = 0;
 let auctions = new Map<string, AuctionState>();
 let bidStates = new Map<string, BidState>();
@@ -321,7 +327,7 @@ function post(body: string, size: number, keepalive: boolean) {
   const done = () => {
     if (keepalive && sentIn === generation) inflight -= size;
   };
-  dep.ajax(ENDPOINT, {
+  dep.ajax(endpoint, {
     success: done,
     error(_: string, xhr: any) {
       done();
@@ -336,7 +342,7 @@ function send(events: Payload[], unloading = false) {
   bodies(events).forEach(([body, size]) => {
     const keepalive = size <= quota;
     if (keepalive || unloading) quota -= size;
-    if (unloading && dep.sendBeacon(ENDPOINT, body)) return;
+    if (unloading && dep.sendBeacon(endpoint, body)) return;
     post(body, size, keepalive);
   });
 }
@@ -540,6 +546,7 @@ function reset() {
   inflight = 0;
   ourCodes = new Set(XE_BIDDERS);
   sampling = 1;
+  endpoint = ENDPOINT;
 }
 
 function isGvlid(gvlid: unknown): gvlid is GVLIDs {
@@ -573,6 +580,7 @@ xeAnalytics.enableAnalytics = function (config?: AnalyticsConfig<'xe'>) {
   ourCodes = new Set([...XE_BIDDERS, ...extra]);
   const rate = Number(options.sampling);
   sampling = rate > 0 && rate < 1 ? rate : 1;
+  endpoint = typeof options.host === 'string' && HOST.test(options.host) ? `https://${options.host}/analytics` : ENDPOINT;
   window.addEventListener('pagehide', onHide);
   document.addEventListener('visibilitychange', onHide);
   baseEnable.call(this, config);

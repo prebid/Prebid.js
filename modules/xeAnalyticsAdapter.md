@@ -24,6 +24,7 @@ or cookies.
 | bidders | optional | Other bidder codes whose params carry an XE placement id | `['myXeAlias']` | string[] |
 | sampling | optional | Share of page views to report, 0 to 1 (default 1) | `0.5` | number |
 | gvlid | optional | GVL ID (or IDs) checked for purpose 7 consent instead of XE's 1383, for publishers that list their own vendor in the CMP | `1234` | number or number[] |
+| host | optional | Host name to send to instead of `pbjs.xe.works`, for an exchange that runs XE on its own domain | `'prebid.example.live'` | string |
 
 # Events
 
@@ -37,7 +38,7 @@ or cookies.
 
 An auction is sent 3 seconds after `auctionEnd`, together with the wins and renders of that window. Later events go in
 batches once a second. When the page is hidden or unloaded, the events still in the analytics queue are processed and
-everything pending is sent with `sendBeacon`. Requests are `text/plain` POSTs to `https://pbjs.xe.works/analytics`
+everything pending is sent with `sendBeacon`. Requests are `text/plain` POSTs to `https://pbjs.xe.works/analytics` (or the `host` option)
 in bodies under 60 KB: a large auction is split by ad unit, then by bidder. `keepalive` is used while the bodies in
 flight fit its 64 KB quota.
 
@@ -52,13 +53,14 @@ pbjs.enableAnalytics({
 });
 ```
 
-A publisher whose CMP lists its own vendor instead of XE:
+An exchange that runs XE on its own domain and lists its own vendor in the CMP:
 
 ```javascript
 pbjs.enableAnalytics({
   provider: 'xe',
   options: {
-    gvlid: 1234
+    gvlid: 1234,
+    host: 'prebid.example.live'
   }
 });
 ```
