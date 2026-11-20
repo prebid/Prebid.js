@@ -64,9 +64,6 @@ export const spec = {
         }
         payload.referrer_detection = refererinfo;
       }
-      if (bidRequest.userId) {
-        payload.userId = bidRequest.userId;
-      }
     }
     const request = formatRequest(payload, bidderRequest);
     return request;

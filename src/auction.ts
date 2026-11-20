@@ -140,6 +140,24 @@ export interface AuctionOptionsConfig {
    * When true, prevent bids from being rendered if TTL is reached. Default is false.
    */
   suppressExpiredRender?: boolean;
+  /**
+   * Called when a bid that is about to be rendered has expired; it may return (a promise to) another bid to render
+   * in its place, for example from a fresh auction. This is useful for slots that cannot be refreshed in the ad server,
+   * such as interstitials. If it returns nothing, an expired bid, a bid that already won or was rendered, a bid
+   * with `deferRendering`, or a bid for a different ad unit or of a different media type, the expired bid is handled as usual
+   * (see `suppressExpiredRender`).
+   *
+   * It is called at most once for each expired bid. From then on, everything the creative sends under the expired bid's
+   * ad ID (native asset requests and trackers, resize requests, render events), as well as `triggerBilling`, applies to the replacement.
+   *
+   * The returned bid should not be used anywhere else: if two expired bids are being rendered at the same time,
+   * returning the same bid for both may render it twice.
+   *
+   * Note that the ad server's targeting cannot be updated at this point, so it will still reflect the expired bid.
+   * Returning a promise delays rendering until it resolves; with `legacyRender`, which writes the creative using
+   * `document.write`, return the replacement synchronously instead.
+   */
+  replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | PromiseLike<Bid | null | undefined>;
 
   /**
    * If true, use legacy rendering logic.
@@ -286,16 +304,17 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
     } else {
+      _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
       events.emit(EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
-      _timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
         if (_timedOutRequests.length) {
           events.emit(EVENTS.BID_TIMEOUT, _timedOutRequests);
         }
+      } else {
+        _timedOutRequests = [];
       }
 
       _auctionStatus = AUCTION_COMPLETED;
@@ -357,6 +376,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
+      // No adapter dispatch will run to resolve this for an empty auction.
+      requestsDone.resolve();
       auctionDone();
     } else {
       addBidderRequests.call({
@@ -570,17 +591,17 @@ export function auctionCallbacks(auctionDone, auctionInstance, { index = auction
 
   function handleBidResponse(adUnitCode: string, bid: Partial<Bid>, handler) {
     bidResponseMap[bid.requestId] = true;
-    addCommonResponseProperties(bid, adUnitCode);
+    addCommonResponseProperties(bid, adUnitCode, { index });
     outstandingBidsAdded++;
     return handler(afterBidAdded);
   }
 
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
-      const bidResponse = getPreparedBidForAuction(bid);
+      const bidResponse = getPreparedBidForAuction(bid, { index });
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
-        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done, { index });
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
@@ -1121,6 +1142,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
         value = value(custBidObj, bidReq);
       } catch (e) {
         logError('bidmanager', 'ERROR', e);
+        return;
       }
     }
 

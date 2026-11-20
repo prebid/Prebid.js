@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, logError, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, logWarn, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
@@ -13,8 +13,8 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
-import type { IdProviderSpec } from "./userId/spec.ts";
 import type { AllConsentData } from '../src/consentHandler.ts';
+import type { IdHandle, IdProviderSpec, ProviderResponse } from "./userId/spec.ts";
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 const COOKIE = 'cookie';
@@ -32,11 +32,13 @@ export type SharedIdParams = {
   create?: boolean;
   /**
    * If true, the the expiration time is automatically extended whenever the script is executed even if the id exists already.
-   * Default is true. If false, then the id expires from the time it was initially created.
+   * Default is false: the id expires from the time it was initially created.
    */
   extend?: boolean;
   /**
    * For publisher server support only. Where to call out to for a server cookie.
+   * Once the pixel loads, the ID follows what the endpoint left in storage: an ID it set is adopted, and one it
+   * deleted is dropped for the rest of the page view. Use cookie storage only: the endpoint can't delete localStorage.
    */
   pixelUrl?: string;
   /**
@@ -95,47 +97,63 @@ function readValue(name, type) {
   }
 }
 
-// How long to wait before reading storage a second time, when the first read after the pixel still shows the id
-// this page view minted.
+// How long to wait before reading storage a second time, when the first read after the pixel shows no change yet.
 const PIXEL_RECHECK_MS = 50;
 
-function getIdCallback(pubcid, pixelUrl, getPixelParams?: () => Record<string, string>) {
-  return function (callback, getStoredId) {
-    if (pixelUrl) {
-      queuePixelCallback(pixelUrl, pubcid, () => {
-        // By now the User ID module has stored `pubcid` (getId's `id`, when there is one), and the pixel endpoint has
-        // had the chance to set the cookie from the server. Storage is read on the next task, not synchronously in the
-        // pixel's load handler: in some WebKit builds the response's Set-Cookie is not yet visible in document.cookie
-        // at the load event, so a synchronous read can miss an id the endpoint set, for example one it restored
-        // (see #16158). If storage still holds the minted id then, it is read once more after a short delay.
-        // - A different id: the server generated or restored it (for example with `create: false`, where getId
-        //   returned no id), so adopt it.
-        // - The same id: complete without one; passing it would have the User ID module write it again from script,
-        //   turning the server-set cookie back into a script-set one.
-        // - No id: the endpoint removed the cookie (for example for Global Privacy Control or denied consent);
-        //   complete without one, so script doesn't write back what the server deleted.
-        const complete = (storedId) => callback(storedId && storedId !== pubcid ? storedId : undefined);
-        const read = (recheck) => {
-          let storedId;
-          try {
-            storedId = getStoredId();
-          } catch (e) {
-            logError('sharedId: could not read the stored id after the pixel', e);
-            complete(undefined);
-            return;
-          }
-          if (recheck && storedId && storedId === pubcid) {
-            setTimeout(() => read(false), PIXEL_RECHECK_MS);
-          } else {
-            complete(storedId);
-          }
-        };
-        setTimeout(() => read(true), 0);
-      }, getPixelParams?.())();
-    } else {
-      callback(pubcid);
-    }
+/**
+ * Fire the pixel, then make the ID follow what the endpoint left in storage.
+ * @param pubcid the ID this page view already holds
+ */
+function pixelSyncCallback(pubcid, config, handle: IdHandle, getPixelParams?: () => Record<string, string>): ProviderResponse['callback'] {
+  return function (setId) {
+    queuePixelCallback(config.params.pixelUrl, pubcid, () => {
+      if (!config.storage) {
+        // nothing reads what the endpoint sets: keep the ID this page view holds
+        setId();
+        return;
+      }
+      // In some WebKit builds the response's Set-Cookie is not yet visible in document.cookie at the load event
+      // (see #16158): read on the next task, and once more a little later if nothing seems to have changed.
+      // What the endpoint left is never written again from script: that would make its cookie a script-set one.
+      const read = (recheck) => {
+        const storedId = handle.get();
+        if (recheck && (!storedId || storedId === pubcid)) {
+          setTimeout(() => read(false), PIXEL_RECHECK_MS);
+        } else if (storedId) {
+          handle.touch();
+          setId(storedId);
+        } else if (pubcid) {
+          // the endpoint deleted the cookie, for example for Global Privacy Control or denied consent
+          handle.remove();
+          setId();
+        } else {
+          setId();
+        }
+      };
+      setTimeout(() => read(true), 0);
+    }, getPixelParams?.())();
   };
+}
+
+function getIdCallback(pubcid, config, handle: IdHandle, getPixelParams?: () => Record<string, string>): ProviderResponse['callback'] {
+  return config.params?.pixelUrl ? pixelSyncCallback(pubcid, config, handle, getPixelParams) : (setId) => setId(pubcid);
+}
+
+let warnedPixelStorage = false;
+
+function checkPixelStorage(config, pixelUrl) {
+  if (!pixelUrl || warnedPixelStorage) return;
+  const types = config?.storage?.type?.trim().split(/\s*&\s*/) ?? [];
+  if (types.some(type => type !== COOKIE)) {
+    warnedPixelStorage = true;
+    logWarn(`sharedId: pixelUrl is set with storage type '${config.storage.type}'. The pixel endpoint can't delete ` +
+      `localStorage, so if it deletes the ID cookie (for example for an opt-out), the ID kept in localStorage is still ` +
+      `used. Use storage type 'cookie' with pixelUrl.`);
+  }
+}
+
+export function resetPixelStorageWarning() {
+  warnedPixelStorage = false;
 }
 
 /**
@@ -205,7 +223,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     const idObj = { 'pubcid': value as string };
     return idObj;
   },
-  getId: function (config = {} as any, consentData, storedId) {
+  getId: function (config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return;
@@ -215,6 +233,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       return;
     }
     const { params: { create = true, pixelUrl } = {} } = config;
+    checkPixelStorage(config, pixelUrl);
     let newId = storedId;
     if (!newId) {
       try {
@@ -228,7 +247,11 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    return { id: newId, callback: getIdCallback(newId, pixelUrl, () => pixelParams(config.params, consentData)) };
+    if (pixelUrl && storedId && config.storage) {
+      // the endpoint may have set the stored ID: don't have it written again from script
+      handle.manage();
+    }
+    return { id: newId, callback: getIdCallback(newId, config, handle, () => pixelParams(config.params, consentData)) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -243,7 +266,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
    * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
    * its expiration time is updated.
    */
-  extendId: function(config = {} as any, consentData, storedId) {
+  extendId: function(config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return { id: undefined };
@@ -256,13 +279,8 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
 
     if (extend) {
       if (pixelUrl) {
-        // Complete the callback once the pixel settles so the User ID module's batch (and
-        // getUserIdsAsync / auctions waiting on it) can finish. Complete it without an id: passing one
-        // would have the User ID module re-store it, overwriting the server-set cookie from script.
-        return {
-          callback: (done) => queuePixelCallback(pixelUrl, storedId as string, () => done(undefined),
-            pixelParams(config.params, consentData))()
-        };
+        checkPixelStorage(config, pixelUrl);
+        return { callback: pixelSyncCallback(storedId, config, handle, () => pixelParams(config.params, consentData)) };
       } else {
         return { id: storedId };
       }
