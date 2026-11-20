@@ -134,8 +134,8 @@ describe('xe analytics adapter', function () {
       });
     });
 
-    [0, -1, '1234', [], ['1234'], null].forEach(gvlid => {
-      it(`falls back to 1383 for ${JSON.stringify(gvlid)}`, function () {
+    [0, -1, 12.5, Infinity, NaN, '1234', [], ['1234'], [1234, 12.5], null].forEach(gvlid => {
+      it(`falls back to 1383 for ${typeof gvlid === 'number' ? gvlid : JSON.stringify(gvlid)}`, function () {
         expect(gvlidOf({ gvlid })).to.equal(1383);
       });
     });
@@ -346,13 +346,13 @@ describe('xe analytics adapter', function () {
   });
 
   it('sends to the host from the options', function () {
-    enable({ host: 'prebid.example.live' });
+    enable({ host: 'Prebid.Adipolo.live' });
     fullAuction();
     clock.tick(3000);
-    expect(ajax.firstCall.args[0]).to.equal('https://prebid.example.live/analytics');
+    expect(ajax.firstCall.args[0]).to.equal('https://prebid.adipolo.live/analytics');
   });
 
-  ['https://prebid.example.live', 'prebid.example.live/x', 'localhost', 42].forEach(host => {
+  ['prebid.example.live', 'https://prebid.adipolo.live', 'prebid.adipolo.live/x', 'evil.prebid.adipolo.live', 42].forEach(host => {
     it(`ignores the host ${JSON.stringify(host)}`, function () {
       enable({ host });
       fullAuction();
@@ -362,7 +362,7 @@ describe('xe analytics adapter', function () {
   });
 
   it('goes back to the default host after disableAnalytics', function () {
-    enable({ host: 'prebid.example.live' });
+    enable({ host: 'prebid.adipolo.live' });
     xeAnalytics.disableAnalytics();
     enable();
     fullAuction();

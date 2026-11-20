@@ -11,7 +11,8 @@ import { logError } from '../src/utils.js';
 const CODE = 'xe';
 const GVLID = 1383;
 const ENDPOINT = 'https://pbjs.xe.works/analytics';
-const HOST = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
+// Prebid Direct domains of the XE family exchanges, kept in line with XE_BIDDERS
+const XE_HOSTS = ['pbjs.xe.works', 'prebid.adipolo.live', 'prebid-eu.adipolo.live', 'prebid.anyclip.com', 'pbjs.anzu-rtb.live', 'pbjs.driftpixel.live', 'pbjs.iqzonertb.live', 'pbjs.league-m.media', 'pbjs.kiviads.live', 'pbjs.bematterfull.com', 'pbjs.revealonmedia.live', 'pbjs.rbstsystems.live'];
 // Bid adapters of the XE family (libraries/xeUtils): their params carry the XE placement id
 const XE_BIDDERS = ['xe', 'xeworks', 'adipolo', 'anyclip', 'anzuDSP', 'driftpixel', 'iqx', 'leagueM', 'lm_kiviads', 'kivi', 'matterfull', 'revealon', 'robustApps'];
 const AUCTION_DELAY = 3000;
@@ -38,7 +39,7 @@ export interface XeAnalyticsOptions {
    */
   gvlid?: GVLIDs;
   /**
-   * Host name to send to instead of pbjs.xe.works, for an exchange that runs XE on its own domain.
+   * Host name to send to instead of pbjs.xe.works, for an exchange that runs XE on its own domain: one of XE_HOSTS.
    */
   host?: string;
 }
@@ -550,7 +551,7 @@ function reset() {
 }
 
 function isGvlid(gvlid: unknown): gvlid is GVLIDs {
-  const valid = (id: unknown) => typeof id === 'number' && id > 0;
+  const valid = (id: unknown) => Number.isInteger(id) && (id as number) > 0;
   return valid(gvlid) || (Array.isArray(gvlid) && gvlid.length > 0 && gvlid.every(valid));
 }
 
@@ -580,7 +581,8 @@ xeAnalytics.enableAnalytics = function (config?: AnalyticsConfig<'xe'>) {
   ourCodes = new Set([...XE_BIDDERS, ...extra]);
   const rate = Number(options.sampling);
   sampling = rate > 0 && rate < 1 ? rate : 1;
-  endpoint = typeof options.host === 'string' && HOST.test(options.host) ? `https://${options.host}/analytics` : ENDPOINT;
+  const host = typeof options.host === 'string' ? options.host.toLowerCase() : '';
+  endpoint = XE_HOSTS.includes(host) ? `https://${host}/analytics` : ENDPOINT;
   window.addEventListener('pagehide', onHide);
   document.addEventListener('visibilitychange', onHide);
   baseEnable.call(this, config);
