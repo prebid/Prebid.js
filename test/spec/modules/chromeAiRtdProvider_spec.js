@@ -1,5 +1,6 @@
 import * as chromeAiRtdProvider from 'modules/chromeAiRtdProvider.js';
 import * as utils from 'src/utils.js';
+import { getSignals } from 'libraries/gptUtils/gptUtils.js';
 
 import 'src/storageManager.js';
 
@@ -21,6 +22,8 @@ describe('Chrome AI RTD Provider', function () {
   // Original globals
   let originalLanguageDetector;
   let originalSummarizer;
+  let originalLanguageModel;
+  let mockLanguageModelSession;
 
   // Stubs
   let logMessageStub, logErrorStub; // Removed deepAccessStub, deepSetValueStub
@@ -34,6 +37,7 @@ describe('Chrome AI RTD Provider', function () {
     // Save original globals
     originalLanguageDetector = self.LanguageDetector;
     originalSummarizer = self.Summarizer;
+    originalLanguageModel = self.LanguageModel;
 
     // Create stubs
     logMessageStub = sandbox.stub(utils, 'logMessage');
@@ -88,6 +92,15 @@ describe('Chrome AI RTD Provider', function () {
     MockSummarizerFn.availability = sandbox.stub().resolves('available'); // Default to 'available'
     MockSummarizerFn.create = sandbox.stub().resolves(mockSummarizerInstance);
     self.Summarizer = MockSummarizerFn;
+
+    mockLanguageModelSession = {
+      prompt: sandbox.stub().resolves(JSON.stringify({ keywords: ['ev', 'cars'] })),
+      destroy: sandbox.stub()
+    };
+    const MockLanguageModelFn = function () {};
+    MockLanguageModelFn.availability = sandbox.stub().resolves('available');
+    MockLanguageModelFn.create = sandbox.stub().resolves(mockLanguageModelSession);
+    self.LanguageModel = MockLanguageModelFn;
   });
 
   afterEach(function () {
@@ -102,6 +115,12 @@ describe('Chrome AI RTD Provider', function () {
       self.Summarizer = originalSummarizer;
     } else {
       delete self.Summarizer;
+    }
+
+    if (originalLanguageModel) {
+      self.LanguageModel = originalLanguageModel;
+    } else {
+      delete self.LanguageModel;
     }
 
     // Restore sandbox
@@ -218,7 +237,7 @@ describe('Chrome AI RTD Provider', function () {
       sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
       self.LanguageDetector.availability.resolves('unavailable');
       return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function (result) {
-        // The init might still resolve to true if other features (like summarizer if enabled & available) initialize successfully.
+        // The init might still resolve to true if other features (like keywords) initialize successfully.
         // We are checking that the specific error for LanguageDetector being unavailable is logged.
         expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: LanguageDetector is unavailable.'))).to.be.true;
       });
@@ -239,26 +258,15 @@ describe('Chrome AI RTD Provider', function () {
       expect(mockLanguageDetectorInstance.detect.called).to.be.true;
     });
 
-    it('should handle Summarizer API unavailability (when availability() returns unavailable)', function () {
-      self.Summarizer.availability.resolves('unavailable');
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function (result) {
-        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer is unavailable.'))).to.be.true;
-        // Init might still resolve to true if other features initialize successfully.
-      });
-    });
-
-    it('should attempt model download if Summarizer availability is "after-download"', function () {
-      self.Summarizer.availability.resolves('after-download');
-      // Mock active user to allow download
-      try {
-        Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true, writable: true });
-      } catch (e) { }
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(() => {
-        expect(self.Summarizer.create.called).to.be.true;
-        expect(mockSummarizerInstance.addEventListener.calledWith('downloadprogress', sinon.match.func)).to.be.true;
-      });
+    it('logs model download progress through the create() monitor', async function () {
+      self.LanguageModel.availability.resolves('downloadable');
+      Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true, writable: true });
+      await chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: false }, keywords: { enabled: true } } });
+      const monitor = self.LanguageModel.create.firstCall.args[0].monitor;
+      const monitorTarget = { addEventListener: sinon.stub() };
+      monitor(monitorTarget);
+      monitorTarget.addEventListener.firstCall.args[1]({ loaded: 0.5, total: 1 });
+      expect(logMessageStub.calledWith(sinon.match('LanguageModel model download: 50%'))).to.be.true;
     });
 
     it('should return a promise', function () {
@@ -275,7 +283,7 @@ describe('Chrome AI RTD Provider', function () {
             ortb2Path: 'custom.language.path',
             confidence: 0.7
           },
-          summarizer: {
+          keywords: {
             enabled: true,
             ortb2Path: 'custom.keywords.path',
             cacheInLocalStorage: true
@@ -293,14 +301,14 @@ describe('Chrome AI RTD Provider', function () {
       const disabledConfig = {
         params: {
           languageDetector: { enabled: false },
-          summarizer: { enabled: false }
+          keywords: { enabled: false }
         }
       };
 
       return chromeAiRtdProvider.chromeAiSubmodule.init(disabledConfig).then(function (result) {
         expect(result).to.be.true;
         expect(logMessageStub.calledWith(sinon.match('Language detection disabled by config'))).to.be.true;
-        expect(logMessageStub.calledWith(sinon.match('Summarizer disabled by config.'))).to.be.true;
+        expect(logMessageStub.calledWith(sinon.match('Keywords disabled by config.'))).to.be.true;
       });
     });
   });
@@ -327,13 +335,6 @@ describe('Chrome AI RTD Provider', function () {
       it('should return null if no data in localStorage for the URL', function () {
         mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ 'other/url': {} }));
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
-      });
-    });
-    describe('chromeAiRtdProvider.storeDetectedKeywords', function () {
-      it('should return false if keywords are not provided or empty', function () {
-        expect(chromeAiRtdProvider.storeDetectedKeywords(null, mockPageUrl)).to.be.false;
-        expect(chromeAiRtdProvider.storeDetectedKeywords([], mockPageUrl)).to.be.false;
-        expect(logMessageStub.calledWith(sinon.match('No valid keywords array to store'))).to.be.true;
       });
     });
   });
@@ -370,7 +371,7 @@ describe('Chrome AI RTD Provider', function () {
       await chromeAiRtdProvider.chromeAiSubmodule.init({
         params: {
           languageDetector: { enabled: true, ortb2Path: 'site.content.language' },
-          summarizer: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false }
+          keywords: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false }
         }
       });
 
@@ -408,16 +409,15 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     it('should enrich with detected keywords if not in auction ORTB2', async function () {
-      mockSummarizerInstance.summarize.resolves('newly detected summary');
-      await chromeAiRtdProvider.chromeAiSubmodule.init({ // Re-init to trigger summarizer with mocks
+      await chromeAiRtdProvider.chromeAiSubmodule.init({
         params: {
-          summarizer: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false },
+          keywords: { enabled: true, ortb2Path: 'site.content.ext.keywords', cacheInLocalStorage: false },
           languageDetector: { enabled: false } // Disable lang to isolate test
         }
       });
 
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.deep.equal(['newly detected summary']);
+      expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.equal('ev,cars');
     });
 
     it('should not enrich keywords if already present in auction ORTB2', function () {
@@ -443,14 +443,637 @@ describe('Chrome AI RTD Provider', function () {
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, langPath)).to.be.undefined;
     });
 
-    it('should handle summarizer disabled', function () {
-      chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: false } } }); // Re-init with summarizer disabled
+    it('should handle keywords disabled', function () {
+      chromeAiRtdProvider.chromeAiSubmodule.init({ params: { keywords: { enabled: false } } });
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      expect(logMessageStub.calledWith(sinon.match('Summarizer disabled, no keyword enrichment.'))).to.be.true;
-      // Check that no keyword enrichment was attempted
-      const keywordPath = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.summarizer.ortb2Path; // or the configured one
-      // Verify that keywords were not set by checking the path
+      expect(logMessageStub.calledWith(sinon.match('Keywords disabled, no keyword enrichment.'))).to.be.true;
+      const keywordPath = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.keywords.ortb2Path;
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, keywordPath)).to.be.undefined;
+    });
+  });
+
+  describe('Classifier, Decisions and Prompt APIs', function () {
+    const NEW_APIS = ['Classifier', 'DecisionModel', 'LanguageModel'];
+    let originals;
+    let reqBidsConfigObj;
+
+    const flush = async () => {
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    };
+
+    function mockApi(name, instance, availability = 'available') {
+      const Api = function () {};
+      Api.availability = sinon.stub().resolves(availability);
+      Api.create = sinon.stub().resolves(instance);
+      self[name] = Api;
+      return Api;
+    }
+
+    function setUserActive(isActive) {
+      Object.defineProperty(navigator, 'userActivation', { value: { isActive }, configurable: true, writable: true });
+    }
+
+    function setCache(data) {
+      mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY)
+        .returns(JSON.stringify({ [chromeAiRtdProvider.getCurrentUrl()]: data }));
+    }
+
+    function storedData() {
+      const call = mockStorage.setDataInLocalStorage.lastCall;
+      return call && JSON.parse(call.args[1])[chromeAiRtdProvider.getCurrentUrl()];
+    }
+
+    function runAuction() {
+      chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      return reqBidsConfigObj.ortb2Fragments.global;
+    }
+
+    const init = (params) => chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: false }, ...params } });
+
+    beforeEach(function () {
+      originals = Object.fromEntries(NEW_APIS.map(name => [name, self[name]]));
+      NEW_APIS.forEach(name => { self[name] = undefined; });
+      Object.defineProperty(document.body, 'textContent', { get: () => 'A page about cars and new electric vehicles.', configurable: true });
+      setUserActive(false);
+      reqBidsConfigObj = { adUnits: [], ortb2Fragments: { global: {} } };
+    });
+
+    afterEach(function () {
+      NEW_APIS.forEach(name => {
+        if (originals[name] === undefined) delete self[name]; else self[name] = originals[name];
+      });
+      delete document.body.textContent;
+      delete navigator.userActivation;
+    });
+
+    describe('defaults', function () {
+      it('does not touch the new APIs unless enabled', async function () {
+        const apis = NEW_APIS.map(name => mockApi(name, {}));
+        await chromeAiRtdProvider.chromeAiSubmodule.init({});
+        apis.forEach(api => {
+          expect(api.availability.called).to.be.false;
+          expect(api.create.called).to.be.false;
+        });
+        const global = runAuction();
+        expect(global.site?.pagecat).to.be.undefined;
+        expect(global.site?.content?.data).to.be.undefined;
+      });
+    });
+
+    describe('categories', function () {
+      const responses = [
+        { id: '483', confidence: 0.82 },
+        { id: '1', confidence: 0.98 },
+        { id: '640', confidence: 0.95 },
+        { id: '42', confidence: 0.3 }
+      ];
+      let session;
+
+      const promptSession = (categories) => ({
+        prompt: sinon.stub().resolves(JSON.stringify({ categories })),
+        destroy: sinon.stub()
+      });
+      const allowedIds = () => session.prompt.firstCall.args[1].responseConstraint.properties.categories.items.properties.id.enum;
+
+      beforeEach(function () {
+        session = promptSession(responses);
+      });
+
+      it('asks the Prompt API for Content Taxonomy 2.2 tier 1 by default and writes cattax 6', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2, gamPps: false } })).to.be.true;
+        expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
+        expect(LanguageModel.create.firstCall.args[0].monitor).to.be.a('function');
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt).to.include('IAB Content Taxonomy 2.2').and.to.include('640: Television');
+        expect(prompt).to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.categories.maxItems).to.equal(2);
+        expect(allowedIds()).to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(session.destroy.called).to.be.true;
+        expect(runAuction().site).to.deep.equal({ pagecat: ['1', '640'], cattax: 6 });
+      });
+
+      it('bundles only the 29 topical Content Taxonomy 2.2 tier 1 IDs, numeric and capped at 680', async function () {
+        const ids = Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]);
+        expect(ids).to.have.length(29);
+        ids.forEach(id => {
+          expect(id).to.match(/^\d+$/);
+          expect(Number(id)).to.be.within(1, 680);
+        });
+        ['v9i3On', 'MRkz4Q', '1000', '1010', '1022', '1030', '1215', '1219'].forEach(id => expect(ids).to.not.include(id));
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(allowedIds().every(id => /^\d+$/.test(id) && Number(id) >= 1 && Number(id) <= 680)).to.be.true;
+      });
+
+      it('uses Content Category Taxonomy 1.0 tier 1 without IAB24 - IAB26 for taxonomy 1', async function () {
+        session = promptSession([{ id: 'IAB2', confidence: 0.9 }, { id: 'IAB24', confidence: 0.9 }]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        expect(session.prompt.firstCall.args[0]).to.include('IAB Content Category Taxonomy 1.0').and.to.include('IAB2: Automotive');
+        expect(allowedIds()).to.deep.equal(Array.from({ length: 23 }, (_, i) => 'IAB' + (i + 1)));
+        expect(runAuction().site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
+      });
+
+      it('drops IDs outside the taxonomy list', async function () {
+        session = promptSession([
+          { id: '1000', confidence: 0.9 }, { id: '681', confidence: 0.9 }, { id: 'v9i3On', confidence: 0.9 }, { id: '1', confidence: 0.6 }
+        ]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('never uses the Classifier API', async function () {
+        const Classifier = mockApi('Classifier', {});
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(Classifier.availability.called).to.be.false;
+      });
+
+      it('rejects unsupported taxonomies', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        const logWarnStub = sandbox.stub(utils, 'logWarn');
+        await init({ categories: { enabled: true, taxonomy: 9 } });
+        expect(logWarnStub.calledWith(sinon.match('Unsupported categories.taxonomy 9'))).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
+      });
+
+      it('caches the categories with a hash of the settings', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        expect(storedData().categories.value).to.deep.equal(['1', '640', '483']);
+        expect(storedData().categories.settings).to.be.a('string');
+      });
+
+      it('uses cached categories without calling the API', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: { ...storedData().categories, value: ['483'] } });
+        await init({ categories: { enabled: true } });
+        expect(LanguageModel.availability.calledOnce).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['483']);
+      });
+
+      it('does not reuse cached categories after minScore or maxCategories change', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: storedData().categories });
+        await init({ categories: { enabled: true, maxCategories: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('does not reuse cached categories from another taxonomy', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true } });
+        setCache({ categories: storedData().categories });
+        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['IAB2']);
+      });
+
+      it('does not cache when cacheInLocalStorage is false', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, cacheInLocalStorage: false } });
+        expect(mockStorage.setDataInLocalStorage.called).to.be.false;
+        expect(runAuction().site.pagecat).to.have.length(3);
+      });
+
+      it('does nothing when LanguageModel is unavailable', async function () {
+        mockApi('LanguageModel', session, 'unavailable');
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(session.prompt.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
+      });
+
+      it('waits for user activation before a model download', async function () {
+        const LanguageModel = mockApi('LanguageModel', session, 'downloadable');
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(LanguageModel.create.called).to.be.false;
+
+        window.dispatchEvent(new Event('click'));
+        await flush();
+        expect(LanguageModel.create.called, 'still inactive').to.be.false;
+
+        setUserActive(true);
+        window.dispatchEvent(new Event('click'));
+        await flush();
+        expect(LanguageModel.create.calledOnce).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['1', '640', '483']);
+      });
+
+      it('creates the model when downloadable and the user is active', async function () {
+        const LanguageModel = mockApi('LanguageModel', session, 'downloadable');
+        setUserActive(true);
+        expect(await init({ categories: { enabled: true } })).to.be.true;
+        expect(LanguageModel.create.calledOnce).to.be.true;
+      });
+
+      it('does not overwrite publisher site.pagecat', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, gamPps: false } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
+        expect(runAuction().site).to.deep.equal({ pagecat: ['IAB1'], cattax: 1 });
+      });
+
+      it('does not change a publisher site.cattax of another taxonomy', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, gamPps: false } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1'], cattax: 7 } };
+        expect(runAuction().site).to.deep.equal({ cat: ['IAB1'], cattax: 7 });
+      });
+
+      ['cat', 'sectioncat'].forEach(field => {
+        it('skips taxonomy 6 when the publisher has site.' + field + ' without cattax, which means taxonomy 1', async function () {
+          mockApi('LanguageModel', session);
+          await init({ categories: { enabled: true, gamPps: false } });
+          reqBidsConfigObj.ortb2Fragments.global = { site: { [field]: ['IAB1-1'] } };
+          expect(runAuction().site).to.deep.equal({ [field]: ['IAB1-1'] });
+        });
+      });
+
+      it('adds pagecat next to publisher site.cat without cattax when the taxonomy is 1', async function () {
+        session = promptSession([{ id: 'IAB2', confidence: 0.9 }]);
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1-1'] } };
+        expect(runAuction().site).to.deep.equal({ cat: ['IAB1-1'], pagecat: ['IAB2'], cattax: 1 });
+      });
+
+      it('keeps a matching publisher site.cattax', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, gamPps: false } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { cattax: 6, sectioncat: ['483'] } };
+        expect(runAuction().site).to.deep.equal({ cattax: 6, sectioncat: ['483'], pagecat: ['1', '640', '483'] });
+      });
+
+      it('logs prompt errors', async function () {
+        session.prompt.rejects(new Error('too long'));
+        mockApi('LanguageModel', session);
+        expect(await init({ categories: { enabled: true } })).to.be.false;
+        expect(logErrorStub.calledWith(sinon.match("Error detecting 'categories'"))).to.be.true;
+      });
+    });
+
+    describe('selectCategories', function () {
+      it('drops IDs not in the taxonomy, entries without a numeric confidence, and duplicates', function () {
+        expect(chromeAiRtdProvider.selectCategories([
+          { id: '1', confidence: 0.9 }, { id: 1, confidence: 0.9 }, { id: '42' }, { id: '1', confidence: 0.8 },
+          { id: 'IAB1', confidence: 0.9 }, { id: 'toString', confidence: 0.9 }, null
+        ], { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
+        expect(chromeAiRtdProvider.selectCategories(undefined, { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal([]);
+      });
+    });
+
+    describe('prompt overrides', function () {
+      it('uses the categories prompt, still appending the categories and page text and constraining the IDs', async function () {
+        const session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '9999', confidence: 0.9 }] })),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, prompt: 'Pick the main topics of this car blog.' } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt.startsWith('Pick the main topics of this car blog.')).to.be.true;
+        expect(prompt).to.not.include('Classify this web page text');
+        expect(prompt).to.include('640: Television').and.to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.categories.items.properties.id.enum)
+          .to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      it('uses the keywords prompt, still appending the page text and the keyword array schema', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, maxKeywords: 4, prompt: 'Give product keywords.' } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt.startsWith('Give product keywords.')).to.be.true;
+        expect(prompt).to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.keywords).to.deep.equal({ type: 'array', items: { type: 'string' }, maxItems: 4 });
+        expect(runAuction().site.content.keywords).to.equal('ev');
+      });
+
+      [['', 'empty'], [42, 'non-string'], ['   ', 'blank']].forEach(([value, label]) => {
+        it(`warns about a ${label} prompt and uses the default`, async function () {
+          const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+          mockApi('LanguageModel', session);
+          const logWarnStub = sandbox.stub(utils, 'logWarn');
+          await init({ keywords: { enabled: true, prompt: value } });
+          expect(logWarnStub.calledWith(sinon.match('keywords.prompt'))).to.be.true;
+          expect(session.prompt.firstCall.args[0]).to.include('short keywords that describe the topic');
+        });
+      });
+
+      it('refreshes cached categories and keywords when the prompt changes', async function () {
+        const session = {
+          prompt: sinon.stub().callsFake((text, { responseConstraint }) => Promise.resolve(JSON.stringify(
+            responseConstraint.properties.keywords ? { keywords: ['ev'] } : { categories: [{ id: '1', confidence: 0.9 }] }
+          ))),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, prompt: 'A' }, categories: { enabled: true, prompt: 'A' } });
+        expect(session.prompt.callCount).to.equal(2);
+        const stored = Object.assign({}, ...mockStorage.setDataInLocalStorage.getCalls()
+          .map(call => JSON.parse(call.args[1])[chromeAiRtdProvider.getCurrentUrl()]));
+        setCache({ extractedKeywords: stored.extractedKeywords, categories: stored.categories });
+        await init({ keywords: { enabled: true, prompt: 'A' }, categories: { enabled: true, prompt: 'A' } });
+        expect(session.prompt.callCount).to.equal(2);
+        await init({ keywords: { enabled: true, prompt: 'B' }, categories: { enabled: true, prompt: 'B' } });
+        expect(session.prompt.callCount).to.equal(4);
+      });
+    });
+
+    describe('GAM Publisher Provided Signals', function () {
+      let session;
+
+      beforeEach(function () {
+        session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '640', confidence: 0.8 }] })),
+          destroy: sinon.stub()
+        };
+        mockApi('LanguageModel', session);
+      });
+
+      it('writes no segtax 6 entry with gamPps: false', async function () {
+        await init({ categories: { enabled: true, gamPps: false } });
+        const global = runAuction();
+        expect(global.site.content).to.be.undefined;
+        expect(getSignals(global)).to.deep.equal([]);
+      });
+
+      it('writes a segtax 6 site.content.data entry by default, which getSignals sends as IAB_CONTENT_2_2', async function () {
+        await init({ categories: { enabled: true } });
+        const global = runAuction();
+        expect(global.site.pagecat).to.deep.equal(['1', '640']);
+        expect(global.site.content.data).to.deep.equal([{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] }]);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('writes the segtax 6 entry even when the publisher pagecat is kept', async function () {
+        await init({ categories: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
+        const global = runAuction();
+        expect(global.site.pagecat).to.deep.equal(['IAB1']);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('keeps the decisions entry separate', async function () {
+        const DecisionModel = mockApi('DecisionModel', {
+          decide: sinon.stub().resolves({ q: { id: 'q', label: 'true', confidence: 1 } }),
+          destroy: sinon.stub()
+        });
+        await init({
+          categories: { enabled: true },
+          decisions: { enabled: true, questions: [{ id: 'q', type: 'boolean', prompt: 'Is it about cars?' }] }
+        });
+        expect(DecisionModel.create.called).to.be.true;
+        const global = runAuction();
+        expect(global.site.content.data).to.deep.equal([
+          { name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] },
+          { name: 'chromeAi', segment: [{ id: 'q', value: 'true' }] }
+        ]);
+        expect(getSignals(global)).to.deep.equal([{ taxonomy: 'IAB_CONTENT_2_2', values: ['1', '640'] }]);
+      });
+
+      it('does not add a second segtax 6 chromeAi entry', async function () {
+        await init({ categories: { enabled: true } });
+        const existing = [{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '483' }] }];
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: existing } } };
+        expect(runAuction().site.content.data).to.deep.equal(existing);
+      });
+
+      it('writes no segtax entry for taxonomy 1', async function () {
+        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
+        await init({ categories: { enabled: true, taxonomy: 1 } });
+        const global = runAuction();
+        expect(global.site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
+        expect(getSignals(global)).to.deep.equal([]);
+      });
+    });
+
+    describe('decisions', function () {
+      const questions = [
+        { id: 'is_review', type: 'boolean', prompt: 'Is this page a product review?' },
+        {
+          id: 'audience',
+          type: 'choice',
+          prompt: 'Who is the page written for?',
+          options: [{ label: 'enthusiast', description: 'Car enthusiasts' }, { label: 'general' }]
+        },
+        { id: 'tone', type: 'score', prompt: 'Rate how positive the page is.' }
+      ];
+      const decision = {
+        is_review: { id: 'is_review', label: 'true', confidence: 0.9, probabilities: { true: 0.9, false: 0.1 } },
+        audience: { id: 'audience', label: 'enthusiast', confidence: 0.4, probabilities: {} },
+        tone: { id: 'tone', label: '4', expectedScore: 3.9, confidence: 0.7, probabilities: {} }
+      };
+      let model;
+
+      beforeEach(function () {
+        model = { decide: sinon.stub().resolves(decision), destroy: sinon.stub() };
+      });
+
+      it('answers with DecisionModel and writes the answers as site.content.data segments', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        const LanguageModel = mockApi('LanguageModel', {});
+        await init({ decisions: { enabled: true, questions, minConfidence: 0.5 } });
+        expect(DecisionModel.availability.firstCall.args[0]).to.deep.equal({ questions });
+        expect(DecisionModel.create.firstCall.args[0].questions).to.deep.equal(questions);
+        expect(model.decide.calledWith('A page about cars and new electric vehicles.')).to.be.true;
+        expect(model.destroy.called).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: [{ name: 'publisher', segment: [{ id: '1' }] }] } } };
+        expect(runAuction().site.content.data).to.deep.equal([
+          { name: 'publisher', segment: [{ id: '1' }] },
+          { name: 'chromeAi', segment: [{ id: 'is_review', value: 'true' }, { id: 'tone', value: '4' }] }
+        ]);
+      });
+
+      it('falls back to the Prompt API with a JSON schema built from the same questions', async function () {
+        const session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ is_review: 'false', audience: 'general', tone: '9' })),
+          destroy: sinon.stub()
+        };
+        mockApi('DecisionModel', model, 'unavailable');
+        mockApi('LanguageModel', session);
+        await init({ decisions: { enabled: true, questions } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt).to.include('audience: Who is the page written for? Answers: "enthusiast" (Car enthusiasts), "general"');
+        expect(responseConstraint).to.deep.equal({
+          type: 'object',
+          properties: {
+            is_review: { type: 'string', enum: ['true', 'false'] },
+            audience: { type: 'string', enum: ['enthusiast', 'general'] },
+            tone: { type: 'string', enum: ['1', '2', '3', '4', '5'] }
+          },
+          required: ['is_review', 'audience', 'tone'],
+          additionalProperties: false
+        });
+        expect(runAuction().site.content.data).to.deep.equal([
+          { name: 'chromeAi', segment: [{ id: 'is_review', value: 'false' }, { id: 'audience', value: 'general' }] }
+        ]);
+      });
+
+      it('does not fall back when promptFallback is false', async function () {
+        const LanguageModel = mockApi('LanguageModel', {});
+        expect(await init({ decisions: { enabled: true, questions, promptFallback: false } })).to.be.false;
+        expect(LanguageModel.availability.called).to.be.false;
+      });
+
+      it('ignores invalid questions', async function () {
+        mockApi('DecisionModel', model);
+        const invalid = [
+          { id: 'no_options', type: 'choice', prompt: 'Pick one' },
+          { id: 'bad_type', type: 'text', prompt: 'Anything' },
+          { type: 'boolean', prompt: 'No id' }
+        ];
+        await init({ decisions: { enabled: true, questions: [questions[0], ...invalid] } });
+        expect(model.decide.called).to.be.true;
+        expect(logErrorStub.calledWith(sinon.match('Ignoring invalid decisions question'))).to.be.true;
+        expect(runAuction().site.content.data[0].segment).to.deep.equal([{ id: 'is_review', value: 'true' }]);
+      });
+
+      it('does nothing without valid questions', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        expect(await init({ decisions: { enabled: true } })).to.be.false;
+        expect(DecisionModel.availability.called).to.be.false;
+      });
+
+      it('uses cached answers only while the questions are unchanged', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        const cached = storedData().decisions;
+        expect(cached.value).to.have.length(3);
+
+        setCache({ decisions: cached });
+        await init({ decisions: { enabled: true, questions } });
+        expect(DecisionModel.create.calledOnce).to.be.true;
+
+        await init({ decisions: { enabled: true, questions: questions.slice(0, 1) } });
+        expect(DecisionModel.create.calledTwice).to.be.true;
+      });
+
+      it('does not reuse cached answers after minConfidence changes', async function () {
+        const DecisionModel = mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        setCache({ decisions: storedData().decisions });
+        await init({ decisions: { enabled: true, questions, minConfidence: 0.8 } });
+        expect(DecisionModel.create.calledTwice).to.be.true;
+        expect(runAuction().site.content.data[0].segment).to.deep.equal([{ id: 'is_review', value: 'true' }]);
+      });
+
+      it('does not add a second chromeAi entry to site.content.data', async function () {
+        mockApi('DecisionModel', model);
+        await init({ decisions: { enabled: true, questions } });
+        const existing = [{ name: 'chromeAi', segment: [{ id: 'mine', value: 'x' }] }];
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: existing } } };
+        expect(runAuction().site.content.data).to.deep.equal(existing);
+      });
+    });
+
+    describe('keywords', function () {
+      let session;
+
+      beforeEach(function () {
+        session = {
+          prompt: sinon.stub().resolves(JSON.stringify({ keywords: [' cars ', 'electric vehicles', 'cars', ''] })),
+          destroy: sinon.stub()
+        };
+      });
+
+      it('extracts keywords with the Prompt API into a comma-separated site.content.keywords', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, maxKeywords: 5 } });
+        const [, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(responseConstraint.properties.keywords).to.deep.equal({ type: 'array', items: { type: 'string' }, maxItems: 5 });
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(storedData().extractedKeywords.value).to.deep.equal(['cars', 'electric vehicles']);
+        expect(runAuction().site.content.keywords).to.equal('cars,electric vehicles');
+      });
+
+      it('writes an array to a kwarray path', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true, ortb2Path: 'site.content.kwarray' } });
+        expect(runAuction().site.content.kwarray).to.deep.equal(['cars', 'electric vehicles']);
+      });
+
+      it('does nothing when LanguageModel is unavailable, without falling back to the Summarizer', async function () {
+        mockApi('LanguageModel', session, 'unavailable');
+        expect(await init({ keywords: { enabled: true } })).to.be.false;
+        expect(session.prompt.called).to.be.false;
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(runAuction().site).to.be.undefined;
+      });
+
+      it('does not overwrite publisher keywords', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true } });
+        reqBidsConfigObj.ortb2Fragments.global = { site: { content: { keywords: 'mine' } } };
+        expect(runAuction().site.content.keywords).to.equal('mine');
+      });
+
+      it('uses cached keywords without calling the API', async function () {
+        const LanguageModel = mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true } });
+        setCache({ extractedKeywords: { ...storedData().extractedKeywords, value: ['cached'] } });
+        await init({ keywords: { enabled: true } });
+        expect(LanguageModel.availability.calledOnce).to.be.true;
+        expect(runAuction().site.content.keywords).to.equal('cached');
+      });
+
+      it('does not reuse cached keywords after maxKeywords changes', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: true } });
+        setCache({ extractedKeywords: storedData().extractedKeywords });
+        await init({ keywords: { enabled: true, maxKeywords: 1 } });
+        expect(session.prompt.calledTwice).to.be.true;
+        expect(runAuction().site.content.keywords).to.equal('cars');
+      });
+
+      it('ignores summarizer settings when keywords are configured', async function () {
+        mockApi('LanguageModel', session);
+        await init({ keywords: { enabled: false }, summarizer: { enabled: true } });
+        expect(session.prompt.called).to.be.false;
+        expect(self.Summarizer.availability.called).to.be.false;
+      });
+    });
+
+    describe('summarizer config (no longer supported)', function () {
+      let logWarnStub;
+
+      beforeEach(function () {
+        logWarnStub = sandbox.stub(utils, 'logWarn');
+      });
+
+      it('warns and maps summarizer.enabled, ortb2Path and cacheInLocalStorage to keywords', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ summarizer: { enabled: true, type: 'teaser', ortb2Path: 'site.ext.data.summary', cacheInLocalStorage: false } });
+        expect(logWarnStub.calledOnceWith(sinon.match('params.summarizer is no longer supported; use params.keywords.'))).to.be.true;
+        expect(self.Summarizer.availability.called).to.be.false;
+        expect(session.prompt.calledOnce).to.be.true;
+        expect(mockStorage.setDataInLocalStorage.called).to.be.false;
+        expect(runAuction().site.ext.data.summary).to.equal('ev');
+      });
+
+      it('warns without enabling keywords when summarizer is not enabled', async function () {
+        const LanguageModel = mockApi('LanguageModel', {});
+        await init({ summarizer: { type: 'teaser' } });
+        expect(logWarnStub.calledOnce).to.be.true;
+        expect(LanguageModel.availability.called).to.be.false;
+      });
+
+      it('does not override keywords settings the publisher set', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+        mockApi('LanguageModel', session);
+        await init({ summarizer: { enabled: true, ortb2Path: 'site.ext.data.summary' }, keywords: { ortb2Path: 'site.content.kwarray' } });
+        expect(runAuction().site.content.kwarray).to.deep.equal(['ev']);
+      });
     });
   });
 });
