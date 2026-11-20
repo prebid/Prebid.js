@@ -202,7 +202,6 @@ export const spec = {
     }
 
     const options = {
-      contentType: 'application/json',
       withCredentials: hasPurpose1Consent(bidderRequest.gdprConsent),
     };
 
