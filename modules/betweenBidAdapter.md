@@ -2,7 +2,7 @@
 
 Module Name: Between Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: info@betweendigital.com
+Maintainer: admin@btwnx.com
 
 # Description
 
@@ -10,7 +10,7 @@ You can use this adapter to get a bid from betweendigital.
 
 About us : [betweenx.com](https://betweenx.com)
 
-More detailed instructions you can be found on [this page](https://cdn.betweendigital.com/prebid_instructions/index.html) .
+More detailed instructions you can be found on [this page](https://cache.btwnx.com/prebid_instructions/index_en.html) .
 
 # Test Parameters
 

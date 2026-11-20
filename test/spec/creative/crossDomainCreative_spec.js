@@ -285,6 +285,21 @@ describe('cross-domain creative', () => {
           });
         });
 
+        it('waits for DOMContentLoaded before setting up the renderer while the document is loading', () => {
+          win.document.readyState = 'loading';
+          win.document.addEventListener = sinon.stub();
+          mkIframe.callsFake(() => document.createElement('iframe'));
+          render({ adId: '123', pubUrl: ORIGIN });
+          reply({ message: MESSAGE_RESPONSE, adId: '123', renderer: '' });
+          return waitFor(() => win.document.addEventListener.called).then(() => {
+            sinon.assert.calledWith(win.document.addEventListener, 'DOMContentLoaded', sinon.match.func);
+            sinon.assert.notCalled(mkIframe);
+            win.document.addEventListener.args[0][1]();
+            sinon.assert.calledOnce(mkIframe);
+            sinon.assert.calledOnce(win.document.body.appendChild);
+          });
+        });
+
         describe('renderer', () => {
           beforeEach(() => {
             win.document.createElement.callsFake(document.createElement.bind(document));

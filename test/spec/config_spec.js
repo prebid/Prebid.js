@@ -73,11 +73,15 @@ describe('config API', function () {
   it('readConfig subscribers can unsubscribe', function () {
     const listener = sinon.spy();
 
-    const unsubscribe = getConfig(listener);
+    const unsubscribe = readConfig(listener);
+
+    setConfig({ logging: true });
+    sinon.assert.calledOnceWithExactly(listener, { logging: true });
+    listener.resetHistory();
 
     unsubscribe();
 
-    readConfig({ logging: true });
+    setConfig({ logging: false });
 
     sinon.assert.notCalled(listener);
   });
@@ -378,6 +382,25 @@ describe('config API', function () {
     });
     expect(logWarnSpy.calledOnce).to.equal(true);
     const warning = 'Auction Options viewabilityMeasurement must be one of: observer, boundingBox';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('sets auctionOptions replaceExpiredBid', function () {
+    const auctionOptionsConfig = {
+      replaceExpiredBid: () => null
+    };
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('should log warning for invalid auctionOptions replaceExpiredBid', function () {
+    setConfig({
+      auctionOptions: {
+        replaceExpiredBid: true,
+      }
+    });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options replaceExpiredBid must be a function';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 

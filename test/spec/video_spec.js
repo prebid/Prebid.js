@@ -20,9 +20,12 @@ describe('video.js', function () {
   });
 
   afterEach(() => {
-    utilsMock.restore();
-    config.resetConfig();
-    sandbox.restore();
+    try {
+      utilsMock.verify();
+    } finally {
+      config.resetConfig();
+      sandbox.restore();
+    }
   });
 
   describe('fillVideoDefaults', () => {
@@ -40,7 +43,7 @@ describe('video.js', function () {
         });
       });
       [2, 3, 4].forEach(placement => {
-        it(`placemement is "${placement}"`, () => {
+        it(`placement is "${placement}"`, () => {
           expect(fillDefaults({ placement })).to.eql({
             placement,
             plcmt: 4
@@ -84,7 +87,7 @@ describe('video.js', function () {
           expected: 1,
           video: {
             plcmt: 1,
-            playbackmethod: 2
+            playbackmethod: [2]
           }
         }
       }).forEach(([t, { expected, video }]) => {
@@ -119,12 +122,14 @@ describe('video.js', function () {
             mediaTypes: {
               video: {
                 playerSize,
-                w: 123
+                w: 123,
+                h: 456
               }
             }
           };
           fillVideoDefaults(adUnit);
           expect(adUnit.mediaTypes.video.w).to.eql(123);
+          expect(adUnit.mediaTypes.video.h).to.eql(456);
         });
       });
 
@@ -340,6 +345,7 @@ describe('video.js', function () {
         }
       },
       {
+        desc: 'safeRenderer',
         type: 'safeRenderer',
         rendererDef: {
           url: 'render.url',

@@ -4381,13 +4381,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "adtrue",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "alkimi",
       "aliasOf": null,
       "gvlid": null,
@@ -4626,20 +4619,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pwbid",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "pubwise",
-      "aliasOf": "pwbid",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "rhythmone",
       "aliasOf": null,
       "gvlid": 36,
@@ -4699,6 +4678,27 @@
       "componentName": "yieldmo",
       "aliasOf": null,
       "gvlid": 173,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adtrue",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pwbid",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubwise",
+      "aliasOf": "pwbid",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5919,7 +5919,7 @@
       "componentType": "rtd",
       "componentName": "optable",
       "gvlid": null,
-      "disclosureURL": null
+      "disclosureURL": "local://modules/optableRtdProvider.json"
     },
     {
       "componentType": "rtd",

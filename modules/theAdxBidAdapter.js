@@ -523,39 +523,7 @@ const generatePayload = (bidRequest, bidderRequest) => {
     device: buildDeviceComponent(bidRequest, bidderRequest),
     imp: [generateImpBody(bidRequest, bidderRequest)],
   };
-  // return payload;
-  const eids = getEids(bidRequest);
-  if (Object.keys(eids).length > 0) {
-    payload.ext = eids;
-  }
   return JSON.stringify(payload);
-};
-
-function getEids(bidRequest) {
-  const eids = {};
-
-  const uId2 = deepAccess(bidRequest, 'userId.uid2.id');
-  if (uId2) {
-    eids['uid2'] = uId2;
-  }
-
-  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    eids['id5id'] = id5;
-    const id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
-    if (id5Linktype) {
-      eids['id5_linktype'] = id5Linktype;
-    }
-  }
-  const netId = deepAccess(bidRequest, 'userId.netId');
-  if (netId) {
-    eids['netid'] = netId;
-  }
-  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
-  if (sharedId) {
-    eids['sharedid'] = sharedId;
-  }
-  return eids;
 };
 
 registerBidder(spec);

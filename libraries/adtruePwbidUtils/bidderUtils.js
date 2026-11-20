@@ -57,6 +57,22 @@ export const NATIVE_ASSETS = {
  * @param {string} url
  * @returns {string} hostname, resolved relative to the current document
  */
+/**
+ * Parse a native `adm` string. Valid JSON is parsed as is, so its escapes (an escaped quote in a title, say) are kept.
+ * Only if that fails is it parsed again with every backslash removed, as these adapters always did, for a response
+ * that escapes its JSON twice.
+ * @param {string} adm
+ * @returns {*} the parsed value
+ * @throws if neither form parses
+ */
+export function parseNativeAdm(adm) {
+  try {
+    return JSON.parse(adm);
+  } catch (e) {
+    return JSON.parse(adm.replace(/\\/g, ''));
+  }
+}
+
 export function getDomainFromURL(url) {
   const anchor = document.createElement('a');
   anchor.href = url;

@@ -1,4 +1,4 @@
-import { DATA_TYPES, VIDEO_CUSTOM_PARAMS as COMMON_VIDEO_CUSTOM_PARAMS, NATIVE_ASSETS, parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets, getResponseMeta, getDomainFromURL } from '../libraries/adtruePwbidUtils/bidderUtils.js';
+import { DATA_TYPES, VIDEO_CUSTOM_PARAMS as COMMON_VIDEO_CUSTOM_PARAMS, NATIVE_ASSETS, parseBannerSizes, createBannerRequest, createVideoRequest, parseNativeAssets, getResponseMeta, getDomainFromURL, parseNativeAdm } from '../libraries/adtruePwbidUtils/bidderUtils.js';
 import { _each, isStr, deepClone, isArray, deepSetValue, mergeDeep, deepAccess, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -327,7 +327,7 @@ function _checkMediaType(bid, newBid) {
     if (adm.indexOf('"ver":') >= 0) {
       try {
         var admJSON = '';
-        admJSON = JSON.parse(adm.replace(/\\/g, ''));
+        admJSON = parseNativeAdm(adm);
         if (admJSON && admJSON.assets) {
           newBid.mediaType = NATIVE;
         }
@@ -347,7 +347,7 @@ function _parseNativeResponse(bid, newBid) {
   if (bid.hasOwnProperty('adm')) {
     var adm;
     try {
-      adm = JSON.parse(bid.adm.replace(/\\/g, ''));
+      adm = parseNativeAdm(bid.adm);
     } catch (ex) {
       _logWarn('Error: Cannot parse native response for ad response: ' + newBid.adm);
       return;
@@ -532,8 +532,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubwise.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        const floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
-        if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
+        const floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+        if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
           const mediaTypeFloor = parseFloat(floorInfo.floor);
           bidFloor = (bidFloor === -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
         }

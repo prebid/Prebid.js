@@ -741,6 +741,38 @@ describe('auctionmanager.js', function () {
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
+
+    describe('when a value function throws', () => {
+      function throwingVal() {
+        throw new Error('targeting value error');
+      }
+
+      it('does not set the key', function () {
+        getGlobal().bidderSettings = {
+          standard: {
+            adserverTargeting: [
+              { key: 'aKey', val: 'aValue' },
+              { key: 'aThrowingKey', val: throwingVal }
+            ]
+          }
+        };
+        const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+        assert.deepEqual(response, { aKey: 'aValue' });
+      });
+
+      it('keeps the standard value when a bidder override throws', function () {
+        getGlobal().bidderSettings = {
+          standard: {
+            adserverTargeting: [{ key: 'aKey', val: 'aValue' }]
+          },
+          [bid.bidderCode]: {
+            adserverTargeting: [{ key: 'aKey', val: throwingVal }]
+          }
+        };
+        const response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+        assert.equal(response.aKey, 'aValue');
+      });
+    });
   });
 
   describe('adjustBids', function () {
@@ -1098,6 +1130,30 @@ describe('auctionmanager.js', function () {
       stubCallAdapters.resetHistory();
       auction.callBids();
       await auction.requestsDone;
+    });
+
+    [true, false].forEach(noAdUnits => {
+      it(`resolves .requestsDone and .end when ${noAdUnits ? 'there are no ad units' : 'no valid bidder requests remain'}`, async () => {
+        stubMakeBidRequests.returns([]);
+        const callback = sinon.spy();
+        const units = noAdUnits ? [] : adUnits;
+        const auction = auctionManager.createAuction({
+          adUnits: units,
+          adUnitCodes: units.map(unit => unit.code),
+          callback
+        });
+        const requestsDone = sinon.spy();
+        auction.requestsDone.then(requestsDone);
+        auction.callBids();
+
+        await auction.end;
+
+        sinon.assert.calledOnce(requestsDone);
+        sinon.assert.notCalled(stubCallAdapters);
+        sinon.assert.calledOnceWithExactly(callback, {}, false, auction.getAuctionId());
+        expect(auction.getAuctionStatus()).to.equal(AUCTION_COMPLETED);
+        expect(auction.getProperties().timedOutRequests).to.eql([]);
+      });
     });
 
     describe('setConfig(minBidCacheTTL)', () => {
@@ -1885,7 +1941,7 @@ describe('auctionmanager.js', function () {
       describe('AUCTION_TIMEOUT event', () => {
         let handler;
         beforeEach(() => {
-          handler = sinon.spy();
+          handler = sinon.stub();
           events.on(EVENTS.AUCTION_TIMEOUT, handler);
         });
         afterEach(() => {
@@ -1906,6 +1962,28 @@ describe('auctionmanager.js', function () {
             });
             respond.forEach(respondToRequest);
             return pm;
+          });
+        });
+
+        [
+          { desc: 'all unresponsive requests', respond: [], missing: [0, 1] },
+          { desc: 'only unresponsive requests', respond: [0], missing: [1] }
+        ].forEach(({ desc, respond, missing }) => {
+          it(`includes ${desc} when the timeout event is dispatched`, () => {
+            let timedOutAtDispatch;
+            handler.callsFake(({ timedOutRequests }) => {
+              timedOutAtDispatch = timedOutRequests.map(request => request.bidId);
+            });
+            const completed = runAuction().then(() => {
+              sinon.assert.calledOnce(handler);
+              const expected = missing.map(index => bids[index].requestId);
+              expect(timedOutAtDispatch).to.eql(expected);
+              const bidTimeout = eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).firstCall.args[1];
+              expect(bidTimeout.map(request => request.bidId)).to.eql(expected);
+              expect(auction.getProperties().timedOutRequests.map(request => request.bidId)).to.eql(expected);
+            });
+            respond.forEach(respondToRequest);
+            return completed;
           });
         });
       });
@@ -1935,6 +2013,7 @@ describe('auctionmanager.js', function () {
       it('should NOT emit BID_TIMEOUT when all bidders responded in time', function () {
         const pm = runAuction().then(() => {
           assert.ok(eventsEmitSpy.withArgs(EVENTS.BID_TIMEOUT).notCalled, 'did not emit event BID_TIMEOUT');
+          expect(auction.getProperties().timedOutRequests).to.eql([]);
         });
         respondToRequest(0);
         respondToRequest(1);
@@ -2670,6 +2749,47 @@ describe('auctionmanager.js', function () {
         bidRequests = [mockBidRequest(bid)];
         cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
         sinon.assert.calledWith(auction.addBidReceived, sinon.match({ cpm: 1.23 }));
+      });
+
+      describe('with an index passed in', () => {
+        function indexWith(adUnitProps) {
+          return new AuctionIndex(() => [{
+            ...auction,
+            getAdUnits: () => auction.getAdUnits().map(au => ({ ...au, ...adUnitProps }))
+          }]);
+        }
+
+        beforeEach(() => {
+          // the global index finds nothing, so only the index passed in can supply the ad unit
+          indexAuctions = [];
+          auction.addBidReceived = sinon.spy();
+        });
+
+        it('uses it to prepare the bid', () => {
+          const bid = mockBid();
+          bidRequests = [mockBidRequest(bid)];
+          const cbs = auctionCallbacks(doneSpy, auction, { index: indexWith({ ttlBuffer: 7, ortb2Imp: { instl: 1 } }) });
+          cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
+          sinon.assert.calledWith(auction.addBidReceived, sinon.match({ ttlBuffer: 7, instl: true }));
+        });
+
+        if (FEATURES.VIDEO) {
+          it('uses it to look up the video media type', async () => {
+            config.setConfig({ cache: { url: 'https://test.cache.url/endpoint', ignoreBidderCacheKey: true } });
+            const vastUrl = 'https://bidder.example/cache?uuid=supplied-key';
+            const bid = { ...mockBid(), mediaType: 'video', vastUrl, videoCacheKey: 'supplied-key' };
+            bidRequests = [mockBidRequest(bid, {
+              mediaType: { video: { context: 'instream', cache: false } }
+            })];
+            const cbs = auctionCallbacks(doneSpy, auction, { index: indexWith({}) });
+            cbs.addBidResponse(ADUNIT_CODE, bid);
+            cbs.adapterDone.call(bidRequests[0]);
+            await ready;
+            // video.cache: false comes from the index passed in; without it, ignoreBidderCacheKey would send the bid to the cache
+            expect(server.requests).to.have.lengthOf(0);
+            sinon.assert.calledWith(auction.addBidReceived, sinon.match({ vastUrl }));
+          });
+        }
       });
 
       describe('when responsesReady defers', () => {
