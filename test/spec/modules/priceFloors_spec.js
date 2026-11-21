@@ -25,6 +25,7 @@ import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { guardTids } from '../../../src/adapters/bidderFactory.js';
 import * as activities from '../../../src/activities/rules.js';
 import { server } from '../../mocks/xhr.js';
+import adapterManager from '../../../src/adapterManager.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
@@ -988,6 +989,237 @@ describe('the price floors module', function () {
         floorMin: 7,
         fetchStatus: undefined,
         floorProvider: undefined
+      });
+    });
+    describe('matchedRules', () => {
+      const multiFormatAdUnit = (code = 'test_div_1') => ({
+        code,
+        mediaTypes: {
+          banner: { sizes: [[300, 250], [300, 600]] },
+          video: { playerSize: [[640, 480]] },
+          native: {}
+        },
+        bids: [{ bidder: 'someBidder' }, { bidder: 'someOtherBidder' }]
+      });
+
+      it('should expose the matched rule for each media type declared on the ad unit', () => {
+        handleSetFloorsConfig(basicFloorConfig);
+        runStandardAuction([multiFormatAdUnit()]);
+        validateBidRequests(true, {
+          modelVersion: 'basic model',
+          matchedRules: {
+            banner: { floorRule: 'banner', floorRuleValue: 1, floorValue: 1, floorCurrency: 'USD', modelVersion: 'basic model' },
+            video: { floorRule: 'video', floorRuleValue: 5, floorValue: 5, floorCurrency: 'USD', modelVersion: 'basic model' },
+            native: { floorRule: '*', floorRuleValue: 2.5, floorValue: 2.5, floorCurrency: 'USD', modelVersion: 'basic model' }
+          }
+        });
+      });
+
+      it('should give each bid request its own copy', () => {
+        handleSetFloorsConfig(basicFloorConfig);
+        runStandardAuction([multiFormatAdUnit()]);
+        const [bid1, bid2] = exposedAdUnits[0].bids;
+        expect(bid1.floorData.matchedRules).to.not.equal(bid2.floorData.matchedRules);
+        expect(bid1.floorData.matchedRules.banner).to.not.equal(bid2.floorData.matchedRules.banner);
+      });
+
+      it('should apply floorMin to floorValue but not floorRuleValue', () => {
+        handleSetFloorsConfig(minFloorConfigLow);
+        runStandardAuction([multiFormatAdUnit()]);
+        validateBidRequests(true, {
+          matchedRules: {
+            banner: { floorRule: 'banner', floorRuleValue: 1, floorValue: 2.3 },
+            video: { floorRule: 'video', floorRuleValue: 5, floorValue: 5 }
+          }
+        });
+      });
+
+      it('should leave floorRule undefined when the schema default is used', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: { ...basicFloorData, values: { banner: 1 }, default: 0.5 }
+        });
+        runStandardAuction([multiFormatAdUnit()]);
+        const { matchedRules } = exposedAdUnits[0].bids[0].floorData;
+        expect(matchedRules.banner.floorRule).to.equal('banner');
+        expect(matchedRules.video).to.include({ floorRuleValue: 0.5, floorValue: 0.5 });
+        expect(matchedRules.video.floorRule).to.be.undefined;
+      });
+
+      it('should leave out media types with no matching rule', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: { ...basicFloorData, values: { banner: 1 } }
+        });
+        runStandardAuction([multiFormatAdUnit()]);
+        expect(Object.keys(exposedAdUnits[0].bids[0].floorData.matchedRules)).to.eql(['banner']);
+      });
+
+      it('should match size "*", resolving to the only size when a media type declares one, as getFloor does', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['mediaType', 'size'] },
+            values: {
+              'banner|300x250': 1.1,
+              'banner|*': 1.5,
+              'video|640x480': 6,
+              'video|*': 4,
+              '*|*': 0.8
+            }
+          }
+        });
+        runStandardAuction([multiFormatAdUnit()]);
+        validateBidRequests(true, {
+          matchedRules: {
+            banner: { floorRule: 'banner|*', floorRuleValue: 1.5 },
+            video: { floorRule: 'video|640x480', floorRuleValue: 6 },
+            native: { floorRule: '*|*', floorRuleValue: 0.8 }
+          }
+        });
+        // adapterManager copies the ad unit's mediaTypes onto each bid request
+        const bid = { ...exposedAdUnits[0].bids[0], mediaTypes: exposedAdUnits[0].mediaTypes };
+        expect(bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }).floor).to.equal(1.5);
+        expect(bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }).floor).to.equal(6);
+        expect(bid.getFloor({ currency: 'USD', mediaType: 'banner', size: [300, 250] }).floor).to.equal(1.1);
+      });
+
+      it('should resolve size "*" for a single, not yet normalized, [w, h] size', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['mediaType', 'size'] },
+            values: { 'video|640x480': 6, 'video|*': 4, 'banner|300x250': 1.1, 'banner|*': 1.5 }
+          }
+        });
+        const adUnit = { ...multiFormatAdUnit(), mediaTypes: { video: { playerSize: [640, 480] }, banner: { sizes: [300, 250] } } };
+        runStandardAuction([adUnit]);
+        const { matchedRules } = adUnit.bids[0].floorData;
+        expect(matchedRules.video).to.include({ floorRule: 'video|640x480', floorRuleValue: 6 });
+        expect(matchedRules.banner).to.include({ floorRule: 'banner|300x250', floorRuleValue: 1.1 });
+      });
+
+      it('should not affect the floors bidders get through the auction rule cache', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: { ...basicFloorData, values: { banner: 1 } }
+        });
+        const adUnit = {
+          ...multiFormatAdUnit(),
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          bids: [{ bidder: 'someBidder', ortb2Imp: { ext: { prebid: { floors: { floorMin: 5 } } } } }]
+        };
+        runStandardAuction([adUnit]);
+        expect(adUnit.bids[0].floorData.matchedRules.banner).to.include({ floorRuleValue: 1, floorValue: 1 });
+        expect(_floorDataForAuction[basicBidRequest.auctionId].data.matchingInputs).to.be.undefined;
+        // adapterManager merges bidder-level ortb2Imp into the bid request
+        const bidRequest = { ...adUnit.bids[0], mediaTypes: adUnit.mediaTypes };
+        expect(bidRequest.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }).floor).to.equal(5);
+      });
+
+      it('should use the ad unit code and floorMin from ortb2Imp', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['adUnitCode', 'mediaType'] },
+            values: { 'test_div_1|banner': 1.2, 'test_div_2|banner': 3, '*|*': 0.1 }
+          }
+        });
+        const au1 = { ...multiFormatAdUnit('test_div_1'), mediaTypes: { banner: { sizes: [[300, 250]] } } };
+        const au2 = { ...multiFormatAdUnit('test_div_2'), mediaTypes: { banner: { sizes: [[300, 250]] } }, ortb2Imp: { ext: { prebid: { floors: { floorMin: 4 } } } } };
+        runStandardAuction([au1, au2]);
+        expect(au1.bids[0].floorData.matchedRules.banner).to.include({ floorRule: 'test_div_1|banner', floorRuleValue: 1.2, floorValue: 1.2 });
+        expect(au2.bids[0].floorData.matchedRules.banner).to.include({ floorRule: 'test_div_2|banner', floorRuleValue: 3, floorValue: 4 });
+      });
+
+      it('should use the GAM ad slot from ortb2Imp for gptSlot rules', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['gptSlot', 'mediaType'] },
+            values: { '/1234/slot|banner': 2.2, '*|*': 0.1 }
+          }
+        });
+        const adUnit = {
+          ...multiFormatAdUnit(),
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          ortb2Imp: { ext: { data: { adserver: { name: 'gam', adslot: '/1234/slot' } } } }
+        };
+        runStandardAuction([adUnit]);
+        expect(adUnit.bids[0].floorData.matchedRules.banner).to.include({ floorRule: '/1234/slot|banner', floorRuleValue: 2.2 });
+      });
+
+      it('should not break the auction if a custom schema field throws', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          additionalSchemaFields: {
+            bidderParam: (bidRequest) => bidRequest.params.placement
+          },
+          data: {
+            ...basicFloorData,
+            schema: { delimiter: '|', fields: ['bidderParam'] },
+            values: { '*': 1 }
+          }
+        });
+        runStandardAuction([multiFormatAdUnit()]);
+        expect(exposedAdUnits[0].bids[0].floorData).to.not.have.property('matchedRules');
+        expect(exposedAdUnits[0].bids[0].floorData.skipped).to.equal(false);
+      });
+
+      it('should not be set when there is no floors data', () => {
+        handleSetFloorsConfig({ ...basicFloorConfig, data: undefined });
+        runStandardAuction([multiFormatAdUnit()]);
+        validateBidRequests(false, sinon.match({ skipped: true }));
+        exposedAdUnits[0].bids.forEach(bid => expect(bid.floorData).to.not.have.property('matchedRules'));
+      });
+
+      it('should not be set when floors are skipped', () => {
+        handleSetFloorsConfig({ ...basicFloorConfig, skipRate: 100 });
+        runStandardAuction([multiFormatAdUnit()]);
+        validateBidRequests(false, sinon.match({ skipped: true, skippedReason: FLOOR_SKIPPED_REASON.RANDOM }));
+        exposedAdUnits[0].bids.forEach(bid => expect(bid.floorData).to.not.have.property('matchedRules'));
+      });
+
+      it('should not be set for bidders in noFloorSignalBidders', () => {
+        handleSetFloorsConfig({
+          ...basicFloorConfig,
+          enforcement: { ...basicFloorConfig.enforcement, noFloorSignalBidders: ['someBidder'] }
+        });
+        runStandardAuction([multiFormatAdUnit()]);
+        const [signaled, notSignaled] = exposedAdUnits[0].bids;
+        expect(signaled.floorData).to.not.have.property('matchedRules');
+        expect(notSignaled.floorData.matchedRules.banner.floorRule).to.equal('banner');
+      });
+
+      it('should be included in the bidRequested event payload', () => {
+        handleSetFloorsConfig(basicFloorConfig);
+        const adUnit = multiFormatAdUnit();
+        runStandardAuction([adUnit]);
+        const adapter = { callBids: sinon.stub() };
+        const bidders = ['someBidder', 'someOtherBidder'];
+        bidders.forEach(bidder => { adapterManager.bidderRegistry[bidder] = adapter; });
+        const payloads = [];
+        const onBidRequested = (payload) => payloads.push(payload);
+        events.on(EVENTS.BID_REQUESTED, onBidRequested);
+        try {
+          const bidderRequests = adapterManager.makeBidRequests(exposedAdUnits, Date.now(), basicBidRequest.auctionId, 1000, [], {});
+          adapterManager.callBids(exposedAdUnits, bidderRequests, sinon.stub(), sinon.stub(), { request: sinon.stub(), done: sinon.stub() }, 1000, sinon.stub());
+        } finally {
+          events.off(EVENTS.BID_REQUESTED, onBidRequested);
+          bidders.forEach(bidder => { delete adapterManager.bidderRegistry[bidder]; });
+        }
+        expect(payloads.length).to.equal(2);
+        payloads.forEach(bidderRequest => {
+          sinon.assert.match(bidderRequest.bids[0].floorData.matchedRules, {
+            banner: { floorRule: 'banner', floorRuleValue: 1 },
+            video: { floorRule: 'video', floorRuleValue: 5 },
+            native: { floorRule: '*', floorRuleValue: 2.5 }
+          });
+        });
       });
     });
     describe('default floor', () => {
@@ -2367,6 +2599,34 @@ describe('the price floors module', function () {
         }
       });
       expect(returnedBidResponse.cpm).to.equal(0.5);
+    });
+    it('should not change the response floorData when request-time matchedRules were computed', function () {
+      handleSetFloorsConfig({ ...basicFloorConfig, data: { ...basicFloorData, values: { 'banner': 0.3 } } });
+      let adUnits;
+      requestBidsHook(config => { adUnits = config.adUnits; }, {
+        auctionId: AUCTION_ID,
+        adUnits: [{ code: 'test_div_1', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [{ bidder: 'appnexus' }] }]
+      });
+      expect(adUnits[0].bids[0].floorData.matchedRules.banner.floorRule).to.equal('banner');
+      runBidResponse();
+      expect(returnedBidResponse.floorData).to.deep.equal({
+        floorRuleValue: 0.3,
+        floorValue: 0.3,
+        floorCurrency: 'USD',
+        floorRule: 'banner',
+        cpmAfterAdjustments: 0.5,
+        enforcements: {
+          bidAdjustment: true,
+          enforceBidders: ['*'],
+          enforceJS: true,
+          enforcePBS: false,
+          floorDeals: false,
+          noFloorSignalBidders: []
+        },
+        matchedFields: {
+          mediaType: 'banner'
+        }
+      });
     });
     it('if should work with more complex rules and update accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = {
