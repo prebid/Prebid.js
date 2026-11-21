@@ -844,7 +844,7 @@ const adapterManager = {
               // Client adapters already isolate a throw so the next bidder still runs.
               // yieldAll stops the queue when this call throws, which drops every later bidder.
               logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
-              doneCbs.forEach(done => done(false));
+              uniqueServerRequests.forEach(bidRequest => doneCb.call(bidRequest));
             }
           }
         } else {
@@ -967,13 +967,7 @@ const adapterManager = {
     }
   },
   resolveAlias(alias) {
-    let code = alias;
-    let visited;
-    while (_aliasRegistry[code] && (!visited || !visited.has(code))) {
-      code = _aliasRegistry[code];
-      (visited = visited || new Set()).add(code);
-    }
-    return code;
+    return resolveAlias(alias);
   },
   registerAnalyticsAdapter<P extends AnalyticsProvider>({ adapter, code, gvlid, acpId }: {
     adapter: AnalyticsAdapter<P>,
