@@ -23,7 +23,7 @@ export const imRtdLocalName = '__im_sids';
 const submoduleName = 'im';
 const segmentsMaxAge = 3600000; // 1 hour (30 * 60 * 1000)
 const uidMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
-const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
+const vidMaxAge = 34560000000; // 400 days (400 * 24 * 60 * 60 * 1000)
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: submoduleName });
 

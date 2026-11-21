@@ -115,7 +115,9 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
 }
 
 function getWrapperCode(wrapper, data) {
-  return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)));
+  // btoa only takes Latin-1, and gumgum.js decodes with plain atob, so escape the rest for JSON.parse.
+  const json = JSON.stringify(data).replace(/[\u0100-\uffff]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  return wrapper.replace('AD_JSON', window.btoa(json));
 }
 
 /**
@@ -152,7 +154,7 @@ function isBidRequestValid(bid) {
     adUnitCode
   } = bid;
   const legacyParamID = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
-  const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
+  const id = legacyParamID || params.slot || params.native || params.zone || params.pubId;
 
   if (invalidRequestIds[id]) {
     logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
@@ -543,7 +545,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes = mediaTypes.banner.sizes;
     } else if (mediaTypes.video) {
       sizes = mediaTypes.video.playerSize;
-      data = _getVidParams(mediaTypes.video);
+      Object.assign(data, _getVidParams(mediaTypes.video));
     }
 
     // ADJS-1024 & ADSS-1297 & ADTS-175
@@ -648,7 +650,8 @@ export function getCids(site) {
   if (site.content && Array.isArray(site.content.data)) {
     for (const dataItem of site.content.data) {
       if (typeof dataItem?.name === 'string' && (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv'))) {
-        return Array.isArray(dataItem.ext?.cids) ? dataItem.ext.cids.join(',') : '';
+        const cids = dataItem.cids ?? dataItem.ext?.cids;
+        return Array.isArray(cids) ? cids.join(',') : '';
       }
     }
   }

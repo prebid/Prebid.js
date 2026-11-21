@@ -424,44 +424,17 @@ describe('viantOrtbBidAdapter', function () {
       const bids = spec.interpretResponse({ body: bidResponse }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
-      it('should return the proper mediaType', function () {
-        it('should return a creativeId', function () {
-          expect(bid.mediaType).to.equal('banner');
-        });
-      });
-      it('should return a price', function () {
-        expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price);
-      });
-
-      it('should return a request id', function () {
-        expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid);
-      });
-
-      it('should return width and height for the creative', function () {
-        expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w);
-        expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h);
-      });
-      it('should return a creativeId', function () {
-        expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid);
-      });
-      it('should return an ad', function () {
-        expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm);
-      });
-
-      it('should return a deal id if it exists', function () {
-        expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid);
-      });
-
-      it('should have a time-to-live of 5 minutes', function () {
-        expect(bid.ttl).to.equal(300);
-      });
-
-      it('should always return net revenue', function () {
-        expect(bid.netRevenue).to.equal(true);
-      });
-      it('should return a currency', function () {
-        expect(bid.currency).to.equal(bidResponse.cur);
-      });
+      expect(bid.mediaType).to.equal('banner');
+      expect(bid.cpm).to.equal(bidResponse.seatbid[0].bid[0].price);
+      expect(bid.requestId).to.equal(bidResponse.seatbid[0].bid[0].impid);
+      expect(bid.width).to.equal(bidResponse.seatbid[0].bid[0].w);
+      expect(bid.height).to.equal(bidResponse.seatbid[0].bid[0].h);
+      expect(bid.creativeId).to.equal(bidResponse.seatbid[0].bid[0].crid);
+      expect(bid.ad).to.equal(bidResponse.seatbid[0].bid[0].adm);
+      expect(bid.dealId).to.equal(bidResponse.seatbid[0].bid[0].dealid);
+      expect(bid.ttl).to.equal(300);
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.currency).to.equal(bidResponse.cur);
     });
   });
   describe('interpretResponse-Video', function () {
@@ -540,18 +513,13 @@ describe('viantOrtbBidAdapter', function () {
       const bids = spec.interpretResponse({ body: VIDEO_BID_RESPONSE }, request);
       expect(bids.length).to.equal(1);
       const bid = bids[0];
-      it('should return the proper mediaType', function () {
-        expect(bid.mediaType).to.equal('video');
-      });
-      it('should return correct Ad Markup', function () {
+      expect(bid.mediaType).to.equal('video');
+      if (FEATURES.VIDEO) {
+        // filled in by the ORTB converter's video response processor, which isn't built without VIDEO
         expect(bid.vastXml).to.equal('<VAST version="4.2"></VAST>');
-      });
-      it('should return correct Notification', function () {
         expect(bid.vastUrl).to.equal('http://0.0.0.0:8181/nurl');
-      });
-      it('should return correct Cpm', function () {
-        expect(bid.cpm).to.equal(1.09);
-      });
+      }
+      expect(bid.cpm).to.equal(1.09);
     });
   });
 });

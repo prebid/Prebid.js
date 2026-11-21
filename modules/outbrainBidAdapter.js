@@ -12,6 +12,10 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { Renderer } from '../src/Renderer.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+/**
+ * @typedef {import('./outbrainBidAdapter.d.ts').OutbrainBidParams} OutbrainBidParams
+ */
+
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
 const CURRENCY = 'USD';
@@ -49,11 +53,11 @@ export const spec = {
       return false;
     }
 
-    if (!!bid.params.bcat && (typeof bid.params.bcat !== 'object' || !bid.params.bcat.every(item => typeof item === 'string'))) {
+    if (!!bid.params.bcat && (!Array.isArray(bid.params.bcat) || !bid.params.bcat.every(item => typeof item === 'string'))) {
       return false;
     }
 
-    if (!!bid.params.badv && (typeof bid.params.badv !== 'object' || !bid.params.badv.every(item => typeof item === 'string'))) {
+    if (!!bid.params.badv && (!Array.isArray(bid.params.badv) || !bid.params.badv.every(item => typeof item === 'string'))) {
       return false;
     }
 
@@ -102,7 +106,7 @@ export const spec = {
       }
 
       if (typeof bid.getFloor === 'function') {
-        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : (isVideoRequest(bid) ? VIDEO : BANNER));
         if (floor) {
           imp.bidfloor = floor;
         }

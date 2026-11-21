@@ -344,7 +344,6 @@ export const spec = {
         userLanguage,
         pageUrl,
         pageDomain,
-        userId: bidRequest.userId,
         eids: (bidRequest.userIdAsEids || []).map(eid => ({
           source: eid.source,
           id: eid.uids?.[0]?.id
@@ -366,9 +365,9 @@ export const spec = {
           )
         },
         privacy: {
-          gpp: gpp?.consentString || "",
+          gpp: gpp?.gppString || "",
           tcfeu: gdpr?.consentString || "",
-          usp: usp?.uspString || "",
+          usp: usp || "",
           gpc: gpc ? 1 : 0,
         },
         xPageUrl: pageUrl,

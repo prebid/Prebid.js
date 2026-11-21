@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -27,13 +27,6 @@ const STORAGE = getStorageManager({ bidderCode: BIDDER.CODE });
 const CURRENCY = Object.freeze({
   KEY: 'currency',
   US_DOLLAR: 'USD',
-});
-
-const REQUEST_KEYS = Object.freeze({
-  USER_DATA: 'ortb2.user.data',
-  SOCIAL_CANVAS: 'params.socialCanvas',
-  SUA: 'ortb2.device.sua',
-  TDID_ADAPTER: 'userId.tdid',
 });
 
 const SUA = Object.freeze({
@@ -87,7 +80,6 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   const firstBidRequest = validBidRequests[0];
-  const tdidAdapter = deepAccess(firstBidRequest, REQUEST_KEYS.TDID_ADAPTER);
 
   const metadata = getAllMetadata(bidderRequest);
 
@@ -105,7 +97,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    user: getUserIds(bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
     ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
   });
 
@@ -121,7 +113,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // Add user data object if available
-  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
+  krakenParams.user.data = firstBidRequest?.ortb2?.user?.data || [];
 
   krakenParams.requestCount = getRequestCount();
 
@@ -139,14 +131,14 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // Pull Social Canvas segments and embed URL
-  const socialCanvas = deepAccess(firstBidRequest, REQUEST_KEYS.SOCIAL_CANVAS);
+  const socialCanvas = firstBidRequest?.params?.socialCanvas;
 
   if (socialCanvas !== null && socialCanvas !== undefined) {
     krakenParams.socan = socialCanvas;
   }
 
   // User Agent Client Hints / SUA
-  const uaClientHints = deepAccess(firstBidRequest, REQUEST_KEYS.SUA);
+  const uaClientHints = firstBidRequest?.ortb2?.device?.sua;
   if (uaClientHints) {
     const suaValidAttributes = [];
 
@@ -356,17 +348,15 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
+function getUserIds(usp, gdpr, eids, gpp) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
   };
 
   // Pull Trade Desk ID
-  if (!tdidAdapter && crb.tdID) {
+  if (crb.tdID) {
     userIds.tdID = crb.tdID;
-  } else if (tdidAdapter) {
-    userIds.tdID = tdidAdapter;
   }
 
   // USP
@@ -478,7 +468,7 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const gpid = bid?.ortb2Imp?.ext?.gpid;
   if (gpid) {
     imp.fpd = {
       gpid: gpid

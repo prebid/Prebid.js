@@ -127,7 +127,13 @@ const converter = ortbConverter({
       if (mt?.video && !mt?.banner) context.mediaType = VIDEO;
       else if (mt?.banner && !mt?.video) context.mediaType = BANNER;
     }
-    return buildBidResponse(bid, context);
+    const response = buildBidResponse(bid, context);
+    if (response.mediaType === VIDEO && typeof bid.adm === 'string' &&
+        (bid.adm.startsWith('https://') || bid.adm.startsWith('http://'))) {
+      response.vastUrl = bid.adm;
+      delete response.vastXml;
+    }
+    return response;
   },
 });
 

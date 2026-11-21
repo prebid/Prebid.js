@@ -7,7 +7,7 @@
 	<title>Prebid.js Video Outstream Example</title>
 
 	<!-- Load Prebid.js -->
-	<script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter"></script>
+	<script async src="http://localhost:4444/bundle?modules=msftBidAdapter"></script>
 
 	<!-- Load Google Publisher Tag -->
 	<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
@@ -19,17 +19,15 @@
 			mediaTypes: {
 				video: {
 					context: 'outstream',
-					playerSize: [640, 480]
+					playerSize: [640, 480],
+					skip: 1,
+					playbackmethod: [2]
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13232385,
-					video: {
-						skippable: true,
-						playback_method: ['auto_play_sound_off']
-					}
+					placement_id: 13232385
 				}
 			}]
 		}, {
@@ -37,17 +35,15 @@
 			mediaTypes: {
 				video: {
 					context: 'outstream',
-					playerSize: [640, 480]
+					playerSize: [640, 480],
+					skip: 1,
+					playbackmethod: [2]
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13232385,
-					video: {
-						skippable: true,
-						playback_method: ['auto_play_sound_off']
-					}
+					placement_id: 13232385
 				}
 			}]
 		}];
@@ -67,7 +63,7 @@
 			});
       pbjs.addAdUnits(outstreamVideoAdUnit);
       pbjs.bidderSettings = {
-        appnexus: {
+        msft: {
           bidCpmAdjustment: function () {
             return 10;
           }

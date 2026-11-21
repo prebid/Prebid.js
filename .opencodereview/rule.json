@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "path": "**/*.{js,jsx,ts,tsx,mjs,cjs}",
+      "rule": "Lightweight, high-precision correctness review of changed Prebid.js code. Find only demonstrable behavioral defects, such as erroneous boolean logic, bounds, null handling, asynchronous control flow, or duplicate callbacks. For every finding, set category to bug (or security for an actual security issue) and choose severity based on actual impact, never default to other/low without justification. In content, quote the exact defective expression, give a concrete failing input/scenario and explain the correct behavior. existing_code MUST quote the actual added executable line containing the defect, exactly as it appears in the diff, not nearby comments, documentation, or the function signature; do not include +/- diff markers. If a clear minimal fix exists, provide suggestion_code using the corrected executable line. Do not fabricate evidence or force a finding. Clean changes should receive zero comments and task_done DONE. After submitting any high-confidence findings with code_comment, call task_done DONE promptly. Never comment on style, naming, speculative architecture, or issues already provably caught by static checks.",
+      "merge_system_rule": false
+    }
+  ]
+}

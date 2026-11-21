@@ -86,3 +86,17 @@ var adUnits = [
 When a custom player selects a winning video/audio bid, report the win through
 Prebid, for example `pbjs.markWinningBidAsUsed({ adId: bid.adId, events: true })`.
 This triggers the win-notice lifecycle separately from VAST render events.
+
+# Campaign priority
+
+To let Publink's direct campaigns rank by priority, trust this bidder:
+
+```javascript
+pbjs.bidderSettings = pbjs.bidderSettings || {};
+pbjs.bidderSettings.publinkio = Object.assign({}, pbjs.bidderSettings.publinkio, {
+  allowPriorityBids: true
+});
+```
+
+See [bidderSettings `allowPriorityBids`](https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html#212-allowprioritybids)
+for how priority bids are ranked.

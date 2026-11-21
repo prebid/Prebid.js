@@ -19,6 +19,10 @@ function observerAllowed() {
   return measurement == null ? (getGlobal().yield ?? true) : measurement === 'observer';
 }
 
+function getComposedParentElement(node) {
+  return node.assignedSlot ?? node.parentElement ?? node.getRootNode()?.host ?? null;
+}
+
 /**
  * return the offset between the given window's viewport and the top window's.
  */
@@ -162,27 +166,39 @@ function getClipRects(element) {
   try {
     while (el != null && win != null) {
       const { x, y } = getViewportOffset(win);
+      // visibility is inherited, but a descendant can override an ancestor's hidden value
+      const elementStyle = getComputedStyle(el);
+      if (elementStyle.visibility === 'hidden') {
+        return null;
+      }
       let node = el;
       // how the subtree being walked is positioned, which decides which ancestors can clip it
       let position;
       while (node != null) {
-        const style = getComputedStyle(node);
-        // an ancestor that is transparent or hidden hides the element regardless of positioning
-        if (style.visibility === 'hidden' || style.opacity === '0') {
+        const style = node === el ? elementStyle : getComputedStyle(node);
+        // ancestor opacity applies to the whole subtree regardless of positioning or visibility
+        if (style.opacity === '0') {
           return null;
         }
         if (node === el) {
           position = style.position;
-        } else if (contains(style, position)) {
-          if (style.overflow !== 'visible') {
+        } else if (style.display !== 'contents' && contains(style, position)) {
+          const clipX = style.overflowX !== 'visible';
+          const clipY = style.overflowY !== 'visible';
+          if (clipX || clipY) {
             const rect = getBoundingClientRect(node);
-            rects.push({ left: rect.left + x, top: rect.top + y, right: rect.right + x, bottom: rect.bottom + y });
+            rects.push({
+              left: clipX ? rect.left + x : -Infinity,
+              top: clipY ? rect.top + y : -Infinity,
+              right: clipX ? rect.right + x : Infinity,
+              bottom: clipY ? rect.bottom + y : Infinity
+            });
           }
           // from here up it is this ancestor that carries the element, so its own positioning
           // decides which of the remaining ancestors can clip it
           position = style.position;
         }
-        node = node.parentElement;
+        node = getComposedParentElement(node);
       }
       // nothing can render outside the frame that contains it
       const frame = win.frameElement;
@@ -299,7 +315,21 @@ export const viewportIntersections = intersections((callback) => new Intersectio
   threshold: Array.from({ length: 101 }, (e, i) => i / 100)
 }));
 
-export function mkIntersectionHook(intersections = viewportIntersections) {
+// according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
+// https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
+// However, browsers appear to run it even when the element is outside the DOM
+// just to be sure, cap the amount of time we wait for intersections.
+//
+// the cap only holds as an upper bound with high priority scheduling: an ordinary timer is
+// queued behind all other ready work, so on a busy page it comes due well past its deadline -
+// which is when bounding the wait matters most.
+//
+// the first observation for an element arrives as a queued task, rather than with the
+// rendering lifecycle that carries later updates, so it needs well under a millisecond of free
+// main thread; 20ms leaves margin for a moderately busy one. Much less would be
+// counterproductive: a user-blocking task outruns the observer, so the wait would end before
+// any entry had arrived.
+export function mkIntersectionHook(intersections = viewportIntersections, cap = () => urgentDelay(20)) {
   return function (next, request) {
     if (!observerAllowed()) {
       // measurements will not consult the observer, so there is nothing to wait for
@@ -310,21 +340,7 @@ export function mkIntersectionHook(intersections = viewportIntersections) {
       PbPromise.allSettled((request.adUnits ?? []).map(adUnit =>
         intersections.observe(getAdUnitElement(adUnit))
       )),
-      // according to MDN, with threshold 0 "the callback will be run as soon as the target element intersects or touches the boundary of the root, even if no pixels are yet visible"
-      // https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API
-      // However, browsers appear to run it even when the element is outside the DOM
-      // just to be sure, cap the amount of time we wait for intersections.
-      //
-      // the cap only holds as an upper bound with high priority scheduling: an ordinary timer is
-      // queued behind all other ready work, so on a busy page it comes due well past its deadline -
-      // which is when bounding the wait matters most.
-      //
-      // the first observation for an element arrives as a queued task, rather than with the
-      // rendering lifecycle that carries later updates, so it needs well under a millisecond of free
-      // main thread; 20ms leaves margin for a moderately busy one. Much less would be
-      // counterproductive: a user-blocking task outruns the observer, so the wait would end before
-      // any entry had arrived.
-      urgentDelay(20)
+      cap()
     ]).then(() => next.call(this, request));
   };
 }
@@ -354,7 +370,12 @@ startAuction.before(mkIntersectionHook());
 // main thread time is available to the observer
 requestBids.before(mkPrewarmHook(), 100);
 
+const isDetached = (element) => element?.isConnected === false;
+
 export function percentInView(element, { w, h } = {}) {
+  if (isDetached(element)) {
+    return 0;
+  }
   if (!observerAllowed()) {
     return percentInViewStatic(element, { w, h });
   }
@@ -388,7 +409,7 @@ export function percentInView(element, { w, h } = {}) {
  * @returns {boolean} True if viewability is measurable
  */
 export function isViewabilityMeasurable(element) {
-  return !inIframe() && element !== null;
+  return !inIframe() && element !== null && !isDetached(element);
 }
 
 /**

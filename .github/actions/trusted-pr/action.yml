@@ -1,0 +1,38 @@
+name: Trusted PR info
+description: >
+  From a workflow_run triggered by "PR info", get the PR number, checked against the
+  triggering run's head commit. The artifact comes from the PR's own (untrusted) run.
+outputs:
+  number:
+    description: PR number
+    value: ${{ steps.verify.outputs.number }}
+  sha:
+    description: PR head commit
+    value: ${{ steps.verify.outputs.sha }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download PR info
+      id: download
+      uses: ./.github/actions/unzip-artifact
+      with:
+        name: prInfo
+    - name: Verify PR info
+      id: verify
+      uses: actions/github-script@v9
+      env:
+        ARTIFACT_EXISTS: ${{ steps.download.outputs.exists }}
+      with:
+        script: |
+          const fs = require('fs');
+          if (process.env.ARTIFACT_EXISTS !== 'true') throw new Error('prInfo artifact not found');
+          const { prNo } = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/artifacts/prInfo.json`, 'utf8'));
+          if (!Number.isSafeInteger(prNo) || prNo <= 0) throw new Error(`Invalid PR number: ${prNo}`);
+          const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: prNo });
+          const sha = context.payload.workflow_run.head_sha;
+          if (pr.head.sha !== sha) {
+            throw new Error(`PR #${prNo} head is ${pr.head.sha}, not the triggering commit ${sha}`);
+          }
+          core.setOutput('number', String(prNo));
+          core.setOutput('sha', sha);

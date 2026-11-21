@@ -55,7 +55,11 @@ export const spec = {
     return serverRequests;
   },
   interpretResponse: (serverResponse, request) => {
-    const responseJson = serverResponse ? serverResponse.body : {};
+    const responseJson = serverResponse && serverResponse.body;
+    // Treat responses without a creative or a positive price as no-bids.
+    if (!responseJson || !responseJson.sourceHTML || !(Number(responseJson.cpmBid) > 0)) {
+      return [];
+    }
     const placementId = responseJson.DIVID;
     const bidResponse = {
       ad: responseJson.sourceHTML,

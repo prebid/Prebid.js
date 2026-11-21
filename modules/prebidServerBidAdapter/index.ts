@@ -6,7 +6,6 @@ import {
   flatten,
   generateUUID,
   getParameterByName,
-  insertUserSyncIframe,
   isGzipCompressionSupported,
   isNumber,
   isPlainObject,
@@ -25,6 +24,7 @@ import { isValid } from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import { ajax } from '../../src/ajax.js';
 import { hook } from '../../src/hook.js';
+import { insertUserSyncIframe } from '../../src/userSync.js';
 import { hasPurpose1Consent } from '../../src/utils/gdpr.js';
 import { parseUntrustedJSON } from '../../src/utils/untrustedJson.js';
 import { hasVendorPurposeConsent } from '../../libraries/consentManagement/consentUtils.js';
@@ -433,6 +433,11 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent, hostGvlid?: string) {
+  // A string endpoint is rewritten to {p1Consent, noP1Consent} by formatUrlParams.
+  // A missing endpoint is left null and must not throw: the caller skips the request.
+  if (urlProp == null || typeof urlProp !== 'object') {
+    return;
+  }
   const hasPurpose = hostGvlid
     ? hasVendorPurposeConsent(gdprConsent, 1, hostGvlid)
     : hasPurpose1Consent(gdprConsent);
@@ -537,9 +542,9 @@ export function PrebidServer() {
         onError(msg, error) {
           const { p1Consent = '', noP1Consent = '' } = s2sBidRequest?.s2sConfig?.endpoint || {};
           if (p1Consent === noP1Consent) {
-            logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"}`, error);
+            logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"`, error);
           } else {
-            logError(`Prebid server call failed: '${msg}'. Endpoints: p1Consent "${p1Consent}", noP1Consent "${noP1Consent}"}`, error);
+            logError(`Prebid server call failed: '${msg}'. Endpoints: p1Consent "${p1Consent}", noP1Consent "${noP1Consent}"`, error);
           }
           bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest }));
           done(error.timedOut);
@@ -666,7 +671,8 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
       sendUncompressed();
     }
   } else {
-    logError('PBS request not made.  Check endpoints.');
+    // Without this, the s2s bidder never calls done() and the auction waits out its timeout.
+    onError('PBS request not made.  Check endpoints.', { timedOut: false });
   }
 }, 'processPBSRequest');
 

@@ -10,7 +10,7 @@ import { MODULE_TYPE_RTD } from '../../src/activities/modules.js';
 import { guardOrtb2Fragments } from '../../libraries/objectGuard/ortbGuard.js';
 import { activityParamsBuilder } from '../../src/activities/params.js';
 import type { StartAuctionOptions } from "../../src/prebid.ts";
-import type { ProviderConfig, RTDProvider, RTDProviderConfig } from "./spec.ts";
+import type { ProviderConfig, RTDProviderConfig } from "./spec.ts";
 
 // export so that consumers can `import {type RTDProviderConfig} from 'prebid.js/modules/rtdModule'`
 export { type RTDProviderConfig } from './spec.ts';
@@ -36,7 +36,7 @@ let _userConsent;
  *
  * @param {Object} submodule The RTD submodule to register.
  * @param {string} submodule.name The name of the RTD submodule.
- * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @param {number|number[]} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
  * @param {number} [submodule.acpId] The Google Additional Consent provider ID of the RTD submodule.
  */
 export function attachRealTimeDataProvider(submodule) {
@@ -100,8 +100,11 @@ const setEventsListeners = (function () {
   };
 })();
 
-type RealTimeDataConfig = {
-  dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+type RealTimeDataConfig<P extends string = string> = {
+  dataProviders: (
+    { [K in keyof ProviderConfig]: RTDProviderConfig<K> }[keyof ProviderConfig]
+    | { [K in P]: RTDProviderConfig<K> }[P]
+  )[];
   /**
    * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
    */
@@ -109,8 +112,8 @@ type RealTimeDataConfig = {
 };
 
 declare module '../../src/config' {
-  interface Config {
-    [MODULE_NAME]?: RealTimeDataConfig;
+  interface Config<P extends string = string> {
+    [MODULE_NAME]?: RealTimeDataConfig<P>;
   }
 }
 
@@ -237,7 +240,10 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
       },
       set(target, prop, value, receiver) {
         if (prop === fpdKey) {
-          mergeDeep(fpdGuard, value);
+          // the same as assigning `global` and `bidder` individually
+          ['global', 'bidder'].forEach(key => {
+            if (value != null && Object.prototype.hasOwnProperty.call(value, key)) fpdGuard[key] = value[key];
+          });
           return true;
         }
         return Reflect.set(target, prop, value, receiver);

@@ -448,7 +448,7 @@ const serverResponse = {
 
 const request = {
   method: 'POST',
-  url: 'https://rtbf.uncn.jp/pb/0/bid.json',
+  url: 'https://ds.uncn.jp/pb/0/bid.json',
   data: '{"id":"5ebea288-f13a-4754-be6d-4ade66c68877","at":1,"imp":[{"id":"216255f234b602","banner":{"w":300,"h":250},"format":[{"w":300,"h":250},{"w":336,"h":280}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-0"},{"id":"31e2b28ced2475","banner":{"w":"300","h":"250"},"format":[{"w":"300","h":"250"}],"secure":1,"bidfloor":0"tagid":"/19968336/header-bid-tag-1"},{"id":"40a333e047a9bd","banner":{"w":300,"h":250},"format":[{"w":300,"h":250}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-2"}],"cur":"JPY","site":{"id":"uni-corn.net","publisher":{"id":12345},"domain":"uni-corn.net","page":"https://uni-corn.net/","ref":"https://uni-corn.net/"},"device":{"language":"ja","ua":"Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36"},"user":{"id":"69d9e1c2-801e-4901-a665-fad467550fec"},"bcat":[],"source":{"ext":{"stype":"prebid_uncn","bidder":"unicorn","prebid_version":"1.1"}}}'
 };
 
@@ -524,6 +524,7 @@ describe('unicornBidAdapterTest', () => {
     });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
+      assert.strictEqual(req.url, 'https://ds.uncn.jp/pb/0/bid.json');
       const uid = JSON.parse(req.data)['user']['id'];
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(openRTBRequest);
@@ -532,7 +533,7 @@ describe('unicornBidAdapterTest', () => {
       const uid2 = JSON.parse(req2.data)['user']['id'];
       assert.deepStrictEqual(uid, uid2);
     });
-    it('test if contains ID5', () => {
+    it('does not add EIDs from a raw bid.userId', () => {
       const _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
@@ -542,16 +543,6 @@ describe('unicornBidAdapterTest', () => {
       const req = spec.buildRequests(_validBidRequests, bidderRequest);
       const reqData = removeUntestableAttrs(JSON.parse(req.data));
       const openRTBRequestData = removeUntestableAttrs(utils.deepClone(openRTBRequest));
-      openRTBRequestData.user.eids = [
-        {
-          source: 'id5-sync.com',
-          uids: [
-            {
-              id: 'id5_XXXXX'
-            }
-          ]
-        }
-      ];
       assert.deepStrictEqual(reqData, openRTBRequestData);
     });
   });

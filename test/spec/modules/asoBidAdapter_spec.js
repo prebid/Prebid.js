@@ -4,6 +4,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { OUTSTREAM } from 'src/video.js';
 import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import { parseUrl } from '../../../src/utils.js';
+import { getWinDimensions } from '../../../src/utils/winDimensions.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
@@ -229,8 +230,8 @@ describe('Adserver.Online bidding adapter', function () {
       expect(payload.site.page).to.equal('https://example.com/page.html');
 
       expect(payload.device).to.exist;
-      expect(payload.device.w).to.equal(window.screen.width);
-      expect(payload.device.h).to.equal(window.screen.height);
+      expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+      expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
       expect(payload.imp).to.have.lengthOf(1);
 
@@ -259,8 +260,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.screen.width);
-        expect(payload.device.h).to.equal(window.screen.height);
+        expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+        expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 
@@ -288,8 +289,8 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.site.page).to.equal('https://example.com/page.html');
 
         expect(payload.device).to.exist;
-        expect(payload.device.w).to.equal(window.screen.width);
-        expect(payload.device.h).to.equal(window.screen.height);
+        expect(payload.device.w).to.equal(getWinDimensions().screen.width);
+        expect(payload.device.h).to.equal(getWinDimensions().screen.height);
 
         expect(payload.imp).to.have.lengthOf(1);
 

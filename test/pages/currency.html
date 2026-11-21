@@ -9,7 +9,7 @@
 
 <html>
 <head>
-    <script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=currency"></script>
+    <script async src="http://localhost:4444/bundle?modules=msftBidAdapter&modules=currency"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
@@ -24,9 +24,9 @@
             },
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'appnexus',
+                bidder: 'msft',
                 params: {
-                    placementId: 13144370
+                    placement_id: 13144370
                 }
             }]
 
@@ -55,10 +55,10 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: 'msft',
 				params: {
-					placementId: 13232354,
-					allowSmallerSizes: true
+					placement_id: 13232354,
+					allow_smaller_sizes: true
 				}
 			}]
 		}];

@@ -1,3 +1,11 @@
+/**
+ * A component's `disclosureURL` may be a single URL, or a list of them (for components with multiple GVL IDs).
+ */
+export function disclosureURLList(disclosureURL) {
+  if (disclosureURL == null) return [];
+  return Array.isArray(disclosureURL) ? disclosureURL : [disclosureURL];
+}
+
 export function metadataRepository() {
   const components = {};
   const disclosures = {};
@@ -33,8 +41,8 @@ export function metadataRepository() {
       if (components.length === 0) return null;
       const disclosures = Object.fromEntries(
         components
-          .filter(({ disclosureURL }) => disclosureURL != null)
-          .map(({ disclosureURL }) => [disclosureURL, repo.getStorageDisclosure(disclosureURL)])
+          .flatMap(({ disclosureURL }) => disclosureURLList(disclosureURL))
+          .map(disclosureURL => [disclosureURL, repo.getStorageDisclosure(disclosureURL)])
       );
       return {
         disclosures,

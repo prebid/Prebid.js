@@ -10,6 +10,16 @@ Maintainer: dima@xe.works
 
 Module that connects to xe.works demand sources
 
+# Bid Params
+
+| Name  | Scope    | Description                 | Type     |
+|-------|----------|-----------------------------|----------|
+| `pid` | required | Unique placement ID         | `string` |
+| `env` | required | Environment name            | `string` |
+| `ext` | optional | Specific integration config | `object` |
+
+The adapter also answers to the bidder codes `xeworks` and `lunamediax`.
+
 # Test Parameters
 ```
 var adUnits = [
@@ -25,7 +35,7 @@ var adUnits = [
                 bidder: 'xe',
                 params: {
                     env: 'xe',
-                    placement: 'test-banner',
+                    pid: 'test-banner',
                     ext: {}
                 }
             }
@@ -45,7 +55,7 @@ var adUnits = [
             bidder: 'xe',
             params: {
                 env: 'xe',
-                placement: 'test-video',
+                pid: 'test-video',
                 ext: {}
             }
         }]

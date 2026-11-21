@@ -1,0 +1,23 @@
+name: PR info
+
+# Unprivileged trigger for workflow_run workflows that need secrets (code-path-changes.yml, prebid-code-scanner.yml).
+# Unlike pull_request_target, fork PRs go through the repo's approval setting for outside contributors.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  pr-info:
+    name: Save PR info
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate PR info
+        run: |
+          echo '{ "prNo": ${{ github.event.pull_request.number }} }' > "$RUNNER_TEMP/prInfo.json"
+      - name: Upload PR info
+        uses: actions/upload-artifact@v7
+        with:
+          name: prInfo
+          path: ${{ runner.temp }}/prInfo.json

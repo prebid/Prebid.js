@@ -963,22 +963,6 @@ describe('TwistDigitalBidAdapter', function () {
     });
   });
 
-  describe('deal id', function () {
-    after(function () {
-      config.resetConfig();
-    });
-    before(function () {
-      getGlobal().bidderSettings = {
-        twistdigital: {
-          storageAllowed: true
-        }
-      };
-    });
-    after(function () {
-      getGlobal().bidderSettings = {};
-    });
-  });
-
   describe('unique deal id', function () {
     after(function () {
       config.resetConfig();

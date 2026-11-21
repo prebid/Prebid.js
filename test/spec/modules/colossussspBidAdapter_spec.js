@@ -264,11 +264,6 @@ describe('ColossussspAdapter', function () {
 
   describe('buildRequests with user ids', function () {
     var clonedBid = JSON.parse(JSON.stringify(bid));
-    clonedBid.userId = {};
-    clonedBid.userId.idl_env = 'idl_env123';
-    clonedBid.userId.tdid = 'tdid123';
-    clonedBid.userId.id5id = { uid: 'id5id123' };
-    clonedBid.userId.uid2 = { id: 'uid2id123' };
     clonedBid.userIdAsEids = [
       {
         'source': 'pubcid.org',
@@ -310,11 +305,11 @@ describe('ColossussspAdapter', function () {
         const placement = placements[i];
         expect(placement).to.have.property('eids');
         expect(placement.eids).to.be.an('array');
-        expect(placement.eids.length).to.be.equal(7);
+        expect(placement.eids.length).to.be.equal(3);
         for (const index in placement.eids) {
           const v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids');
-          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com']);
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz']);
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1);
           expect(v.uids[0]).to.have.property('id');
@@ -390,10 +385,10 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.mediaType).to.be.a('string');
         expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
+    });
+    it('Returns an empty array if invalid response is passed', function () {
+      serverResponses = spec.interpretResponse({ body: 'invalid_response' });
+      expect(serverResponses).to.be.an('array').that.is.empty;
     });
 
     const videoResObject = {
@@ -433,10 +428,10 @@ describe('ColossussspAdapter', function () {
         expect(dataItem.mediaType).to.be.a('string');
         expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        videoServerResponses = spec.interpretResponse('invalid_response');
-        expect(videoServerResponses).to.be.an('array').that.is.empty;
-      });
+    });
+    it('Returns an empty array if invalid video response is passed', function () {
+      videoServerResponses = spec.interpretResponse({ body: 'invalid_response' });
+      expect(videoServerResponses).to.be.an('array').that.is.empty;
     });
   });
 

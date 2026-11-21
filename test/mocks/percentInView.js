@@ -47,6 +47,8 @@ if (frameElement != null) {
       height: doc.clientHeight
     };
   };
+  // Vitest holds on to the iframe element for a while after removing it, and the stub would keep this whole frame alive
+  window.addEventListener('pagehide', () => { delete frameElement.getBoundingClientRect; });
 }
 
 export function enableFrameRect() {

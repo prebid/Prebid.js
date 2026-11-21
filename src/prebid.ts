@@ -9,7 +9,6 @@ import {
   flatten,
   generateUUID,
   isArray,
-  isArrayOfNums,
   isEmpty,
   isFn,
   isGptPubadsDefined,
@@ -24,8 +23,9 @@ import {
   uniques,
   unsupportedBidderMessage
 } from './utils.js';
+import { validateSizes } from './utils/objects.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
+import { userSync, type RemoveUserSyncsOptions } from './userSync.js';
 import { config } from './config.js';
 import { auctionManager } from './auctionManager.js';
 import { isBidUsable } from './targeting/filters.js';
@@ -47,7 +47,8 @@ import {
   markBidAsRendered,
   markWinningBid,
   renderAdDirect,
-  renderIfDeferred
+  renderIfDeferred,
+  getBidToRender
 } from './adRendering.js';
 import { getHighestCpm, getHighestDesirability } from './utils/reducers.js';
 import { fillVideoDefaults, ORTB_VIDEO_PARAMS } from './video.js';
@@ -57,12 +58,12 @@ import { delayIfPrerendering } from './utils/prerendering.js';
 import { type BidAdapter, type BidderSpec, newBidder } from './adapters/bidderFactory.js';
 import { normalizeFPD } from './fpd/normalize.js';
 import type { Bid } from "./bidfactory.ts";
-import type { AdUnit, AdUnitDefinition, BidderParams } from "./adUnits.ts";
+import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
 import type { AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments } from "./types/common.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 import type { AnyFunction, Wraps } from "./types/functions.d.ts";
-import type { BidderScopedSettings, BidderSettings } from "./bidderSettings.ts";
+import type { BidderSettingsMap } from "./bidderSettings.ts";
 import { fillAudioDefaults, ORTB_AUDIO_PARAMS } from './audio.ts';
 import { type WrapsInBids, wrapInBids } from "./utils/wrapsInBids.ts";
 
@@ -83,13 +84,7 @@ initDevtoolsMcp();
 
 declare module './prebidGlobal' {
   interface PrebidJS {
-    bidderSettings: {
-      standard?: BidderSettings<BidderCode>
-    } & {
-      [B in BidderCode]?: BidderScopedSettings<B>
-    } & {
-      [B in keyof BidderParams]?: BidderScopedSettings<B>
-    };
+    bidderSettings: BidderSettingsMap;
     /**
      * True once Prebid is loaded.
      */
@@ -117,19 +112,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.pageViewIdPerBidder = pbjsInstance.pageViewIdPerBidder || new Map<string | null, string>();
-
-function validateSizes(sizes, targLength?: number) {
-  let cleanSizes = [];
-  if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
-    // check if an array of arrays or array of numbers
-    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
-      cleanSizes = sizes;
-    } else if (isArrayOfNums(sizes, 2)) {
-      cleanSizes.push(sizes);
-    }
-  }
-  return cleanSizes;
-}
 
 // synchronize fields between mediaTypes[mediaType] and ortb2Imp[mediaType]
 export function syncOrtb2(adUnit, mediaType) {
@@ -417,6 +399,8 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateAudioMediaType(adUnit);
     }
 
+    if (!validatedBanner && !validatedVideo && !validatedNative && !validatedAudio) return;
+
     const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);
 
     validatedAdUnits.push(validatedAdUnit);
@@ -457,7 +441,11 @@ declare module './prebidGlobal' {
      * Re-trigger user syncs. Requires the `userSync.enableOverride` config to be set.
      */
     triggerUserSyncs: typeof triggerUserSyncs;
-    removeUserSyncs: () => number;
+    /**
+     * Remove the user sync iframes inserted by this Prebid instance, and return how many were removed.
+     * With `{withChildFrames: true}`, only remove those that have created frames of their own.
+     */
+    removeUserSyncs: (options?: RemoveUserSyncsOptions) => number;
     getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
     getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
     getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
@@ -644,7 +632,7 @@ function setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
 
 addApiMethod('setTargetingForAst', setTargetingForAst);
 
-type RenderAdOptions = {
+export type RenderAdOptions = {
   /**
    * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
    */
@@ -695,7 +683,7 @@ function removeAdUnit(adUnitCode?: AdUnitCode) {
 }
 addApiMethod('removeAdUnit', removeAdUnit);
 
-export type RequestBidsOptions = {
+export type RequestBidsOptions<B extends BidderCode = BidderCode> = {
   /**
    * Callback to execute when all the bid responses are back or the timeout hits. Parameters may be undefined
    * in situations where the auction is canceled prematurely (e.g. CMP errors)
@@ -712,7 +700,7 @@ export type RequestBidsOptions = {
   /**
    * AdUnit definitions to request. Use this or adUnitCodes. Default to all adUnits if empty.
    */
-  adUnits?: AdUnitDefinition[];
+  adUnits?: AdUnitDefinition<B>[];
   /**
    * adUnit codes to request. Use this or adUnits. Default to all adUnits if empty.
    */
@@ -770,7 +758,7 @@ declare module './hook' {
 }
 
 interface RequestBids {
-  (options?: RequestBidsOptions): Promise<RequestBidsResult>;
+  <const B extends BidderCode>(options?: RequestBidsOptions<B>): Promise<RequestBidsResult>;
 }
 
 declare module './events' {
@@ -982,7 +970,7 @@ requestBids.before(executeCallbacks, 49);
  * Add ad unit(s)
  * @param adUnits
  */
-function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
+function addAdUnits<const B extends BidderCode>(adUnits: AdUnitDefinition<B> | AdUnitDefinition<B>[]) {
   pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]));
 }
 
@@ -1340,12 +1328,20 @@ function triggerBilling({ adId, adUnitCode }: {
   adId?: string;
   adUnitCode?: AdUnitCode
 }) {
-  auctionManager.getAllWinningBids()
-    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
-    .forEach((bid) => {
-      adapterManager.triggerBilling(bid);
-      renderIfDeferred(bid);
-    });
+  function bill(adId) {
+    auctionManager.getAllWinningBids()
+      .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+      .forEach((bid) => {
+        adapterManager.triggerBilling(bid);
+        renderIfDeferred(bid);
+      });
+  }
+  if (adId == null) {
+    bill(adId);
+  } else {
+    // the publisher knows only the ad ID of an expired bid that was replaced (see `auctionOptions.replaceExpiredBid`)
+    getBidToRender(auctionManager.findBidByAdId(adId), false, (bid) => bill(bid?.adId ?? adId));
+  }
 }
 addApiMethod('triggerBilling', triggerBilling);
 

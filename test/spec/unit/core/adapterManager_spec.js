@@ -792,6 +792,36 @@ describe('adapterManager tests', function () {
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
+
+    it('should catch an s2s adapter error and still call client bidders', function () {
+      prebidServerAdapterMock.callBids.throws(new Error('bad s2s config'));
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      rubiconAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetBehavior();
+      sandbox.stub(utils, 'logError');
+
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[300, 250]],
+        bids: [
+          { bidder: 'appnexus', params: { placementId: 'id' } },
+          { bidder: 'rubicon', params: { accountId: 1111, siteId: 2222, zoneId: 3333 } }
+        ]
+      }];
+      const bidRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 's2s-throw', 1000);
+      const doneBidders = [];
+      function mockDoneCB() {
+        doneBidders.push(this.bidderCode);
+      }
+
+      expect(() => adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, () => {})).to.not.throw();
+      sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+      sinon.assert.calledOnce(rubiconAdapterMock.callBids);
+      expect(doneBidders).to.include('appnexus');
+      sinon.assert.calledWithMatch(utils.logError, 'prebidServer Bid Adapter emitted an uncaught error when parsing their bidRequest');
+
+      delete adapterManager.bidderRegistry['rubicon'];
+    });
   }); // end s2s tests
 
   describe('Multiple S2S tests', function () {
@@ -1074,6 +1104,31 @@ describe('adapterManager tests', function () {
       ],
       'start': 1462918897460
     }];
+
+    it('does not send one Prebid Server the bidder requests (and bidder data) meant for another', () => {
+      const requests = utils.deepClone(bidRequests);
+      const [appnexusRequest, pubmaticRequest] = requests;
+      appnexusRequest.ortb2 = { site: { keywords: 'appnexus-only' } };
+      pubmaticRequest.ortb2 = { site: { keywords: 'pubmatic-only' } };
+
+      adapterManager.callBids(getAdUnits(), requests, () => {}, () => {});
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+
+      const sentToServer = {};
+      prebidServerAdapterMock.callBids.getCalls().forEach(call => {
+        const [{ s2sConfig }, bidderRequests] = call.args;
+        const server = s2sConfig.accountId;
+        sentToServer[server] = bidderRequests.map(request => request.bidderCode);
+        bidderRequests.forEach(request => {
+          expect(s2sConfig.bidders, `server '${server}' received the '${request.bidderCode}' bidder request`).to.include(request.bidderCode);
+        });
+        expect(
+          bidderRequests[0].ortb2.site.keywords,
+          `server '${server}' would build its request from another server's bidder data`
+        ).to.equal(`${s2sConfig.bidders[0]}-only`);
+      });
+      expect(sentToServer).to.eql({ abc: ['appnexus'], def: ['pubmatic'] });
+    });
 
     describe('invokes callBids on the S2S adapter', () => {
       let onTimelyResponse, timedOut, done;

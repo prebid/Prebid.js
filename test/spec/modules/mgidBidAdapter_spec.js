@@ -5,6 +5,7 @@ import { config } from '../../../src/config.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync.js';
 import * as utils from '../../../src/utils.js';
+import { toOrtbNativeRequest } from '../../../src/native.js';
 
 const ORIGINAL_USER_AGENT_DATA = window.navigator.userAgentData;
 const ORIGINAL_USER_AGENT = window.navigator.userAgent;
@@ -559,6 +560,7 @@ describe('Mgid bid adapter', function () {
         title: { required: true },
         image: { sizes: [80, 80] },
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
       const bidRequests = [bid];
       const request = spec.buildRequests(bidRequests, {});
       expect(request).to.be.undefined;
@@ -573,6 +575,7 @@ describe('Mgid bid adapter', function () {
         title: { required: true },
         image: { sizes: [80, 80] },
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
       const request = spec.buildRequests([bid], {});
       expect(request).to.not.be.undefined;
       const data = JSON.parse(request.data);
@@ -590,6 +593,7 @@ describe('Mgid bid adapter', function () {
         image: { sizes: [80, 80] },
         sponsoredBy: {},
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
       const request = spec.buildRequests([bid], {});
       expect(request).to.be.a('object');
       const data = JSON.parse(request.data);
@@ -611,6 +615,7 @@ describe('Mgid bid adapter', function () {
         image: { sizes: [80, 80] },
         sponsoredBy: { },
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
       const page = top.location.href;
@@ -664,6 +669,7 @@ describe('Mgid bid adapter', function () {
         icon: {},
         sponsoredBy: { },
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
       const page = top.location.href;
@@ -716,6 +722,7 @@ describe('Mgid bid adapter', function () {
         image: { sizes: [80, 80] },
         sponsoredBy: { },
       };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
 
       const bidRequests = [bid];
       const page = top.location.href;
@@ -757,26 +764,27 @@ describe('Mgid bid adapter', function () {
         'ortbRequest': data,
       });
     });
-    it('should normalize MGID legacy native aliases before conversion', function () {
+    it('should not modify bidRequest.nativeOrtbRequest', function () {
       const bid = Object.assign({}, abid);
-      bid.mediaTypes = { native: '' };
-      bid.nativeParams = {
-        title: { required: true },
-        image: { sizes: [80, 80] },
-        sponsored: { },   // alias for sponsoredBy → data type 1
-        saleprice: { },   // alias for salePrice   → data type 7
-        displayurl: { },  // alias for displayUrl  → data type 11
-        data: { },        // alias for body        → data type 2
-      };
+      bid.mediaTypes = { native: {} };
+      bid.nativeParams = { title: { required: true }, image: {}, sponsoredBy: {} };
+      bid.nativeOrtbRequest = toOrtbNativeRequest(bid.nativeParams);
+      const original = utils.deepClone(bid.nativeOrtbRequest);
       const request = spec.buildRequests([bid], {});
-      expect(request).to.not.be.undefined;
-      const parsed = JSON.parse(request.data);
-      const nativeReq = JSON.parse(parsed.imp[0].native.request);
-      const dataTypes = nativeReq.assets.filter(a => a.data).map(a => a.data.type);
-      expect(dataTypes).to.include(1);   // sponsoredBy
-      expect(dataTypes).to.include(2);   // body/desc
-      expect(dataTypes).to.include(7);   // salePrice
-      expect(dataTypes).to.include(11);  // displayUrl
+      expect(JSON.parse(JSON.parse(request.data).imp[0].native.request).context).to.equal(1);
+      expect(bid.nativeOrtbRequest).to.eql(original);
+    });
+    it('should not send a native-only imp when core provides no nativeOrtbRequest', function () {
+      const bid = Object.assign({}, abid);
+      bid.mediaTypes = { native: { ortb: { assets: [{ id: 1, title: { len: 80 } }, { id: 1, data: { type: 1 } }] } } };
+      expect(spec.buildRequests([bid], {})).to.be.undefined;
+    });
+    it('should keep the banner imp when core provides no nativeOrtbRequest', function () {
+      const bid = Object.assign({}, abid);
+      bid.mediaTypes = { banner: { sizes: [[300, 250]] }, native: { ortb: { assets: [{ id: 1, title: { len: 80 } }] } } };
+      const imp = JSON.parse(spec.buildRequests([bid], {}).data).imp[0];
+      expect(imp.banner).to.exist;
+      expect(imp.native).to.not.exist;
     });
     it('should use bidRequest.nativeOrtbRequest for ORTB-native ad units', function () {
       const bid = Object.assign({}, abid);
@@ -794,23 +802,6 @@ describe('Mgid bid adapter', function () {
       const data = JSON.parse(request.data);
       const nativeReq = JSON.parse(data.imp[0].native.request);
       expect(nativeReq.assets).to.deep.equal(bid.nativeOrtbRequest.assets);
-    });
-    it('should fall back to toOrtbNativeRequest(nativeParams) when nativeOrtbRequest is absent', function () {
-      const bid = Object.assign({}, abid);
-      bid.mediaTypes = { native: '' };
-      bid.nativeParams = {
-        title: { required: true },
-        image: { sizes: [120, 90] },
-        sponsoredBy: { },
-      };
-      const request = spec.buildRequests([bid], {});
-      expect(request).to.not.be.undefined;
-      const data = JSON.parse(request.data);
-      const nativeReq = JSON.parse(data.imp[0].native.request);
-      expect(nativeReq.assets).to.be.an('array').with.lengthOf(3);
-      expect(nativeReq.assets[0].title).to.deep.include({ len: 140 });
-      expect(nativeReq.assets[1].img).to.deep.include({ type: 3, w: 120, h: 90 });
-      expect(nativeReq.assets[2].data).to.deep.include({ type: 1 });
     });
     it('should return proper banner request', function () {
       const bid = Object.assign({}, abid);

@@ -76,7 +76,6 @@ export const spec = {
     const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
-      'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
     const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;

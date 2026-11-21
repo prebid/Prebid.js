@@ -30,7 +30,6 @@ import {
   MODULE_TYPE_UID
 } from '../../../src/activities/modules.js';
 import * as events from 'src/events.js';
-import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
 import { requestBids } from 'src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { GDPR_ACPIDS, GDPR_GVLIDS, GVL_PURPOSES, VENDORLESS_GVLID } from '../../../src/consentHandler.js';
@@ -422,7 +421,7 @@ describe('gdpr enforcement', function () {
             describe(`restriction is ${restriction}`, () => {
               const restrictedExpectation = type === 'feature' ? expectation : newExpectation;
 
-              it(`shold return ${JSON.stringify(restrictedExpectation)}`, () => {
+              it(`should return ${JSON.stringify(restrictedExpectation)}`, () => {
                 consentData.vendorData.publisher.restrictions = {
                   [purpose]: {
                     [gvlid]: restriction
@@ -500,11 +499,13 @@ describe('gdpr enforcement', function () {
             }]
           }
         });
-        setupConsentData();
+        setupConsentData({
+          gdprApplies: false
+        });
         expectAllow(true, rule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
       });
 
-      it('should support TCF 2.3 tcData using disclosedVendors', function () {
+      it('should accept TCF 2.3 tcData (tcfPolicyVersion 3, disclosedVendors)', function () {
         gvlids.appnexus = 1;
         setEnforcementConfig({
           gdpr: {
@@ -764,7 +765,110 @@ describe('gdpr enforcement', function () {
     });
   });
 
+  describe('modules with multiple GVL IDs', () => {
+    beforeEach(() => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: ['excepted']
+          }]
+        }
+      });
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    Object.entries({
+      'all of them have consent': [[1, 2], true],
+      'one of them does not have consent': [[1, 3], false],
+      'none of them have consent': [[3, 5], false],
+    }).forEach(([t, [ids, allow]]) => {
+      it(`should ${allow ? 'allow' : 'deny'} when ${t}`, () => {
+        setupConsentData();
+        gvlids.bidder = ids;
+        expectAllow(allow, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+      });
+    });
+
+    it('should name the GVL IDs that have no legal basis', () => {
+      setupConsentData();
+      gvlids.bidder = [1, 3, 5];
+      expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder'))).to.eql({
+        allow: false,
+        reason: 'no legal basis for GVL ID(s) 3, 5'
+      });
+    });
+
+    it('should check each GVL ID against its own publisher restrictions', () => {
+      setupConsentData({
+        tcDataMutator(tcData) {
+          tcData.publisher.restrictions = { 2: { 2: 0 } };
+        }
+      });
+      gvlids.bidder = [1, 2];
+      expectAllow(false, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+    });
+
+    it('should accept a list from gvlMapping', () => {
+      setupConsentData();
+      gvlids.bidder = 1;
+      config.setConfig({ gvlMapping: { bidder: [1, 3] } });
+      expectAllow(false, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+    });
+
+    it('should let vendorExceptions apply to all GVL IDs', () => {
+      setupConsentData();
+      gvlids.excepted = [3, 5];
+      expectAllow(true, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'excepted')));
+    });
+
+    it('should not check Additional Consent', () => {
+      const cd = setupConsentData();
+      cd.addtlConsent = '2~89~dv.';
+      gvlids.bidder = [1, 3];
+      acpids.bidder = 89;
+      expectAllow(false, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+    });
+
+    it('should require legal basis for every GVL ID to transmit EIDs', () => {
+      setupConsentData();
+      gvlids.bidder = [1, 3];
+      expectAllow(false, transmitEidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+      gvlids.bidder = [1, 2];
+      expectAllow(true, transmitEidsRule(activityParams(MODULE_TYPE_BIDDER, 'bidder')));
+    });
+  });
+
   describe('reportAnalyticsRule', () => {
+    it('should use the GVL ID(s) from the analytics adapter when none was registered', () => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'measurement',
+            enforcePurpose: true,
+            enforceVendor: true,
+          }]
+        }
+      });
+      setupConsentData();
+      const adapter = {};
+      sandbox.stub(adapterManager, 'getAnalyticsAdapter').withArgs('analytics').returns({ adapter });
+      Object.entries({
+        1: true,
+        3: false,
+      }).forEach(([gvlid, allow]) => {
+        adapter.gvlid = () => Number(gvlid);
+        expectAllow(allow, reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, 'analytics')));
+      });
+      adapter.gvlid = () => [1, 3];
+      expectAllow(false, reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, 'analytics')));
+    });
+
     it('should block analytics adapter which does not have consent and allow the one(s) which have consent', function() {
       setEnforcementConfig({
         gdpr: {
@@ -796,7 +900,7 @@ describe('gdpr enforcement', function () {
   });
 
   describe('transmitUfpdRule', () => {
-    it('should allow when purpose 3 consent is given', () => {
+    it('should allow when purpose 4 and vendor consent are given', () => {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -815,7 +919,7 @@ describe('gdpr enforcement', function () {
       expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
-    it('should return deny by default when purpose 4 consent is withheld', () => {
+    it('should return deny by default when vendor consent is withheld', () => {
       setEnforcementConfig({});
       Object.assign(gvlids, {
         mockBidder: 123
@@ -1255,6 +1359,11 @@ describe('gdpr enforcement', function () {
                         const allowed = validateRules(rule, consentData, 'mockVendor', 123);
                         expect(allowed).to.be.false;
                       });
+                    } else {
+                      it(`should return true (nothing is enforced)`, () => {
+                        const allowed = validateRules(rule, consentData, 'mockVendor', 123);
+                        expect(allowed).to.be.true;
+                      });
                     }
                   });
                 });
@@ -1593,6 +1702,22 @@ describe('gdpr enforcement', function () {
 
       it('should use fallbackFn if no other lookup produces a gvl id', () => {
         expect(getGvlid('type', MOCK_MODULE, () => 321)).to.equal(321);
+      });
+
+      it('should normalize lists returned by fallbackFn', () => {
+        expect(getGvlid('type', MOCK_MODULE, () => [3, 1, 3])).to.eql([1, 3]);
+      });
+
+      it('should return a normalized list from gvlMapping', () => {
+        config.setConfig({ gvlMapping: { [MOCK_MODULE]: [2, 1] } });
+        entry = { gvlid: 3 };
+        expect(getGvlid('type', MOCK_MODULE)).to.eql([1, 2]);
+      });
+
+      it('should ignore an empty list in gvlMapping', () => {
+        config.setConfig({ gvlMapping: { [MOCK_MODULE]: [] } });
+        entry = { gvlid: 3 };
+        expect(getGvlid('type', MOCK_MODULE)).to.equal(3);
       });
     });
 
