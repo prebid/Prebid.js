@@ -176,7 +176,8 @@ describe('User ID', function () {
 
   function expectImmediateBidHook(...args) {
     return runBidsHook(...args).then(() => {
-      startDelay.calledWith(0);
+      // the auction is held for no longer than the configured `auctionDelay`, which then times out
+      sinon.assert.calledWith(startDelay, auctionDelay);
       return startDelay.resolve();
     });
   }
@@ -1821,6 +1822,86 @@ describe('User ID', function () {
         });
       });
 
+      it('should ignore a callback that completes after a refresh returned an id without a callback', () => {
+        startInit();
+        return clearStack().then(() => {
+          sinon.assert.calledOnce(mockIdCallback); // still pending
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: 'fresh' } }));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          // the first callback completes late, with an older id
+          mockIdCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          expect(coreStorage.getCookie('MOCKID')).to.include('fresh');
+        });
+      });
+
+      it('should keep a callback in flight when the same config is applied again', () => {
+        startInit();
+        return clearStack().then(() => {
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+          mockIdCallback.callArg(0, { MOCKID: 'kept' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('kept');
+          expect(coreStorage.getCookie('MOCKID')).to.include('kept');
+        });
+      });
+
+      it('should ignore a callback from before a config update once a refresh supersedes it', () => {
+        startInit();
+        return clearStack().then(() => {
+          // recreates the submodule container; the callback still belongs to the old one
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'mockId',
+                storage: { name: 'MOCKID', type: 'cookie' }
+              }]
+            }
+          });
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: 'fresh' } }));
+          return getGlobal().refreshUserIds().then(clearStack);
+        }).then(() => {
+          mockIdCallback.callArg(0, { MOCKID: 'stale' });
+          return clearStack();
+        }).then(() => {
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+          expect(coreStorage.getCookie('MOCKID')).to.include('fresh');
+        });
+      });
+
+      it('should not wait on the callback a filtered refresh superseded for the submodule it names', () => {
+        startInit();
+        const refreshedCallback = sinon.stub();
+        let resolved = false;
+        return clearStack().then(() => {
+          // the original callback never completes
+          mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedCallback }));
+          getGlobal().refreshUserIds({ submoduleNames: ['mockId'] }).then(() => { resolved = true; });
+          return clearStack();
+        }).then(() => {
+          expect(resolved).to.be.false; // the replacement is still pending
+          refreshedCallback.callArg(0, { MOCKID: 'fresh' });
+          return clearStack();
+        }).then(() => {
+          expect(resolved).to.be.true;
+          expect(getGlobal().getUserIds().mid).to.equal('fresh');
+        });
+      });
+
       it('should ignore a callback that completes after the ID system was reinitialized', () => {
         startInit();
         return clearStack().then(() => {
@@ -1914,7 +1995,7 @@ describe('User ID', function () {
         startInit();
         startAuctionHook(() => {
           done();
-        }, { adUnits: [getAdUnitMock()] }, { delay: delay() });
+        }, { adUnits: [getAdUnitMock()] }, { mkDelay: delay() }); // never times out: only the IDs can release it
         getGlobal().refreshUserIds();
         clearStack().then(() => {
           // simulate init complete
@@ -2036,6 +2117,72 @@ describe('User ID', function () {
           });
         });
 
+        it('should wait for the other submodules of a batch, but not for the one a filtered refresh superseded', () => {
+          // mockId and otherId start in the same batch; mockId's original callback never completes
+          startBoth();
+          const refreshedMockCallback = sinon.stub();
+          let resolved = false;
+          return clearStack().then(() => {
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ callback: refreshedMockCallback }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] }).then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            refreshedMockCallback.callArg(0, { MOCKID: 'fresh' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.false; // otherId is still fetching
+            otherIdCallback.callArg(0, { OTHERID: 'other' });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+            expect(getGlobal().getUserIds()).to.deep.equal({ mid: 'fresh', oid: 'other' });
+          });
+        });
+
+        it('should not let a superseded refresh register work for a submodule added before it ran', () => {
+          // An unfiltered refresh is queued, otherId is configured, and a second unfiltered refresh
+          // supersedes the first before either has run. When the first one's chain runs, it must not
+          // register otherId's (abandoned) callback as work a later filtered refresh waits on.
+          const callbacks = { mockId: [], otherId: [] };
+          const recordCallback = (name) => sinon.stub().callsFake(() => {
+            const cb = sinon.stub();
+            callbacks[name].push(cb);
+            return { callback: cb };
+          });
+          init(config);
+          setSubmoduleRegistry([mockIdSystem, otherIdSystem]);
+          const mockIdConfig = { name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' } };
+          config.setConfig({ userSync: { auctionDelay: 10, userIds: [mockIdConfig] } });
+          let resolved = false;
+          return clearStack().then(() => {
+            mockIdCallback.callArg(0, { MOCKID: 'first' });
+            return clearStack();
+          }).then(() => {
+            mockIdSystem.getId = recordCallback('mockId');
+            otherIdSystem.getId = recordCallback('otherId');
+            getGlobal().refreshUserIds();
+            config.setConfig({
+              userSync: {
+                auctionDelay: 10,
+                userIds: [mockIdConfig, { name: 'otherId', storage: { name: 'OTHERID', type: 'cookie' } }]
+              }
+            });
+            getGlobal().refreshUserIds();
+            return clearStack();
+          }).then(() => {
+            // only the latest callback of each submodule ever completes
+            callbacks.mockId[callbacks.mockId.length - 1].callArg(0, { MOCKID: 'second' });
+            callbacks.otherId[callbacks.otherId.length - 1].callArg(0, { OTHERID: 'second' });
+            return clearStack();
+          }).then(() => {
+            mockIdSystem.getId = sinon.stub().callsFake(() => ({ id: { MOCKID: 'third' } }));
+            getGlobal().refreshUserIds({ submoduleNames: ['mockId'] }).then(() => { resolved = true; });
+            return clearStack();
+          }).then(() => {
+            expect(resolved).to.be.true;
+          });
+        });
+
         it('should not inherit a stuck batch that an unfiltered refresh superseded', () => {
           // mockId never calls back. An unfiltered refresh escapes it, and a filtered
           // refresh afterwards must not pick the abandoned batch back up.
@@ -2063,7 +2210,7 @@ describe('User ID', function () {
         },
         { adUnits: [getAdUnitMock()] },
         {
-          delay: delay(),
+          mkDelay: delay(), // never times out: only the failed init can release it
           getIds: () => Promise.reject(new Error())
         }
         );
@@ -2575,7 +2722,7 @@ describe('User ID', function () {
 
         return runBidsHook(auctionSpy, { adUnits }).then(() => {
           // check auction was delayed
-          startDelay.calledWith(33);
+          sinon.assert.calledWith(startDelay, 33);
           auctionSpy.calledOnce.should.equal(false);
 
           // check ids were fetched
@@ -2608,7 +2755,7 @@ describe('User ID', function () {
 
         return runBidsHook(auctionSpy, { adUnits }).then(() => {
           // check auction was delayed
-          startDelay.calledWith(33);
+          sinon.assert.calledWith(startDelay, 33);
           auctionSpy.calledOnce.should.equal(false);
 
           // check ids were fetched
@@ -2651,11 +2798,11 @@ describe('User ID', function () {
             // check user sync is delayed after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
+            sinon.assert.calledWith(events.on, EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, sync user ids after delay
             events.on.callArg(1);
-            callbackDelay.calledWith(77);
+            sinon.assert.calledWith(callbackDelay, 77);
             mockIdCallback.calledOnce.should.equal(false);
 
             return callbackDelay.resolve();
@@ -2684,11 +2831,11 @@ describe('User ID', function () {
             // sync delay after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
+            sinon.assert.calledWith(events.on, EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, if no sync delay, fetch ids
             events.on.callArg(1);
-            callbackDelay.calledWith(0);
+            sinon.assert.calledWith(callbackDelay, 0);
             return callbackDelay.resolve();
           }).then(() => {
             mockIdCallback.calledOnce.should.equal(true);

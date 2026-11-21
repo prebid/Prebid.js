@@ -160,7 +160,7 @@ export function setSubmoduleRegistry(submodules) {
   updateEIDConfig(submodules);
 }
 
-function processSubmoduleCallbacks(submodules, cb) {
+function processSubmoduleCallbacks(submodules, cb, onSubmoduleDone?: (name: string) => void) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
@@ -169,7 +169,10 @@ function processSubmoduleCallbacks(submodules, cb) {
   submodules.forEach(function (submodule) {
     // set by submodule.store.handle() in populateSubmoduleId (see IdStore.handle in ./storage.ts)
     const handle: InvocationHandle = submodule.handle;
-    handle.onClose = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
+    handle.onClose = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(() => {
+      onSubmoduleDone?.(submodule.submodule.name);
+      done();
+    });
     function setId(id?: SerializableId) {
       if (handle.managed) {
         handle.setId(id);
@@ -394,63 +397,114 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'));
   }
 
-  // Batches of submodule callbacks that have been discovered but have not finished.
-  // A filtered refresh cancels `done`, but the submodules it did not name may still
-  // be fetching, so its replacement chain waits for them rather than releasing the
-  // auction early. Tracked from discovery rather than from the moment they start,
-  // because with `auctionDelay` = 0 callbacks are held until after the auction ends.
-  const inFlight = new Set<ReturnType<typeof defer<void>>>();
+  // Submodule callbacks that have been discovered but have not finished, one entry per
+  // submodule per batch (a batch can cover several submodules). A filtered refresh
+  // cancels `done`, but the submodules it did not name may still be fetching, so its
+  // replacement chain waits for them rather than releasing the auction early. Tracked
+  // from discovery rather than from the moment they start, because with
+  // `auctionDelay` = 0 callbacks are held until after the auction ends.
+  // Tracked per submodule so that a refresh can drop the work it supersedes (the
+  // callbacks of the submodules it refreshes) while still waiting for the rest.
+  type PendingWork = { name: string, deferred: ReturnType<typeof defer<void>> };
+  const inFlight = new Set<PendingWork>();
+  type Batch = ReturnType<typeof trackBatch>;
+  const batches = new Set<Batch>();
 
-  function trackBatch() {
-    const batch = defer<void>();
-    inFlight.add(batch);
-    return {
-      batch,
-      settle: () => {
-        inFlight.delete(batch);
-        batch.resolve();
+  function settleWork(work: PendingWork) {
+    inFlight.delete(work);
+    work.deferred.resolve();
+  }
+
+  function trackBatch(names: string[]) {
+    const work = new Map<string, PendingWork>();
+    // submodules whose work in this batch a later refresh has superseded (`true`: all of them);
+    // they must not be registered again when the batch's chain gets to run
+    let superseded: Set<string> | true = new Set<string>();
+    const isSuperseded = (name) => superseded === true || superseded.has(name);
+    function add(name) {
+      if (!work.has(name) && !isSuperseded(name)) {
+        const item = { name, deferred: defer<void>() };
+        work.set(name, item);
+        inFlight.add(item);
+      }
+    }
+    names.forEach(add);
+    const batch = {
+      // one submodule's callback has completed
+      settle(name: string) {
+        if (work.has(name)) settleWork(work.get(name));
+      },
+      // once the batch knows which submodules it is actually waiting on
+      retain(names: string[]) {
+        names.forEach(add);
+        work.forEach((item, name) => {
+          if (!names.includes(name)) settleWork(item);
+        });
+      },
+      // a later refresh replaces this batch's work for `names` (all of it if null)
+      supersede(names: string[] | null) {
+        if (names == null) {
+          // nothing left to wait for, and nothing it may register later: drop it from the registry,
+          // since the chain that would otherwise settle it may never finish
+          batch.settleAll();
+          return;
+        }
+        if (superseded !== true) {
+          names.forEach((name) => (superseded as Set<string>).add(name));
+        }
+        work.forEach((item, name) => {
+          if (isSuperseded(name)) settleWork(item);
+        });
+      },
+      settleAll() {
+        batches.delete(batch);
+        superseded = true;
+        work.forEach(settleWork);
       }
     };
+    batches.add(batch);
+    return batch;
   }
 
-  function pendingCallbacks() {
-    return inFlight.size
-      ? PbPromise.all(Array.from(inFlight, (batch) => batch.promise)).then(() => undefined)
-      : null;
+  function pendingCallbacks(excludeNames: string[]) {
+    const pending = Array.from(inFlight)
+      .filter((item) => !excludeNames.includes(item.name))
+      .map((item) => item.deferred.promise);
+    return pending.length ? PbPromise.all(pending).then(() => undefined) : null;
   }
 
-  // An unfiltered refresh replaces everything, including work that may never
-  // finish. Release the markers it supersedes, or a later filtered refresh would
-  // wait on a batch nothing is going to complete.
-  function supersedeAll(except) {
-    Array.from(inFlight).forEach((batch) => {
-      if (batch === except) return;
-      inFlight.delete(batch);
-      batch.resolve();
+  // A refresh replaces the earlier work of the submodules it refreshes (all of them
+  // if `names` is null), including work that may never finish. Release it, or a later
+  // filtered refresh would wait on a callback nothing is going to complete. That includes
+  // work an earlier batch has yet to register, once its chain runs.
+  function supersede(names: string[] | null, except: Batch) {
+    Array.from(batches).forEach((batch) => {
+      if (batch !== except) batch.supersede(names);
     });
   }
 
-  let settleInitial;
+  let initialBatch: Batch;
 
   const initChain = PbPromise.all([hooksReady, startInit.promise])
     .then(timeConsent)
     .then(checkRefs(() => {
       initialized = true;
       initSubmodules(initModules, allModules);
-      if (initModules.submodules.some(item => isFn(item.callback))) {
-        settleInitial = trackBatch().settle;
+      const withCallback = initModules.submodules.filter(item => isFn(item.callback));
+      if (withCallback.length) {
+        initialBatch = trackBatch(withCallback.map(item => item.submodule.name));
       }
     }))
     .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
     .then(checkRefs(() => {
       const modWithCb = initModules.submodules.filter(item => isFn(item.callback));
       if (modWithCb.length) {
-        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+        return new PbPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, (name) => initialBatch?.settle(name)));
       }
     }));
 
   // never let the marker outlive the chain that owns it
-  initChain.then(() => settleInitial?.(), () => settleInitial?.());
+  initChain.then(() => initialBatch?.settleAll(), () => initialBatch?.settleAll());
 
   let done = cancelAndTry(initChain);
 
@@ -474,16 +528,19 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
       }
     }
     if (refresh && initialized) {
-      // Captured before the refresh adds a batch of its own. An unfiltered refresh
-      // supersedes everything, so it keeps escaping a stuck initialization; a
-      // filtered one must not shorten the wait for what it left running.
-      // A filtered refresh waits for what it leaves running; an unfiltered one
-      // supersedes it, but only once the replacement is installed below.
-      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks();
+      // a single name has always been accepted in place of a list
+      if (typeof submoduleNames === 'string') submoduleNames = [submoduleNames];
+      // A filtered refresh waits for what it leaves running: the outstanding work of
+      // every submodule it does not name. The work of the ones it does name is
+      // superseded (their refreshed callbacks replace it), so it is not waited on, even
+      // if it never completes. An unfiltered refresh supersedes everything, so it keeps
+      // escaping a stuck initialization. Either way the superseded work is released
+      // only once the replacement is installed below.
+      const priorCallbacks = submoduleNames == null ? null : pendingCallbacks(submoduleNames);
       // Registered now, not when the chain gets there: a second refresh issued
       // before this one has run must still see this batch as outstanding.
-      const refreshBatch = trackBatch();
-      const settleRefresh = refreshBatch.settle;
+      const refreshBatch = trackBatch(submoduleNames ?? allModules.map((sm) => sm.submodule.name));
+      const settleRefresh = () => refreshBatch.settleAll();
       const chain = done
         .catch(() => null)
         .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
@@ -496,19 +553,18 @@ function idSystemInitializer({ mkDelay = delay } = {}) {
           ).filter((sm) => {
             return sm.callback != null;
           });
+          refreshBatch.retain(cbModules.map((sm) => sm.submodule.name));
           if (cbModules.length) {
-            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
+            return new PbPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, refreshBatch.settle));
           }
         }));
       chain.then(settleRefresh, settleRefresh);
       done = cancelAndTry(
         priorCallbacks == null ? chain : PbPromise.all([priorCallbacks, chain]).then(() => undefined)
       );
-      if (submoduleNames == null) {
-        // After the swap, never before: releasing these first can fulfil the chain
-        // this refresh just replaced, and a caller can take it for the current one.
-        supersedeAll(refreshBatch.batch);
-      }
+      // After the swap, never before: releasing these first can fulfil the chain
+      // this refresh just replaced, and a caller can take it for the current one.
+      supersede(submoduleNames, refreshBatch);
     }
     return done;
   };
@@ -971,6 +1027,8 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
           advertiseKeys: false,
         }),
         store: undefined,
+        // a plain config update leaves the previous invocation running, but the next one must still supersede it
+        handle: previousSubmodule?.handle,
         dirty: previousSubmodule == null || !deepEqual(newConfig, previousSubmodule.config),
         new: previousSubmodule == null
       };
@@ -988,7 +1046,8 @@ export type SubmoduleContainer<P extends UserIdProvider> = {
   idObj;
   storageMgr: StorageManager;
   store: IdStore;
-  // the latest getId / extendId invocation; an older one completing late is ignored
+  // the latest getId / extendId invocation, carried over from the container this one replaces;
+  // an older one completing late is ignored
   handle?: InvocationHandle;
   // true if this module was reconfigured (latest config is different from previous config)
   dirty: boolean;
