@@ -530,3 +530,10 @@ describe('DatablocksAdapter', function() {
     });
   });
 });
+
+describe('datablocksBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3172);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

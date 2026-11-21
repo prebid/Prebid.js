@@ -602,3 +602,10 @@ describe('adriverAdapter', function () {
     });
   });
 });
+
+describe('adriverBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(46);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

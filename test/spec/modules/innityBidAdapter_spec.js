@@ -128,3 +128,10 @@ describe('innityAdapterTest', () => {
     });
   });
 });
+
+describe('innityBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(255);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

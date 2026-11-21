@@ -5,6 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getDNT } from '../libraries/dnt/index.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 const BIDDER_CODE = 'distroscale';
+const ACP_ID = 2262; // Google Additional Consent provider ID
 const SHORT_CODE = 'ds';
 const LOG_WARN_PREFIX = 'DistroScale: ';
 const ENDPOINT = 'https://hb.jsrdn.com/hb?from=pbjs';
@@ -116,8 +117,9 @@ function _createImpressionObject(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: SUPPORTED_MEDIATYPES,
-  aliases: [SHORT_CODE],
+  aliases: [{ code: SHORT_CODE, acpId: ACP_ID }],
 
   isBidRequestValid: bid => {
     if (bid && bid.params && bid.params.pubid && isStr(bid.params.pubid)) {

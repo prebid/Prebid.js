@@ -12,6 +12,7 @@ import { INSTREAM } from '../src/video.js';
  */
 
 const BIDDER_CODE = 'ivs';
+const ACP_ID = 3831; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://a.ivstracker.net/prod/openrtb/2.5';
 
 export const converter = ortbConverter({
@@ -24,6 +25,7 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [VIDEO],
 
   /**
