@@ -193,7 +193,7 @@ function getUserSyncs(
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['bt'],
+  aliases: [{ code: 'bt', gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,

@@ -826,3 +826,10 @@ describe('Opera Ads Bid Adapter', function () {
     });
   });
 });
+
+describe('Opera Ads alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(1135);
+    expect(spec.aliases).to.deep.include({ code: 'opera', gvlid: 1135 });
+  });
+});

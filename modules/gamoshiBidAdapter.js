@@ -132,7 +132,7 @@ export const helper = {
 export const spec = {
   code: 'gamoshi',
   gvlid: GVLID,
-  aliases: ['gambid', 'cleanmedianet'],
+  aliases: [{ code: 'gambid', gvlid: GVLID }, 'cleanmedianet'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {

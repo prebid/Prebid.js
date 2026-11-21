@@ -14,13 +14,15 @@ const DEFAULT_TMAX = 500;
  * Formats - Display/Native/Video formats supported.
  *
  */
+const GVLID = 81;
+
 export const spec = {
 
   code: 'pulsepoint',
 
-  gvlid: 81,
+  gvlid: GVLID,
 
-  aliases: ['pulseLite', 'pulsepointLite'],
+  aliases: [{ code: 'pulseLite', gvlid: GVLID }, { code: 'pulsepointLite', gvlid: GVLID }],
 
   supportedMediaTypes: ['banner', 'native', 'video'],
 

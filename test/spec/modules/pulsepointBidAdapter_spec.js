@@ -326,8 +326,8 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(2);
-    expect(spec.aliases[0]).to.equal('pulseLite');
-    expect(spec.aliases[1]).to.equal('pulsepointLite');
+    expect(spec.aliases[0]).to.deep.equal({ code: 'pulseLite', gvlid: 81 });
+    expect(spec.aliases[1]).to.deep.equal({ code: 'pulsepointLite', gvlid: 81 });
   });
 
   it('Verifies supported media types', function () {

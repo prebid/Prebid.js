@@ -418,3 +418,10 @@ describe('shBidAdapter', () => {
     });
   });
 });
+
+describe('ShowHeroes alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(111);
+    expect(spec.aliases).to.deep.include({ code: 'showheroesBs', gvlid: 111 });
+  });
+});

@@ -355,7 +355,7 @@ describe('Smart bid adapter tests', function () {
 
   it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('smart');
+    expect(spec.aliases[0]).to.deep.equal({ code: 'smart', gvlid: 45 });
   });
 
   it('Verifies if bid request valid', function () {

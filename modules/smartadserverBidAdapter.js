@@ -26,7 +26,7 @@ const GVL_ID = 45;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  aliases: ['smart'], // short code
+  aliases: [{ code: 'smart', gvlid: GVL_ID }], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

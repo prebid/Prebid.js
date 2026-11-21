@@ -13,7 +13,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['freewheel-mrm'], //  aliases for fwssp
+  aliases: [{ code: 'freewheel-mrm', gvlid: GVL_ID }], //  aliases for fwssp
 
   /**
    * Determines whether or not the given bid request is valid.

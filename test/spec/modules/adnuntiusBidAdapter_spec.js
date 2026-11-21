@@ -1971,3 +1971,14 @@ describe('adnuntiusBidAdapter', function() {
     });
   }
 });
+
+describe('Adnuntius alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(855);
+    expect(spec.aliases).to.deep.include({ code: 'adndeal1', gvlid: 855 });
+    expect(spec.aliases).to.deep.include({ code: 'adndeal2', gvlid: 855 });
+    expect(spec.aliases).to.deep.include({ code: 'adndeal3', gvlid: 855 });
+    expect(spec.aliases).to.deep.include({ code: 'adndeal4', gvlid: 855 });
+    expect(spec.aliases).to.deep.include({ code: 'adndeal5', gvlid: 855 });
+  });
+});

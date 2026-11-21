@@ -649,3 +649,10 @@ describe('BeOp Bid Adapter tests', () => {
     });
   });
 });
+
+describe('BeOp alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(666);
+    expect(spec.aliases).to.deep.include({ code: 'bp', gvlid: 666 });
+  });
+});

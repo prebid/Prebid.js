@@ -1844,3 +1844,10 @@ describe('gumgumAdapter', function () {
     expect(result[1].type).to.equal('iframe');
   });
 });
+
+describe('GumGum alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(61);
+    expect(spec.aliases).to.deep.include({ code: 'gg', gvlid: 61 });
+  });
+});

@@ -225,8 +225,8 @@ describe('Conversant adapter tests', function() {
   it('Verify basic properties', function() {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(2);
-    expect(spec.aliases[0]).to.equal('cnvr');
-    expect(spec.aliases[1]).to.equal('epsilon');
+    expect(spec.aliases[0]).to.deep.equal({ code: 'cnvr', gvlid: 24 });
+    expect(spec.aliases[1]).to.deep.equal({ code: 'epsilon', gvlid: 24 });
     expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(3);
     expect(spec.supportedMediaTypes[1]).to.equal('video');
   });

@@ -13,7 +13,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
-  aliases: ['dichange', 'digitalmatter'],
+  aliases: ['dichange', { code: 'digitalmatter', gvlid: GVLID }],
   bidParameters: ['accountId', 'siteId'],
   isBidRequestValid: function (bid) {
     if (typeof bid.params !== 'object') {

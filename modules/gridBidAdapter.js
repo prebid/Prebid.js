@@ -60,7 +60,7 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', 'gridNM'],
+  aliases: ['playwire', 'adlivetech', { code: 'gridNM', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.

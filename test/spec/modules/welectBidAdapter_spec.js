@@ -227,3 +227,10 @@ describe('WelectAdapter', function () {
     });
   });
 });
+
+describe('Welect alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(adapter.gvlid).to.equal(282);
+    expect(adapter.aliases).to.deep.include({ code: 'wlt', gvlid: 282 });
+  });
+});

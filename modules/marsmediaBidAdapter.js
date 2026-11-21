@@ -8,12 +8,14 @@ import { getAdUnitElement } from '../src/utils/adUnits.js';
 import { getDNT } from '../libraries/dnt/index.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
+const GVLID = 776;
+
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
-  this.aliases = ['mars'];
+  this.aliases = [{ code: 'mars', gvlid: GVLID }];
   this.supportedMediaTypes = [VIDEO, BANNER];
 
-  this.gvlid = 776;
+  this.gvlid = GVLID;
   const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   const SUPPORTED_VIDEO_MIMES = ['video/mp4'];
   const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];

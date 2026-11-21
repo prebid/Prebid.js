@@ -20,7 +20,8 @@ import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const ALIAS_BIDDER_CODE = ['gg'];
+const GVLID = 61;
+const ALIAS_BIDDER_CODE = [{ code: 'gg', gvlid: GVLID }];
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' };
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
@@ -853,7 +854,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 61,
+  gvlid: GVLID,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,

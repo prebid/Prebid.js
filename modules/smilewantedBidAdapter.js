@@ -23,7 +23,7 @@ const GVL_ID = 639;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  aliases: ['smile', 'sw'],
+  aliases: [{ code: 'smile', gvlid: GVL_ID }, { code: 'sw', gvlid: GVL_ID }],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
