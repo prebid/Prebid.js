@@ -29,7 +29,6 @@ describe('bidmaticBidAdapter', function () {
     'bidderRequestId': 'req123456',
     'auctionId': 'auct123456',
     'schain': { ver: '1.0' },
-    'userId': { id1: 'value1' },
   };
 
   const VIDEO_BID_REQUEST = {
@@ -182,7 +181,7 @@ describe('bidmaticBidAdapter', function () {
         'Coppa': 0
       });
       expect(result.Schain).to.deep.equal({ ver: '1.0' });
-      expect(result.UserIds).to.deep.equal({ id1: 'value1' });
+      expect(result).to.not.have.property('UserIds');
     });
 
     it('should remap bid request with consent params', function () {

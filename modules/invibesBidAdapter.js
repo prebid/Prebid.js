@@ -18,7 +18,6 @@ const CONSTANTS = {
   PREBID_VERSION: 13,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
-  USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
   DISABLE_USER_SYNC: true
 };
@@ -114,7 +113,7 @@ function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
   const _adUnitCodes = [];
-  let _customEndpoint, _userId, _domainId;
+  let _customEndpoint, _domainId;
   const _ivAuctionStart = Date.now();
   window.invibes = window.invibes || {};
   window.invibes.placementIds = window.invibes.placementIds || [];
@@ -138,7 +137,6 @@ function buildRequest(bidRequests, bidderRequest) {
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
     _disableUserSyncs = bidRequest?.params?.disableUserSyncs;
-    _userId = _userId || bidRequest.userId;
   });
 
   invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent, bidderRequest.uspConsent);
@@ -146,16 +144,12 @@ function buildRequest(bidRequests, bidderRequest) {
   invibes.visitId = invibes.visitId || generateRandomId();
 
   const currentQueryStringParams = parseQueryStringParams();
-  const userIdModel = getUserIds(_userId);
   const bidParamsJson = {
     placementIds: _placementIds,
     adUnitCodes: _adUnitCodes,
     auctionStartTime: _ivAuctionStart,
     bidVersion: CONSTANTS.PREBID_VERSION
   };
-  if (userIdModel) {
-    bidParamsJson.userId = userIdModel;
-  }
   const data = {
     location: getDocumentLocation(bidderRequest),
     videoAdHtmlId: generateRandomId(),
@@ -428,20 +422,6 @@ function generateRandomId() {
 
 function getDocumentLocation(bidderRequest) {
   return bidderRequest.refererInfo.page.substring(0, 300);
-}
-
-function getUserIds(bidUserId) {
-  let userId;
-  if (bidUserId) {
-    CONSTANTS.USERID_PROVIDERS.forEach(provider => {
-      if (bidUserId[provider]) {
-        userId = userId || {};
-        userId[provider] = bidUserId[provider];
-      }
-    });
-  }
-
-  return userId;
 }
 
 function parseQueryStringParams() {

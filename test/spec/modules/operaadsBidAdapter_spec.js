@@ -422,7 +422,7 @@ describe('Opera Ads Bid Adapter', function () {
       }
     });
 
-    it('sharedid should be used', function () {
+    it('a raw bid.userId.sharedid is not used as buyeruid', function () {
       const bidRequests = [{
         adUnitCode: 'test-div',
         auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -458,10 +458,11 @@ describe('Opera Ads Bid Adapter', function () {
         requestData = JSON.parse(reqs[0].data);
       }).to.not.throw();
 
-      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.sharedid.id);
+      expect(requestData.user.buyeruid).to.be.a('string').and.not.be.empty;
+      expect(requestData.user.buyeruid).to.not.equal(bidRequests[0].userId.sharedid.id);
     });
 
-    it('pubcid should be used when sharedid is empty', function () {
+    it('a raw bid.userId.pubcid is not used as buyeruid', function () {
       const bidRequests = [{
         adUnitCode: 'test-div',
         auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -495,7 +496,8 @@ describe('Opera Ads Bid Adapter', function () {
         requestData = JSON.parse(reqs[0].data);
       }).to.not.throw();
 
-      expect(requestData.user.buyeruid).to.equal(bidRequests[0].userId.pubcid);
+      expect(requestData.user.buyeruid).to.be.a('string').and.not.be.empty;
+      expect(requestData.user.buyeruid).to.not.equal(bidRequests[0].userId.pubcid);
     });
 
     it('random uid will be generate when userId is empty', function () {

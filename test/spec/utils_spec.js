@@ -73,6 +73,52 @@ describe('Utils', function () {
     });
   });
 
+  describe('generateUUID', function () {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    if (window.isSecureContext) {
+      it('should use crypto.randomUUID when available', function () {
+        const randomUUID = sinon.spy(window.crypto, 'randomUUID');
+        try {
+          const uuid = utils.generateUUID();
+          expect(uuid).to.match(UUID_REGEX);
+          sinon.assert.calledOnce(randomUUID);
+          expect(randomUUID.returnValues[0]).to.equal(uuid);
+          expect(utils.generateUUID()).to.not.equal(uuid);
+        } finally {
+          randomUUID.restore();
+        }
+      });
+    }
+
+    it('should return the value of crypto.randomUUID', function () {
+      const randomUUID = sinon.stub().returns('11111111-2222-4333-8444-555555555555');
+      Object.defineProperty(window.crypto, 'randomUUID', { value: randomUUID, configurable: true });
+      try {
+        expect(utils.generateUUID()).to.equal('11111111-2222-4333-8444-555555555555');
+        sinon.assert.calledOnce(randomUUID);
+      } finally {
+        delete window.crypto.randomUUID;
+      }
+    });
+
+    it('should fall back to getRandomValues when crypto.randomUUID is not available', function () {
+      const original = window.crypto.randomUUID;
+      Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true });
+      const getRandomValues = sinon.spy(window.crypto, 'getRandomValues');
+      try {
+        const uuid = utils.generateUUID();
+        expect(uuid).to.match(UUID_REGEX);
+        sinon.assert.callCount(getRandomValues, 31);
+        expect(utils.generateUUID()).to.not.equal(uuid);
+      } finally {
+        getRandomValues.restore();
+        delete window.crypto.randomUUID;
+      }
+      expect(window.crypto.randomUUID).to.equal(original);
+    });
+  });
+
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {

@@ -362,28 +362,13 @@ describe('TheAdxAdapter', function () {
       expect(mediaTypes.video).to.not.be.undefined;
     });
 
-    it('add eids to request', function () {
+    it('does not add ids from a raw bid.userId to the request', function () {
       const localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
       const results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       const result = results.pop();
       const payload = JSON.parse(result.data);
-      expect(payload).to.not.be.null;
-      expect(payload.ext).to.not.be.null;
-
-      expect(payload.ext.uid2).to.not.be.null;
-      expect(payload.ext.uid2.length).to.greaterThan(0);
-
-      expect(payload.ext.id5id).to.not.be.null;
-      expect(payload.ext.id5id.length).to.greaterThan(0);
-      expect(payload.ext.id5_linktype).to.not.be.null;
-      expect(payload.ext.id5_linktype.length).to.greaterThan(0);
-
-      expect(payload.ext.netid).to.not.be.null;
-      expect(payload.ext.netid.length).to.greaterThan(0);
-
-      expect(payload.ext.sharedid).to.not.be.null;
-      expect(payload.ext.sharedid.length).to.greaterThan(0);
+      expect(payload).to.not.have.property('ext');
     });
   });
 

@@ -241,9 +241,6 @@ export const adapter = {
     return getRequests({
       'url': endPoint,
       'method': 'POST',
-      'options': {
-        'contentType': 'application/json'
-      },
     }, validBidRequests, bidderRequest);
   },
 

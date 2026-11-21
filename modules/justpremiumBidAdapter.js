@@ -49,13 +49,9 @@ export const spec = {
       sizes[zone].push.apply(sizes[zone], b.mediaTypes && b.mediaTypes.banner && b.mediaTypes.banner.sizes);
     });
 
-    if (validBidRequests[0]?.userId?.pubcid) {
-      payload.pubcid = validBidRequests[0]?.userId?.pubcid;
-    } else if (validBidRequests[0]?.crumbs?.pubcid) {
+    if (validBidRequests[0]?.crumbs?.pubcid) {
       payload.pubcid = validBidRequests[0]?.crumbs?.pubcid;
     }
-
-    payload.uids = validBidRequests[0].userId;
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr_consent = {

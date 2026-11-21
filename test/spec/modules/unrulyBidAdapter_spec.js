@@ -454,10 +454,8 @@ describe('UnrulyAdapter', function () {
     it('should return a server request with method === POST', function () {
       expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].method).to.equal('POST');
     });
-    it('should ensure contentType is `application/json`', function () {
-      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].options).to.deep.equal({
-        contentType: 'application/json'
-      });
+    it('should not set a contentType, so no CORS preflight is triggered', function () {
+      expect(adapter.buildRequests(mockBidRequests.bids, mockBidRequests)[0].options?.contentType).to.be.undefined;
     });
     it('should return a server request with valid payload', function () {
       const expectedResult = {
