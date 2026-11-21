@@ -64,13 +64,13 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
     url = buildUrl(urlInfo);
   }
   const headers = new Headers(options.customHeaders);
-  headers.set(CTYPE, options.contentType || 'text/plain');
   const rqOpts: any = {
     method,
     headers
   };
   if (method !== GET && data) {
     rqOpts.body = data;
+    headers.set(CTYPE, options.contentType || 'text/plain');
   }
   if (options.withCredentials) {
     rqOpts.credentials = 'include';

@@ -100,7 +100,8 @@ describe('AMX ID', () => {
 
       const [request] = server.requests;
       expect(request.withCredentials).to.be.true;
-      expect(request.requestHeaders['Content-Type']).to.match(/text\/plain/);
+      // a GET has no body, so no Content-Type (which would only add a CORS preflight for non-simple values)
+      expect(request.requestHeaders['Content-Type']).to.be.undefined;
 
       const { search } = utils.parseUrl(request.url);
       expect(search.av).to.equal(amxIdSubmodule.version);

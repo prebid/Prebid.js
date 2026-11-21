@@ -192,9 +192,39 @@ describe('ajax', () => {
             method: 'GET'
           },
           text: '',
-          headers: {
-            'content-type': 'text/plain'
-          }
+          headers: {}
+        }
+      },
+      'GET with a JSON content type': {
+        url: EXAMPLE_URL,
+        data: null,
+        options: {
+          method: 'GET',
+          contentType: 'application/json',
+        },
+        expect: {
+          request: {
+            url: EXAMPLE_URL + '/',
+            method: 'GET'
+          },
+          text: '',
+          headers: {}
+        }
+      },
+      'POST without a body': {
+        url: EXAMPLE_URL,
+        data: null,
+        options: {
+          method: 'POST',
+          contentType: 'application/json',
+        },
+        expect: {
+          request: {
+            url: EXAMPLE_URL + '/',
+            method: 'POST'
+          },
+          text: '',
+          headers: {}
         }
       },
       'GET with credentials': {
@@ -211,9 +241,7 @@ describe('ajax', () => {
             credentials: 'include'
           },
           text: '',
-          headers: {
-            'content-type': 'text/plain'
-          }
+          headers: {}
         }
       }
     }).forEach(([t, { url, data, options, expect: { request, text, headers } }]) => {
@@ -226,6 +254,9 @@ describe('ajax', () => {
           const hdr = new Headers(headers);
           Array.from(req.headers.entries()).forEach(([name, val]) => {
             expect(hdr.get(name)).to.eql(val);
+          });
+          Array.from(hdr.entries()).forEach(([name, val]) => {
+            expect(req.headers.get(name)).to.eql(val);
           });
           expect(body).to.eql(text);
         });
