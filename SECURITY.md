@@ -150,8 +150,8 @@ behavior, but neither tests nor helper names prove that every caller is protecte
 ## Reporting a Vulnerability
 
 Keep suspected vulnerabilities, exploit details, credentials, and user data out of
-public issues and pull requests. Use **Report a vulnerability** in the affected
-repository's Security tab when private reporting is available. Otherwise, ask a
-repository maintainer for a private reporting channel without publishing sensitive
-details. Include the affected version, required configuration, reproduction steps,
-and expected security impact, using synthetic or redacted data.
+public issues and pull requests. Report privately through GitHub's
+[Report a vulnerability](https://github.com/prebid/Prebid.js/security/advisories/new)
+form (the repository's Security tab). Include the affected version, required
+configuration, reproduction steps, and expected security impact, using synthetic or
+redacted data.
