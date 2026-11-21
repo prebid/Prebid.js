@@ -1,6 +1,4 @@
-/// <reference types="mocha" />
 import { expect } from 'chai';
-import type { Bid } from '../../../src/bidfactory.js';
 import { server } from '../../mocks/xhr.js';
 import { config } from '../../../src/config.js';
 import { spec, fillPriceMacros, getEndpoint } from '../../../modules/melvadBidAdapter.js';
@@ -13,7 +11,7 @@ const CURRENCY_MACRO = '$' + '{AUCTION_CURRENCY}';
 const WIN_LINK = `https://pub.supplier.melvad.com/win/abc?price=${PRICE_MACRO}&cur=${CURRENCY_MACRO}`;
 const BILLING_LINK = `https://pub.supplier.melvad.com/bill/abc?price=${PRICE_MACRO}&cur=${CURRENCY_MACRO}`;
 
-function bannerBid(overrides: Record<string, unknown> = {}) {
+function bannerBid(overrides = {}) {
   return {
     bidder: 'melvad',
     bidId: 'bid-banner',
@@ -25,7 +23,7 @@ function bannerBid(overrides: Record<string, unknown> = {}) {
     sizes: [[300, 250], [728, 90]],
     params: { placementId: 'pl-banner' },
     ...overrides,
-  } as any;
+  };
 }
 
 const NATIVE_REQUEST = {
@@ -48,7 +46,7 @@ function nativeBid() {
     // the core derives the ORTB native request of the ad unit before the adapter sees the bid request
     nativeOrtbRequest: NATIVE_REQUEST,
     params: { placementId: 'pl-native' },
-  } as any;
+  };
 }
 
 function videoBid() {
@@ -63,10 +61,10 @@ function videoBid() {
       video: { context: 'instream', playerSize: [640, 360], mimes: ['video/mp4'], protocols: [2, 3], plcmt: 1 },
     },
     params: { placementId: 'pl-video' },
-  } as any;
+  };
 }
 
-function bidderRequest(bids: any[]) {
+function bidderRequest(bids) {
   return {
     bidderCode: 'melvad',
     auctionId: 'auction-1',
@@ -75,10 +73,10 @@ function bidderRequest(bids: any[]) {
     timeout: 1000,
     refererInfo: { page: 'https://publisher.example/article', domain: 'publisher.example', ref: '' },
     ortb2: { site: { page: 'https://publisher.example/article', domain: 'publisher.example' } },
-  } as any;
+  };
 }
 
-function sspBid(overrides: Record<string, unknown> = {}) {
+function sspBid(overrides = {}) {
   return {
     id: 'aid-1',
     impid: 'bid-banner',
@@ -97,12 +95,12 @@ function sspBid(overrides: Record<string, unknown> = {}) {
 }
 
 // cur null leaves the currency out of the response
-function sspResponse(bids: any[], cur: string | null = 'RUB') {
-  const body: any = { id: 'net-1', bidid: 'aid', seatbid: [{ seat: 'dsp-7', bid: bids }] };
+function sspResponse(bids, cur = 'RUB') {
+  const body = { id: 'net-1', bidid: 'aid', seatbid: [{ seat: 'dsp-7', bid: bids }] };
   if (cur !== null) {
     body.cur = cur;
   }
-  return { body, headers: { get: () => '' } } as any;
+  return { body, headers: { get: () => '' } };
 }
 
 describe('melvadBidAdapter', () => {
@@ -133,7 +131,7 @@ describe('melvadBidAdapter', () => {
 
   describe('buildRequests', () => {
     it('posts one OpenRTB request as text/plain without credentials', () => {
-      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()])) as any;
+      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()]));
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT);
       expect(request.options.contentType).to.equal('text/plain');
@@ -144,19 +142,19 @@ describe('melvadBidAdapter', () => {
     it('uses the configured endpoint', () => {
       config.setConfig({ melvad: { endpoint: 'https://ssp.example/prebid' } });
       expect(getEndpoint()).to.equal('https://ssp.example/prebid');
-      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()])) as any;
+      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()]));
       expect(request.url).to.equal('https://ssp.example/prebid');
     });
 
     it('marks the request as first price with the contract version', () => {
-      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()])) as any;
+      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()]));
       expect(request.data.at).to.equal(1);
       expect(request.data.ext.melvad.contractVersion).to.equal(1);
       expect(request.data.tmax).to.equal(1000);
     });
 
     it('builds a banner imp with the placement and the sizes', () => {
-      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()])) as any;
+      const request = spec.buildRequests([bannerBid()], bidderRequest([bannerBid()]));
       expect(request.data.imp).to.have.lengthOf(1);
       const imp = request.data.imp[0];
       expect(imp.id).to.equal('bid-banner');
@@ -168,13 +166,13 @@ describe('melvadBidAdapter', () => {
 
     it('trims the placement in the imp', () => {
       const bid = bannerBid({ params: { placementId: ' pl-banner ' } });
-      const request = spec.buildRequests([bid], bidderRequest([bid])) as any;
+      const request = spec.buildRequests([bid], bidderRequest([bid]));
       expect(request.data.imp[0].ext.melvad.placementId).to.equal('pl-banner');
     });
 
     if (FEATURES.NATIVE) {
       it('builds a native imp with the ORTB request', () => {
-        const request = spec.buildRequests([nativeBid()], bidderRequest([nativeBid()])) as any;
+        const request = spec.buildRequests([nativeBid()], bidderRequest([nativeBid()]));
         const imp = request.data.imp[0];
         expect(imp.id).to.equal('bid-native');
         expect(imp.native).to.be.an('object');
@@ -186,7 +184,7 @@ describe('melvadBidAdapter', () => {
 
     if (FEATURES.VIDEO) {
       it('builds a video imp from the player parameters', () => {
-        const request = spec.buildRequests([videoBid()], bidderRequest([videoBid()])) as any;
+        const request = spec.buildRequests([videoBid()], bidderRequest([videoBid()]));
         const imp = request.data.imp[0];
         expect(imp.id).to.equal('bid-video');
         expect(imp.video.w).to.equal(640);
@@ -199,23 +197,23 @@ describe('melvadBidAdapter', () => {
 
     it('groups several impressions into one request', () => {
       const bids = [bannerBid(), nativeBid(), videoBid()];
-      const request = spec.buildRequests(bids, bidderRequest(bids)) as any;
-      expect(request.data.imp.map((imp: any) => imp.id)).to.deep.equal(['bid-banner', 'bid-native', 'bid-video']);
+      const request = spec.buildRequests(bids, bidderRequest(bids));
+      expect(request.data.imp.map((imp) => imp.id)).to.deep.equal(['bid-banner', 'bid-native', 'bid-video']);
     });
 
     it('passes the page and the first party user through', () => {
       const bidder = bidderRequest([bannerBid()]);
       bidder.ortb2.user = { buyeruid: '213ba1a2425be71ec5080b1d64b8450c' };
-      const request = spec.buildRequests([bannerBid()], bidder) as any;
+      const request = spec.buildRequests([bannerBid()], bidder);
       expect(request.data.site.page).to.equal('https://publisher.example/article');
       expect(request.data.user.buyeruid).to.equal('213ba1a2425be71ec5080b1d64b8450c');
     });
   });
 
   describe('interpretResponse', () => {
-    function interpret(response: any, bids: any[] = [bannerBid()]) {
+    function interpret(response, bids = [bannerBid()]) {
       const request = spec.buildRequests(bids, bidderRequest(bids));
-      return spec.interpretResponse(response, request as any) as any[];
+      return spec.interpretResponse(response, request);
     }
 
     it('returns no bids for an empty body (204)', () => {
@@ -293,7 +291,7 @@ describe('melvadBidAdapter', () => {
       const bare = interpret(sspResponse([sspBid({ api: 0, attr: [], ext: { melvad: { mediaType: 'banner' }, nroa: { client: {} } } })]))[0];
       expect(bare.melvad).to.deep.equal({ win: WIN_LINK, billing: BILLING_LINK });
       // bid.melvad is part of the public bid type: no cast is needed to read it
-      const typed: Bid = bid;
+      const typed = bid;
       expect(typed.melvad?.nroa?.erid).to.equal('2SDnjdXyz12');
     });
 
@@ -370,13 +368,13 @@ describe('melvadBidAdapter', () => {
   describe('events', () => {
     // ajax is rewritten at build time (plugins/callerContext.js) and cannot be stubbed: the requests are read from
     // the global fetch mock
-    const notices = () => server.requests.map((req: any) => ({ url: req.url, method: req.method, keepalive: req.fetch.request.keepalive }));
+    const notices = () => server.requests.map((req) => ({ url: req.url, method: req.method, keepalive: req.fetch.request.keepalive }));
 
     const wonBid = () => ({
       cpm: 80,
       currency: 'RUB',
       melvad: { win: WIN_LINK, billing: BILLING_LINK },
-    } as any);
+    });
 
     it('calls the win link with the price on bidWon', () => {
       spec.onBidWon(wonBid());
@@ -399,13 +397,13 @@ describe('melvadBidAdapter', () => {
     });
 
     it('calls nothing without links', () => {
-      spec.onBidWon({ cpm: 1, currency: 'USD' } as any);
-      spec.onBidBillable({ cpm: 1, currency: 'USD', melvad: {} } as any);
+      spec.onBidWon({ cpm: 1, currency: 'USD' });
+      spec.onBidBillable({ cpm: 1, currency: 'USD', melvad: {} });
       expect(server.requests).to.have.length(0);
     });
 
     it('fills the macros once each', () => {
-      expect(fillPriceMacros(`https://x/y?p=${PRICE_MACRO}&c=${CURRENCY_MACRO}&q=${PRICE_MACRO}`, { cpm: 2.5, currency: 'EUR' } as any))
+      expect(fillPriceMacros(`https://x/y?p=${PRICE_MACRO}&c=${CURRENCY_MACRO}&q=${PRICE_MACRO}`, { cpm: 2.5, currency: 'EUR' }))
         .to.equal('https://x/y?p=2.5&c=EUR&q=2.5');
     });
   });
