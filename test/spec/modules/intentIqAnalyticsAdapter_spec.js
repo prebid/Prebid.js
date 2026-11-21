@@ -6,6 +6,7 @@ import iiqAnalyticsAnalyticsAdapter, {
 } from "modules/intentIqAnalyticsAdapter.js";
 import * as utils from "src/utils.js";
 import { server } from "test/mocks/xhr.js";
+import { mockGptSlot } from "test/mocks/gpt.js";
 import { config } from "src/config.js";
 import { EVENTS } from "src/constants.js";
 import * as events from "src/events.js";
@@ -784,13 +785,13 @@ describe("IntentIQ tests all", function () {
       gam.cmd.forEach((fn) => fn());
 
       // simulate slotRenderEnded
-      const slot = {
-        getSlotElementId: () => "ad-unit-1",
-        getAdUnitPath: () => "/123/foo",
-        getTargetingKeys: () => ["hb_bidder", "hb_adid"],
-        getTargeting: (k) =>
-          k === "hb_bidder" ? ["pubmatic"] : k === "hb_adid" ? ["ad123"] : [],
-      };
+      const slot = mockGptSlot(
+        { hb_bidder: "pubmatic", hb_adid: "ad123" },
+        {
+          getSlotElementId: () => "ad-unit-1",
+          getAdUnitPath: () => "/123/foo",
+        }
+      );
       if (gam._listeners["slotRenderEnded"]) {
         gam._listeners["slotRenderEnded"]({ isEmpty: false, slot });
       }
@@ -817,13 +818,13 @@ describe("IntentIQ tests all", function () {
       events.emit(EVENTS.BID_REQUESTED);
       gam.cmd.forEach((fn) => fn());
 
-      const slot = {
-        getSlotElementId: () => "ad-unit-1",
-        getAdUnitPath: () => "/123/foo",
-        getTargetingKeys: () => ["hb_bidder", "hb_adid"],
-        getTargeting: (k) =>
-          k === "hb_bidder" ? ["pubmatic"] : k === "hb_adid" ? ["ad123"] : [],
-      };
+      const slot = mockGptSlot(
+        { hb_bidder: "pubmatic", hb_adid: "ad123" },
+        {
+          getSlotElementId: () => "ad-unit-1",
+          getAdUnitPath: () => "/123/foo",
+        }
+      );
 
       const initialRequests = server.requests.length;
       if (gam._listeners["slotRenderEnded"]) {

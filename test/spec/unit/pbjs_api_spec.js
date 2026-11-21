@@ -31,6 +31,7 @@ import { BID_STATUS, EVENTS, GRANULARITY_OPTIONS, PB_LOCATOR, TARGETING_KEYS } f
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { nativeAdapters } from '../../../src/native.js';
+import { targetingConfigApi } from '../../mocks/gpt.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -112,29 +113,9 @@ var Slot = function Slot(elementId, pathId) {
     getAdUnitPath: function getAdUnitPath() {
       return pathId;
     },
-
-    setTargeting: function setTargeting(key, value) {
-      this.targeting[key] = Array.isArray(value) ? value : [value];
-    },
-
-    getTargeting: function getTargeting(key) {
-      return this.targeting[key] || [];
-    },
-
-    getTargetingKeys: function getTargetingKeys() {
-      return Object.getOwnPropertyNames(this.targeting);
-    },
-
-    clearTargeting: function clearTargeting() {
-      this.targeting = {};
-      return this;
-    },
-
-    updateTargetingFromMap: function updateTargetingFromMap(targetingMap) {
-      Object.keys(targetingMap).forEach(key => this.setTargeting(key, targetingMap[key]));
-    }
   };
-  slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
+  slot.spySetTargeting = sinon.spy();
+  Object.assign(slot, targetingConfigApi(slot.targeting, slot.spySetTargeting));
   slot.spyGetSlotElementId = sinon.spy(slot, 'getSlotElementId');
   return slot;
 };
@@ -149,9 +130,9 @@ var createSlotArray = function createSlotArray() {
 
 var createSlotArrayScenario2 = function createSlotArrayScenario2() {
   var slot1 = new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]);
-  slot1.setTargeting('pos1', '750x350');
+  slot1.setConfig({ targeting: { pos1: '750x350' } });
   var slot2 = new Slot(config.adUnitElementIDs[1], config.adUnitCodes[0]);
-  slot2.setTargeting('pos1', '750x350');
+  slot2.setConfig({ targeting: { pos1: '750x350' } });
   return [
     slot1,
     slot2
@@ -171,25 +152,10 @@ window.googletag = {
       setSlots: function (slots) {
         self._slots = slots;
       },
-
-      setTargeting: function(key, arrayOfValues) {
-        self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
-      },
-
-      getTargeting: function(key) {
-        return self._targeting[key] || [];
-      },
-
-      getTargetingKeys: function() {
-        return Object.getOwnPropertyNames(self._targeting);
-      },
-
-      clearTargeting: function() {
-        self._targeting = {};
-      }
     };
   }
 };
+Object.assign(window.googletag, targetingConfigApi(window.googletag._targeting));
 
 var createTagAST = function() {
   var tags = {};
@@ -1020,8 +986,7 @@ describe('Unit: Prebid Module', function () {
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().forEach(function (key) {
-          const value = slot.getTargeting(key);
+        Object.entries(slot.getConfig('targeting').targeting).forEach(function ([key, value]) {
           targeting[key] = value[0];
         });
         expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
@@ -1036,21 +1001,20 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
       slots.forEach(function(slot) {
-        slot.setTargeting('hb_pb', 'stale');
+        slot.setConfig({ targeting: { hb_pb: 'stale' } });
       });
 
       pbjs.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
       slots.forEach(function(slot) {
         targeting = {};
-        slot.getTargetingKeys().forEach(function (key) {
-          const value = slot.getTargeting(key);
+        Object.entries(slot.getConfig('targeting').targeting).forEach(function ([key, value]) {
           targeting[key] = value[0];
         });
 
         expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
         // ensure stale prebid targeting is cleared when no bids are returned
-        expect(targeting['hb_pb']).to.equal(null);
+        expect(targeting).to.not.have.property('hb_pb');
       });
     });
 

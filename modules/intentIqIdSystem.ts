@@ -84,7 +84,7 @@ export type IntentIqIdSystemParams = {
   groupChanged?: (group: 'A' | 'B', terminationCause?: number) => void;
 
   /**
-   * Reference to the GAM `googletag.pubads()` object for automatic targeting
+   * Reference to the GAM `googletag` object for automatic targeting
    * key injection.
    */
   gamObjectReference?: Record<string, unknown>;
@@ -353,7 +353,7 @@ function sendSyncRequest(allowedStorage: any, url: string, partner: number, firs
 /**
  * Configures and updates A/B testing group in Google Ad Manager (GAM).
  *
- * @param {object} gamObjectReference - Reference to the GAM object, expected to have a `cmd` queue and `pubads()` API.
+ * @param {object} gamObjectReference - Reference to the GAM object (`googletag`), expected to have a `cmd` queue and `setConfig()`.
  * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
