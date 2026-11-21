@@ -231,6 +231,7 @@ describe('cross-domain creative', () => {
     iframe.setAttribute('srcdoc', '<script>window.ran = true;</script>');
     iframe.onload = function () {
       expect(iframe.contentWindow.ran).to.be.true;
+      iframe.remove();
       done();
     };
     document.body.appendChild(iframe);
@@ -300,10 +301,177 @@ describe('cross-domain creative', () => {
           });
         });
 
-        describe('renderer', () => {
+        describe('messages received during startup', () => {
+          let channel, frame, listener, resolveRender;
+
           beforeEach(() => {
+            channel = new MessageChannel();
+            listener = sinon.spy();
+            const rendered = new Promise(resolve => { resolveRender = resolve; });
+            frame = {
+              setAttribute: sinon.stub(),
+              contentWindow: {
+                document: {
+                  createElement: sinon.stub().returns({}),
+                  body: { appendChild: sinon.stub() }
+                },
+                Promise,
+                render: sinon.stub().callsFake((data, { onMessage }) => {
+                  onMessage(listener);
+                  return rendered;
+                })
+              }
+            };
+            mkIframe.returns(frame);
+          });
+
+          afterEach(() => {
+            channel.port1.close();
+            channel.port2.close();
+          });
+
+          ['loading', 'complete'].forEach(readyState => {
+            it(`delivers queued messages in order before render resolves when the document is ${readyState}`, () => {
+              win.document.readyState = readyState;
+              win.document.addEventListener = sinon.stub();
+              // Capture the receiving port so delivery and both startup stages can be controlled independently.
+              const channelStub = sinon.stub(window, 'MessageChannel').returns(channel);
+              try {
+                render({ adId: '123', pubUrl: ORIGIN });
+              } finally {
+                channelStub.restore();
+              }
+              const receive = data => channel.port1.onmessage({ data: JSON.stringify(data) });
+              const response = { message: MESSAGE_RESPONSE, adId: '123', renderer: '' };
+              const first = { message: 'first' };
+              const second = { message: 'second' };
+              const third = { message: 'third' };
+
+              receive(response);
+              receive(first);
+              if (readyState === 'loading') {
+                sinon.assert.notCalled(mkIframe);
+                win.document.addEventListener.getCall(0).args[1]();
+              }
+              receive(second);
+              receive(response);
+              sinon.assert.notCalled(listener);
+              sinon.assert.notCalled(frame.contentWindow.render);
+              sinon.assert.calledOnce(mkIframe);
+
+              frame.onload();
+              expect(listener.args).to.eql([[first], [second], [response]]);
+              receive(third);
+              expect(listener.args).to.eql([[first], [second], [response], [third]]);
+              sinon.assert.calledOnce(frame.contentWindow.render);
+              expect(getMessage(1)).to.not.exist;
+
+              resolveRender();
+              return waitFor(() => getMessage(1)?.payload).then(() => {
+                expect(getMessage(1).payload.event).to.equal(EVENT_AD_RENDER_SUCCEEDED);
+              });
+            });
+          });
+        });
+
+        describe('renderer', () => {
+          let frames;
+
+          beforeEach(() => {
+            frames = [];
             win.document.createElement.callsFake(document.createElement.bind(document));
-            win.document.body.appendChild.callsFake(document.body.appendChild.bind(document.body));
+            win.document.body.appendChild.callsFake(frame => {
+              frames.push(frame);
+              return document.body.appendChild(frame);
+            });
+          });
+
+          afterEach(() => {
+            frames.forEach(frame => frame.remove());
+          });
+
+          function replyWithInvalidMessages() {
+            messages[0].transfer[0].postMessage('{');
+            [null, true, false, 0, 123, 'response', [], [MESSAGE_RESPONSE]].forEach(data => reply(data));
+          }
+
+          it('ignores malformed and non-object messages before accepting a valid response', () => {
+            const renderSpy = window._render = sinon.spy();
+            render({ adId: '123', pubUrl: ORIGIN });
+            replyWithInvalidMessages();
+            reply({ message: MESSAGE_RESPONSE, adId: 'other', renderer: '' });
+            reply({ adId: '123' });
+            reply({
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = window.parent._render'
+            });
+            return waitFor(() => renderSpy.called && getMessage(1)?.payload).then(() => {
+              sinon.assert.calledOnce(renderSpy);
+              sinon.assert.calledOnce(win.document.body.appendChild);
+              expect(getMessage(1).payload.event).to.equal(EVENT_AD_RENDER_SUCCEEDED);
+              expect(getMessage(2)).to.not.exist;
+            }).finally(() => {
+              delete window._render;
+            });
+          });
+
+          it('ignores malformed and non-object follow-up messages', () => {
+            const listener = window._listener = sinon.spy();
+            const followUp = { message: 'valid', value: 123 };
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = function(_, {onMessage}) { onMessage(window.parent._listener) }'
+            });
+            return waitFor(() => getMessage(1)?.payload).then(() => {
+              replyWithInvalidMessages();
+              reply(followUp);
+              return waitFor(() => listener.called);
+            }).then(() => {
+              expect(listener.args).to.eql([[followUp]]);
+              expect(getMessage(2)).to.not.exist;
+            }).finally(() => {
+              delete window._listener;
+            });
+          });
+
+          ['</script>', '</ScRiPt >', '</script><script>window.unexpected = true</script>'].forEach(text => {
+            it(`preserves literal ${JSON.stringify(text)} in renderer JavaScript`, () => {
+              const renderSpy = window._render = sinon.spy();
+              render({ adId: '123', pubUrl: ORIGIN });
+              reply({
+                message: MESSAGE_RESPONSE,
+                adId: '123',
+                renderer: `window.render = function() { window.parent._render(${JSON.stringify(text)}) }`
+              });
+              return waitFor(() => getMessage(1)?.payload).then(() => {
+                sinon.assert.calledOnceWithExactly(renderSpy, text);
+                expect(getMessage(1).payload.event).to.equal(EVENT_AD_RENDER_SUCCEEDED);
+                const rendererWindow = frames[0].contentWindow;
+                expect(rendererWindow.unexpected).to.be.undefined;
+                expect(rendererWindow.document.scripts).to.have.length(1);
+              }).finally(() => {
+                delete window._render;
+              });
+            });
+          });
+
+          it('marks the renderer frame so the native renderer keeps it when replacing markup', () => {
+            window._render = sinon.stub();
+            render({ adId: '123', pubUrl: ORIGIN });
+            reply({
+              message: MESSAGE_RESPONSE,
+              adId: '123',
+              renderer: 'window.render = window.parent._render'
+            });
+            return waitFor(() => window._render.called).then(() => {
+              // creative/renderers/native/renderer.js finds its own frame with this selector
+              expect(frames[0].matches('iframe[srcdoc*="render"]')).to.be.true;
+            }).finally(() => {
+              delete window._render;
+            });
           });
 
           it('sets up and runs renderer', () => {
