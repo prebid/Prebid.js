@@ -6,9 +6,15 @@ import type { Bid } from "../src/bidfactory.ts";
 import { createIframe, generateUUID, logWarn, memoize } from "../src/utils.js";
 import { getAdUnitElement } from "../src/utils/adUnits.ts";
 import type { Identifier } from "../src/types/common.d.ts";
-import { getBidForMessage, isMessageAllowed, parseMessage, processMessage } from "../src/secureCreatives.js";
+import { getBidForMessage, isMessageAllowed, isRenderRequest, parseMessage, processMessage } from "../src/secureCreatives.js";
 import { config } from "../src/config.ts";
-import { emitAdRenderFail, isRenderSuppressed, usesLegacyRenderer } from "../src/adRendering.ts";
+import {
+  canReplaceExpiredBid,
+  emitAdRenderFail,
+  getBidToRender,
+  isRenderSuppressed,
+  usesLegacyRenderer
+} from "../src/adRendering.ts";
 import { AD_RENDER_FAILED_REASON } from "../src/constants.ts";
 
 declare module '../src/prebidGlobal.ts' {
@@ -116,11 +122,14 @@ export function renderBid(bid: { adId: Identifier }, options?: RenderAdOptions) 
     fail(AD_RENDER_FAILED_REASON.INVALID_ELEMENT, 'bid.element must be in a descendant of prebid\'s window');
     return;
   }
-  const { suppress, logReasons } = isRenderSuppressed(actualBid);
-  if (suppress) {
-    // stop early so that the element's current contents are not disturbed
-    logReasons();
-    return;
+  // an expired bid is replaced (or suppressed) only once the frame asks to render it
+  if (!canReplaceExpiredBid(actualBid)) {
+    const { suppress, logReasons } = isRenderSuppressed(actualBid);
+    if (suppress) {
+      // stop early so that the element's current contents are not disturbed
+      logReasons();
+      return;
+    }
   }
   element.innerHTML = '';
   try {
@@ -169,7 +178,9 @@ function attach(port, bid) {
       if (data.adId !== bid.adId) {
         logRejection('for the wrong adId', event, bid, data);
       } else {
-        processMessage(data, bid, (message) => port.postMessage(JSON.stringify(message)));
+        getBidToRender(bid, isRenderRequest(data), (bidToRender) => {
+          processMessage(data, bidToRender, (message) => port.postMessage(JSON.stringify(message)));
+        });
       }
     }
   };

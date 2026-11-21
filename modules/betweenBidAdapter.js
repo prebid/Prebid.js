@@ -14,7 +14,7 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  */
 
 const BIDDER_CODE = 'between';
-const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+const ENDPOINT = 'https://ads.btwnx.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
@@ -174,11 +174,11 @@ export const spec = {
     syncs.push(
       {
         type: 'iframe',
-        url: 'https://ads.betweendigital.com/sspmatch-iframe'
+        url: 'https://ads.btwnx.com/sspmatch-iframe'
       },
       {
         type: 'image',
-        url: 'https://ads.betweendigital.com/sspmatch'
+        url: 'https://ads.btwnx.com/sspmatch'
       }
     );
     return syncs;

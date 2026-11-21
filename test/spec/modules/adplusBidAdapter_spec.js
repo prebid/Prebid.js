@@ -101,9 +101,6 @@ describe('AplusBidAdapter', function () {
         adUnitId: 'pb-adunit-id-1',
         bidId: '2bdcb0b203c17d',
         transactionId: 'transaction-id-1',
-        userId: {
-          adplusId: 'adplus-user-id'
-        },
         userIdAsEids: [{
           source: 'ad-plus.com.tr',
           uids: [
@@ -153,7 +150,7 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data.pageUrl).to.equal('https://test.domain/page.html');
       expect(request[0].data.domain).to.equal('test.domain');
       expect(request[0].data.referrer).to.equal('https://previous-google.com');
-      expect(request[0].data.adplusUid).to.equal('adplus-user-id');
+      expect(request[0].data).to.not.have.property('adplusUid');
       expect(request[0].data.eids).to.deep.equal([{
         source: 'ad-plus.com.tr',
         uids: [

@@ -375,8 +375,8 @@ describe('adtelligentBidAdapter', () => {
       it('sets Schain', () => {
         expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(DISPLAY_REQUEST.schain);
       });
-      it('sets UserId\'s', () => {
-        expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);
+      it('does not send raw UserIds', () => {
+        expect(bidRequestWithPubSettingsData).to.not.have.property('UserIds');
       });
       it('sets AgeVerification', () => {
         expect(bidRequestWithPubSettingsData.AgeVerification).to.deep.equal(ageVerificationData);

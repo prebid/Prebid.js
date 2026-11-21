@@ -9,6 +9,7 @@ import {
   getParameterByName,
   isArray,
   isBoolean,
+  isFn,
   isPlainObject,
   isStr,
   logError,
@@ -67,8 +68,9 @@ function attachProperties(config, useDefaultValues = true) {
   const validateauctionOptions = (() => {
     const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes', 'yield'];
     const arrKeys = ['secondaryBidders'];
+    const fnKeys = ['replaceExpiredBid'];
     const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
-    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(Object.keys(enumKeys));
+    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(fnKeys).concat(Object.keys(enumKeys));
 
     return function validateauctionOptions(val) {
       if (!isPlainObject(val)) {
@@ -92,6 +94,11 @@ function attachProperties(config, useDefaultValues = true) {
         } else if (boolKeys.includes(k)) {
           if (!isBoolean(val[k])) {
             logWarn(`Auction Options ${k} must be of type boolean`);
+            return false;
+          }
+        } else if (fnKeys.includes(k)) {
+          if (!isFn(val[k])) {
+            logWarn(`Auction Options ${k} must be a function`);
             return false;
           }
         } else if (enumKeys.hasOwnProperty(k)) {
@@ -208,7 +215,8 @@ function attachProperties(config, useDefaultValues = true) {
   }
 }
 
-export interface Config {
+/** P is inferred by the setters to keep each provider's configuration tied to its name. */
+export interface Config<P extends string = string> {
   /**
    * Enable debug mode. In debug mode, Prebid.js will post additional messages to the browser console and cause
    * Prebid Server to return additional information in its response.
@@ -258,7 +266,7 @@ export interface Config {
    * The default maxBid value is 5000.
    */
   maxBid?: number;
-  userSync?: UserSyncConfig;
+  userSync?: UserSyncConfig<P>;
   /**
    * Set the order in which bidders are called.
    */
@@ -294,10 +302,10 @@ export interface Config {
   disableFingerprintingApis?: Array<'devicepixelratio' | 'webdriver' | 'resolvedoptions'>;
 }
 
-type PartialConfig = Partial<Config> & { [setting: string]: unknown };
-type BidderConfig = {
+type PartialConfig<P extends string = string> = Partial<Config<P>> & { [setting: string]: unknown };
+type BidderConfig<P extends string = string> = {
   bidders: BidderCode[];
-  config: PartialConfig;
+  config: PartialConfig<P>;
 };
 
 type TopicalConfig<S extends string> = { [K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown };
@@ -448,7 +456,7 @@ export function newConfig() {
   /*
    * Set configuration.
    */
-  function setConfig(options: PartialConfig) {
+  function setConfig<const P extends string>(options: PartialConfig<P>) {
     if (!isPlainObject(options)) {
       logError('setConfig options must be an object');
       return;
@@ -566,7 +574,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config: BidderConfig, mergeFlag = false) {
+  function setBidderConfig<const P extends string>(config: BidderConfig<P>, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -601,7 +609,7 @@ export function newConfig() {
     }
   }
 
-  function mergeConfig(config: PartialConfig) {
+  function mergeConfig<const P extends string>(config: PartialConfig<P>) {
     if (!isPlainObject(config)) {
       logError('mergeConfig input must be an object');
       return;
@@ -619,7 +627,7 @@ export function newConfig() {
     return mergedConfig;
   }
 
-  function mergeBidderConfig(config: BidderConfig) {
+  function mergeBidderConfig<const P extends string>(config: BidderConfig<P>) {
     return setBidderConfig(config, true);
   }
 

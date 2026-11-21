@@ -11,7 +11,9 @@ import { getStorageManager } from '../src/storageManager.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
+import type { AllConsentData } from '../src/consentHandler.ts';
 import type { IdHandle, IdProviderSpec, ProviderResponse } from "./userId/spec.ts";
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
@@ -39,6 +41,19 @@ export type SharedIdParams = {
    * deleted is dropped for the rest of the page view. Use cookie storage only: the endpoint can't delete localStorage.
    */
   pixelUrl?: string;
+  /**
+   * If true, the `pixelUrl` request also carries the page's consent data, so the endpoint can decide on storage with
+   * it: `gdpr` (1 or 0, when GDPR applicability is known), `gdpr_consent`, `us_privacy`, `gpp` and `gpp_sid`
+   * (comma-separated section IDs), each only when available. Default is false.
+   */
+  pixelConsent?: boolean;
+  /**
+   * If true, the `pixelUrl` request also carries `cookie_domain`: the domain Prebid.js writes the ID cookie on (the
+   * topmost domain the browser accepts a cookie for, e.g. `example.com` on `www.example.com`), so a first-party
+   * endpoint can set its cookie with the same `Domain`. A server can't run the browser's public-suffix check
+   * itself; it should only accept a value equal to the request host or a parent domain of it. Default is false.
+   */
+  pixelCookieDomain?: boolean;
   /**
    * The value to use for `inserter` in EIDs.
    */
@@ -89,7 +104,7 @@ const PIXEL_RECHECK_MS = 50;
  * Fire the pixel, then make the ID follow what the endpoint left in storage.
  * @param pubcid the ID this page view already holds
  */
-function pixelSyncCallback(pubcid, config, handle: IdHandle): ProviderResponse['callback'] {
+function pixelSyncCallback(pubcid, config, handle: IdHandle, getPixelParams?: () => Record<string, string>): ProviderResponse['callback'] {
   return function (setId) {
     queuePixelCallback(config.params.pixelUrl, pubcid, () => {
       if (!config.storage) {
@@ -116,12 +131,12 @@ function pixelSyncCallback(pubcid, config, handle: IdHandle): ProviderResponse['
         }
       };
       setTimeout(() => read(true), 0);
-    })();
+    }, getPixelParams?.())();
   };
 }
 
-function getIdCallback(pubcid, config, handle: IdHandle): ProviderResponse['callback'] {
-  return config.params?.pixelUrl ? pixelSyncCallback(pubcid, config, handle) : (setId) => setId(pubcid);
+function getIdCallback(pubcid, config, handle: IdHandle, getPixelParams?: () => Record<string, string>): ProviderResponse['callback'] {
+  return config.params?.pixelUrl ? pixelSyncCallback(pubcid, config, handle, getPixelParams) : (setId) => setId(pubcid);
 }
 
 let warnedPixelStorage = false;
@@ -141,7 +156,31 @@ export function resetPixelStorageWarning() {
   warnedPixelStorage = false;
 }
 
-function queuePixelCallback(pixelUrl, id = '', callback?) {
+/**
+ * The extra `pixelUrl` query params: the page's consent data when `pixelConsent` is set, and the
+ * cookie domain when `pixelCookieDomain` is set. Empty values are left out.
+ */
+function pixelParams(
+  { pixelConsent, pixelCookieDomain }: SharedIdParams = {},
+  consentData: Partial<AllConsentData> | undefined
+): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (pixelConsent) {
+    Object.entries(getUserSyncParams(consentData?.gdpr, consentData?.usp, consentData?.gpp))
+      .filter(([, value]) => value != null && value !== '')
+      .forEach(([key, value]) => {
+        params[key] = String(value);
+      });
+  }
+  if (pixelCookieDomain) {
+    // the domain the User ID module writes the ID cookie on. Only probed when asked for: the probe writes test cookies
+    const domain = sharedIdSystemSubmodule.domainOverride();
+    if (domain) params.cookie_domain = domain;
+  }
+  return params;
+}
+
+function queuePixelCallback(pixelUrl, id = '', callback?, params: Record<string, string> = {}) {
   if (!pixelUrl) {
     return;
   }
@@ -149,6 +188,7 @@ function queuePixelCallback(pixelUrl, id = '', callback?) {
   // Use pubcid as a cache buster
   const urlInfo = parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
+  Object.assign(urlInfo.search, params);
   const targetUrl = buildUrl(urlInfo);
 
   return function () {
@@ -211,7 +251,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
       // the endpoint may have set the stored ID: don't have it written again from script
       handle.manage();
     }
-    return { id: newId, callback: getIdCallback(newId, config, handle) };
+    return { id: newId, callback: getIdCallback(newId, config, handle, () => pixelParams(config.params, consentData)) };
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -240,7 +280,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
     if (extend) {
       if (pixelUrl) {
         checkPixelStorage(config, pixelUrl);
-        return { callback: pixelSyncCallback(storedId, config, handle) };
+        return { callback: pixelSyncCallback(storedId, config, handle, () => pixelParams(config.params, consentData)) };
       } else {
         return { id: storedId };
       }

@@ -49,7 +49,7 @@ jobs:
       ./.github/workflows/run-tests.yml
     with:
       built-key: ${{ needs.build.outputs.linux }}
-      test-cmd: gulp test-build-logic
+      test-cmd: npx gulp test-build-logic
 
   ts-consumer-packed:
     needs: build

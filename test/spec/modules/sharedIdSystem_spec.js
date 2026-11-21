@@ -324,6 +324,194 @@ describe('SharedId System', function () {
       expect(result).to.be.undefined;
     });
   });
+  describe('pixelConsent and pixelCookieDomain', function () {
+    const PIXEL_URL = '/wp-json/pubcid/v1/extend/';
+    const TC_STRING = 'CPx1VfLPx1VfLAcABBENC-CgAP_AAH_AAAAAJ5NV_H__bX9n-';
+    const GPP_STRING = 'DBABMA~CPx1VfLPx1VfLAcABBENC-CgAP_AAH_AAAAAJ5NV_H__bX9n-';
+    const FULL_CONSENT = {
+      gdpr: { gdprApplies: true, consentString: TC_STRING },
+      usp: '1YNN',
+      gpp: { gppString: GPP_STRING, applicableSections: [2, 7] }
+    };
+    const PLAIN_URL = `${window.location.protocol}//${window.location.host}${PIXEL_URL}?id=pubcid%3A`;
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+      sandbox.useFakeTimers();
+      sandbox.stub(utils, 'triggerPixel');
+      sandbox.stub(sharedIdSystemSubmodule, 'domainOverride').returns('example.com');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    function getIdPixel(params, consentData) {
+      sharedIdSystemSubmodule.getId({ params: { pixelUrl: PIXEL_URL, ...params } }, consentData).callback(sinon.stub());
+      sinon.assert.calledOnce(utils.triggerPixel);
+      return utils.triggerPixel.firstCall.args[0];
+    }
+
+    function extendIdPixel(params, consentData) {
+      sharedIdSystemSubmodule.extendId({ params: { pixelUrl: PIXEL_URL, extend: true, ...params } }, consentData, 'TestId').callback(sinon.stub());
+      sinon.assert.calledOnce(utils.triggerPixel);
+      return utils.triggerPixel.firstCall.args[0];
+    }
+
+    function queryOf(url) {
+      return Object.fromEntries(new URL(url).searchParams.entries());
+    }
+
+    Object.entries({ getId: [getIdPixel, UUID], extendId: [extendIdPixel, 'TestId'] }).forEach(([method, [firePixel, id]]) => {
+      describe(`${method}'s pixel`, function () {
+        ['restored-by-server', undefined].forEach(storedId => {
+          it(`should follow the server cookie (${storedId}) with both pixel params enabled`, function () {
+            const handle = {
+              get: sinon.stub().returns(storedId),
+              touch: sinon.spy(),
+              remove: sinon.spy()
+            };
+            const setId = sinon.spy();
+            const config = {
+              params: { pixelUrl: PIXEL_URL, extend: true, pixelConsent: true, pixelCookieDomain: true },
+              storage: { type: 'cookie', name: '_pubcid', expires: 10 }
+            };
+            const result = sharedIdSystemSubmodule[method](config, FULL_CONSENT, method === 'getId' ? undefined : id, handle);
+            sinon.assert.notCalled(sharedIdSystemSubmodule.domainOverride);
+            result.callback(setId);
+            expect(queryOf(utils.triggerPixel.firstCall.args[0])).to.include({
+              id: `pubcid:${id}`,
+              gdpr_consent: TC_STRING,
+              cookie_domain: 'example.com'
+            });
+            sinon.assert.notCalled(setId);
+            utils.triggerPixel.firstCall.args[1]();
+            sandbox.clock.tick(50);
+            if (storedId) {
+              sinon.assert.calledWithExactly(setId, storedId);
+              sinon.assert.calledOnce(handle.touch);
+              sinon.assert.notCalled(handle.remove);
+            } else {
+              sinon.assert.calledWithExactly(setId);
+              sinon.assert.calledOnce(handle.remove);
+              sinon.assert.notCalled(handle.touch);
+            }
+            sinon.assert.calledOnce(setId);
+          });
+        });
+
+        it('should be unchanged without pixelConsent, even with consent data', function () {
+          expect(firePixel({}, FULL_CONSENT)).to.equal(PLAIN_URL + id);
+        });
+
+        it('should be unchanged with pixelConsent: false', function () {
+          expect(firePixel({ pixelConsent: false }, FULL_CONSENT)).to.equal(PLAIN_URL + id);
+        });
+
+        it('should be unchanged with pixelConsent but no consent data', function () {
+          expect(firePixel({ pixelConsent: true }, undefined)).to.equal(PLAIN_URL + id);
+          utils.triggerPixel.resetHistory();
+          expect(firePixel({ pixelConsent: true }, { gdpr: null, usp: null, gpp: null, coppa: false })).to.equal(PLAIN_URL + id);
+        });
+
+        it('should carry every consent param with full consent data', function () {
+          const url = firePixel({ pixelConsent: true }, FULL_CONSENT);
+          expect(url).to.equal(PLAIN_URL + id +
+            `&gdpr=1&gdpr_consent=${TC_STRING}&us_privacy=1YNN&gpp=${GPP_STRING}&gpp_sid=2,7`);
+          expect(queryOf(url)).to.eql({
+            id: `pubcid:${id}`,
+            gdpr: '1',
+            gdpr_consent: TC_STRING,
+            us_privacy: '1YNN',
+            gpp: GPP_STRING,
+            gpp_sid: '2,7'
+          });
+        });
+
+        it('should send gdpr=0 when GDPR does not apply', function () {
+          expect(queryOf(firePixel({ pixelConsent: true }, { gdpr: { gdprApplies: false, consentString: TC_STRING } }))).to.eql({
+            id: `pubcid:${id}`,
+            gdpr: '0',
+            gdpr_consent: TC_STRING
+          });
+        });
+
+        it('should leave out gdpr when GDPR applicability is unknown, and an empty consent string', function () {
+          expect(queryOf(firePixel({ pixelConsent: true }, { gdpr: { consentString: '' } }))).to.eql({
+            id: `pubcid:${id}`
+          });
+        });
+
+        it('should send only us_privacy with only USP data', function () {
+          expect(queryOf(firePixel({ pixelConsent: true }, { usp: '1YNN' }))).to.eql({
+            id: `pubcid:${id}`,
+            us_privacy: '1YNN'
+          });
+        });
+
+        it('should send only gpp and gpp_sid with only GPP data', function () {
+          expect(queryOf(firePixel({ pixelConsent: true }, { gpp: { gppString: GPP_STRING, applicableSections: [7] } }))).to.eql({
+            id: `pubcid:${id}`,
+            gpp: GPP_STRING,
+            gpp_sid: '7'
+          });
+        });
+
+        it('should leave out an empty gpp_sid', function () {
+          expect(queryOf(firePixel({ pixelConsent: true }, { gpp: { gppString: GPP_STRING, applicableSections: [] } }))).to.eql({
+            id: `pubcid:${id}`,
+            gpp: GPP_STRING
+          });
+        });
+
+        it('should keep the query params already in pixelUrl', function () {
+          const url = firePixel({ pixelUrl: `${PIXEL_URL}?site=1`, pixelConsent: true }, { usp: '1YNN' });
+          expect(queryOf(url)).to.eql({
+            site: '1',
+            id: `pubcid:${id}`,
+            us_privacy: '1YNN'
+          });
+        });
+
+        it('should not look up the cookie domain without pixelCookieDomain', function () {
+          firePixel({ pixelConsent: true }, FULL_CONSENT);
+          utils.triggerPixel.resetHistory();
+          expect(firePixel({ pixelCookieDomain: false }, FULL_CONSENT)).to.equal(PLAIN_URL + id);
+          sinon.assert.notCalled(sharedIdSystemSubmodule.domainOverride);
+        });
+
+        it('should send cookie_domain with pixelCookieDomain', function () {
+          const url = firePixel({ pixelCookieDomain: true }, FULL_CONSENT);
+          expect(url).to.equal(PLAIN_URL + id + '&cookie_domain=example.com');
+          sinon.assert.calledOnce(sharedIdSystemSubmodule.domainOverride);
+        });
+
+        it('should send both consent and cookie_domain with pixelConsent and pixelCookieDomain', function () {
+          expect(queryOf(firePixel({ pixelConsent: true, pixelCookieDomain: true }, { usp: '1YNN', gdpr: { gdprApplies: false } }))).to.eql({
+            id: `pubcid:${id}`,
+            gdpr: '0',
+            us_privacy: '1YNN',
+            cookie_domain: 'example.com'
+          });
+        });
+
+        it('should leave out cookie_domain when no domain is determined', function () {
+          sharedIdSystemSubmodule.domainOverride.returns(undefined);
+          expect(firePixel({ pixelCookieDomain: true }, undefined)).to.equal(PLAIN_URL + id);
+        });
+
+        it('should send the domain the module writes the cookie on', function () {
+          const expected = sharedIdSystemSubmodule.domainOverride.wrappedMethod();
+          sharedIdSystemSubmodule.domainOverride.callThrough();
+          const query = queryOf(firePixel({ pixelCookieDomain: true }, undefined));
+          expect(query.cookie_domain).to.equal(expected);
+        });
+      });
+    });
+  });
+
   describe('pixelUrl with storage other than cookies', function () {
     let sandbox;
 

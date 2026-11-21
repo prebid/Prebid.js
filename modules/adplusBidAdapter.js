@@ -102,7 +102,6 @@ function createBidRequest(bid, bidderRequest) {
       pageUrl,
       domain,
       referrer,
-      adplusUid: bid?.userId?.adplusId,
       eids: bid?.userIdAsEids,
       transactionId: getStringValue(bid?.transactionId),
     }),
