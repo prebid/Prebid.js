@@ -539,6 +539,13 @@ const stripRefPointer = (uid) => {
  * @param {Object} response Targeting response
  * @returns {Object} Response in cache format
  */
+/**
+ * Strip ext.optable.ref pointers and `_`-prefixed metadata from an EID
+ * @param {Object} eid ORTB2 EID
+ * @returns {Object} EID safe to send to bidders
+ */
+const cleanEid = (eid) => ({ ...withoutPrivateKeys(eid), uids: (eid.uids || []).map(stripRefPointer) });
+
 export const toCacheFormat = (response) => {
   const user = response?.ortb2?.user;
   const eids = Array.isArray(user?.eids) ? user.eids : [];
@@ -561,7 +568,7 @@ export const toCacheFormat = (response) => {
       ...response.ortb2,
       user: {
         ...user,
-        eids: eids.map((eid) => ({ ...withoutPrivateKeys(eid), uids: (eid.uids || []).map(stripRefPointer) })),
+        eids: eids.map(cleanEid),
       },
     };
   }
@@ -754,6 +761,11 @@ const targetingRequestKey = (apiParams) => {
  * @param {Object} data Targeting response
  */
 const storeTargeting = (apiParams, data) => {
+  // Once the SDK has loaded, the cache holds the bundle's merged data; a direct response must not replace it
+  if (isSDKAvailable(apiParams.instance)) {
+    logMessage('Optable SDK has loaded, leaving the targeting cache to it');
+    return;
+  }
   setCachedTargeting(apiParams.cacheKey, data);
   setSDKTargetingCache(apiParams.host, apiParams.node, data);
 };
@@ -837,12 +849,15 @@ export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, opt
 
   if (targetingData.ortb2) {
     targetingData = toCacheFormat(targetingData);
-    const { eids: optableEids, ...user } = targetingData.ortb2.user ?? {};
-    const eidCount = optableEids?.length || 0;
+    // A response can carry EIDs under user.eids, user.ext.eids or both; keep them all
+    const { eids: userEids, ext: userExt, ...user } = targetingData.ortb2.user ?? {};
+    const { eids: extEids, ...ext } = userExt ?? {};
+    const optableEids = [...(userEids || []), ...(extEids || []).map(cleanEid)];
+    const eidCount = optableEids.length;
     logMessage(`targetingHandleRtd: received targeting data with ${eidCount} EIDs`);
 
     let eids = optableEids;
-    if (options.skipMergeIfUid2Exists && eids) {
+    if (options.skipMergeIfUid2Exists && eids.length) {
       const globalUser = reqBidsConfigObj.ortb2Fragments?.global?.user;
       if (hasUid2Eid(globalUser?.ext?.eids) || hasUid2Eid(globalUser?.eids)) {
         eids = eids.filter(eid => eid.source !== UID2_SOURCE);
@@ -851,11 +866,12 @@ export const targetingHandleRtd = (reqBidsConfigObj, targetingData, mergeFn, opt
     }
 
     // Prebid has already normalized EIDs to user.ext.eids by the time RTD runs
+    const mergedExt = eids.length ? { ...ext, eids } : ext;
     mergeFn(reqBidsConfigObj.ortb2Fragments.global, {
       ...targetingData.ortb2,
-      user: eids ? { ...user, ext: { ...user.ext, eids } } : user,
+      user: Object.keys(mergedExt).length ? { ...user, ext: mergedExt } : user,
     });
-    logMessage(`EIDs merged into ortb2Fragments.global.user.ext.eids (${eids?.length || 0} EIDs)`);
+    logMessage(`EIDs merged into ortb2Fragments.global.user.ext.eids (${eids.length} EIDs)`);
   }
 
   if (reqBidsConfigObj.adUnits && Array.isArray(reqBidsConfigObj.adUnits)) {
@@ -898,16 +914,11 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const options = { skipMergeIfUid2Exists };
 
     const sdkAvailable = isSDKAvailable(instance);
-    // Pages set up window.optable before loading the Optable bundle, which keeps its own merged cache under
-    // OPTABLE_RESOLVED; let it answer rather than overwrite that cache with a direct call
-    const bundleExpected = !sdkAvailable && !!window.optable;
-    if (!sdkAvailable && !bundleExpected && !hasDirectApiConfig && (host || node || site)) {
-      logError('host, node and site are all required for direct API calls, skipping Optable RTD');
-      callback();
-      return;
+    if (!sdkAvailable && !hasDirectApiConfig && (host || node || site)) {
+      logWarn('host, node and site are all required for direct API calls, using the Optable Web SDK instead');
     }
 
-    if (sdkAvailable || bundleExpected || !hasDirectApiConfig) {
+    if (sdkAvailable || !hasDirectApiConfig) {
       logMessage('SDK mode: using the Optable Web SDK targeting');
       await withBundleOrCache(
         sdkAvailable,
@@ -926,13 +937,13 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     const consent = extractConsent(userConsent);
     const { ids, hids } = extractIdentifiers(configIds, configHids);
     const passport = getPassport(host, node);
-    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout, cacheKey };
+    const apiParams = { host, node, site, ids, hids, consent, sessionId, passport, cookies, timeout: effectiveTimeout, cacheKey, instance };
 
     logMessage(`Direct API mode: host=${host}, node=${node}, site=${site}, cookies=${cookies}, timeout=${effectiveTimeout}`);
 
     // Serve the cache immediately and refresh it in the background, once per page load for these
     // parameters; once that refresh has answered, serve its answer, as the shared cache may hold another's
-    const cachedData = reuseTargeting(apiParams) || getCachedTargeting(cacheKey);
+    const cachedData = reuseTargeting(apiParams) || readUsableCache(cacheKey);
     if (cachedData) {
       fetchTargeting(apiParams);
       await handleRtdFn(reqBidsConfigObj, cachedData, mergeDeep, options);
@@ -950,7 +961,8 @@ const getTargetingBidRequestData = async (reqBidsConfigObj, callback, moduleConf
     }
 
     // The RTD framework stops waiting after auctionDelay
-    if (timeout && Date.now() - startedAt >= timeout) {
+    // 0 means the auction is not delayed, so it has already moved on
+    if (timeout != null && Date.now() - startedAt >= timeout) {
       logWarn('Targeting API answered after auctionDelay, cached for the next auction');
       callback();
       return;
