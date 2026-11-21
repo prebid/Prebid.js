@@ -99,6 +99,13 @@ config.getConfig('s2sConfig', config => {
     _s2sConfigs = isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
   }
 });
+// the s2sConfig each S2S bidder request was built for, so that callBids sends it to that server
+const s2sConfigForRequest = new WeakMap<BidderRequest<any>, any>();
+
+function isS2SConfigUsable(s2sConfig): boolean {
+  const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
+  return s2sAdapter != null && (s2sAdapter.isConfigValid?.(s2sConfig) ?? true);
+}
 
 export const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
@@ -371,9 +378,17 @@ export const filterBidsForAdUnit = hook('sync', function(bids, s2sConfig, { getS
     return bids;
   } else {
     const serverBidders = getS2SBidders(s2sConfig);
+    const s2sConfigs = isArray(_s2sConfigs) ? _s2sConfigs : [_s2sConfigs];
     return bids.filter((bid: BidRequest<any>) => {
       if (!serverBidders.has(bid.bidder)) return false;
-      if (bid.s2sConfigName == null) return true;
+      if (bid.s2sConfigName == null) {
+        // several configs may list a bidder so that `s2sConfigName` can choose between them;
+        // a bid that does not choose goes only to the first one whose adapter can serve it
+        // stored impressions (`bidder: null`) are not deduplicated: every server gets them
+        if (bid.bidder == null || !s2sConfigs.includes(s2sConfig)) return true;
+        const candidates = s2sConfigs.filter(cfg => cfg?.enabled && getS2SBidders(cfg).has(bid.bidder));
+        return (candidates.find(isS2SConfigUsable) ?? candidates[0]) === s2sConfig;
+      }
       const configName = getConfigName(s2sConfig);
       const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];
       return allowedS2SConfigs.includes(configName);
@@ -668,7 +683,8 @@ const adapterManager = {
         // uniquePbsTid is so we know which server to send which bids to during the callBids function
         const uniquePbsTid = generateUUID();
 
-        (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
+        const requestCount = bidRequests.length;
+        const addS2SRequest = (bidderCode: BidderCode | null) => {
           const bidderRequestId = generateUUID();
           const pageViewId = getPageViewIdForBidder(bidderCode);
           const metrics = auctionMetrics.fork();
@@ -696,9 +712,15 @@ const adapterManager = {
             allowPriorityBids: bidderCode != null && Array.isArray(s2sConfig.allowPriorityBids) && s2sConfig.allowPriorityBids.includes(bidderCode),
           }, s2sParams);
           if (bidderRequest.bids.length !== 0) {
+            s2sConfigForRequest.set(bidderRequest, s2sConfig);
             bidRequests.push(bidderRequest);
           }
-        });
+        };
+        serverBidders.forEach(addS2SRequest);
+        // stored impressions travel with the bidders' requests; only a server none of them reached needs its own
+        if (hasModuleBids && bidRequests.length === requestCount) {
+          addS2SRequest(null);
+        }
 
         // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
         // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
@@ -794,63 +816,70 @@ const adapterManager = {
       }
     });
 
+    // requests not built by makeBidRequests have no recorded config; match those by position and bidder
+    const unattributed = uniqueServerBidRequests.filter(request => !s2sConfigForRequest.has(request));
     let counter = 0;
-    const s2sAdapterCalls = _s2sConfigs.map((s2sConfig) => () => {
-      if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
-        // s2s should get the same client side timeout as other client side requests.
-        const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
-          request: requestCallbacks.request.bind(null, 's2s'),
-          done: requestCallbacks.done
-        } : undefined);
-        const adaptersServerSide = s2sConfig.bidders;
-        const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-        const uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
-        const adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
+    const dispatches: Array<[any, S2SBidderRequest<any>]> = uniqueServerBidRequests
+      .filter(request => s2sConfigForRequest.has(request))
+      .map((request): [any, S2SBidderRequest<any>] => [s2sConfigForRequest.get(request), request]);
+    _s2sConfigs.forEach(s2sConfig => {
+      if (s2sConfig && unattributed[counter] && getS2SBidderSet(s2sConfig).has(unattributed[counter].bidderCode)) {
+        dispatches.push([s2sConfig, unattributed[counter++]]);
+      }
+    });
+    const s2sAdapterCalls = dispatches.map(([s2sConfig, serverRequest]) => () => {
+      // s2s should get the same client side timeout as other client side requests.
+      const s2sAjax = qualifiedAjaxBuilder(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, requestBidsTimeout, requestCallbacks ? {
+        request: requestCallbacks.request.bind(null, 's2s'),
+        done: requestCallbacks.done
+      } : undefined);
+      const adaptersServerSide = s2sConfig.bidders;
+      const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
+      const uniquePbsTid = serverRequest.uniquePbsTid;
+      const adUnitsS2SCopy = serverRequest.adUnitsS2SCopy;
 
-        const uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
-
-        if (s2sAdapter) {
-          const s2sBidRequest = { 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout };
-          if (s2sBidRequest.ad_units.length) {
-            const doneCbs = uniqueServerRequests.map(bidRequest => {
-              bidRequest.start = timestamp();
-              return function (timedOut, ...args) {
-                if (!timedOut) {
-                  onTimelyResponse(bidRequest.bidderRequestId);
-                }
-                doneCb.apply(bidRequest, [timedOut, ...args]);
-              };
-            });
-
-            const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
-            logMessage(`CALLING S2S HEADER BIDDERS ==== ${bidders.length > 0 ? bidders.join(', ') : 'No bidder specified, using "ortb2Imp" definition(s) only'}`);
-
-            // fire BID_REQUESTED event for each s2s bidRequest
-            uniqueServerRequests.forEach(bidRequest => {
-              // add the new sourceTid
-              events.emit(EVENTS.BID_REQUESTED, { ...bidRequest, tid: bidRequest.auctionId });
-            });
-
-            // make bid requests
-            try {
-              s2sAdapter.callBids(
-                s2sBidRequest,
-                uniqueServerRequests,
-                addBidResponse,
-                (timedOut) => doneCbs.forEach(done => done(timedOut)),
-                s2sAjax
-              );
-            } catch (e) {
-              // Client adapters already isolate a throw so the next bidder still runs.
-              // yieldAll stops the queue when this call throws, which drops every later bidder.
-              logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
-              doneCbs.forEach(done => done(false));
-            }
+      const uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
+      const doneCbs = uniqueServerRequests.map(bidRequest => {
+        bidRequest.start = timestamp();
+        return function (timedOut, ...args) {
+          if (!timedOut) {
+            onTimelyResponse(bidRequest.bidderRequestId);
           }
-        } else {
-          logError('missing ' + s2sConfig.adapter);
+          doneCb.apply(bidRequest, [timedOut, ...args]);
+        };
+      });
+
+      const s2sBidRequest = { 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout };
+      if (!s2sAdapter) {
+        logError('missing ' + s2sConfig.adapter);
+        doneCbs.forEach(done => done(false));
+      } else if (!s2sBidRequest.ad_units?.length) {
+        doneCbs.forEach(done => done(false));
+      } else {
+        const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
+        logMessage(`CALLING S2S HEADER BIDDERS ==== ${bidders.length > 0 ? bidders.join(', ') : 'No bidder specified, using "ortb2Imp" definition(s) only'}`);
+
+        // fire BID_REQUESTED event for each s2s bidRequest
+        uniqueServerRequests.forEach(bidRequest => {
+          // add the new sourceTid
+          events.emit(EVENTS.BID_REQUESTED, { ...bidRequest, tid: bidRequest.auctionId });
+        });
+
+        // make bid requests
+        try {
+          s2sAdapter.callBids(
+            s2sBidRequest,
+            uniqueServerRequests,
+            addBidResponse,
+            (timedOut) => doneCbs.forEach(done => done(timedOut)),
+            s2sAjax
+          );
+        } catch (e) {
+          // Client adapters already isolate a throw so the next bidder still runs.
+          // yieldAll stops the queue when this call throws, which drops every later bidder.
+          logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
+          doneCbs.forEach(done => done(false));
         }
-        counter++;
       }
     });
 
