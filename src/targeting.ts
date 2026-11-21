@@ -215,7 +215,11 @@ declare module './config' {
 }
 
 export function newTargeting(auctionManager) {
-  const latestAuctionForAdUnit = {};
+  const latestAuctionForAdUnit = Object.create(null);
+  // An auction ID can be chosen by the publisher and reused across auctions, so it does not pick out
+  // one auction. The ad unit code array that `requestBids` builds once per request, and that the
+  // auction keeps as is, does: it is a fresh array for every request.
+  const latestRequestForAdUnit = Object.create(null);
 
   function getBidSlots(bid: Bid) {
     if (!isGptPubadsDefined() || bid?.adId == null) return [];
@@ -224,8 +228,18 @@ export function newTargeting(auctionManager) {
   }
 
   const targeting = {
-    setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier) {
+    /**
+     * Record the auction that is now the current one for `adUnitCode`.
+     *
+     * @param adUnitCode
+     * @param auctionId the auction's ID, used to pick its bids out of the bid cache.
+     * @param requestAdUnitCodes the ad unit codes of the request that started the auction, as
+     *   `auction.getAdUnitCodes()` returns them. This is what tells the auction apart from an
+     *   earlier one that carries the same ID.
+     */
+    setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier, requestAdUnitCodes: AdUnitCode[]) {
       latestAuctionForAdUnit[adUnitCode] = auctionId;
+      latestRequestForAdUnit[adUnitCode] = requestAdUnitCodes;
     },
 
     resetPresetTargetingAST(adUnitCode?: AdUnitCode | AdUnitCode[]) {
@@ -877,6 +891,43 @@ export function newTargeting(auctionManager) {
     return adUnitCodes.map(au => ({ [au]: [{ [TARGETING_KEYS.VERSION]: [version ?? DEFAULT_HB_VER] }] }));
   }
 
+  /**
+   * Ad units of a retained auction that is no longer the latest one for their code.
+   *
+   * `auctionManager.getAdUnits()` spans every retained auction, so one ad unit code can appear
+   * once per auction that used it. Merging their ad server targeting makes a key outlive the
+   * auction that set it: a module that sets `adUnit.adserverTargeting` (for example an RTD
+   * submodule through `getTargetingData`) can add a key, but can never retract it on a later
+   * auction for the same code, because the earlier auction's copy of the ad unit still carries it.
+   *
+   * Ad units of the latest auction are kept, including twins (same code, same auction) and an ad
+   * unit object the latest auction reused from an earlier one. An ad unit whose code has no
+   * recorded latest auction - it never went through `startAuction` - keeps the merged behavior.
+   *
+   * Two retained auctions can carry the same ID, since `auctionId` can be supplied by the
+   * publisher and reused, so the latest one is the auction whose `getAdUnitCodes()` is the array
+   * recorded alongside that ID. Once the latest auction leaves the cache no retained auction
+   * matches that array, and the auctions it superseded stay superseded instead of becoming
+   * current again.
+   */
+  function supersededAdUnits(adUnitCodes) {
+    const superseded = new Set();
+    const latest = new Set();
+    for (const auction of auctionManager.getAuctions()) {
+      const auctionId = auction.getAuctionId();
+      const requestAdUnitCodes = auction.getAdUnitCodes();
+      for (const adUnit of auction.getAdUnits()) {
+        const latestAuctionId = latestAuctionForAdUnit[adUnit.code];
+        if (latestAuctionId == null || !adUnitCodes.includes(adUnit.code)) continue;
+        const latestRequest = latestRequestForAdUnit[adUnit.code];
+        const isLatest = latestAuctionId === auctionId && latestRequest === requestAdUnitCodes;
+        (isLatest ? latest : superseded).add(adUnit);
+      }
+    }
+    latest.forEach(adUnit => superseded.delete(adUnit));
+    return superseded;
+  }
+
   function getAdUnitTargeting(adUnitCodes) {
     function getTargetingObj(adUnit) {
       return adUnit?.[JSON_MAPPING.ADSERVER_TARGETING];
@@ -893,8 +944,10 @@ export function newTargeting(auctionManager) {
         });
     }
 
+    const superseded = supersededAdUnits(adUnitCodes);
+
     return auctionManager.getAdUnits()
-      .filter(adUnit => adUnitCodes.includes(adUnit.code) && getTargetingObj(adUnit))
+      .filter(adUnit => adUnitCodes.includes(adUnit.code) && getTargetingObj(adUnit) && !superseded.has(adUnit))
       .reduce((result, adUnit) => {
         const targetingValues = getTargetingValues(adUnit);
 
