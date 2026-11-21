@@ -171,3 +171,13 @@ describe('epomDspBidAdapter', function () {
     });
   });
 });
+
+describe('epom_dspBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(849);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'epomdsp')).to.have.property('gvlid', 849);
+  });
+});

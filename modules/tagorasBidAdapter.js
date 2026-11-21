@@ -16,6 +16,7 @@ import {
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'tagoras';
+const GVLID = 1450;
 const BIDDER_VERSION = '1.0.0';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
@@ -35,6 +36,7 @@ const getUserSyncs = createUserSyncGetter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,

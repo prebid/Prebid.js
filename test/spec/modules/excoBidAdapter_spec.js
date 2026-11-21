@@ -446,3 +446,9 @@ describe('ExcoBidAdapter', function () {
     });
   });
 });
+
+describe('excoBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(adapter.gvlid).to.equal(444);
+  });
+});
