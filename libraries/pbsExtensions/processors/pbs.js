@@ -74,6 +74,14 @@ export const PBS_PROCESSORS = {
         }
       }
     },
+    relayPreviousAuctionInfo: {
+      // sets bidResponse.relayPreviousAuctionInfo from ext.prebid.relaypreviousauctioninfo
+      fn(bidResponse, bid) {
+        if (bid?.ext?.prebid?.relaypreviousauctioninfo === true) {
+          bidResponse.relayPreviousAuctionInfo = true;
+        }
+      }
+    },
     extPrebidMeta: {
       // sets bidResponse.meta from ext.prebid.meta
       fn(bidResponse, bid) {
