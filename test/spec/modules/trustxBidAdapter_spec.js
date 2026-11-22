@@ -1110,3 +1110,9 @@ describe('trustxBidAdapter', function() {
     });
   });
 });
+
+describe('trustxBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1624);
+  });
+});

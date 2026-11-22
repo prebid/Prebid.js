@@ -447,3 +447,13 @@ describe('anyclipBidAdapter', () => {
     });
   });
 });
+
+describe('anyclipBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1400);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'anyclip')).to.have.property('gvlid', 1400);
+  });
+});
