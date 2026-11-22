@@ -1,4 +1,4 @@
-import { vanegraphSubmodule, pageUrl, setGptTargeting, consentMissing } from 'modules/vanegraphRtdProvider.js';
+import { vanegraphSubmodule, pageUrl, setGptTargeting, consentMissing, GPT_KEYS } from 'modules/vanegraphRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 const KEY = 'pk_test123';
@@ -22,6 +22,16 @@ function readyResponse() {
     },
     targeting: { vg_cat: ['22', '30'], vg_safety: 'none', vg_intent: 'commercial_investigation' }
   };
+}
+
+// A stand-in for googletag.pubads() that keeps page-level key-values, as GPT does across single-page-app navigations.
+function fakePubads() {
+  const kv = {};
+  return { kv, setTargeting: (k, v) => { kv[k] = v; }, clearTargeting: (k) => { delete kv[k]; } };
+}
+function runGptQueue(pubads) {
+  window.googletag.pubads = () => pubads;
+  window.googletag.cmd.splice(0).forEach((fn) => fn());
 }
 
 function bidConfig() {
@@ -88,6 +98,15 @@ describe('vanegraphRtdProvider', function () {
       expect(callback.calledOnce).to.equal(true);
     });
 
+    it('clears its GAM key-values when consent is missing, so earlier labels do not carry over', function () {
+      const pubads = fakePubads();
+      pubads.setTargeting('vg_safety', 'none');
+      pubads.setTargeting('pos', 'top');
+      vanegraphSubmodule.getBidRequestData(bidConfig(), sinon.spy(), { params: { publishableKey: KEY } }, { gdpr: { gdprApplies: true } });
+      runGptQueue(pubads);
+      expect(pubads.kv).to.deep.equal({ pos: 'top' });
+    });
+
     it('leaves the publisher\'s own categories in another taxonomy untouched', function () {
       const callback = sinon.spy();
       const reqBidsConfigObj = { ortb2Fragments: { global: { site: { content: { cattax: 6, cat: ['IAB2'] } } }, bidder: {} } };
@@ -114,11 +133,49 @@ describe('vanegraphRtdProvider', function () {
       expect(site.content.data[0].ext.segtax).to.equal(9);
       expect(window.googletag.cmd.length).to.equal(1);
 
-      const setTargeting = sinon.spy();
-      window.googletag.pubads = () => ({ setTargeting });
-      window.googletag.cmd[0]();
-      expect(setTargeting.calledWith('vg_safety', 'none')).to.equal(true);
-      expect(setTargeting.calledWith('vg_cat', ['22', '30'])).to.equal(true);
+      const pubads = fakePubads();
+      runGptQueue(pubads);
+      expect(pubads.kv).to.deep.equal({ vg_cat: ['22', '30'], vg_safety: 'none', vg_intent: 'commercial_investigation' });
+    });
+
+    it('does not leave the previous page\'s key-values when the next page is still pending (single-page apps)', function () {
+      const pubads = fakePubads();
+      pubads.setTargeting('pos', 'top'); // the publisher's own key stays
+      const a = readyResponse();
+      a.targeting.vg_seg = ['seg_ev_pl'];
+      vanegraphSubmodule.getBidRequestData(bidConfig(), sinon.spy(), { params: { publishableKey: KEY } });
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(a));
+      runGptQueue(pubads);
+      expect(pubads.kv.vg_safety).to.equal('none');
+      expect(pubads.kv.vg_seg).to.deep.equal(['seg_ev_pl']);
+
+      const callback = sinon.spy();
+      vanegraphSubmodule.getBidRequestData(bidConfig(), callback, { params: { publishableKey: KEY, url: 'https://news.example.pl/next' } });
+      server.requests[1].respond(202, { 'Content-Type': 'application/json' }, JSON.stringify({ status: 'pending' }));
+      runGptQueue(pubads);
+      expect(callback.calledOnce).to.equal(true);
+      expect(pubads.kv).to.deep.equal({ pos: 'top' });
+    });
+
+    it('drops the previous page\'s segments when the next page has none', function () {
+      const pubads = fakePubads();
+      const a = readyResponse();
+      a.targeting.vg_seg = ['seg_ev_pl'];
+      vanegraphSubmodule.getBidRequestData(bidConfig(), sinon.spy(), { params: { publishableKey: KEY } });
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(a));
+      vanegraphSubmodule.getBidRequestData(bidConfig(), sinon.spy(), { params: { publishableKey: KEY } });
+      server.requests[1].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(readyResponse()));
+      runGptQueue(pubads);
+      expect(pubads.kv).to.deep.equal({ vg_cat: ['22', '30'], vg_safety: 'none', vg_intent: 'commercial_investigation' });
+    });
+
+    it('clears its key-values when the request fails', function () {
+      const pubads = fakePubads();
+      pubads.setTargeting('vg_safety', 'none');
+      vanegraphSubmodule.getBidRequestData(bidConfig(), sinon.spy(), { params: { publishableKey: KEY } });
+      server.requests[0].respond(403, { 'Content-Type': 'application/json' }, '{"error":{"code":"domain_not_allowed"}}');
+      runGptQueue(pubads);
+      expect(Object.keys(pubads.kv).filter((k) => GPT_KEYS.includes(k))).to.deep.equal([]);
     });
 
     it('can leave GAM targeting alone', function () {
@@ -136,6 +193,10 @@ describe('vanegraphRtdProvider', function () {
       server.requests[0].respond(202, { 'Content-Type': 'application/json' }, JSON.stringify({ status: 'pending' }));
       expect(callback.calledOnce).to.equal(true);
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content).to.equal(undefined);
+      const pubads = fakePubads();
+      pubads.setTargeting('vg_safety', 'none');
+      runGptQueue(pubads);
+      expect(pubads.kv).to.deep.equal({});
     });
 
     it('never blocks the auction on errors', function () {

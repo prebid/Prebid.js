@@ -102,22 +102,36 @@ export function withoutConflictingCategories(existing: any, ortb2: any): any {
   return { ...ortb2, site: { ...ortb2.site, content: rest } };
 }
 
-/** Mirrors the labels as Google Ad Manager key-values for direct-sold line items. */
-export function setGptTargeting(targeting?: VanegraphTargeting): void {
-  if (!targeting) return;
+/** The Google Ad Manager keys this module owns. Page-level targeting persists across page changes in a single-page app, so they are always cleared before new labels are set, and cleared alone when the new page has none. */
+export const GPT_KEYS = ['vg_cat', 'vg_safety', 'vg_intent', 'vg_seg'];
+
+function queueGpt(fn: (pubads: any) => void): void {
   const w = window as any;
   const gt = (w.googletag = w.googletag || { cmd: [] });
   gt.cmd = gt.cmd || [];
-  gt.cmd.push(() => {
-    const pubads = gt.pubads();
+  gt.cmd.push(() => fn(gt.pubads()));
+}
+
+/** Removes this module's key-values, so a page with no labels yet never keeps the previous page's. */
+export function clearGptTargeting(): void {
+  queueGpt((pubads) => GPT_KEYS.forEach((k) => pubads.clearTargeting(k)));
+}
+
+/** Mirrors the labels as Google Ad Manager key-values for direct-sold line items, replacing the previous page's. */
+export function setGptTargeting(targeting?: VanegraphTargeting): void {
+  if (!targeting) return;
+  queueGpt((pubads) => {
+    GPT_KEYS.forEach((k) => pubads.clearTargeting(k));
     Object.keys(targeting).forEach((k) => pubads.setTargeting(k, targeting[k]));
   });
 }
 
 function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<'vanegraph'>, userConsent?: any): void {
   const params = config?.params || ({} as VanegraphRtdParams);
+  const gpt = params.setGptTargeting !== false;
   if (consentMissing(userConsent)) {
     logInfo(`${MODULE_NAME}: GDPR applies and no consent string is available; skipping`);
+    if (gpt) clearGptTargeting();
     callback();
     return;
   }
@@ -126,6 +140,7 @@ function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () =
     endpoint,
     {
       success(response: string, xhr: { status: number }) {
+        let labelled = false;
         try {
           if (xhr && xhr.status !== 200) {
             logInfo(`${MODULE_NAME}: page not classified yet`);
@@ -134,16 +149,22 @@ function getBidRequestData(reqBidsConfigObj: StartAuctionOptions, callback: () =
             if (data && data.status === 'ready' && data.ortb2) {
               const global = reqBidsConfigObj.ortb2Fragments.global;
               mergeDeep(global, withoutConflictingCategories(global, data.ortb2));
-              if (params.setGptTargeting !== false) setGptTargeting(data.targeting);
+              if (gpt && data.targeting) {
+                setGptTargeting(data.targeting);
+                labelled = true;
+              }
             }
           }
         } catch (e) {
           logError(`${MODULE_NAME}: invalid response`, e);
         }
+        // Pending, not classified or invalid: the previous page's key-values must not carry over.
+        if (gpt && !labelled) clearGptTargeting();
         callback();
       },
       error(err: unknown) {
         logError(`${MODULE_NAME}: request failed`, err);
+        if (gpt) clearGptTargeting();
         callback();
       },
     },
