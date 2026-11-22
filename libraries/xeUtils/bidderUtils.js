@@ -101,10 +101,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     url: endpoint + '/bid',
     data: JSON.stringify(requests),
     withCredentials: true,
-    bidderRequest,
-    options: {
-      contentType: 'application/json',
-    }
+    bidderRequest
   };
 }
 
