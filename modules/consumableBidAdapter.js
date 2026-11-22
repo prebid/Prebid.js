@@ -1,5 +1,4 @@
-import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import { config } from '../src/config.js';
+import { logWarn, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -10,6 +9,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'consumable';
+const GVLID = 591;
 
 const BASE_URI = 'https://e.serverbid.com/api/v2';
 
@@ -18,6 +18,7 @@ let bidder = 'consumable';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -87,7 +88,7 @@ export const spec = {
       data.schain = schain;
     }
 
-    if (config.getConfig('coppa')) {
+    if (bidderRequest?.ortb2?.regs?.coppa === 1) {
       data.coppa = true;
     }
 
@@ -300,7 +301,7 @@ function retrieveAd(decision, unitId, unitName) {
 }
 
 function handleEids(data, validBidRequests) {
-  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  let bidUserIdAsEids = validBidRequests?.[0]?.userIdAsEids;
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);

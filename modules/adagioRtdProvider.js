@@ -252,7 +252,7 @@ export const _internal = {
         placementFromSource = adUnit.code;
         break;
       case PLACEMENT_SOURCES.GPID:
-        placementFromSource = deepAccess(adUnit, 'ortb2Imp.ext.gpid')
+        placementFromSource = deepAccess(adUnit, 'ortb2Imp.ext.gpid');
         break;
     }
 
@@ -356,7 +356,7 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId');
     if (!divId) {
       divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
@@ -538,8 +538,7 @@ function getSlotPosition(divId) {
       const body = d.body;
       const clientTop = d.clientTop || body.clientTop || 0;
       const clientLeft = d.clientLeft || body.clientLeft || 0;
-      const scrollTop = wt.pageYOffset || windowDimensions.document.documentElement.scrollTop || windowDimensions.document.body.scrollTop;
-      const scrollLeft = wt.pageXOffset || windowDimensions.document.documentElement.scrollLeft || windowDimensions.document.body.scrollLeft;
+      const { scrollY: scrollTop, scrollX: scrollLeft } = windowDimensions;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
       const mustDisplayElement = elComputedStyle.display === 'none';

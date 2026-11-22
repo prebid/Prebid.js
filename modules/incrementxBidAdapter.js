@@ -1,6 +1,6 @@
 import { parseSizesInput, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 /**
@@ -10,6 +10,7 @@ import { Renderer } from '../src/Renderer.js';
  */
 
 const BIDDER_CODE = 'incrementx';
+const ACP_ID = 2651; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://hb.incrementxserv.com/vzhbidder/bid';
 const DEFAULT_CURRENCY = 'USD';
 const CREATIVE_TTL = 300;
@@ -43,7 +44,8 @@ function createRenderer(bid, rendererOptions = {}) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['incrx'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'incrx', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

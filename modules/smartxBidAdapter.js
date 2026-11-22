@@ -89,7 +89,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const isPageSecure = !!page.match(/^https:/)
+    const isPageSecure = !!page.match(/^https:/);
 
     const smartxRequests = bidRequests.map(function (bid) {
       const tagId = getBidIdParameter('tagId', bid.params);
@@ -328,6 +328,7 @@ export const spec = {
             const renderer = Renderer.install({
               id: 0,
               url: 'https://dco.smartclip.net/?plc=7777779',
+              adUnitCode: currentBidRequest.adUnitCode,
               config: {
                 adText: 'SmartX Outstream Video Ad via Prebid.js',
                 player_width: playersize[0][0],
@@ -357,18 +358,18 @@ export const spec = {
             bid.renderer = renderer;
           }
           bidResponses.push(bid);
-        })
+        });
       });
     }
     return bidResponses;
   }
-}
+};
 
 function createOutstreamConfig(bid) {
   const confMinAdWidth = getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
   const confMaxAdWidth = getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
-  const confStartOpen = getBidIdParameter('startOpen', bid.renderer.config.outstream_options)
-  const confEndingScreen = getBidIdParameter('endingScreen', bid.renderer.config.outstream_options)
+  const confStartOpen = getBidIdParameter('startOpen', bid.renderer.config.outstream_options);
+  const confEndingScreen = getBidIdParameter('endingScreen', bid.renderer.config.outstream_options);
   const confTitle = getBidIdParameter('title', bid.renderer.config.outstream_options);
   const confSkipOffset = getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
   const confDesiredBitrate = getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
@@ -445,7 +446,7 @@ function createOutstreamConfig(bid) {
 
   try {
     // eslint-disable-next-line
-    outstreamplayer.connect(divID).setup(playerConfig, playerListener)
+    outstreamplayer.connect(divID).setup(playerConfig, playerListener);
   } catch (e) {
     logError('[SMARTX][renderer] Error caught: ' + e);
   }

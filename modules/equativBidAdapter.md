@@ -28,13 +28,24 @@ var adUnits = [
             {
                 bidder: 'equativ',
                 params: {
-                    networkId: 13,  // mandatory if no ortb2.(site or app).publisher.id set
-                    siteId: 20743,  // optional
-                    pageId: 89653,  // optional
-                    formatId: 291,  // optional
+                    networkId: 13,           // mandatory if no ortb2.(site or app).publisher.id set
+                    placementuuid: 'abc-123', // optional, preferred way to identify inventory
+                    siteId: 20743,           // optional, DEPRECATED - use placementuuid instead
+                    pageId: 89653,           // optional, DEPRECATED - use placementuuid instead
+                    formatId: 291,           // optional, DEPRECATED - use placementuuid instead
                 }
             }
         ]
     }
 ];
 ```
+
+# Parameters
+
+| Name            | Scope    | Description                                                                                          | Type     |
+|-----------------|----------|------------------------------------------------------------------------------------------------------|----------|
+| `networkId`     | optional | Equativ network id. Mandatory unless `ortb2.(site\|app\|dooh).publisher.id` is set.                   | `number` |
+| `placementuuid` | optional | Placement identifier used to source inventory. Preferred way to identify inventory; forwarded as `imp.ext.bidder.plcmtuuid`. When legacy params are also supplied, all fields are forwarded and the downstream receiver decides which to use. | `string` |
+| `siteId`        | optional | **Deprecated.** Equativ site id. Use `placementuuid` instead. Kept only to support the ramp-up.      | `number` |
+| `pageId`        | optional | **Deprecated.** Equativ page id. Use `placementuuid` instead. Kept only to support the ramp-up.      | `number` |
+| `formatId`      | optional | **Deprecated.** Equativ format id. Use `placementuuid` instead. Kept only to support the ramp-up.    | `number` |

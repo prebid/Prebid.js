@@ -17,7 +17,7 @@ describe('adbroBidAdapter', function () {
         },
       },
       params: params,
-    }
+    };
   };
 
   const validBid = makeBid({ placementId: '1234' }, [[300, 250]]);
@@ -86,6 +86,7 @@ describe('adbroBidAdapter', function () {
       expect(data).to.have.property('imp').that.is.an('array').with.lengthOf(1);
       expect(data).to.have.property('device').that.is.an('object');
       expect(data.device).to.have.property('js', 1);
+      expect(data.device).to.have.property('connectiontype').that.is.a('number');
     });
 
     it('Returns valid imps', function () {

@@ -33,23 +33,25 @@ describe('ortb -> pbjs mediaType conversion', () => {
   it('gives precedence to context.mediaType', () => {
     const resp = {};
     setResponseMediaType(resp, { mtype: 1 }, { mediaType: 'video' });
-    expect(resp.mediaType).to.eql('video')
-  })
+    expect(resp.mediaType).to.eql('video');
+  });
 });
 
 describe('ortb -> pbjs mediaType conversion based on ext.prebid.type', () => {
   testMtype(extPrebidMediaType);
   describe('respects ext.prebid.type', () => {
     Object.values(ORTB_MTYPES).forEach(mediaType => {
-      const response = {};
-      extPrebidMediaType(response, {
-        ext: {
-          prebid: {
-            type: mediaType
+      it(`${mediaType}`, () => {
+        const response = {};
+        extPrebidMediaType(response, {
+          ext: {
+            prebid: {
+              type: mediaType
+            }
           }
-        }
-      }, {});
-      expect(response.mediaType).to.eql(mediaType);
+        }, {});
+        expect(response.mediaType).to.eql(mediaType);
+      });
     });
   });
 
@@ -63,5 +65,5 @@ describe('ortb -> pbjs mediaType conversion based on ext.prebid.type', () => {
     const response = {};
     extPrebidMediaType(response, { ext: { prebid: { type: 'banner' } } }, { mediaType: 'video' });
     expect(response.mediaType).to.eql('video');
-  })
+  });
 });

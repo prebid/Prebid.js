@@ -21,38 +21,39 @@ const NAVEGG_ID = 'nvggid';
 const BASE_URL = 'https://id.navegg.com/uid/';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const dep = {
+  ajaxBuilder
+};
 
 function getIdFromAPI() {
-  const resp = function (callback) {
-    ajaxBuilder()(
+  return function (callback) {
+    const useStoredId = () => callback(getNaveggIdFromLocalStorage() || getOldCookie());
+    dep.ajaxBuilder()(
       BASE_URL,
-      response => {
-        if (response) {
-          let responseObj;
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            logError(error);
-            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-            callback(fallbackValue);
+      {
+        success(response) {
+          let id;
+          if (response) {
+            try {
+              id = JSON.parse(response)?.[NAVEGG_ID];
+            } catch (error) {
+              logError(error);
+            }
           }
-
-          if (responseObj && responseObj[NAVEGG_ID]) {
-            callback(responseObj[NAVEGG_ID]);
+          if (id) {
+            callback(id);
           } else {
-            const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-            callback(fallbackValue);
+            useStoredId();
           }
+        },
+        error(error) {
+          logError('Navegg ID fetch encountered an error', error);
+          useStoredId();
         }
       },
-      error => {
-        logError('Navegg ID fetch encountered an error', error);
-        const fallbackValue = getNaveggIdFromLocalStorage() || getOldCookie();
-        callback(fallbackValue);
-      },
+      undefined,
       { method: 'GET', withCredentials: false });
   };
-  return resp;
 }
 
 /**
@@ -114,8 +115,8 @@ export const naveggIdSubmodule = {
    * @return {{id: string | undefined } | undefined}
    */
   getId(config, consentData) {
-    const resp = getIdFromAPI()
-    return { callback: resp }
+    const resp = getIdFromAPI();
+    return { callback: resp };
   },
   eids: {
     'naveggId': {

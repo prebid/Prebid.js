@@ -1,13 +1,20 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
   isBidRequestValid,
   onBidWon,
   createUserSyncGetter,
   createBuildRequestsFn,
-  createInterpretResponseFn
+  createInterpretResponseFn,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 } from '../libraries/vidazooUtils/bidderUtils.js';
+
+/**
+ * @typedef {import('./opaMarketplaceBidAdapter.d.ts').OpaMarketplaceBidRequestParams} OpaMarketplaceBidRequestParams
+ */
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'opamarketplace';
@@ -26,8 +33,9 @@ function createUniqueRequestData(hashUrl, bid) {
   };
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false);
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false);
+const NATIVE_OPTIONS = { supportNative: true };
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, false, NATIVE_OPTIONS);
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, false, NATIVE_OPTIONS);
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.opamarketplace.com/api/sync/iframe',
   imageSyncUrl: 'https://sync.opamarketplace.com/api/sync/image'
@@ -36,12 +44,15 @@ const getUserSyncs = createUserSyncGetter({
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  onBidWon
+  onBidWon,
+  onBidBillable,
+  onAdRenderSucceeded,
+  onBidViewable
 };
 
 registerBidder(spec);

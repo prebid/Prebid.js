@@ -6,6 +6,7 @@ import { fillNativeImp, fillNativeResponse } from './native.js';
 import { BID_RESPONSE, IMP, REQUEST } from '../../../src/pbjsORTB.js';
 import { clientSectionChecker } from '../../../src/fpd/oneClient.js';
 import { fillAudioImp, fillAudioResponse } from './audio.js';
+import { getDealMeta } from './deal.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -13,7 +14,7 @@ export const DEFAULT_PROCESSORS = {
       // sets initial request to bidderRequest.ortb2
       priority: 99,
       fn(ortbRequest, bidderRequest) {
-        mergeDeep(ortbRequest, bidderRequest.ortb2)
+        mergeDeep(ortbRequest, bidderRequest.ortb2);
       }
     },
     onlyOneClient: {
@@ -88,6 +89,7 @@ export const DEFAULT_PROCESSORS = {
           burl: bid.burl,
           ttl: bid.exp || context.ttl,
           netRevenue: context.netRevenue,
+          duration: bid.dur,
         }).filter(([k, v]) => typeof v !== 'undefined')
           .forEach(([k, v]) => {
             bidResponse[k] = v;
@@ -114,40 +116,44 @@ export const DEFAULT_PROCESSORS = {
         if (bid.cattax) {
           bidResponse.meta.cattax = bid.cattax;
         }
+        const dealMeta = getDealMeta(bid);
+        if (dealMeta) {
+          bidResponse.meta.deal = dealMeta;
+        }
       }
     }
   }
-}
+};
 
 if (FEATURES.NATIVE) {
   DEFAULT_PROCESSORS[IMP].native = {
     // populates imp.native
     fn: fillNativeImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
     // populates bidResponse.native if bidResponse.mediaType === NATIVE
     fn: fillNativeResponse
-  }
+  };
 }
 
 if (FEATURES.VIDEO) {
   DEFAULT_PROCESSORS[IMP].video = {
     // populates imp.video
     fn: fillVideoImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].video = {
     // sets video response attributes if bidResponse.mediaType === VIDEO
     fn: fillVideoResponse
-  }
+  };
 }
 
 if (FEATURES.AUDIO) {
   DEFAULT_PROCESSORS[IMP].audio = {
     // populates imp.audio
     fn: fillAudioImp
-  }
+  };
   DEFAULT_PROCESSORS[BID_RESPONSE].audio = {
     // sets video response attributes if bidResponse.mediaType === AUDIO
     fn: fillAudioResponse
-  }
+  };
 }

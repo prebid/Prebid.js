@@ -18,6 +18,7 @@ import { BOL_LIKE_USER_AGENTS } from '../libraries/userAgentUtils/constants.js';
  */
 
 const BIDDER_CODE = 'yieldone';
+const ACP_ID = 385; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
@@ -29,7 +30,8 @@ const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['y1'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'y1', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -84,40 +86,6 @@ export const spec = {
           break;
         default:
           break;
-      }
-
-      // LiveRampID
-      const idlEnv = deepAccess(bidRequest, 'userId.idl_env');
-      if (isStr(idlEnv) && !isEmpty(idlEnv)) {
-        payload.lr_env = idlEnv;
-      }
-
-      // IMID
-      const imuid = deepAccess(bidRequest, 'userId.imuid');
-      if (isStr(imuid) && !isEmpty(imuid)) {
-        payload.imuid = imuid;
-      }
-
-      // DACID
-      const fuuid = deepAccess(bidRequest, 'userId.dacId.fuuid');
-      const dacid = deepAccess(bidRequest, 'userId.dacId.id');
-      if (isStr(fuuid) && !isEmpty(fuuid)) {
-        payload.fuuid = fuuid;
-      }
-      if (isStr(dacid) && !isEmpty(dacid)) {
-        payload.dac_id = dacid;
-      }
-
-      // ID5
-      const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
-      if (isStr(id5id) && !isEmpty(id5id)) {
-        payload.id5Id = id5id;
-      }
-
-      // UID2.0
-      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
-      if (isStr(uid2) && !isEmpty(uid2)) {
-        payload.uid2id = uid2;
       }
 
       // GPID
@@ -252,7 +220,7 @@ export const spec = {
       }];
     }
   },
-}
+};
 
 /**
  * NOTE: server side does not yet support multiple formats.
@@ -335,7 +303,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
 
     result = sizeObj;
     return result;
-  }
+  };
 
   let playerSize = _getPlayerSize(deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
 

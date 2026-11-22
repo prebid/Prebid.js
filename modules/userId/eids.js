@@ -73,8 +73,8 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
           eids = [eids];
         }
         eids.forEach(eid => {
-          eid.uids = eid.uids.filter(({ id }) => isStr(id))
-        })
+          eid.uids = eid.uids.filter(({ id }) => isStr(id));
+        });
         eids = eids.filter(({ uids }) => uids?.length > 0);
       } catch (e) {
         logError(`Could not generate EID for "${name}"`, e);
@@ -85,7 +85,7 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
     if (Array.isArray(eids)) {
       eids.filter(eid => eid != null).forEach(collect);
     }
-  })
+  });
   return Object.values(allEids);
 }
 
@@ -103,6 +103,6 @@ export function getEids(priorityMap) {
       }
       eidConfigs.set(key, eidConf);
     }
-  })
+  });
   return createEidsArray(idValues, eidConfigs);
 }

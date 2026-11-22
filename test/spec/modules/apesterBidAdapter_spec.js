@@ -7,7 +7,7 @@ import {
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import {
   hashCode,
@@ -18,6 +18,7 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getTopWindowQueryParams
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
@@ -90,7 +91,7 @@ const VIDEO_BID = {
       'placement': 1
     }
   }
-}
+};
 
 const ORTB2_DEVICE = {
   sua: {
@@ -202,20 +203,14 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
-
 describe('apesterBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
   describe('validate spec', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -237,12 +232,15 @@ describe('apesterBidAdapter', function () {
     });
 
     it('exists and contains media types', function () {
-      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
-      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(3);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO, NATIVE]);
     });
   });
 
   describe('validate bid requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -273,6 +271,9 @@ describe('apesterBidAdapter', function () {
   });
 
   describe('build requests', function () {
+    after(function () {
+      config.resetConfig();
+    });
     let sandbox;
     before(function () {
       getGlobal().bidderSettings = {
@@ -444,7 +445,134 @@ describe('apesterBidAdapter', function () {
       sandbox.restore();
     });
   });
+  describe('native support', function () {
+    const NATIVE_ORTB = {
+      ver: '1.2',
+      assets: [
+        { id: 1, required: 1, title: { len: 80 } },
+        { id: 2, required: 1, img: { type: 3, w: 1200, h: 627 } },
+        { id: 3, required: 1, data: { type: 1 } }
+      ]
+    };
+
+    const NATIVE_ORTB_RESPONSE = {
+      ver: '1.2',
+      assets: [
+        { id: 1, title: { text: 'Native title' } },
+        { id: 2, img: { url: 'https://cdn.example/img.jpg', w: 1200, h: 627 } },
+        { id: 3, data: { value: 'Advertiser' } }
+      ],
+      link: { url: 'https://advertiser.example/click' },
+      eventtrackers: [{ event: 1, method: 1, url: 'https://tracker.example/imp' }]
+    };
+
+    const NATIVE_BID = {
+      bidId: 'native-bid-1',
+      adUnitCode: 'div-native-1',
+      bidderRequestId: '1fdb5ff1b6eaa7',
+      params: {
+        subDomain: SUB_DOMAIN,
+        cId: '59db6b3b4ffaa70004f45cdc',
+        pId: '59ac17c192832d0011283fe3'
+      },
+      sizes: [],
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      schain: 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+      mediaTypes: { native: { ortb: NATIVE_ORTB } },
+      nativeOrtbRequest: NATIVE_ORTB,
+      ortb2Imp: { ext: { tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf' } }
+    };
+
+    const buildNativeRequest = (bid = NATIVE_BID) => adapter.buildRequests([bid], BIDDER_REQUEST)[0];
+
+    it('should build a native request with mediaTypes.native and nativeOrtbRequest', function () {
+      config.setConfig({ bidderTimeout: 3000 });
+      const requests = adapter.buildRequests([NATIVE_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(`${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`);
+      expect(requests[0].data.mediaTypes).to.deep.equal(NATIVE_BID.mediaTypes);
+      expect(requests[0].data.nativeOrtbRequest).to.deep.equal(NATIVE_ORTB);
+      expect(requests[0].data.bidId).to.equal(NATIVE_BID.bidId);
+    });
+
+    it('should interpret a native response into bid.native.ortb', function () {
+      const serverResponse = {
+        body: {
+          cid: '59db6b3b4ffaa70004f45cdc',
+          results: [{
+            ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+            advertiserDomains: ['example.com'],
+            exp: 60,
+            width: 1,
+            height: 1,
+            mediaType: 'native',
+            creativeId: '12610997325162499419',
+            price: 1.5,
+            cookies: []
+          }]
+        }
+      };
+      const responses = adapter.interpretResponse(serverResponse, buildNativeRequest());
+      expect(responses).to.have.length(1);
+      expect(responses[0].mediaType).to.equal(NATIVE);
+      expect(responses[0].native).to.deep.equal({ ortb: NATIVE_ORTB_RESPONSE });
+      expect(responses[0].cpm).to.equal(1.5);
+      expect(responses[0].requestId).to.equal(NATIVE_BID.bidId);
+      expect(responses[0].ad).to.be.undefined;
+      expect(responses[0].vastXml).to.be.undefined;
+    });
+
+    it('should not send nativeOrtbRequest when mediaTypes was narrowed and native is no longer active', function () {
+      const narrowedBid = {
+        ...NATIVE_BID,
+        mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 480]] } }
+      };
+      const requests = adapter.buildRequests([narrowedBid], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0].data).to.not.have.property('nativeOrtbRequest');
+      expect(requests[0].data.mediaTypes).to.not.have.property('native');
+    });
+
+    it('should skip a native result when the request has no nativeOrtbRequest (malformed mediaTypes.native)', function () {
+      const malformedBid = { ...NATIVE_BID, nativeOrtbRequest: undefined };
+      const request = buildNativeRequest(malformedBid);
+      expect(request.data).to.not.have.property('nativeOrtbRequest');
+      const nativeResponse = {
+        body: {
+          cid: '59db6b3b4ffaa70004f45cdc',
+          results: [{
+            ad: JSON.stringify({ native: NATIVE_ORTB_RESPONSE }),
+            mediaType: 'native',
+            creativeId: '12610997325162499419',
+            price: 1.5
+          }]
+        }
+      };
+      expect(adapter.interpretResponse(nativeResponse, request)).to.be.empty;
+    });
+
+    it('should skip a native result whose ad is not valid native markup', function () {
+      const serverResponse = {
+        body: {
+          results: [{
+            ad: 'not-json',
+            mediaType: 'native',
+            creativeId: 'cr-native',
+            price: 1.5
+          }]
+        }
+      };
+      expect(adapter.interpretResponse(serverResponse, buildNativeRequest())).to.be.empty;
+    });
+  });
+
   describe('getUserSyncs', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
@@ -491,7 +619,7 @@ describe('apesterBidAdapter', function () {
       const gppConsent = {
         gppString: 'gpp_string',
         applicableSections: [7]
-      }
+      };
 
       const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
@@ -503,6 +631,9 @@ describe('apesterBidAdapter', function () {
   });
 
   describe('interpret response', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -578,99 +709,10 @@ describe('apesterBidAdapter', function () {
       expect(responses[0].ttl).to.equal(300);
     });
   });
-
-  describe('user id system', function () {
-    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
-      const id = Date.now().toString();
-      const bid = utils.deepClone(BID);
-
-      const userId = (function () {
-        switch (idSystemProvider) {
-          case 'lipb':
-            return { lipbid: id };
-          case 'id5id':
-            return { uid: id };
-          default:
-            return id;
-        }
-      })();
-
-      bid.userId = {
-        [idSystemProvider]: userId
-      };
-
-      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
-        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
-      });
-    });
-    // testing bid.userIdAsEids handling
-    it("should include user ids from bid.userIdAsEids (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-    })
-    it("should include user ids from bid.userIdAsEids (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.userIdAsEids = [
-        {
-          "source": "audigent.com",
-          "uids": [{ "id": "fakeidi6j6dlc6e" }]
-        },
-        {
-          "source": "rwdcntrl.net",
-          "uids": [{ "id": "fakeid6f35197d5c", "atype": 1 }]
-        }
-      ]
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.audigent.com']).to.equal("fakeidi6j6dlc6e");
-      expect(requests[0].data['uid.rwdcntrl.net']).to.equal("fakeid6f35197d5c");
-    })
-    // testing user.ext.eid handling
-    it("should include user ids from user.ext.eid (length=1)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-    })
-    it("should include user ids from user.ext.eid (length=2)", function() {
-      const bid = utils.deepClone(BID);
-      bid.user = {
-        ext: {
-          eids: [
-            {
-              "source": "pubcid.org",
-              "uids": [{ "id": "fakeid8888dlc6e" }]
-            },
-            {
-              "source": "adserver.org",
-              "uids": [{ "id": "fakeid495ff1" }]
-            }
-          ]
-        }
-      }
-      const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
-      expect(requests[0].data['uid.pubcid.org']).to.equal("fakeid8888dlc6e");
-      expect(requests[0].data['uid.adserver.org']).to.equal("fakeid495ff1");
-    })
-  });
-
   describe('alternate param names extractors', function () {
+    after(function () {
+      config.resetConfig();
+    });
     it('should return undefined when param not supported', function () {
       const cid = extractCID({ 'c_id': '1' });
       const pid = extractPID({ 'p_id': '1' });
@@ -691,6 +733,9 @@ describe('apesterBidAdapter', function () {
   });
 
   describe('unique deal id', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         apester: {
@@ -705,7 +750,7 @@ describe('apesterBidAdapter', function () {
     let uniqueDealId;
     beforeEach(() => {
       uniqueDealId = getUniqueDealId(storage, key, 0);
-    })
+    });
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -721,11 +766,14 @@ describe('apesterBidAdapter', function () {
         const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
-      }, 200)
+      }, 200);
     });
   });
 
   describe('storage utils', function () {
+    after(function () {
+      config.resetConfig();
+    });
     before(function () {
       getGlobal().bidderSettings = {
         apester: {
@@ -752,7 +800,7 @@ describe('apesterBidAdapter', function () {
     });
 
     it('should get external stored value', function () {
-      const value = 'superman'
+      const value = 'superman';
       window.localStorage.setItem('myExternalKey', value);
       const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);

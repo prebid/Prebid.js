@@ -5,10 +5,9 @@
  * @requires module:modules/userId
  */
 
-import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
-import { isFn, isPlainObject, isStr, logError, logInfo, logMessage } from '../src/utils.js';
+import { generateUUID, logInfo, logMessage } from '../src/utils.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 /**
@@ -19,21 +18,35 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
 const AU_GVLID = 902;
+const MAX_QID_LENGTH = 40;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'qid' });
 
-/**
- * Param or default.
- * @param {String} param
- * @param {String} defaultVal
- */
-function paramOrDefault(param, defaultVal, arg) {
-  if (isFn(param)) {
-    return param(arg);
-  } else if (isStr(param)) {
-    return param;
+function getStoredQid() {
+  const qid = storage.getDataFromLocalStorage('qid');
+
+  if (qid && qid.length > MAX_QID_LENGTH) {
+    logInfo('adqueryIdSubmodule ID QID invalid length, removing:', qid.length);
+    storage.removeDataFromLocalStorage('qid');
+    return null;
   }
-  return defaultVal;
+
+  return qid;
+}
+
+function generateQid() {
+  let qid;
+  if (window.crypto && window.crypto.getRandomValues) {
+    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    qid = randomValues.map(val => val.toString(36)).join('').substring(0, 20);
+  } else {
+    qid = generateUUID();
+  }
+  storage.setDataInLocalStorage('qid', qid);
+
+  logInfo('adqueryIdSubmodule ID QID GENERATED:', qid);
+
+  return qid;
 }
 
 /** @type {Submodule} */
@@ -57,73 +70,41 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    return { qid: value }
+    return { qid: value };
   },
   /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * performs action to obtain id and return a value synchronously
    * @function
-   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId() {
+    logInfo('[GETID]');
     logMessage('adqueryIdSubmodule getId');
 
-    const qid = storage.getDataFromLocalStorage('qid');
+    const qid = getStoredQid() || generateQid();
 
-    if (qid) {
-      return {
-        callback: function (callback) {
-          callback(qid);
-        }
-      }
+    logInfo('adqueryIdSubmodule ID QID:', qid);
+
+    return { id: qid };
+  },
+  /**
+   * called by the userId module instead of getId when a stored id already exists,
+   * replaces a stored qid longer than 40 characters
+   * @function
+   * @param {SubmoduleConfig} config
+   * @param {Object} consentData
+   * @param {string} storedId
+   * @returns {IdResponse|undefined}
+   */
+  extendId(config, consentData, storedId) {
+    logInfo('[EXTENDID]');
+    if (!storedId || (typeof storedId === 'string' && storedId.length <= MAX_QID_LENGTH)) {
+      return;
     }
 
-    if (!isPlainObject(config.params)) {
-      config.params = {};
-    }
+    logInfo('adqueryIdSubmodule stored QID invalid, replacing:', typeof storedId === 'string' ? storedId.length : typeof storedId);
 
-    const url = paramOrDefault(
-      config.params.url,
-      `https://bidder.adquery.io/prebid/qid`,
-      config.params.urlArg
-    );
-
-    const resp = function (callback) {
-      let qid = window.qid;
-
-      if (!qid) {
-        const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-        qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
-
-        logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
-      }
-      logInfo('adqueryIdSubmodule ID QID:', qid);
-
-      const callbacks = {
-        success: response => {
-          let responseObj;
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              logError(error);
-            }
-          }
-          if (responseObj.qid) {
-            const myQid = responseObj.qid;
-            storage.setDataInLocalStorage('qid', myQid);
-            return callback(myQid);
-          }
-          callback();
-        },
-        error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-          callback();
-        }
-      };
-      ajax(url + '?qid=' + qid, callbacks, undefined, { method: 'GET' });
-    };
-    return { callback: resp };
+    return { id: getStoredQid() || generateQid() };
   },
   eids: {
     'qid': {

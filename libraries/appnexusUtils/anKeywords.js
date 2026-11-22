@@ -55,8 +55,8 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
         return;
       } // unsuported types - don't send a key
     }
-    v = v.filter(kw => kw !== '')
-    const entry = { key: k }
+    v = v.filter(kw => kw !== '');
+    const entry = { key: k };
     if (v.length > 0) {
       entry.value = v;
     }
@@ -73,7 +73,7 @@ export function convertKeywordStringToANMap(keyStr) {
     // will split based on commas and will eat white space before/after the comma
     return convertKeywordsToANMap(keyStr.split(/\s*(?:,)\s*/));
   } else {
-    return {}
+    return {};
   }
 }
 
@@ -101,7 +101,7 @@ function convertKeywordsToANMap(kwarray) {
         result[kw] = [];
       }
     }
-  })
+  });
   return result;
 }
 
@@ -119,7 +119,7 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
       Object.entries(kwMap || {})
         .map(([k, v]) => [k, (isNumber(v) || isStr(v)) ? [v] : v])
     )))
-  )
+  );
 }
 
 export function getANMapFromOrtbIASKeywords(ortb2) {
@@ -138,7 +138,7 @@ export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
     getANMapFromOrtbIASKeywords(ortb2), // <-- include IAS
     getANMapFromOrtbSegments(ortb2),
     ...anKeywordsMaps
-  )
+  );
 }
 
 export function getANMapFromOrtbSegments(ortb2) {
@@ -154,7 +154,7 @@ export function getANMapFromOrtbSegments(ortb2) {
           if (ortbSegData[segtax]) {
             ortbSegData[segtax].push(seg.id);
           } else {
-            ortbSegData[segtax] = [seg.id]
+            ortbSegData[segtax] = [seg.id];
           }
         });
       }

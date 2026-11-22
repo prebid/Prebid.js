@@ -38,7 +38,7 @@ describe('Yieldlove Bid Adaper', function () {
       ],
       ext: {}
     }
-  }
+  };
 
   describe('isBidRequestValid', () => {
     const bid = bidRequests[0];
@@ -125,4 +125,4 @@ describe('Yieldlove Bid Adaper', function () {
       }]);
     });
   });
-})
+});

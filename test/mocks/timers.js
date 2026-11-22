@@ -61,7 +61,7 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
     const infoIndex = timers.findIndex((i) => i.handle === handle && i.type === type);
     if (infoIndex > -1) timers.splice(infoIndex, 1);
     checkWaits();
-  }
+  };
   const clearTimeoutInterceptor = generateClearInterceptor('timeout', originalClearTimeout);
   const clearIntervalInterceptor = generateClearInterceptor('interval', originalClearInterval);
 
@@ -83,5 +83,5 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
         globalThis.clearInterval = originalClearInterval;
       }
     }
-  }
+  };
 }

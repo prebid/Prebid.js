@@ -1,7 +1,5 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
-import { spec, storage } from 'modules/publicGoodBidAdapter.js';
-import { hook } from 'src/hook.js';
+import { spec } from 'modules/publicGoodBidAdapter.js';
 
 describe('Public Good Adapter', function () {
   let validBidRequests;

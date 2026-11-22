@@ -190,8 +190,7 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
-          expect([]).to.be.lengthOf(0);
+          expect(spec.interpretResponse(response, { bidRequest: bidRequests[0] })).to.be.lengthOf(0);
         });
 
         it('should return empty bid on incorrect CPM', function () {
@@ -201,8 +200,7 @@ describe('GrowAdvertising Adapter', function() {
             }
           });
 
-          const bids = spec.interpretResponse(response, { bidRequest: bidRequests[0] });
-          expect([]).to.be.lengthOf(0);
+          expect(spec.interpretResponse(response, { bidRequest: bidRequests[0] })).to.be.lengthOf(0);
         });
       });
 

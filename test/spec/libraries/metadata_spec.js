@@ -7,13 +7,13 @@ describe('metadata', () => {
   });
   it('returns undefined when there is no metadata', () => {
     expect(metadata.getMetadata('bidder', 'missing')).to.not.exist;
-  })
+  });
   it('can register and return component metadata', () => {
     const meta = {
       componentType: 'bidder',
       componentName: 'mock',
       disclosureURL: 'foo'
-    }
+    };
     metadata.register('mockModule', {
       components: [meta]
     });
@@ -40,7 +40,7 @@ describe('metadata', () => {
           componentName: 'mock',
           disclosureURL: 'mock.url'
         }
-      ]
+      ];
       const disclosures = {
         'mock.url': { disclosures: ['foo', 'bar'] }
       };
@@ -53,7 +53,28 @@ describe('metadata', () => {
       expect(metadata.getModuleMetadata('mockModule')).to.eql({
         disclosures,
         components
-      })
-    })
-  })
-})
+      });
+    });
+    it('includes all disclosures for components that have more than one', () => {
+      const components = [
+        {
+          componentType: 'rtd',
+          componentName: 'mock',
+          disclosureURL: ['first.url', 'second.url']
+        }
+      ];
+      const disclosures = {
+        'first.url': { disclosures: ['foo'] },
+        'second.url': { disclosures: ['bar'] }
+      };
+      metadata.register('mockModule', {
+        components,
+        disclosures
+      });
+      expect(metadata.getModuleMetadata('mockModule')).to.eql({
+        disclosures,
+        components
+      });
+    });
+  });
+});

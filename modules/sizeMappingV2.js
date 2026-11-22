@@ -20,6 +20,10 @@ import { adUnitSetupChecks } from '../src/prebid.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ * @typedef {import('./sizeMappingV2.d.ts').BannerSizeConfig} BannerSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').VideoSizeConfig} VideoSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').NativeSizeConfig} NativeSizeConfig
+ * @typedef {import('./sizeMappingV2.d.ts').BidderSizeConfig} BidderSizeConfig
  */
 
 // Allows for stubbing of these functions while writing unit tests.
@@ -76,13 +80,13 @@ export function checkAdUnitSetupHook(adUnits) {
       banner: 'sizes',
       video: 'playerSize',
       native: 'active'
-    }
+    };
     const propertyName = associatedProperty[mediaType];
     const conditionalLogMessages = {
       banner: 'Removing mediaTypes.banner from ad unit.',
       video: 'Removing mediaTypes.video.sizeConfig from ad unit.',
       native: 'Removing mediaTypes.native.sizeConfig from ad unit.'
-    }
+    };
     if (Array.isArray(sizeConfig)) {
       sizeConfig.forEach((config, index) => {
         const keys = Object.keys(config);
@@ -149,7 +153,7 @@ export function checkAdUnitSetupHook(adUnits) {
 
     // If all checks have passed, isValid should equal 'true'
     return isValid;
-  }
+  };
   const validatedAdUnits = [];
   adUnits.forEach(adUnit => {
     adUnit = adUnitSetupChecks.validateAdUnit(adUnit);
@@ -334,7 +338,7 @@ export function getFilteredMediaTypes(mediaTypes) {
     banner: undefined,
     video: undefined,
     native: undefined
-  }
+  };
 
   activeViewportWidth = getWinDimensions().innerWidth;
   activeViewportHeight = getWinDimensions().innerHeight;
@@ -364,7 +368,7 @@ export function getFilteredMediaTypes(mediaTypes) {
         delete transformedMediaTypes[mediaType];
       }
     }
-  })
+  });
 
   // filter out 'undefined' values from activeSizeBucket object and attach sizes/playerSize information against the active size bucket.
   const sizeBucketToSizeMap = Object
@@ -431,7 +435,7 @@ export function getActiveSizeBucket(sizeConfig, activeViewport) {
           activeSizeBucket = [];
         }
       }
-    })
+    });
   return activeSizeBucket;
 }
 
@@ -518,5 +522,5 @@ export function setupAdUnitMediaTypes(adUnits, labels) {
       logWarn(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit has declared invalid 'mediaTypes' or has not declared a 'mediaTypes' property`);
     }
     return result;
-  }, [])
+  }, []);
 }

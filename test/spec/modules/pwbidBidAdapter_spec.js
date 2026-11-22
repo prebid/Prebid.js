@@ -221,7 +221,7 @@ const sampleValidBidRequests = [
     'bidderRequestsCount': 1,
     'bidderWinsCount': 0
   }
-]
+];
 
 const sampleBidderBannerRequest = {
   'bidder': 'pubwise',
@@ -575,6 +575,24 @@ describe('PubWiseAdapter', function () {
     });
   });
 
+  describe('Floors module', function () {
+    it('asks for floors in the impression currency and uses one returned in it', function () {
+      const bid = utils.deepClone(sampleValidBannerBidRequest);
+      const getFloor = sinon.stub().returns({ currency: 'USD', floor: 1.5 });
+      bid.getFloor = getFloor;
+      const request = spec.buildRequests([bid]);
+      sinon.assert.calledWith(getFloor, sinon.match({ currency: 'USD', mediaType: 'banner', size: '*' }));
+      expect(request.data.imp[0].bidfloor).to.equal(1.5);
+    });
+
+    it('ignores a floor returned in another currency', function () {
+      const bid = utils.deepClone(sampleValidBannerBidRequest);
+      bid.getFloor = () => ({ currency: 'EUR', floor: 1.5 });
+      const request = spec.buildRequests([bid]);
+      expect(request.data.imp[0].bidfloor).to.not.equal(1.5);
+    });
+  });
+
   describe('Identifies Media Types', function () {
     it('identifies native adm type', function() {
       const adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
@@ -593,8 +611,8 @@ describe('PubWiseAdapter', function () {
 
   describe('Properly Parses AdSlot Data', function () {
     it('parses banner', function() {
-      const testBid = utils.deepClone(sampleValidBannerBidRequest)
-      _parseAdSlot(testBid)
+      const testBid = utils.deepClone(sampleValidBannerBidRequest);
+      _parseAdSlot(testBid);
       expect(testBid).to.deep.equal(sampleBidderBannerRequest);
     });
   });
@@ -602,7 +620,7 @@ describe('PubWiseAdapter', function () {
   describe('Properly Handles Response', function () {
     it('handles response with muiltiple responses', function() {
       // the request when it comes back is on the data object
-      const pbResponse = spec.interpretResponse(sampleRTBResponse, { 'data': sampleRequest })
+      const pbResponse = spec.interpretResponse(sampleRTBResponse, { 'data': sampleRequest });
       expect(pbResponse).to.deep.equal(samplePBBidObjects);
     });
   });
@@ -812,11 +830,6 @@ describe('PubWiseAdapter', function () {
         }
       };
 
-      const outstreamBidRequest =
-      [
-        validOutstreamRequest
-      ];
-
       const validInstreamRequest = {
         code: 'video1',
         mediaTypes: {
@@ -842,11 +855,6 @@ describe('PubWiseAdapter', function () {
         }
       };
 
-      const instreamBidRequest =
-      [
-        validInstreamRequest
-      ];
-
       const outstreamRequest = spec.isBidRequestValid(validOutstreamRequest);
       expect(outstreamRequest).to.equal(false);
 
@@ -869,7 +877,7 @@ describe('PubWiseAdapter', function () {
         skipmin: 10,
         minduration: 10,
         mimes: ['video/mp4', 'video/x-flv'],
-      }
+      };
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
         sandbox = sinon.createSandbox();
@@ -879,18 +887,18 @@ describe('PubWiseAdapter', function () {
       afterEach(() => {
         utilsMock.restore();
         sandbox.restore();
-      })
+      });
 
       it('should log Video.Placement param missing', function() {
         _checkVideoPlacement(videoData, adUnit);
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
       it('should not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
-      })
+      });
     });
     // end video testing
   });

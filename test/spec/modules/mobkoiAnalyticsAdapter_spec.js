@@ -6,14 +6,14 @@ import { EVENTS } from 'src/constants.js';
 import sinon from 'sinon';
 
 const defaultTimeout = 10000;
-const requestId = 'test-request-id'
-const publisherId = 'mobkoiPublisherId'
-const bidId = 'test-bid-id'
-const bidderCode = 'mobkoi'
-const transactionId = 'test-transaction-id'
-const impressionId = 'test-impression-id'
-const adUnitId = 'test-ad-unit-id'
-const auctionId = 'test-auction-id'
+const requestId = 'test-request-id';
+const publisherId = 'mobkoiPublisherId';
+const bidId = 'test-bid-id';
+const bidderCode = 'mobkoi';
+const transactionId = 'test-transaction-id';
+const impressionId = 'test-impression-id';
+const adUnitId = 'test-ad-unit-id';
+const auctionId = 'test-auction-id';
 const integrationBaseUrl = 'http://integrationBaseUrl';
 
 const adm = '<div>test ad</div>';
@@ -24,7 +24,7 @@ const performStandardAuction = (auctionEvents) => {
   auctionEvents.forEach(auctionEvent => {
     events.emit(auctionEvent.event, auctionEvent.data);
   });
-}
+};
 
 const getOrtb2 = () => ({
   site: {
@@ -33,7 +33,7 @@ const getOrtb2 = () => ({
       ext: { integrationEndpoint: integrationBaseUrl }
     }
   }
-})
+});
 
 const getBidderResponse = () => ({
   body: {
@@ -66,12 +66,12 @@ const getBidderResponse = () => ({
       }
     ],
   }
-})
+});
 
 const getMockEvents = () => {
   const sizes = [800, 300];
   const timestamp = Date.now();
-  const auctionOrBidError = { timestamp, error: 'error', bidderRequest: { bidderRequestId: requestId } }
+  const auctionOrBidError = { timestamp, error: 'error', bidderRequest: { bidderRequestId: requestId } };
 
   return {
     AUCTION_TIMEOUT: auctionOrBidError,
@@ -155,8 +155,8 @@ const getMockEvents = () => {
       error: 'error',
       bidderRequestId: requestId
     }
-  }
-}
+  };
+};
 
 const getBidRequest = () => ({
   bidder: bidderCode,
@@ -167,7 +167,7 @@ const getBidRequest = () => ({
   bidderRequestId: requestId,
   auctionId,
   ortb2: getOrtb2()
-})
+});
 
 const getBidderRequest = () => ({
   bidderCode,
@@ -175,7 +175,7 @@ const getBidderRequest = () => ({
   bidderRequestId: requestId,
   bids: [getBidRequest()],
   ortb2: getOrtb2()
-})
+});
 
 describe('mobkoiAnalyticsAdapter', function () {
   let sandbox;
@@ -257,13 +257,13 @@ describe('mobkoiAnalyticsAdapter', function () {
         { event: EVENTS.AUCTION_INIT, data: AUCTION_INIT },
         { event: EVENTS.BID_RESPONSE, data: bidResponse },
         { event: EVENTS.BID_WON, data: BID_WON },
-      ]
+      ];
 
       performStandardAuction(eventSequence);
 
       expect(sendGetRequestStub.callCount).to.equal(1);
       expect(sendGetRequestStub.firstCall.args[0]).to.equal(lurl);
-    })
+    });
 
     it('should call postAjax while tracking BIDDER_DONE event', function () {
       const { AUCTION_INIT, BID_RESPONSE, BIDDER_DONE } = getMockEvents();
@@ -278,7 +278,7 @@ describe('mobkoiAnalyticsAdapter', function () {
 
       expect(postAjaxStub.calledOnce).to.be.true;
       expect(postAjaxStub.firstCall.args[0]).to.equal(`${integrationBaseUrl}/debug`);
-    })
+    });
 
     it('should track complete auction workflow in correct sequence and trigger a loss beacon', function () {
       const { AUCTION_INIT, BID_RESPONSE, AUCTION_END, AD_RENDER_SUCCEEDED, BIDDER_DONE } = getMockEvents();
@@ -336,7 +336,7 @@ describe('mobkoiAnalyticsAdapter', function () {
         expect(errorPayload.error).to.include('Unable to determine track args type');
       }
     });
-  })
+  });
 
   describe('utils', function () {
     let bidderRequest;
@@ -384,7 +384,7 @@ describe('mobkoiAnalyticsAdapter', function () {
           utils.getOrtbId(bidderRequest);
         }).to.throw();
       });
-    })
+    });
 
     describe('getImpId', function () {
       let bidResponse;
@@ -412,7 +412,7 @@ describe('mobkoiAnalyticsAdapter', function () {
       it('should return null if impId is missing', function () {
         expect(utils.getImpId({})).to.be.null;
       });
-    })
+    });
 
     describe('getPublisherId', function () {
       it('should return the publisherId from the given object', function () {
@@ -425,7 +425,7 @@ describe('mobkoiAnalyticsAdapter', function () {
           utils.getPublisherId(bidderRequest);
         }).to.throw();
       });
-    })
+    });
 
     describe('getIntegrationEndpoint', function () {
       it('should return the integrationEndpoint from the given object', function () {
@@ -439,7 +439,7 @@ describe('mobkoiAnalyticsAdapter', function () {
         expect(utils.getIntegrationEndpoint(bidderRequest))
           .to.equal(PROD_PREBID_JS_INTEGRATION_ENDPOINT);
       });
-    })
+    });
 
     describe('determineObjType', function () {
       [null, undefined, 123, 'string', true].forEach(value => {
@@ -452,42 +452,42 @@ describe('mobkoiAnalyticsAdapter', function () {
 
       it('should throw an error if the object type could not be determined', function () {
         expect(() => {
-          utils.determineObjType({ dumbAttribute: 'bid' })
+          utils.determineObjType({ dumbAttribute: 'bid' });
         }).to.throw();
       });
 
       Object.values(SUB_PAYLOAD_TYPES).forEach(type => {
         it(`should return the ${type} type`, function () {
-          const eventArgs = {}
-          const uniqueFields = SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP[type]
+          const eventArgs = {};
+          const uniqueFields = SUB_PAYLOAD_UNIQUE_FIELDS_LOOKUP[type];
           uniqueFields.forEach(field => {
-            eventArgs[field] = 'random-value'
-          })
+            eventArgs[field] = 'random-value';
+          });
           expect(utils.determineObjType(eventArgs)).to.equal(type);
-        })
-      })
-    })
+        });
+      });
+    });
 
     describe('mergePayloadAndCustomFields', function () {
       it('should throw an error when the target is not an object', function () {
         expect(() => {
-          utils.mergePayloadAndCustomFields(123, {})
+          utils.mergePayloadAndCustomFields(123, {});
         }).to.throw();
-      })
+      });
 
       it('should throw an error when the new values are not an object', function () {
         expect(() => {
-          utils.mergePayloadAndCustomFields({}, 123)
+          utils.mergePayloadAndCustomFields({}, 123);
         }).to.throw();
-      })
+      });
 
       it('should throw an error if custom fields are provided and one of them is not a string', () => {
-        const customFields = { impid: 'bid-123', bidId: 123 }
+        const customFields = { impid: 'bid-123', bidId: 123 };
         expect(() => {
-          utils.mergePayloadAndCustomFields({}, customFields)
+          utils.mergePayloadAndCustomFields({}, customFields);
         }).to.throw();
-      })
-    })
+      });
+    });
 
     describe('validateSubPayloads', function () {
       it('should throw an error if the sub payloads required fields are not the correct type', function () {
@@ -497,7 +497,7 @@ describe('mobkoiAnalyticsAdapter', function () {
               impid: 123,
               publisherId: 456
             }
-          })
+          });
         }).to.throw();
       });
 
@@ -508,9 +508,9 @@ describe('mobkoiAnalyticsAdapter', function () {
               impid: '123',
               publisherId: 'publisher-123'
             }
-          })
+          });
         }).to.not.throw();
       });
     });
-  })
+  });
 });

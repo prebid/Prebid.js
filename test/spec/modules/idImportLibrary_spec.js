@@ -8,19 +8,19 @@ import * as activities from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
 import { server } from 'test/mocks/xhr.js';
+import { normalizeEmail, sha256Base64 } from '../../../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 
 var expect = require('chai').expect;
 
 const mockMutationObserver = {
   observe: () => {
-    return null
+    return null;
   }
-}
+};
 
 describe('IdImportLibrary Tests', function () {
   let sandbox;
   let clock;
-  const fn = sinon.spy();
 
   before(() => {
     hook.ready();
@@ -64,29 +64,29 @@ describe('IdImportLibrary Tests', function () {
       sinon.assert.called(utils.logInfo);
     });
     it('results with config debounce ', function () {
-      const config = { 'url': 'URL', 'debounce': 300 }
+      const config = { 'url': 'URL', 'debounce': 300 };
       idImportlibrary.setConfig(config);
       expect(config.debounce).to.be.equal(300);
     });
 
     it('results with config default debounce ', function () {
-      const config = { 'url': 'URL' }
+      const config = { 'url': 'URL' };
       idImportlibrary.setConfig(config);
       expect(config.debounce).to.be.equal(250);
     });
     it('results with config default fullscan ', function () {
-      const config = { 'url': 'URL', 'debounce': 0 }
+      const config = { 'url': 'URL', 'debounce': 0 };
       idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(false);
     });
     it('results with config fullscan ', function () {
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 }
+      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
       idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(true);
       expect(config.inputscan).to.be.equal(false);
     });
     it('results with config inputscan ', function () {
-      const config = { 'inputscan': true, 'debounce': 0 }
+      const config = { 'inputscan': true, 'debounce': 0 };
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
     });
@@ -130,7 +130,7 @@ describe('IdImportLibrary Tests', function () {
 
     it('results with config fullscan with email found in html ', function () {
       document.body.innerHTML = '<body><div>test@test.com</div></body>';
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 }
+      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
       idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(true);
       expect(config.inputscan).to.be.equal(false);
@@ -139,7 +139,7 @@ describe('IdImportLibrary Tests', function () {
 
     it('results with config fullscan with no email found in html ', function () {
       document.body.innerHTML = '<body><div>test</div></body>';
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 }
+      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
       idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(true);
       expect(config.inputscan).to.be.equal(false);
@@ -147,7 +147,7 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config formElementId without listner ', function () {
-      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 }
+      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 };
       document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
       idImportlibrary.setConfig(config);
       expect(config.formElementId).to.be.equal('userid');
@@ -155,7 +155,7 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config formElementId with listner ', function () {
-      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 }
+      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 };
       document.body.innerHTML = '<body><input type="text" id="userid" value=""></body>';
       idImportlibrary.setConfig(config);
       expect(config.formElementId).to.be.equal('userid');
@@ -163,14 +163,14 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config target without listner ', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 }
+      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
       document.body.innerHTML = '<body><div id="userid">test@test.com<div></div></body>';
       idImportlibrary.setConfig(config);
       expect(config.target).to.be.equal('userid');
       expect(refreshUserIdSpy.calledOnce).to.equal(true);
     });
     it('results with config target with listner ', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 }
+      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
       document.body.innerHTML = '<body><div id="userid"><div></div></body>';
       idImportlibrary.setConfig(config);
 
@@ -179,21 +179,21 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config target with listner', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 }
+      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
       idImportlibrary.setConfig(config);
       document.body.innerHTML = '<body><div id="userid">test@test.com<div></div></body>';
       expect(config.target).to.be.equal('userid');
       expect(refreshUserIdSpy.calledOnce).to.equal(false);
     });
     it('results with config fullscan ', function () {
-      const config = { url: 'testUrl', 'fullscan': true, 'debounce': 0 }
+      const config = { url: 'testUrl', 'fullscan': true, 'debounce': 0 };
       idImportlibrary.setConfig(config);
       document.body.innerHTML = '<body><div id="userid"><div></div></body>';
       expect(config.fullscan).to.be.equal(true);
       expect(refreshUserIdSpy.calledOnce).to.equal(false);
     });
     it('results with config inputscan with listner', function () {
-      const config = { url: 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { url: 'testUrl', 'inputscan': true, 'debounce': 0 };
       var input = document.createElement('input');
       input.setAttribute('type', 'text');
       document.body.appendChild(input);
@@ -206,7 +206,7 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config inputscan with listner and no user ids ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
       document.body.innerHTML = '<body><input  id="userid" value=""></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
@@ -214,7 +214,7 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config inputscan with listner ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
       document.body.innerHTML = '<body><input  id="userid" type=text value=""></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
@@ -222,19 +222,83 @@ describe('IdImportLibrary Tests', function () {
     });
 
     it('results with config inputscan without listner ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
       document.body.innerHTML = '<body><input  id="userid" value="test@test.com"></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
       expect(refreshUserIdSpy.calledOnce).to.equal(true);
     });
   });
+  describe('normalizeEmail', function () {
+    it('trims and lowercases the address', function () {
+      expect(normalizeEmail('  Test.User@Example.COM ')).to.equal('test.user@example.com');
+    });
+    it('drops the dots and the + suffix of a gmail.com address, as UID2 does', function () {
+      expect(normalizeEmail('Test.User+promo@Gmail.com')).to.equal('testuser@gmail.com');
+    });
+    it('keeps the dots and the + suffix of another domain', function () {
+      expect(normalizeEmail('test.user+promo@example.com')).to.equal('test.user+promo@example.com');
+    });
+    ['', 'test', 'test@', '@example.com', 'a@b@example.com', 'te st@example.com', '+promo@gmail.com'].forEach(value => {
+      it(`rejects ${JSON.stringify(value)}`, function () {
+        expect(normalizeEmail(value)).to.equal(undefined);
+      });
+    });
+  });
+
+  // Guard WebCrypto suite registration to avoid an empty suite in insecure contexts.
+  if (window.isSecureContext) {
+    describe('hashed email', function () {
+      let stubs;
+      beforeEach(function () {
+        stubs = [
+          sinon.stub(getGlobal(), 'refreshUserIds'),
+          sinon.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } }),
+          sinon.stub(window, 'MutationObserver').returns(mockMutationObserver),
+        ];
+      });
+      afterEach(function () {
+        stubs.forEach(stub => stub.restore());
+        document.body.innerHTML = '';
+      });
+
+      it('sha256Base64 hashes as UID2 does: SHA-256, base64-encoded', async function () {
+        expect(await sha256Base64('testuser@gmail.com')).to.equal('2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=');
+      });
+
+      it('posts the hash of the address normalized as UID2 does', async function () {
+        document.body.innerHTML = '<body><input type="text" id="userid" value=" Test.User@Gmail.com "></body>';
+        idImportlibrary.setConfig({ url: 'URL', formElementId: 'userid', debounce: 0 });
+        let request;
+        for (let i = 0; i < 100 && !request; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          request = server.requests.find(r => r.url.endsWith('/URL'));
+        }
+        expect(request.method).to.equal('POST');
+        expect(JSON.parse(request.requestBody)).to.deep.equal({
+          hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
+          uids: { id: { 'MOCKID': '1111' } },
+        });
+      });
+
+      it('posts to the URL configured when the hash started, even if setConfig changes it meanwhile', async function () {
+        document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
+        idImportlibrary.setConfig({ url: 'URL1', formElementId: 'userid', debounce: 0 });
+        idImportlibrary.setConfig({ url: 'URL2', formElementId: 'userid', debounce: 0 });
+        for (let i = 0; i < 100 && server.requests.filter(r => ['URL1', 'URL2'].includes(r.url.slice(-4))).length < 2; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        expect(server.requests.map(r => r.url).map(url => url.slice(-4)).filter(url => ['URL1', 'URL2'].includes(url)).sort())
+          .to.deep.equal(['URL1', 'URL2']);
+      });
+    });
+  }
+
   describe('Tests with no user ids', function () {
     let mutationObserverStub;
-    let userId;
+
     let jsonSpy;
     beforeEach(function() {
-      const sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver');
       jsonSpy = sinon.spy(JSON, 'stringify');
@@ -253,14 +317,14 @@ describe('IdImportLibrary Tests', function () {
       mutationObserverStub.restore();
     });
     it('results with config inputscan without listner with no user ids #1', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
       document.body.innerHTML = '<body><input  id="userid" value="test@test.com"></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
       expect(jsonSpy.calledOnce).to.equal(false);
     });
     it('results with config inputscan without listner with no user ids #2', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 }
+      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
       document.body.innerHTML = '<body><input  id="userid"></body>';
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);

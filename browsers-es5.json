@@ -1,0 +1,20 @@
+{
+  "chrome_50": {
+    "name": "Chrome 50",
+    "browserstack": {
+      "browserName": "chrome",
+      "browserVersion": "50.0",
+      "os": "Windows",
+      "osVersion": "10"
+    }
+  },
+  "firefox_65": {
+    "name": "Firefox 65",
+    "browserstack": {
+      "browserName": "firefox",
+      "browserVersion": "65.0",
+      "os": "Windows",
+      "osVersion": "10"
+    }
+  }
+}

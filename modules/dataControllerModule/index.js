@@ -46,7 +46,7 @@ function containsConfiguredSDA(segmentMap, bidderCode) {
   if (_dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
     return true;
   }
-  return hasValue(segmentMap.get(bidderCode)) || hasValue(segmentMap.get(GLOBAL))
+  return hasValue(segmentMap.get(bidderCode)) || hasValue(segmentMap.get(GLOBAL));
 }
 
 function hasValue(bidderSegment) {
@@ -127,7 +127,7 @@ function filterSDA(adUnits, ortb2Fragments) {
     }
   }
   if (resetGlobal) {
-    deepSetValue(ortb2Fragments, 'global.user.data', [])
+    deepSetValue(ortb2Fragments, 'global.user.data', []);
   }
 }
 
@@ -145,7 +145,7 @@ function filterEIDs(adUnits, ortb2Fragments) {
           const bidderFragment = ortb2Fragments.bidder[bid.bidder];
           const userExt = deepAccess(bidderFragment, 'user.ext.eids') || [];
           if (userExt) {
-            deepSetValue(bidderFragment, 'user.ext.eids', [])
+            deepSetValue(bidderFragment, 'user.ext.eids', []);
           }
         }
       }
@@ -153,7 +153,7 @@ function filterEIDs(adUnits, ortb2Fragments) {
   });
 
   if (globalEidUpdate) {
-    deepSetValue(ortb2Fragments, 'global.user.ext.eids', [])
+    deepSetValue(ortb2Fragments, 'global.user.ext.eids', []);
   }
   return adUnits;
 }

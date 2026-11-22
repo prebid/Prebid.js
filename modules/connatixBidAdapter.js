@@ -9,7 +9,6 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  deepAccess,
   deepSetValue,
   formatQS,
   getWindowTop,
@@ -21,11 +20,12 @@ import {
 } from '../src/utils.js';
 
 import {
-  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'connatix';
 
@@ -40,6 +40,10 @@ let cnxIdsValues;
 
 const EVENTS_URL = 'https://capi.connatix.com/tr/am';
 
+export const dep = {
+  ajax
+};
+
 let context = {};
 
 /*
@@ -48,7 +52,7 @@ let context = {};
  */
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
+    return bid?.params?.bidfloor ?? 0;
   }
 
   try {
@@ -70,7 +74,7 @@ export function validateBanner(mediaTypes) {
     return true;
   }
 
-  const banner = deepAccess(mediaTypes, BANNER, {});
+  const banner = mediaTypes?.[BANNER] || {};
   return (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
 }
 
@@ -81,7 +85,7 @@ export function validateVideo(mediaTypes) {
     return true;
   }
 
-  return video.context !== ADPOD;
+  return video.context === INSTREAM || video.context === OUTSTREAM;
 }
 
 export function _getMinSize(sizes) {
@@ -130,7 +134,7 @@ export function detectViewability(bid) {
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
 
   let element = null;
-  let bidParamSizes = null;
+  let bidParamSizes;
   let minSize = [];
 
   if (isStr(viewabilityContainerIdentifier)) {
@@ -138,8 +142,9 @@ export function detectViewability(bid) {
       element = getDomElement(viewabilityContainerIdentifier);
 
       if (element) {
-        bidParamSizes = [element.offsetWidth, element.offsetHeight];
-        minSize = _getMinSize(bidParamSizes)
+        const { width, height } = getElementDimensions(element);
+        bidParamSizes = [width, height];
+        minSize = _getMinSize(bidParamSizes);
       }
     } catch (e) {
       logError(`Error while trying to find viewability container element: ${viewabilityContainerIdentifier}`);
@@ -151,7 +156,7 @@ export function detectViewability(bid) {
     bidParamSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && bid.mediaType.video.playerSize ? bid.mediaType.video.playerSize : bidParamSizes;
     bidParamSizes = typeof bidParamSizes === 'undefined' && bid.mediaType && bid.mediaType.video && isNumber(bid.mediaType.video.w) && isNumber(bid.mediaType.h) ? [bid.mediaType.video.w, bid.mediaType.video.h] : bidParamSizes;
-    minSize = _getMinSize(bidParamSizes ?? [])
+    minSize = _getMinSize(bidParamSizes ?? []);
     element = getAdUnitElement(bid);
   }
 
@@ -159,8 +164,8 @@ export function detectViewability(bid) {
     const minSizeObj = {
       w: minSize[0],
       h: minSize[1]
-    }
-    return Math.round(getViewability(element, getWindowTop(), minSizeObj))
+    };
+    return Math.round(getViewability(element, getWindowTop(), minSizeObj));
   }
 
   return null;
@@ -179,7 +184,7 @@ export function _getBidRequests(validBidRequests) {
     if (isNumber(detectedViewabilityPercentage)) {
       detectedViewabilityPercentage = detectedViewabilityPercentage / 100;
     }
-    return {
+    const bidRequest = {
       bidId,
       mediaTypes,
       sizes,
@@ -189,6 +194,13 @@ export function _getBidRequests(validBidRequests) {
       declaredViewabilityPercentage: bid.params.viewabilityPercentage ?? null,
       detectedViewabilityPercentage,
     };
+
+    const gpid = bid?.ortb2Imp?.ext?.gpid;
+    if (gpid && isStr(gpid)) {
+      bidRequest.gpid = gpid;
+    }
+
+    return bidRequest;
   });
 }
 
@@ -196,7 +208,7 @@ export function _getBidRequests(validBidRequests) {
  * Get ids from Prebid User ID Modules and add them to the payload
  */
 function _handleEids(payload, validBidRequests) {
-  const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  const bidUserIdAsEids = validBidRequests?.[0]?.userIdAsEids;
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
@@ -209,6 +221,13 @@ export function hasQueryParams(url) {
   } catch (e) {
     return false;
   }
+}
+
+function _appendQueryParams(url, queryParams) {
+  if (!queryParams) {
+    return url;
+  }
+  return url + (hasQueryParams(url) ? `&${queryParams}` : `?${queryParams}`);
 }
 
 export function saveInLocalStorage(name, value) {
@@ -234,9 +253,9 @@ export const spec = {
    * Otherwise, the request to the Connatix server is not made
    */
   isBidRequestValid: (bid = {}) => {
-    const bidId = deepAccess(bid, 'bidId');
-    const mediaTypes = deepAccess(bid, 'mediaTypes', {});
-    const params = deepAccess(bid, 'params', {});
+    const bidId = bid?.bidId;
+    const mediaTypes = bid?.mediaTypes || {};
+    const params = bid?.params || {};
 
     const hasBidId = Boolean(bidId);
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
@@ -327,11 +346,13 @@ export const spec = {
 
   /*
    * Determine the user sync type (either 'iframe' or 'image') based on syncOptions.
+   * The iframe sync (UserSyncEndpoint) is preferred because it returns identity data via postMessage;
+   * the image sync (PixelSyncEndpoint, may be null) is used only when iframe syncs are not allowed.
    * Construct the sync URL by appending required query parameters such as gdpr, ccpa, and coppa consents.
    * Return an array containing an object with the sync type and the constructed URL.
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    if (!syncOptions.iframeEnabled) {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) => {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
 
@@ -362,41 +383,47 @@ export const spec = {
       params['gpp_sid'] = gppConsent.applicableSections.join(',');
     }
 
-    if (config.getConfig('coppa') === true) {
+    if (coppa) {
       params['coppa'] = 1;
     }
 
-    window.addEventListener('message', function handler(event) {
-      if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
-        return;
-      }
-
-      const { message, data } = event.data.cnx;
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
-        this.removeEventListener('message', handler);
-        event.stopImmediatePropagation();
-      }
-
-      if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
-        if (data) {
-          saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
-        }
-      }
-    }, true)
-
-    const syncUrl = serverResponses[0].body.UserSyncEndpoint;
     const queryParams = Object.keys(params).length > 0 ? formatQS(params) : '';
+    const { UserSyncEndpoint, PixelSyncEndpoint } = serverResponses[0].body || {};
 
-    let url = syncUrl;
-    if (queryParams) {
-      url += hasQueryParams(syncUrl) ? `&${queryParams}` : `?${queryParams}`;
+    if (syncOptions.iframeEnabled && UserSyncEndpoint && isStr(UserSyncEndpoint)) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
+          return;
+        }
+
+        const { message, data } = event.data.cnx;
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT) {
+          this.removeEventListener('message', handler);
+          event.stopImmediatePropagation();
+        }
+
+        if (message === ALL_PROVIDERS_RESOLVED_EVENT || message === IDENTITY_PROVIDER_COLLECTION_UPDATED_EVENT) {
+          if (data) {
+            saveInLocalStorage(CNX_IDS_LOCAL_STORAGE_KEY, data);
+          }
+        }
+      }, true);
+
+      return [{
+        type: 'iframe',
+        url: _appendQueryParams(UserSyncEndpoint, queryParams)
+      }];
     }
 
-    return [{
-      type: 'iframe',
-      url
-    }];
+    if (syncOptions.pixelEnabled && PixelSyncEndpoint && isStr(PixelSyncEndpoint)) {
+      return [{
+        type: 'image',
+        url: _appendQueryParams(PixelSyncEndpoint, queryParams)
+      }];
+    }
+
+    return [];
   },
 
   isConnatix: (aliasName) => {
@@ -437,7 +464,7 @@ export const spec = {
   },
 
   triggerEvent(data) {
-    ajax(EVENTS_URL, null, JSON.stringify(data), {
+    dep.ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false
     });

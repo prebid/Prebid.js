@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import sinon from 'sinon';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 

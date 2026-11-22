@@ -165,7 +165,7 @@ describe('openwebAdapter', function () {
 
     const bidderRequest = {
       bidderCode: 'openweb',
-    }
+    };
     const api = [1, 2];
     const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
     const protocols = [2, 3, 5, 6];
@@ -228,24 +228,24 @@ describe('openwebAdapter', function () {
     it('should send the correct sizes array', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].sizes).to.be.an('array');
-      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
+      expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes);
       expect(request.data.bids[1].sizes).to.be.an('array');
-      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes);
       expect(request.data.bids[2].sizes).to.be.an('array');
-      expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes)
+      expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes);
     });
 
     it('should send nativeOrtbRequest in native bid request', function () {
-      decorateAdUnitsWithNativeParams(bidRequests)
+      decorateAdUnitsWithNativeParams(bidRequests);
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      assert.deepEqual(request.data.bids[2].nativeOrtbRequest, bidRequests[2].mediaTypes.native.ortb)
+      assert.deepEqual(request.data.bids[2].nativeOrtbRequest, bidRequests[2].mediaTypes.native.ortb);
     });
 
     it('should send the correct media type', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].mediaType).to.equal(VIDEO)
-      expect(request.data.bids[1].mediaType).to.equal(BANNER)
-      expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER])
+      expect(request.data.bids[0].mediaType).to.equal(VIDEO);
+      expect(request.data.bids[1].mediaType).to.equal(BANNER);
+      expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER]);
     });
 
     it('should respect syncEnabled option', function() {
@@ -400,8 +400,8 @@ describe('openwebAdapter', function () {
         return {
           currency: 'USD',
           floor: 3.32
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -414,8 +414,8 @@ describe('openwebAdapter', function () {
         return {
           currency: 'USD',
           floor: 0.8
-        }
-      }
+        };
+      };
       bid.params.floorPrice = 1.5;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
@@ -446,7 +446,7 @@ describe('openwebAdapter', function () {
         'model': '',
         'bitness': '64',
         'architecture': 'x86'
-      }
+      };
       const bid = utils.deepClone(bidRequests[0]);
       bid.ortb2 = {
         'device': {
@@ -475,7 +475,7 @@ describe('openwebAdapter', function () {
             'architecture': 'x86'
           }
         }
-      }
+      };
       const requestWithSua = spec.buildRequests([bid], bidderRequest);
       const data = requestWithSua.data;
       expect(data.bids[0].sua).to.exist;
@@ -631,19 +631,19 @@ describe('openwebAdapter', function () {
 
     it('video type should have vastXml key', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml)
+      expect(result[0].vastXml).to.equal(expectedVideoResponse.vastXml);
     });
 
     it('banner type should have ad key', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[1].ad).to.equal(expectedBannerResponse.ad)
+      expect(result[1].ad).to.equal(expectedBannerResponse.ad);
     });
 
     it('native type should have native key', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(result[2].native).to.eql(expectedNativeResponse.native)
+      expect(result[2].native).to.eql(expectedNativeResponse.native);
     });
-  })
+  });
 
   describe('getUserSyncs', function() {
     const imageSyncResponse = {
@@ -725,7 +725,7 @@ describe('openwebAdapter', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
-  })
+  });
 
   describe('onBidWon', function() {
     beforeEach(function() {
@@ -747,7 +747,7 @@ describe('openwebAdapter', function () {
       };
 
       spec.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1)
-    })
-  })
+      expect(utils.triggerPixel.callCount).to.equal(1);
+    });
+  });
 });

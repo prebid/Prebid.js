@@ -41,7 +41,7 @@ describe('jwplayerBidAdapter', function() {
         }
       },
       timeout: 1000
-    }
+    };
   });
 
   it('should use jwplayer bidder code', function () {
@@ -260,7 +260,7 @@ describe('jwplayerBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', function() {
+  it('interpretResponse should convert the ORTB response into bids', function() {
     const serverResponse = {
       body: {
         id: 'test-request-id',

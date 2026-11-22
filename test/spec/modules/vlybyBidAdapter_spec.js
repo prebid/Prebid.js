@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec } from 'modules/vlybyBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { spec } from 'modules/vlybyBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const REQUEST = {
   bidder: 'vlyby',
@@ -12,7 +12,7 @@ const REQUEST = {
   adUnitCode: '/0000/vlyby',
   bidId: '2d925f27f5079f',
   sizes: [1, 1]
-}
+};
 
 const BIDDER_REQUEST = {
   'request': {
@@ -31,7 +31,7 @@ const BIDDER_REQUEST = {
       'sizes': [[1, 1]]
     }
   ]
-}
+};
 
 const bids = {
   bids: {
@@ -47,16 +47,16 @@ const bids = {
     },
     adomain: ['vlyby.com']
   }
-}
+};
 
 describe('vlybyBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
@@ -64,48 +64,48 @@ describe('vlybyBidAdapter', function () {
         'params': {
           'publisherId': 'f363eb2b75459b34592cc4'
         }
-      }
-      expect(spec.isBidRequestValid(request)).to.equal(true)
-    })
+      };
+      expect(spec.isBidRequestValid(request)).to.equal(true);
+    });
 
     it('should return false when required params are not passed', function () {
-      expect(spec.isBidRequestValid({})).to.equal(false)
-    })
-  })
+      expect(spec.isBidRequestValid({})).to.equal(false);
+    });
+  });
 
   describe('buildRequests', function () {
-    const bidRequests = [REQUEST]
-    const request = spec.buildRequests(bidRequests, BIDDER_REQUEST)
+    const bidRequests = [REQUEST];
+    const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
 
     it('sends bid request to ENDPOINT via POST', function () {
-      expect(request.method).to.equal('POST')
-    })
+      expect(request.method).to.equal('POST');
+    });
 
     it('returns a list of valid requests', function () {
-      expect(request.validBidRequests).to.eql([REQUEST])
-    })
+      expect(request.validBidRequests).to.eql([REQUEST]);
+    });
 
     it('sends params.publisherId', function () {
-      expect(request.validBidRequests[0].params.publisherId).to.eql(REQUEST.params.publisherId)
-    })
+      expect(request.validBidRequests[0].params.publisherId).to.eql(REQUEST.params.publisherId);
+    });
   });
 
   describe('interpretResponse', function () {
     it('nobid responses', function () {
-      expect(spec.interpretResponse({ body: {} }).length).to.equal(0)
-      expect(spec.interpretResponse({ body: [] }).length).to.equal(0)
-    })
+      expect(spec.interpretResponse({ body: {} }).length).to.equal(0);
+      expect(spec.interpretResponse({ body: [] }).length).to.equal(0);
+    });
 
     it('handles the response', function () {
       const response = spec.interpretResponse({ body: bids });
 
-      expect(response, 'response is not an Array').to.be.an('array')
-      expect(response[0].cpm, 'cpm does not match').to.equal(5.2)
-      expect(response[0].width, 'width does not match').to.equal(1)
-      expect(response[0].height, 'height does not match').to.equal(1)
-      expect(response[0].creativeId, 'creative ID does not match').to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af')
-      expect(response[0].ad, 'creative Ad does not match').to.equal('<ad/>')
-      expect(response[0].meta.adomain, 'creative Ad does not match').to.be.an('array')
+      expect(response, 'response is not an Array').to.be.an('array');
+      expect(response[0].cpm, 'cpm does not match').to.equal(5.2);
+      expect(response[0].width, 'width does not match').to.equal(1);
+      expect(response[0].height, 'height does not match').to.equal(1);
+      expect(response[0].creativeId, 'creative ID does not match').to.equal('60fe2250-d13d-11eb-8983-d7b28b8ba5af');
+      expect(response[0].ad, 'creative Ad does not match').to.equal('<ad/>');
+      expect(response[0].meta.adomain, 'creative Ad does not match').to.be.an('array');
     });
   });
 });

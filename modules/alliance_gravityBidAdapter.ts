@@ -1,12 +1,12 @@
 import { deepSetValue } from '../src/utils.js';
-import { AdapterRequest, BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { AdapterRequest, AdapterResponse, BidderSpec, ExtendedResponse, ServerResponse, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-import { interpretResponse, enrichImp, getUserSyncs } from '../libraries/alliance_gravityUtils/index.js';
+import { enrichBidResponse, enrichImp, getUserSyncs, mediaTypeOverride, videoResponseOverride } from '../libraries/alliance_gravityUtils/index.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { BidRequest, ClientBidderRequest } from '../src/adapterManager.js';
-import { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
+import { ORTBImp, ORTBRequest, ORTBResponse } from '../src/prebid.public.js';
 
 const BIDDER_CODE = 'alliance_gravity';
 const REQUEST_URL = 'https://pbs.production.agrvt.com/openrtb2/auction';
@@ -22,8 +22,8 @@ declare module '../src/adUnits' {
 
 const converter = ortbConverter({
   context: {
-    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
-    ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+    netRevenue: false,
+    ttl: 90,
   },
   imp(buildImp, bidRequest: BidRequest<typeof BIDDER_CODE>, context) {
     let imp:ORTBImp = buildImp(bidRequest, context);
@@ -41,7 +41,19 @@ const converter = ortbConverter({
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    return buildRequest(imps, bidderRequest, context);
+    const ortbRequest = buildRequest(imps, bidderRequest, context);
+    deepSetValue(ortbRequest, 'ext.alliance_gravity.channel', 'pbjs');
+    return ortbRequest;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    return enrichBidResponse(bidResponse, bid);
+  },
+  overrides: {
+    bidResponse: {
+      mediaType: mediaTypeOverride,
+      video: videoResponseOverride,
+    },
   },
 });
 
@@ -56,7 +68,7 @@ const buildRequests = (
   bidRequests: BidRequest<typeof BIDDER_CODE>[],
   bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>,
 ): AdapterRequest => {
-  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest })
+  const data:ORTBRequest = converter.toORTB({ bidRequests, bidderRequest });
   const adapterRequest:AdapterRequest = {
     method: 'POST',
     url: REQUEST_URL,
@@ -64,9 +76,21 @@ const buildRequests = (
     options: {
       endpointCompression: DEFAULT_GZIP_ENABLED
     },
-  }
+  };
   return adapterRequest;
-}
+};
+
+const interpretResponse = (
+  serverResponse: ServerResponse,
+  bidderRequest: AdapterRequest,
+): AdapterResponse => {
+  if (!serverResponse.body) return [];
+  const ortbResponse = serverResponse.body as ORTBResponse;
+  if (!ortbResponse.seatbid || ortbResponse.seatbid.length === 0) return [];
+
+  const result = converter.fromORTB({ request: bidderRequest.data as ORTBRequest, response: ortbResponse }) as ExtendedResponse;
+  return result.bids ?? [];
+};
 
 export const spec:BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,

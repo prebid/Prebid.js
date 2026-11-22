@@ -177,7 +177,7 @@ describe('sirdataRtdProvider', function () {
           'sddan_id': '123456789',
           'post_content_token': '987654321'
         }
-      }
+      };
       addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true; });
       expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
     });
@@ -187,7 +187,7 @@ describe('sirdataRtdProvider', function () {
     it('gets data from async request and adds segment data', function () {
       const overrideAppnexus = function (adUnit, list, data, bid) {
         deepSetValue(bid, 'params.keywords.custom', list.segments.concat(list.categories));
-      }
+      };
 
       const config = {
         params: {

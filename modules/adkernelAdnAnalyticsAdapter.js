@@ -40,7 +40,7 @@ function buildRequestTemplate(pubId) {
     },
     user: {},
     src: getUmtSource(loc.href, ref)
-  }
+  };
 }
 
 const analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }),
@@ -160,7 +160,7 @@ function trackBidTimeout(args) {
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
   const ev = { event: event };
   if (adapter) {
-    ev.adapter = adapter
+    ev.adapter = adapter;
   }
   if (tagid) {
     ev.tagid = tagid;

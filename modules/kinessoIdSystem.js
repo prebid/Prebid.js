@@ -26,6 +26,10 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
 
+export const dep = {
+  ajax
+};
+
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
  * @param {string} currPrng the current pseudorandom number generator
@@ -156,7 +160,7 @@ function syncId(storedId) {
     error: function () {
       logInfo('KinessoId: Sync error for id : ' + storedId);
     }
-  }
+  };
 }
 
 /**
@@ -190,7 +194,7 @@ function kinessoSyncUrl(accountId, consentData) {
   if (!gdpr || typeof gdpr.gdprApplies !== 'boolean' || !gdpr.gdprApplies) return kinessoSyncUrl;
 
   kinessoSyncUrl = `${kinessoSyncUrl}&gdpr=1&gdpr_consent=${gdpr.consentString}`;
-  return kinessoSyncUrl
+  return kinessoSyncUrl;
 }
 
 /** @type {Submodule} */
@@ -235,7 +239,7 @@ export const kinessoIdSubmodule = {
     const kinessoIdPayload = {};
     kinessoIdPayload.id = knnsoId;
     const payloadString = JSON.stringify(kinessoIdPayload);
-    ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
+    dep.ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, { method: 'POST', withCredentials: true });
     return { 'id': knnsoId };
   },
   eids: {

@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { datamageRtdSubmodule } from 'modules/datamageRtdProvider.js';
-import * as ajaxUtils from 'src/ajax.js';
+import { datamageRtdSubmodule, dep } from 'modules/datamageRtdProvider.js';
 import * as utils from 'src/utils.js';
 
 describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
@@ -64,7 +63,7 @@ describe('datamageRtdSubmodule (DataMage RTD Provider)', function () {
     };
 
     // Stub Prebid's internal ajaxBuilder
-    ajaxBuilderStub = sandbox.stub(ajaxUtils, 'ajaxBuilder');
+    ajaxBuilderStub = sandbox.stub(dep, 'ajaxBuilder');
 
     // Keep tests deterministic + allow port-strip assertion
     btoaStub = sandbox.stub(window, 'btoa').callsFake((s) => `b64(${s})`);

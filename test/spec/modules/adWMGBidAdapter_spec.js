@@ -173,14 +173,14 @@ describe('adWMGBidAdapter', function () {
       expect(JSON.parse(requests[0].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(JSON.parse(requests[1].data).gdpr.applies).to.be.true;
       expect(JSON.parse(requests[1].data).gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
-    })
+    });
 
     it('should not contain GDPR consent data if GDPR not set', function() {
       delete bidderRequest.gdprConsent;
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(JSON.parse(requests[0].data).gdpr).to.be.an('undefined');
       expect(JSON.parse(requests[1].data).gdpr).to.be.an('undefined');
-    })
+    });
 
     it('should set debug mode in requests if enabled', function() {
       sinon.stub(config, 'getConfig').withArgs('debug').returns(true);
@@ -188,7 +188,7 @@ describe('adWMGBidAdapter', function () {
       expect(JSON.parse(requests[0].data).debug).to.be.true;
       expect(JSON.parse(requests[1].data).debug).to.be.true;
       config.getConfig.restore();
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -305,8 +305,8 @@ describe('adWMGBidAdapter', function () {
         apiVersion: 2
       };
       const serverResponse = {};
-      let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
-      syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
+      spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
       expect(syncs[0].url.match(/gdpr/g).length).to.equal(2); // gdpr + gdpr_consent
       expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1);
     });
@@ -326,5 +326,15 @@ describe('adWMGBidAdapter', function () {
       const syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       expect(syncs[0].url.slice(-1)).to.not.equal('&');
     });
+  });
+});
+
+describe('adWMGBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(959);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'wmg')).to.have.property('gvlid', 959);
   });
 });

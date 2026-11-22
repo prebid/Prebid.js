@@ -25,7 +25,6 @@ Please reach out to your account manager for more information.
                         bidder: 'richaudience',
                         params: {
                             "pid":"ADb1f40rmi",
-                            "supplyType":"site",
                             "bidfloor":0.70,
                         }
                     }]
@@ -37,7 +36,6 @@ Please reach out to your account manager for more information.
                         bidder: 'richaudience',
                         params: {
                             "pid":"ADb1f40rmo",
-                            "supplyType":"site",
                             "bidfloor":0.40,
                             "keywords": "key1=value1;key2=value2;key3=value3;"
                         }
@@ -61,7 +59,6 @@ Please reach out to your account manager for more information.
                 bidder: 'richaudience',
                 params: {
                   pid: 'OjUW9KhuQV',
-                  supplyType: 'site',
                   player: {
                      init: "open",
                      end: "close",
@@ -87,7 +84,6 @@ Please reach out to your account manager for more information.
                             bidder: 'richaudience',
                             params: {
                                 "pid":"ADb1f40rmi",
-                                "supplyType":"app",
                                 "ifa":"AAAAAAAAA-BBBB-CCCC-1111-222222220000",
                                 "bidfloor":0.70,
                             }
@@ -101,7 +97,6 @@ Please reach out to your account manager for more information.
                             bidder: 'richaudience',
                             params: {
                                 "pid":"ADb1f40rmo",
-                                "supplyType":"app",
                                 "ifa":"AAAAAAAAA-BBBB-CCCC-1111-222222220000",
                                 "bidfloor":0.40,
                             }

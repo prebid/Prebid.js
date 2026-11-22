@@ -1,7 +1,7 @@
 import { deepAccess, getBidIdParameter, isArray, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const ENDPOINT = `https://hb.justbidit2.xyz:8843/prebid`;
 const BIDDER_CODE = 'waardex';
@@ -80,10 +80,10 @@ const getCommonBidsData = bidderRequest => {
     payload.gdpr_consent = {
       consent_string: bidderRequest.gdprConsent.consentString,
       consent_required: bidderRequest.gdprConsent.gdprApplies,
-    }
+    };
   }
 
-  payload.coppa = !!config.getConfig('coppa');
+  payload.coppa = (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa());
 
   return payload;
 };
@@ -130,7 +130,7 @@ const transformSizes = requestSizes => {
       return {
         width: parseInt(item[0], 10) || 0,
         height: parseInt(item[1], 10) || 0,
-      }
+      };
     });
   }
 
@@ -262,7 +262,7 @@ const mapOpenRtbVideoToHbBid = (openRtbBid, hbRequestBid) => {
       secondaryCatIds: null,
       mediaType: 'video',
     },
-  }
+  };
 };
 
 const getVastUrl = openRtbBid => {
@@ -271,7 +271,7 @@ const getVastUrl = openRtbBid => {
   if (adm.startsWith('http')) {
     return adm;
   } else {
-    return null
+    return null;
   }
 };
 

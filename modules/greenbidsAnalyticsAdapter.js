@@ -50,7 +50,7 @@ export const isSampled = function(greenbidsId, samplingRate, exploratorySampling
   if (isPrimarySampled) return true;
   const isExtraSampled = hashInt >= (1 - throttledSamplingRate) * (0xFFFF + 1);
   return isExtraSampled;
-}
+};
 
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVER, analyticsType }), {
 
@@ -93,7 +93,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVE
       this.exploratorySamplingSplit = analyticsOptions.options.exploratorySamplingSplit;
     }
 
-    analyticsOptions.pbuid = config.options.pbuid
+    analyticsOptions.pbuid = config.options.pbuid;
     analyticsOptions.server = ANALYTICS_SERVER;
 
     return true;
@@ -227,7 +227,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVE
     if (!isFilteringForced) {
       this.sendEventMessage('/',
         this.createBidMessage(auctionEndArgs, cachedAuction)
-      )
+      );
     };
   },
   handleBidTimeout(timeoutBids) {

@@ -3,7 +3,6 @@ import { spec } from 'modules/undertoneBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { deepClone, getWinDimensions } from '../../../src/utils.js';
 import * as adUnits from 'src/utils/adUnits';
-import { getAdUnitElement } from 'src/utils/adUnits';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -490,15 +489,11 @@ describe('Undertone Adapter', () => {
       expect(bidVideo2.video.plcmt).to.equal(null);
       expect(bidVideo2.gpid).to.equal('/1111/pbadslot#728x90');
     });
-    it('should send all userIds data to server', function () {
+    it('should not send a raw bid.userId as uids', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
       const bidCommons = JSON.parse(request.data)['commons'];
       expect(bidCommons).to.be.an('object');
-      expect(bidCommons.uids).to.be.an('object');
-      expect(bidCommons.uids.tdid).to.equal('123456');
-      expect(bidCommons.uids.idl_env).to.equal('1111');
-      expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
-      expect(bidCommons.uids.id5id.uid).to.equal('1111');
+      expect(bidCommons).to.not.have.property('uids');
     });
     it('should send page sizes sizes correctly', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);

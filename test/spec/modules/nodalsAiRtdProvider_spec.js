@@ -71,6 +71,9 @@ const generateGdprConsent = (consent = {}) => {
   const defaults = {
     gdprApplies: true,
     purpose1Consent: true,
+    purpose2Consent: true,
+    purpose3Consent: true,
+    purpose4Consent: true,
     purpose7Consent: true,
     nodalsConsent: true,
   };
@@ -83,9 +86,9 @@ const generateGdprConsent = (consent = {}) => {
         purpose: {
           consents: {
             1: mergedConsent.purpose1Consent,
-            2: true,
-            3: true,
-            4: true,
+            2: mergedConsent.purpose2Consent,
+            3: mergedConsent.purpose3Consent,
+            4: mergedConsent.purpose4Consent,
             5: true,
             6: true,
             7: mergedConsent.purpose7Consent,
@@ -145,9 +148,19 @@ describe('NodalsAI RTD Provider', () => {
   const permissiveUserConsent = generateGdprConsent();
   const vendorRestrictiveUserConsent = generateGdprConsent({ nodalsConsent: false });
   const noPurpose1UserConsent = generateGdprConsent({ purpose1Consent: false });
+  const noPurpose2UserConsent = generateGdprConsent({ purpose2Consent: false });
+  const noPurpose3UserConsent = generateGdprConsent({ purpose3Consent: false });
+  const noPurpose4UserConsent = generateGdprConsent({ purpose4Consent: false });
   const noPurpose7UserConsent = generateGdprConsent({ purpose7Consent: false });
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
-  const leastPermissiveUserConsent = generateGdprConsent({ purpose1Consent: false, purpose7Consent: false, nodalsConsent: false });
+  const leastPermissiveUserConsent = generateGdprConsent({
+    purpose1Consent: false,
+    purpose2Consent: false,
+    purpose3Consent: false,
+    purpose4Consent: false,
+    purpose7Consent: false,
+    nodalsConsent: false,
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -223,12 +236,46 @@ describe('NodalsAI RTD Provider', () => {
         expect(server.requests.length).to.equal(0);
       });
 
+      it('should return false when user is under GDPR jurisdiction and purpose2 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose2UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return false when user is under GDPR jurisdiction and purpose3 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose3UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return false when user is under GDPR jurisdiction and purpose4 has not been granted', () => {
+        const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose4UserConsent);
+        server.respond();
+
+        expect(result).to.be.false;
+        expect(server.requests.length).to.equal(0);
+      });
+
       it('should return false when user is under GDPR jurisdiction and purpose7 has not been granted', () => {
         const result = nodalsAiRtdSubmodule.init(validConfig, noPurpose7UserConsent);
         server.respond();
 
         expect(result).to.be.false;
         expect(server.requests.length).to.equal(0);
+      });
+
+      it('should return true when user is under GDPR jurisdiction and a non-required purpose has not been granted', () => {
+        const userConsent = JSON.parse(JSON.stringify(permissiveUserConsent));
+        userConsent.gdpr.vendorData.purpose.consents[5] = false;
+        const result = nodalsAiRtdSubmodule.init(validConfig, userConsent);
+        server.respond();
+
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
       });
 
       it('should return false when user is under GDPR jurisdiction and Nodals AI as a vendor has no consent', () => {
@@ -654,7 +701,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const customUserConsent = generateGdprConsent({ nodalsConsent: false });
+
       const callback = sinon.spy();
       nodalsAiRtdSubmodule.getBidRequestData(
         {}, callback, validConfig, vendorRestrictiveUserConsent
@@ -663,13 +710,13 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(callback.called).to.be.true;
       expect(engine.init.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 
     it('should not store function arguments in a queue when no data is in localstorage and make a HTTP request for data', () => {
       const callback = sinon.spy();
-      const requestObj = { dummy: 'obj' }
+      const requestObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         requestObj, callback, validConfig, permissiveUserConsent
       );
@@ -686,7 +733,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -713,7 +760,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, validConfig, permissiveUserConsent
       );
@@ -739,7 +786,7 @@ describe('NodalsAI RTD Provider', () => {
       });
       const engine = createTargetingEngineStub();
       const callback = sinon.spy();
-      const reqBidsConfigObj = { dummy: 'obj' }
+      const reqBidsConfigObj = { dummy: 'obj' };
       const configWithManagedConsent = { params: { propertyId: '10312dd2', publisherProvidedConsent: true } };
       nodalsAiRtdSubmodule.getBidRequestData(
         reqBidsConfigObj, callback, configWithManagedConsent, leastPermissiveUserConsent
@@ -775,7 +822,7 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(engine.init.called).to.be.false;
       expect(engine.onBidResponseEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 
@@ -795,7 +842,7 @@ describe('NodalsAI RTD Provider', () => {
         data: successPubEndpointResponse,
         createdAt: Date.now(),
       });
-      const userConsent = generateGdprConsent();
+
       const bidResponse = { dummy: 'obj', 'bid': 'foo' };
       nodalsAiRtdSubmodule.onBidResponseEvent(
         bidResponse, validConfig, permissiveUserConsent
@@ -878,7 +925,7 @@ describe('NodalsAI RTD Provider', () => {
 
       expect(engine.init.called).to.be.false;
       expect(engine.onAuctionEndEvent.called).to.be.false;
-      expect(window.$nodals.cmdQueue).to.be.undefined
+      expect(window.$nodals.cmdQueue).to.be.undefined;
       expect(server.requests.length).to.equal(0);
     });
 
@@ -923,7 +970,7 @@ describe('NodalsAI RTD Provider', () => {
         createdAt: Date.now(),
       });
       const engine = createTargetingEngineStub();
-      const userConsent = generateGdprConsent();
+
       const auctionDetails = { dummy: 'obj', auction: 'foo' };
       nodalsAiRtdSubmodule.onAuctionEndEvent(
         auctionDetails, validConfig, permissiveUserConsent

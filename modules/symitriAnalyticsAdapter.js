@@ -44,7 +44,7 @@ function sendEvent(payload) {
         customHeaders: { 'Content-Type': 'application/atom+xml;type=entry;charset=utf-8', 'Authorization': initOptions.apiAuthToken }
       });
     }
-  } catch (err) { logMessage('##### symitriAnalytics :: error' + err) }
+  } catch (err) { logMessage('##### symitriAnalytics :: error' + err); }
 }
 
 symitriAnalytics.originEnableAnalytics = symitriAnalytics.enableAnalytics;

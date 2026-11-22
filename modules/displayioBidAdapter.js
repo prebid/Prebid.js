@@ -9,6 +9,7 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
+const GVLID = 1618;
 const BID_TTL = 300;
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
@@ -16,6 +17,7 @@ const US_KEY = '_dio_us';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bid) {
     return !!(bid.params && bid.params.placementId && bid.params.siteId &&
@@ -58,7 +60,7 @@ export const spec = {
       };
 
       if (bidResponse.mediaType === VIDEO) {
-        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url
+        bidResponse.vastUrl = adData.videos[0] && adData.videos[0].url;
       }
 
       if (bidResponse.renderURL) {
@@ -83,7 +85,7 @@ function getPayload (bid, bidderRequest) {
       });
       storage.setDataInLocalStorage(US_KEY, us);
     }
-    return us
+    return us;
   })();
   const { params, adUnitCode, bidId } = bid;
   const { siteId, placementId, renderURL, pageCategory, keywords } = params;
@@ -137,7 +139,7 @@ function getPayload (bid, bidderRequest) {
         connection_type: connection?.effectiveType || '',
       }
     }
-  }
+  };
 }
 
 function newRenderer(bid) {
@@ -160,7 +162,7 @@ function webisRender(bid, doc) {
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;
     win.webis.init(bid.adData, bid.adUnitCode, bid.params);
-  })
+  });
 }
 
 registerBidder(spec);

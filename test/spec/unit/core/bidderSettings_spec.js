@@ -22,9 +22,9 @@ describe('ScopedSettings', () => {
     it('can retrieve nested settings', () => {
       data = {
         scope: { outer: { key: 'value' } }
-      }
+      };
       expect(settings.get('scope', 'outer.key')).to.equal('value');
-    })
+    });
 
     it('should fallback to fallback scope', () => {
       data = {
@@ -53,9 +53,9 @@ describe('ScopedSettings', () => {
         fallback: {
           key: true
         }
-      }
+      };
       expect(settings.get('scope', 'key')).to.equal(false);
-    })
+    });
   });
 
   describe('getOwn', () => {
@@ -98,12 +98,12 @@ describe('ScopedSettings', () => {
         scope: {
           skey: 'value'
         }
-      }
+      };
       expect(settings.settingsFor('scope')).to.eql({
         dkey: 'value',
         skey: 'value'
-      })
-    })
+      });
+    });
   });
 });
 
@@ -118,13 +118,13 @@ describe('bidderSettings', () => {
         }
       }
     });
-  })
+  });
 
   afterEach(() => {
     sandbox.restore();
-  })
+  });
 
   it('should fetch data from getGlobal().bidderSettings', () => {
     expect(bidderSettings.get('scope', 'key')).to.equal('value');
-  })
+  });
 });

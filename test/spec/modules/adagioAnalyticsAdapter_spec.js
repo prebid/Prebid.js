@@ -10,6 +10,11 @@ const adapterManager = require('src/adapterManager').default;
 const events = require('src/events');
 
 describe('adagio analytics adapter - adagio.js', () => {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.ADAGIO;
+  });
+
   let sandbox;
   let adagioQueuePushSpy;
 
@@ -52,8 +57,6 @@ describe('adagio analytics adapter - adagio.js', () => {
     });
 
     it('builds and sends auction data', () => {
-      const w = utils.getWindowTop();
-
       const bidRequest = {
         bids: [{
           adUnitCode: 'div-1',
@@ -83,7 +86,6 @@ describe('adagio analytics adapter - adagio.js', () => {
         bidderCode: 'adagio',
         width: 300,
         height: 250,
-        statusMessage: 'Bid available',
         cpm: 6.2189757658226075,
         currency: '',
         netRevenue: false,
@@ -107,7 +109,7 @@ describe('adagio analytics adapter - adagio.js', () => {
             eventName,
             args
           }
-        })
+        });
       }
 
       Object.entries(testEvents).forEach(([ev, payload]) => sinon.assert.calledWith(adagioQueuePushSpy, eventItem(ev, payload)));
@@ -709,7 +711,7 @@ const PBS_ANALYTICS_ANOTHER = {
     }
   ],
   auctionId: AUCTION_ID,
-}
+};
 
 const MOCK = {
   SET_TARGETING: {
@@ -1239,10 +1241,10 @@ describe('adagio analytics adapter', () => {
       _internal.gamSlotCallback({
         slot: {
           getAdUnitPath() {
-            return '/19968336/header-bid-tag-1'
+            return '/19968336/header-bid-tag-1';
           },
           getSlotElementId() {
-            return '/19968336/header-bid-tag-1'
+            return '/19968336/header-bid-tag-1';
           }
         },
         isEmpty: true,
@@ -1282,10 +1284,10 @@ describe('adagio analytics adapter', () => {
       _internal.gamSlotCallback({
         slot: {
           getAdUnitPath() {
-            return '/19968336/header-bid-tag-1'
+            return '/19968336/header-bid-tag-1';
           },
           getSlotElementId() {
-            return '/19968336/header-bid-tag-1'
+            return '/19968336/header-bid-tag-1';
           }
         },
         isEmpty: true,

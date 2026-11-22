@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec, resetSync } from 'modules/optidigitalBidAdapter.js';
-import * as utils from 'src/utils.js';
+import 'src/utils.js';
 
 const ENDPOINT = 'https://pbs.optidigital.com/bidder';
 
@@ -196,7 +196,7 @@ describe('optidigitalAdapterTests', function () {
         'bidderRequestId': '418b37f85e772c',
         'auctionId': '18fd8b8b0bd757'
       }
-    ]
+    ];
 
     it('should return an empty array if there are no bid requests', () => {
       const emptyBidRequests = [];
@@ -239,7 +239,7 @@ describe('optidigitalAdapterTests', function () {
         }
       });
       const request = spec.buildRequests([bidRequest], bidderRequest);
-      const payload = JSON.parse(request.data)
+      const payload = JSON.parse(request.data);
       expect(payload.schain).to.exist;
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
@@ -252,7 +252,7 @@ describe('optidigitalAdapterTests', function () {
       });
     });
 
-    it('should add adContainerWidth and adContainerHeight to payload if divId exsists in parameter', function () {
+    it('omits container dimensions when divId does not resolve to an element', function () {
       const validBidRequestsWithDivId = [
         {
           'bidder': 'optidigital',
@@ -260,7 +260,7 @@ describe('optidigitalAdapterTests', function () {
           'params': {
             'publisherId': 's123',
             'placementId': 'Billboard_Top',
-            'divId': 'div-gpt-ad-1460505748561-0'
+            'divId': 'od-missing-container'
           },
           'adUnitCode': 'div-gpt-ad-1460505748561-0',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -273,13 +273,11 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
-      const payload = JSON.parse(request.data)
-      payload.imp[0].adContainerWidth = 1920
-      payload.imp[0].adContainerHeight = 1080
-      expect(payload.imp[0].adContainerWidth).to.exist;
-      expect(payload.imp[0].adContainerHeight).to.exist;
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0]).not.to.have.property('adContainerWidth');
+      expect(payload.imp[0]).not.to.have.property('adContainerHeight');
     });
 
     it('should read container size from DOM when divId exists', function () {
@@ -288,6 +286,7 @@ describe('optidigitalAdapterTests', function () {
       el.id = containerId;
       el.style.width = '321px';
       el.style.height = '111px';
+      el.style.transform = 'scale(0.5)';
       el.style.position = 'absolute';
       el.style.left = '0';
       el.style.top = '0';
@@ -346,17 +345,16 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       const request = spec.buildRequests(validBidRequestsWithDivId, bidderRequest);
-      const payload = JSON.parse(request.data)
-      payload.imp[0].pageTemplate = 'home'
-      expect(payload.imp[0].pageTemplate).to.exist;
+      const payload = JSON.parse(request.data);
+      expect(payload.pageTemplate).to.equal('home');
     });
 
     it('should add referrer to payload if it exsists in bidderRequest', function () {
       bidderRequest.refererInfo.page = 'https://www.prebid.org';
       const request = spec.buildRequests(validBidRequests, bidderRequest);
-      const payload = JSON.parse(request.data)
+      const payload = JSON.parse(request.data);
       expect(payload.referrer).to.equal('https://www.prebid.org');
     });
 
@@ -453,7 +451,7 @@ describe('optidigitalAdapterTests', function () {
         },
         'addtlConsent': '1~7.12.35.62.66.70.89.93.108',
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr).to.exist;
@@ -471,7 +469,7 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal('');
@@ -486,7 +484,7 @@ describe('optidigitalAdapterTests', function () {
           'hasGlobalConsent': false
         },
         'apiVersion': 1
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal(consentString);
@@ -519,7 +517,7 @@ describe('optidigitalAdapterTests', function () {
           gpp: consentString,
           gpp_sid: [7]
         }
-      }
+      };
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gpp).to.exist;
@@ -584,13 +582,46 @@ describe('optidigitalAdapterTests', function () {
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757'
         }
-      ]
+      ];
       let floorInfo;
       validBidRequestsWithCurrency[0].getFloor = () => floorInfo;
       floorInfo = { currency: 'USD', floor: 1.99 };
       const request = spec.buildRequests(validBidRequestsWithCurrency, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].bidFloor).to.exist;
+    });
+
+    it('should request each bid\'s floor in its own currency, not one left over from an earlier bid', function() {
+      const floorBid = (bidId, currency) => {
+        const bid = {
+          bidder: 'optidigital',
+          bidId,
+          params: { publisherId: 's123', placementId: 'Billboard_Top', ...(currency ? { currency } : {}) },
+          adUnitCode: `div-${bidId}`,
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          sizes: [[300, 250]]
+        };
+        bid.getFloor = sinon.stub().callsFake(({ currency }) => ({ currency, floor: 2 }));
+        return bid;
+      };
+      const eurBid = floorBid('eur-bid', 'EUR');
+      const defaultBid = floorBid('default-bid');
+      const payload = JSON.parse(spec.buildRequests([eurBid, defaultBid], bidderRequest).data);
+      expect(eurBid.getFloor.firstCall.args[0].currency).to.equal('EUR');
+      expect(defaultBid.getFloor.firstCall.args[0].currency).to.equal('USD');
+      expect(payload.imp.map(imp => imp.bidFloor)).to.deep.equal([2, 2]);
+
+      // nor from an earlier auction
+      const nextAuctionBid = floorBid('next-auction-bid');
+      spec.buildRequests([nextAuctionBid], bidderRequest);
+      expect(nextAuctionBid.getFloor.firstCall.args[0].currency).to.equal('USD');
+    });
+
+    it('should use params.bcat and params.badv when the bidder request has no ortb2', function() {
+      const { ortb2, ...bidderRequestWithoutOrtb2 } = bidderRequest;
+      const payload = JSON.parse(spec.buildRequests(bidderRequest.bids, bidderRequestWithoutOrtb2).data);
+      expect(payload.bcat).to.deep.equal(['IAB1-1']);
+      expect(payload.badv).to.deep.equal(['example.com']);
     });
 
     it('should add userEids to payload', function() {

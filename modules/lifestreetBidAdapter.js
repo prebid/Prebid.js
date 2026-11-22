@@ -7,6 +7,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'lifestreet';
+const GVLID = 67;
 const ADAPTER_VERSION = '$prebid.version$';
 
 const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`;
@@ -68,7 +69,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
 
   // ccpa support
   if (bidderRequest.uspConsent) {
-    url += `&__us_privacy=${bidderRequest.uspConsent}`
+    url += `&__us_privacy=${bidderRequest.uspConsent}`;
   }
 
   return {
@@ -86,7 +87,8 @@ function isResponseValid(response) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['lsm'],
+  gvlid: GVLID,
+  aliases: [{ code: 'lsm', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
@@ -96,7 +98,7 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid, bidderRequest)
+      return formatBidRequest(bid, bidderRequest);
     });
   },
 

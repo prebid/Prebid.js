@@ -17,8 +17,13 @@ import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDom
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../modules/33acrossIdSystem.d.ts').ThirtyThreeAcrossIdSystemModuleName} ThirtyThreeAcrossIdSystemModuleName
  */
 
+/**
+ * @type {ThirtyThreeAcrossIdSystemModuleName}
+ */
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
@@ -27,7 +32,7 @@ const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
 const STORAGE_TPID_KEY = '33acrossIdTp';
-const STORAGE_HEM_KEY = '33acrossIdHm'
+const STORAGE_HEM_KEY = '33acrossIdHm';
 const DEFAULT_1PID_SUPPORT = true;
 const DEFAULT_TPID_SUPPORT = true;
 
@@ -81,7 +86,7 @@ function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, en
     const { gppString = '', applicableSections = [] } = gppConsent;
 
     params.gpp = gppString;
-    params.gpp_sid = encodeURIComponent(applicableSections.join(','))
+    params.gpp_sid = encodeURIComponent(applicableSections.join(','));
   }
 
   if (gdprConsentData?.consentString) {
@@ -188,15 +193,15 @@ function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }
     updateSupplementalIdStorage(supplementalId, {
       enabledStorageTypes,
       expires
-    })
+    });
   });
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<ThirtyThreeAcrossIdSystemModuleName>} */
 export const thirtyThreeAcrossIdSubmodule = {
   /**
    * used to link submodule with config
-   * @type {string}
+   * @type {ThirtyThreeAcrossIdSystemModuleName}
    */
   name: MODULE_NAME,
 

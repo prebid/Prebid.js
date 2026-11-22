@@ -23,13 +23,13 @@ export function getReferrerInfo(bidderRequest) {
  *
  * @returns {string} The title of the current web page, or an empty string if no title is found.
  */
-export function getPageTitle() {
+export function getPageTitle(win = window) {
   try {
-    const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
-    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]');
+    return win.top.document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    return document.title || (ogTitle && ogTitle.content) || '';
+    const ogTitle = win.document.querySelector('meta[property="og:title"]');
+    return win.document.title || (ogTitle && ogTitle.content) || '';
   }
 }
 
@@ -42,14 +42,14 @@ export function getPageTitle() {
  *
  * @returns {string} The content of the description meta tag, or an empty string if not found.
  */
-export function getPageDescription() {
+export function getPageDescription(win = window) {
   try {
-    const element = window.top.document.querySelector('meta[name="description"]') ||
-        window.top.document.querySelector('meta[property="og:description"]');
+    const element = win.top.document.querySelector('meta[name="description"]') ||
+        win.top.document.querySelector('meta[property="og:description"]');
     return (element && element.content) || '';
   } catch (e) {
-    const element = document.querySelector('meta[name="description"]') ||
-        document.querySelector('meta[property="og:description"]');
+    const element = win.document.querySelector('meta[name="description"]') ||
+        win.document.querySelector('meta[property="og:description"]');
     return (element && element.content) || '';
   }
 }

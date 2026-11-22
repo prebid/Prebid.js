@@ -1,5 +1,5 @@
 import { config } from '../src/config.js';
-import { metadata } from '../libraries/metadata/metadata.js';
+import { disclosureURLList, metadata } from '../libraries/metadata/metadata.js';
 import {
   ACTIVITY_PARAM_COMPONENT,
   ACTIVITY_PARAM_COMPONENT_NAME,
@@ -18,7 +18,7 @@ import { registerActivityControl } from '../src/activities/rules.js';
 import { ACTIVITY_ACCESS_DEVICE } from '../src/activities/activities.js';
 import { addApiMethod } from "../src/prebid.ts";
 // @ts-expect-error the ts compiler is confused by build-time renaming of summary.mjs to summary.js, reassure it
-// eslint-disable-next-line prebid/validate-imports
+
 import { getStorageDisclosureSummary } from "../libraries/storageDisclosure/summary.js";
 import { getGlobal } from "../src/prebidGlobal.ts";
 
@@ -54,18 +54,21 @@ export function getDisclosures(params, meta = metadata) {
       disclosureURLs[data.aliasOf] = parent.disclosureURL;
     }
   }
-  Object.entries(disclosureURLs).forEach(([componentName, disclosureURL]) => {
-    meta.getStorageDisclosure(disclosureURL)
-      ?.disclosures
-      ?.filter(disclosure => matches(params, disclosure))
-      ?.forEach(disclosure => {
-        matchingDisclosures.push({
-          [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
-          disclosureURL,
-          disclosure
-        })
-      })
-  })
+  Object.entries(disclosureURLs).forEach(([componentName, urls]) => {
+    // a component with multiple disclosures (one for each of its GVL IDs) discloses a key if any of them does
+    disclosureURLList(urls).forEach(disclosureURL => {
+      meta.getStorageDisclosure(disclosureURL)
+        ?.disclosures
+        ?.filter(disclosure => matches(params, disclosure))
+        ?.forEach(disclosure => {
+          matchingDisclosures.push({
+            [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
+            disclosureURL,
+            disclosure
+          });
+        });
+    });
+  });
   return {
     matches: matchingDisclosures,
     disclosureURLs
@@ -76,30 +79,31 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
   let disclosed = false;
   let parent = false;
   let reason = null;
-  const key = params[ACTIVITY_PARAM_STORAGE_KEY]
+  const key = params[ACTIVITY_PARAM_STORAGE_KEY];
   const component = params[ACTIVITY_PARAM_COMPONENT];
   if (key) {
     const disclosures = getMatchingDisclosures(params);
     if (disclosures == null) {
-      reason = `Cannot determine if storage key "${key}" is disclosed by "${component}" because the necessary metadata is missing - was it included in the build?`
+      reason = `Cannot determine if storage key "${key}" is disclosed by "${component}" because the necessary metadata is missing - was it included in the build?`;
     } else {
       const { disclosureURLs, matches } = disclosures;
-      const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME]
+      const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME];
       for (const { componentName } of matches) {
         if (componentName === moduleName) {
           disclosed = true;
         } else {
           parent = true;
-          reason = `Storage key "${key}" is disclosed by module "${componentName}", but not by "${moduleName}" itself (the latter is an alias of the former)`
+          reason = `Storage key "${key}" is disclosed by module "${componentName}", but not by "${moduleName}" itself (the latter is an alias of the former)`;
         }
         if (disclosed || parent) break;
       }
       if (!disclosed && !parent) {
-        reason = `Storage key "${key}" (for ${params[ACTIVITY_PARAM_STORAGE_TYPE]} storage) is not disclosed by "${component}"`
-        if (disclosureURLs[moduleName]) {
-          reason += ` @ ${disclosureURLs[moduleName]}`
+        reason = `Storage key "${key}" (for ${params[ACTIVITY_PARAM_STORAGE_TYPE]} storage) is not disclosed by "${component}"`;
+        const urls = disclosureURLList(disclosureURLs[moduleName]);
+        if (urls.length > 0) {
+          reason += ` @ ${urls.join(', ')}`;
         } else {
-          reason += ` - no disclosure URL was provided, or it could not be retrieved`
+          reason += ` - no disclosure URL was provided, or it could not be retrieved`;
         }
       }
     }
@@ -108,7 +112,7 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
   }
   return {
     disclosed, parent, reason
-  }
+  };
 }
 
 export function storageControlRule(getEnforcement = () => enforcement, check = checkDisclosure) {
@@ -122,7 +126,7 @@ export function storageControlRule(getEnforcement = () => enforcement, check = c
         logWarn('storageControl:', reason);
       }
     }
-  }
+  };
 }
 
 const rule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'storageControl', storageControlRule());
@@ -140,17 +144,17 @@ export type StorageControlConfig = {
    * - 'off': logs a warning when an undisclosed storage key is used
    */
   enforcement?: typeof ENFORCE_OFF | typeof ENFORCE_ALIAS | typeof ENFORCE_STRICT;
-}
+};
 
 declare module '../src/config' {
   interface Config {
-    storageControl: StorageControlConfig
+    storageControl?: StorageControlConfig
   }
 }
 
 config.getConfig('storageControl', (cfg) => {
   enforcement = cfg?.storageControl?.enforcement ?? ENFORCE_STRICT;
-})
+});
 
 export function dynamicDisclosureCollector() {
   const disclosures = {};
@@ -187,7 +191,7 @@ export function dynamicDisclosureCollector() {
     getDisclosures() {
       return Object.values(disclosures);
     }
-  }
+  };
 }
 
 const { hook: discloseStorageHook, getDisclosures: dynamicDisclosures } = dynamicDisclosureCollector();
@@ -202,7 +206,7 @@ export type StorageDisclosure = Disclosure & {
    * Names of the modules associated with this disclosure.
    */
   disclosedBy: string[];
-}
+};
 
 function disclosureSummarizer(getDynamicDisclosures = dynamicDisclosures, getSummary = () => getStorageDisclosureSummary(getGlobal().installedModules, metadata.getModuleMetadata)) {
   return function() {
@@ -213,7 +217,7 @@ function disclosureSummarizer(getDynamicDisclosures = dynamicDisclosures, getSum
       })),
       getSummary()
     );
-  }
+  };
 }
 
 const getStorageUseDisclosures: () => StorageDisclosure[] = disclosureSummarizer();

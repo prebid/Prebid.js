@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, isPlainObject, parseSizesInput } from '../src/utils.js';
+import { deepAccess, getWinDimensions, isPlainObject, parseSizesInput } from '../src/utils.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getElementDimensions } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -10,13 +11,14 @@ import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('./optidigitalBidAdapter.d.ts').OptidigitalBidParams} OptidigitalBidParams
  */
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
 const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
-let CUR = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 let isSynced = false;
 
 export const spec = {
@@ -49,15 +51,12 @@ export const spec = {
       return [];
     }
 
-    const ortb2 = bidderRequest.ortb2 || {
-      bcat: [],
-      badv: []
-    };
+    const ortb2 = bidderRequest.ortb2 || {};
 
     const payload = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
-      deviceWidth: document.documentElement.clientWidth,
+      deviceWidth: getWinDimensions(window).document.documentElement.clientWidth,
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
@@ -65,7 +64,7 @@ export const spec = {
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
       bapp: deepAccess(validBidRequests[0], 'params.bapp') || [],
       device: ortb2.device || {}
-    }
+    };
 
     if (validBidRequests[0].auctionId) {
       payload.auctionId = validBidRequests[0].auctionId;
@@ -81,7 +80,7 @@ export const spec = {
     }
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');
-    if (bidderRequest && gdpr) {
+    if (gdpr) {
       const isConsentString = typeof gdpr.consentString === 'string';
       const isGdprApplies = typeof gdpr.gdprApplies === 'boolean';
       payload.gdpr = {
@@ -92,37 +91,37 @@ export const spec = {
         payload.gdpr.addtlConsent = gdpr.addtlConsent;
       }
     }
-    if (bidderRequest && !gdpr) {
+    if (!gdpr) {
       payload.gdpr = {
         consent: '',
         required: false
-      }
+      };
     }
 
     if (bidderRequest?.gppConsent?.gppString) {
       payload.gpp = {
         consent: bidderRequest.gppConsent.gppString,
         sid: bidderRequest.gppConsent.applicableSections
-      }
+      };
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       payload.gpp = {
         consent: bidderRequest.ortb2.regs.gpp,
         sid: bidderRequest.ortb2.regs.gpp_sid
-      }
+      };
     }
 
     if (window.location.href.indexOf('optidigitalTestMode=true') !== -1) {
       payload.testMode = true;
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
     if (_getEids(validBidRequests[0])) {
       payload.user = {
         eids: _getEids(validBidRequests[0])
-      }
+      };
     }
 
     const ortb2SiteKeywords = (bidderRequest?.ortb2?.site?.keywords || '')?.split(',').map(k => k.trim()).filter(k => k !== '').join(',');
@@ -206,7 +205,7 @@ export const spec = {
 };
 
 function buildImp(bidRequest, ortb2) {
-  let imp = {};
+  let imp;
   imp = {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),
@@ -217,8 +216,9 @@ function buildImp(bidRequest, ortb2) {
 
   if (bidRequest.params.divId && bidRequest.params.divId !== '') {
     if (getAdContainer(bidRequest.params.divId)) {
-      imp.adContainerWidth = getAdContainer(bidRequest.params.divId).offsetWidth;
-      imp.adContainerHeight = getAdContainer(bidRequest.params.divId).offsetHeight;
+      const rect = getElementDimensions(getAdContainer(bidRequest.params.divId));
+      imp.adContainerWidth = rect.width;
+      imp.adContainerHeight = rect.height;
     }
   }
 
@@ -227,11 +227,9 @@ function buildImp(bidRequest, ortb2) {
     floorSizes = getAdUnitSizes(bidRequest);
   }
 
-  if (bidRequest.params.currency && bidRequest.params.currency !== '') {
-    CUR = bidRequest.params.currency;
-  }
+  const currency = (bidRequest.params.currency && bidRequest.params.currency !== '') ? bidRequest.params.currency : DEFAULT_CURRENCY;
 
-  const bidFloor = _getFloor(bidRequest, floorSizes, CUR);
+  const bidFloor = _getFloor(bidRequest, floorSizes, currency);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
   }
@@ -265,7 +263,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === currency && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}

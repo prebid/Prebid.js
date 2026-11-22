@@ -2,7 +2,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
   canAccessWindowTop,
   cleanObj,
-  deepAccess,
   deepClone,
   generateUUID,
   getWindowSelf,
@@ -14,6 +13,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
+  uniques,
 } from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM } from '../src/video.js';
@@ -26,6 +26,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
 import { validateOrtbFields } from '../src/prebid.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -88,11 +89,11 @@ function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
 
 function isRendererPreferredFromPublisher(bidRequest) {
   // renderer defined at adUnit level
-  const adUnitRenderer = deepAccess(bidRequest, 'renderer');
+  const adUnitRenderer = bidRequest?.renderer;
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = deepAccess(bidRequest, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = bidRequest?.mediaTypes?.video?.renderer;
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
@@ -106,7 +107,7 @@ function isRendererPreferredFromPublisher(bidRequest) {
  * If not or if the `backupOnly` flag is true, this means we use our own player (BlueBillywig) defined in this adapter.
  */
 function getPlayerName(bidRequest) {
-  return _internal.isRendererPreferredFromPublisher(bidRequest) ? 'other' : 'adagio'; ;
+  return _internal.isRendererPreferredFromPublisher(bidRequest) ? 'other' : 'adagio';
 }
 
 function hasRtd() {
@@ -127,7 +128,7 @@ export const _internal = {
 };
 
 function _getGdprConsent(bidderRequest) {
-  if (!deepAccess(bidderRequest, 'gdprConsent')) {
+  if (!bidderRequest?.gdprConsent) {
     return false;
   }
 
@@ -146,22 +147,22 @@ function _getGdprConsent(bidderRequest) {
   });
 }
 
-function _getCoppa() {
+function _getCoppa(bidderRequest) {
   return {
-    required: config.getConfig('coppa') === true ? 1 : 0
+    required: (bidderRequest?.ortb2?.regs?.coppa ?? coppaDataHandler.getCoppa()) ? 1 : 0
   };
 }
 
 function _getUspConsent(bidderRequest) {
-  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+  return bidderRequest?.uspConsent ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
+  return bidRequest?.ortb2?.source?.ext?.schain;
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userIdAsEids')) {
+  if (bidRequest?.userIdAsEids) {
     return bidRequest.userIdAsEids;
   }
 }
@@ -173,8 +174,8 @@ function _getEids(bidRequest) {
  * @returns {void}
  */
 function _buildVideoBidRequest(bidRequest) {
-  const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoAdUnitParams = bidRequest?.mediaTypes?.video || {};
+  const videoBidderParams = bidRequest?.params?.video || {};
   const computedParams = {};
 
   // Special case for playerSize.
@@ -205,7 +206,7 @@ function _parseNativeBidResponse(bid) {
     return;
   }
 
-  const native = {}
+  const native = {};
 
   function addAssetDataValue(data) {
     const map = {
@@ -221,7 +222,7 @@ function _parseNativeBidResponse(bid) {
       10: 'body2', // desc2
       11: 'displayUrl',
       12: 'cta'
-    }
+    };
     if (map.hasOwnProperty(data.type) && typeof data.value === 'string') {
       native[map[data.type]] = data.value;
     }
@@ -230,9 +231,9 @@ function _parseNativeBidResponse(bid) {
   // assets
   bid.admNative.assets.forEach(asset => {
     if (asset.title) {
-      native.title = asset.title.text
+      native.title = asset.title.text;
     } else if (asset.data) {
-      addAssetDataValue(asset.data)
+      addAssetDataValue(asset.data);
     } else if (asset.img) {
       switch (asset.img.type) {
         case 1:
@@ -258,7 +259,7 @@ function _parseNativeBidResponse(bid) {
       native.clickUrl = bid.admNative.link.url;
     }
     if (Array.isArray(bid.admNative.link.clicktrackers)) {
-      native.clickTrackers = bid.admNative.link.clicktrackers
+      native.clickTrackers = bid.admNative.link.clicktrackers;
     }
   }
 
@@ -300,14 +301,14 @@ function _parseNativeBidResponse(bid) {
   }
 
   if (bid.admNative.ext) {
-    native.ext = {}
+    native.ext = {};
 
     if (bid.admNative.ext.bvw) {
       native.ext.adagio_bvw = bid.admNative.ext.bvw;
     }
   }
 
-  bid.native = native
+  bid.native = native;
 }
 
 // bidRequest param must be the `bidRequest` object with the original `auctionId` value.
@@ -330,7 +331,7 @@ function _getFloors(bidRequest) {
       s: isArray(size) ? `${size[0]}x${size[1]}` : undefined,
       f: (!isNaN(info?.floor) && info?.currency === CURRENCY) ? info?.floor : undefined
     }));
-  }
+  };
 
   Object.keys(bidRequest.mediaTypes).forEach(mediaType => {
     if (SUPPORTED_MEDIA_TYPES.indexOf(mediaType) !== -1) {
@@ -374,7 +375,7 @@ export function setExtraParam(bid, paramName) {
   const adgGlobalConf = config.getConfig('adagio') || {};
   const ortb2Conf = bid.ortb2;
 
-  const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
+  const detected = adgGlobalConf[paramName] || ortb2Conf?.site?.ext?.data?.[paramName];
   if (detected) {
     // First Party Data can be an array.
     // As we consider that params detected from FPD are fallbacks, we just keep the 1st value.
@@ -402,10 +403,10 @@ function autoFillParams(bid) {
   }
 
   if (!bid.params.placement) {
-    let p = deepAccess(bid, 'ortb2Imp.ext.data.adg_rtd.placement', '');
+    let p = bid?.ortb2Imp?.ext?.data?.adg_rtd?.placement ?? '';
     if (!p) {
       // Use ortb2Imp.ext.data.placement for backward compatibility.
-      p = deepAccess(bid, 'ortb2Imp.ext.data.placement', '');
+      p = bid?.ortb2Imp?.ext?.data?.placement ?? '';
     }
 
     // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
@@ -415,7 +416,7 @@ function autoFillParams(bid) {
     bid.params.placement = p;
   }
 
-  bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.divId', bid.params.adUnitElementId);
+  bid.params.adUnitElementId = bid?.ortb2Imp?.ext?.data?.divId ?? bid.params.adUnitElementId;
   if (!bid.params.adUnitElementId) {
     if (adgGlobalConf.useAdUnitCodeAsAdUnitElementId === true || bid.params.useAdUnitCodeAsAdUnitElementId === true) {
       bid.params.adUnitElementId = bid.adUnitCode;
@@ -456,9 +457,9 @@ const OUTSTREAM_RENDERER = {
 
     const rendererId = this.getRendererId(BB_PUBLICATION, rendererCode);
 
-    const override = {}
+    const override = {};
     if (bid.skipOffset) {
-      override.skipOffset = bid.skipOffset.toString()
+      override.skipOffset = bid.skipOffset.toString();
     }
 
     const renderer = window.bluebillywig.renderers.find(bbr => bbr._id === rendererId);
@@ -490,7 +491,7 @@ const OUTSTREAM_RENDERER = {
   },
   outstreamRender: function(bid) {
     bid.renderer.push(() => {
-      OUTSTREAM_RENDERER.bootstrapPlayer(bid)
+      OUTSTREAM_RENDERER.bootstrapPlayer(bid);
     });
   },
   getRendererId: function(publication, renderer) {
@@ -529,31 +530,31 @@ export const spec = {
     const pageviewId = _internal.getAdagioNs().pageviewId;
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
-    const coppa = _getCoppa();
-    const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
+    const coppa = _getCoppa(bidderRequest);
+    const { gpp, gpp_sid: gppSid } = bidderRequest?.ortb2?.regs || {};
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
-    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
-    const canSyncWithIframe = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
+    const syncEnabled = config.getConfig('userSync')?.syncEnabled;
+    const canSyncWithIframe = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio');
 
     // We don't validate the dsa object in adapter and let our server do it.
-    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    const dsa = bidderRequest?.ortb2?.regs?.ext?.dsa;
 
     // If no session data is provided, we always generate a new one.
-    const sessionData = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.session', {});
+    const { session: sessionData = {} } = bidderRequest?.ortb2?.site?.ext?.data?.adg_rtd || {};
     if (!Object.keys(sessionData).length) {
-      logInfo(LOG_PREFIX, 'No session data provided. A new session is be generated.')
+      logInfo(LOG_PREFIX, 'No session data provided. A new session is be generated.');
       sessionData.new = true;
-      sessionData.rnd = Math.random()
+      sessionData.rnd = Math.random();
     }
 
-    const aucId = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
+    const aucId = bidderRequest?.ortb2?.site?.ext?.data?.adg_rtd?.uid || generateUUID();
 
     const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
-      bidRequest.auctionId = aucId
+      bidRequest.auctionId = aucId;
 
       // Force the Split Keyword to be a String
       if (bidRequest.params.splitKeyword) {
@@ -577,9 +578,9 @@ export const spec = {
         } else {
           let invalidDlParam = false;
 
-          bidRequest.params.dl = bidRequest.params.dataLayer
+          bidRequest.params.dl = bidRequest.params.dataLayer;
           // Remove the dataLayer from the BidRequest to send the `dl` instead of the `dataLayer`
-          delete bidRequest.params.dataLayer
+          delete bidRequest.params.dataLayer;
 
           Object.keys(bidRequest.params.dl).forEach((key) => {
             if (bidRequest.params.dl[key]) {
@@ -604,75 +605,75 @@ export const spec = {
       // - the priceFloors.getFloor() uses a `_floorDataForAuction` map to store the floors based on the auctionId.
       const computedFloors = _getFloors(rawBidRequest);
       if (isArray(computedFloors) && computedFloors.length) {
-        bidRequest.floors = computedFloors
+        bidRequest.floors = computedFloors;
 
-        if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-          const bannerObj = bidRequest.mediaTypes.banner
+        if (bidRequest?.mediaTypes?.banner) {
+          const bannerObj = bidRequest.mediaTypes.banner;
 
           const computeNewSizeArray = (sizeArr = []) => {
-            const size = { size: sizeArr, floor: null }
-            const bannerFloors = bidRequest.floors.filter(floor => floor.mt === BANNER)
-            const BannerSizeFloor = bannerFloors.find(floor => floor.s === sizeArr.join('x'))
-            size.floor = (bannerFloors) ? (BannerSizeFloor) ? BannerSizeFloor.f : bannerFloors[0].f : null
-            return size
-          }
+            const size = { size: sizeArr, floor: null };
+            const bannerFloors = bidRequest.floors.filter(floor => floor.mt === BANNER);
+            const BannerSizeFloor = bannerFloors.find(floor => floor.s === sizeArr.join('x'));
+            size.floor = (bannerFloors) ? (BannerSizeFloor) ? BannerSizeFloor.f : bannerFloors[0].f : null;
+            return size;
+          };
 
           // `bannerSizes`, internal property name
           bidRequest.mediaTypes.banner.bannerSizes = (isArray(bannerObj.sizes[0]))
             ? bannerObj.sizes.map(sizeArr => {
-              return computeNewSizeArray(sizeArr)
+              return computeNewSizeArray(sizeArr);
             })
-            : computeNewSizeArray(bannerObj.sizes)
+            : computeNewSizeArray(bannerObj.sizes);
         }
 
-        if (deepAccess(bidRequest, 'mediaTypes.video')) {
-          const videoObj = bidRequest.mediaTypes.video
+        if (bidRequest?.mediaTypes?.video) {
+          const videoObj = bidRequest.mediaTypes.video;
           const videoFloors = bidRequest.floors.filter(floor => floor.mt === VIDEO);
-          const playerSize = (videoObj.playerSize && isArray(videoObj.playerSize[0])) ? videoObj.playerSize[0] : videoObj.playerSize
-          const videoSizeFloor = (playerSize) ? videoFloors.find(floor => floor.s === playerSize.join('x')) : undefined
+          const playerSize = (videoObj.playerSize && isArray(videoObj.playerSize[0])) ? videoObj.playerSize[0] : videoObj.playerSize;
+          const videoSizeFloor = (playerSize) ? videoFloors.find(floor => floor.s === playerSize.join('x')) : undefined;
 
-          bidRequest.mediaTypes.video.floor = (videoFloors) ? videoSizeFloor ? videoSizeFloor.f : videoFloors[0].f : null
+          bidRequest.mediaTypes.video.floor = (videoFloors) ? videoSizeFloor ? videoSizeFloor.f : videoFloors[0].f : null;
         }
 
-        if (deepAccess(bidRequest, 'mediaTypes.native')) {
+        if (bidRequest?.mediaTypes?.native) {
           const nativeFloors = bidRequest.floors.filter(floor => floor.mt === NATIVE);
           if (nativeFloors.length) {
-            bidRequest.mediaTypes.native.floor = nativeFloors[0].f
+            bidRequest.mediaTypes.native.floor = nativeFloors[0].f;
           }
         }
       }
 
-      if (deepAccess(bidRequest, 'mediaTypes.video')) {
+      if (bidRequest?.mediaTypes?.video) {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      const gpid = bidRequest?.ortb2Imp?.ext?.gpid;
       if (gpid) {
         bidRequest.gpid = gpid;
       }
 
-      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      const instl = bidRequest?.ortb2Imp?.instl;
       if (instl !== undefined) {
         bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
       }
-      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      const rwdd = bidRequest?.ortb2Imp?.rwdd;
       if (rwdd !== undefined) {
         bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
 
       // features are added by the adagioRtdProvider.
       const rawFeatures = {
-        ...deepAccess(bidRequest, 'ortb2.site.ext.data.adg_rtd.features', {}),
+        ...bidRequest?.ortb2?.site?.ext?.data?.adg_rtd?.features,
         print_number: (bidRequest.bidderRequestsCount || 1).toString(),
-        adunit_position: deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position', null)
-      }
+        adunit_position: bidRequest?.ortb2Imp?.ext?.data?.adg_rtd?.adunit_position
+      };
       // Clean the features object from null or undefined values.
       bidRequest.features = Object.entries(rawFeatures).reduce((a, [k, v]) => {
         if (v != null) {
           a[k] = v;
         }
         return a;
-      }, {})
+      }, {});
 
       // Remove some params that are not needed on the server side.
       delete bidRequest.params.siteId;
@@ -692,14 +693,14 @@ export const spec = {
         transactionId: bidRequest.transactionId,
         instl: bidRequest.instl,
         rwdd: bidRequest.rwdd,
-      }
+      };
 
       return adUnit;
     });
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      const organizationId = adUnit.params.organizationId
+      const organizationId = adUnit.params.organizationId;
 
       groupedAdUnits[organizationId] = groupedAdUnits[organizationId] || [];
       groupedAdUnits[organizationId].push(adUnit);
@@ -711,14 +712,21 @@ export const spec = {
     // Those params are not sent to the server.
     // They are used for further operations on analytics adapter.
     validBidRequests.forEach(rawBidRequest => {
-      rawBidRequest.params.pageviewId = pageviewId
+      rawBidRequest.params.pageviewId = pageviewId;
     });
 
     // Build one request per organizationId
     const requests = Object.keys(groupedAdUnits).map(organizationId => {
+      // A single request is built per organizationId, but its ad units may reference several sites.
+      const sites = groupedAdUnits[organizationId]
+        .map(adUnit => adUnit.params.site)
+        .filter(Boolean)
+        .filter(uniques)
+        .map(site => `&site=${encodeURIComponent(site)}`)
+        .join('');
       return {
         method: 'POST',
-        url: `${ENDPOINT}?orgid=${organizationId}`,
+        url: `${ENDPOINT}?orgid=${encodeURIComponent(organizationId)}${sites}`,
         data: {
           organizationId: organizationId,
           hasRtd: _internal.hasRtd() ? 1 : 0,
@@ -774,23 +782,24 @@ export const spec = {
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
-              bidObj.meta = deepAccess(bidObj, 'meta', {});
+              if (bidObj.meta === undefined) bidObj.meta = {};
               bidObj.meta.mediaType = bidObj.mediaType;
               bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
 
               if (bidObj.mediaType === VIDEO) {
-                const mediaTypeContext = deepAccess(bidReq, 'mediaTypes.video.context');
+                const mediaTypeContext = bidReq?.mediaTypes?.video?.context;
                 // Adagio SSP returns a `vastXml` only. No `vastUrl` nor `videoCacheKey`.
                 if (!bidObj.vastUrl && bidObj.vastXml) {
                   bidObj.vastUrl = 'data:text/xml;charset=utf-8;base64,' + window.btoa(bidObj.vastXml.replace(/\\"/g, '"'));
                 }
 
                 if (mediaTypeContext === OUTSTREAM) {
-                  bidObj.outstreamRendererCode = deepAccess(bidReq, 'params.rendererCode', BB_RENDERER_DEFAULT)
+                  const { rendererCode = BB_RENDERER_DEFAULT } = bidReq?.params || {};
+                  bidObj.outstreamRendererCode = rendererCode;
 
-                  if (deepAccess(bidReq, 'mediaTypes.video.skip')) {
-                    const skipOffset = deepAccess(bidReq, 'mediaTypes.video.skipafter', 5) // default 5s.
-                    bidObj.skipOffset = skipOffset
+                  if (bidReq?.mediaTypes?.video?.skip) {
+                    const { skipafter: skipOffset = 5 } = bidReq.mediaTypes.video; // default 5s.
+                    bidObj.skipOffset = skipOffset;
                   }
 
                   bidObj.renderer = OUTSTREAM_RENDERER.newRenderer(bidObj.adUnitCode, bidObj.outstreamRendererCode);

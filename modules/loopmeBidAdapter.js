@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { deepSetValue } from '../src/utils.js';
 
 const BIDDER_CODE = 'loopme';
@@ -45,5 +45,5 @@ export const spec = {
         .filter(({ url }) => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')))
         .filter(({ type }) => (type === 'image' && syncOptions.pixelEnabled) || (type === 'iframe' && syncOptions.iframeEnabled))
     )
-}
+};
 registerBidder(spec);

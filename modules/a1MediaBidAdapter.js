@@ -21,7 +21,7 @@ const converter = ortbConverter({
     if (bidRequest.params.battr) {
       Object.keys(bidRequest.mediaTypes).forEach(mType => {
         imp[mType].battr = bidRequest.params.battr;
-      })
+      });
     }
     return imp;
   },

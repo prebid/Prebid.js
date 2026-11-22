@@ -9,9 +9,9 @@ describe('opscoBidAdapter', function () {
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function')
-    })
-  })
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     const validBid = {

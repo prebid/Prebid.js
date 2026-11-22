@@ -23,7 +23,7 @@ export const EXPERIAN_RTID_DATA_KEY = 'experian_rtid_data';
 export const EXPERIAN_RTID_EXPIRATION_KEY = 'experian_rtid_expiration';
 export const EXPERIAN_RTID_STALE_KEY = 'experian_rtid_stale';
 export const EXPERIAN_RTID_NO_TRACK_KEY = 'experian_rtid_no_track';
-const EXPERIAN_RTID_URL = 'https://rtid.tapad.com'
+const EXPERIAN_RTID_URL = 'https://rtid.tapad.com';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 export const experianRtdObj = {
@@ -39,10 +39,10 @@ export const experianRtdObj = {
     const stale = storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null);
     const expired = storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null);
     const noTrack = storage.getDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null);
-    const now = timestamp()
+    const now = timestamp();
     if (now > new Date(expired).getTime() || (noTrack == null && dataEnvelope == null)) {
       // request data envelope and don't manipulate bids
-      experianRtdObj.requestDataEnvelope(config, userConsent)
+      experianRtdObj.requestDataEnvelope(config, userConsent);
       done();
       return false;
     }
@@ -55,7 +55,7 @@ export const experianRtdObj = {
       return false;
     }
     experianRtdObj.alterBids(reqBidsConfigObj, config);
-    done()
+    done();
     return true;
   },
 
@@ -65,11 +65,11 @@ export const experianRtdObj = {
       return;
     }
     deepAccess(config, 'params.bidders').forEach((bidderCode) => {
-      const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
+      const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode);
       if (bidderData != null) {
-        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { experianRtidKey: bidderData.data.key, experianRtidData: bidderData.data.data } })
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { experianRtidKey: bidderData.data.key, experianRtidData: bidderData.data.data } });
       }
-    })
+    });
   },
   requestDataEnvelope(config, userConsent) {
     function storeDataEnvelopeResponse(response) {
@@ -86,9 +86,9 @@ export const experianRtdObj = {
         }
       }
     }
-    const queryString = experianRtdObj.extractConsentQueryString(config, userConsent)
-    const fullUrl = queryString == null ? `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
-    ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
+    const queryString = experianRtdObj.extractConsentQueryString(config, userConsent);
+    const fullUrl = queryString == null ? `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`;
+    ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' });
   },
   extractConsentQueryString(config, userConsent) {
     const queryObj = {};
@@ -96,10 +96,10 @@ export const experianRtdObj = {
     if (userConsent != null) {
       if (userConsent.gdpr != null) {
         const { gdprApplies, consentString } = userConsent.gdpr;
-        mergeDeep(queryObj, { gdpr: gdprApplies, gdpr_consent: consentString })
+        mergeDeep(queryObj, { gdpr: gdprApplies, gdpr_consent: consentString });
       }
       if (userConsent.uspConsent != null) {
-        mergeDeep(queryObj, { us_privacy: userConsent.uspConsent })
+        mergeDeep(queryObj, { us_privacy: userConsent.uspConsent });
       }
     }
     const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&');
@@ -108,11 +108,11 @@ export const experianRtdObj = {
     if (deepAccess(config, 'params.ids') != null && isPlainObject(deepAccess(config, 'params.ids'))) {
       idsString = Object.entries(deepAccess(config, 'params.ids')).map(([idType, val]) => {
         if (isArray(val)) {
-          return val.map((singleVal) => `id.${idType}=${singleVal}`).join('&')
+          return val.map((singleVal) => `id.${idType}=${singleVal}`).join('&');
         } else {
-          return `id.${idType}=${val}`
+          return `id.${idType}=${val}`;
         }
-      }).join('&')
+      }).join('&');
     }
 
     const combinedString = [consentQueryString, idsString].filter((string) => string !== '').join('&');
@@ -129,13 +129,13 @@ export const experianRtdObj = {
   init(config, userConsent) {
     return isStr(deepAccess(config, 'params.accountId'));
   }
-}
+};
 
 /** @type {RtdSubmodule} */
 export const experianRtdSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: experianRtdObj.getBidRequestData,
   init: experianRtdObj.init
-}
+};
 
 submodule('realTimeData', experianRtdSubmodule);

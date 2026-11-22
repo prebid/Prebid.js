@@ -56,7 +56,7 @@ const getBidderRequest = (isMulti = false) => {
         bidderRequestId: '104e8d2392bd6f',
       }
     ],
-  }
+  };
 };
 const getConvertedBidReq = () => {
   return {
@@ -81,7 +81,7 @@ const getConvertedBidReq = () => {
       }
     ],
     test: 0,
-  }
+  };
 };
 
 const getBidderResponse = () => {
@@ -100,8 +100,8 @@ const getBidderResponse = () => {
         }
       ]
     }
-  }
-}
+  };
+};
 const bannerAdm = '<div><img src="test_src" /></div>';
 const videoAdm = '<VAST version="3.0">testvast1</VAST>';
 const nativeAdm = '{"ver":"1.2","link":{"url":"test_url"},"assets":[{"id":1,"required":1,"title":{"text":"native_title"}}]}';
@@ -247,4 +247,4 @@ describe('a1MediaBidAdapter', function() {
       });
     });
   });
-})
+});

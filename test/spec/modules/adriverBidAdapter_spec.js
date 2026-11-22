@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adriverBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 
 const ENDPOINT = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
@@ -295,12 +294,12 @@ describe('adriverAdapter', function () {
     const cookieValues = [
       { adrcid: 'adrcidValue' },
       { adrcid: undefined }
-    ]
+    ];
     cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
       const expectedValues = [
         'buyerid',
         'ext'
-      ]
+      ];
 
       it('check adrcid if it exists', function () {
         bidRequests[0].userId.adrcid = cookieValue.adrcid;
@@ -522,9 +521,9 @@ describe('adriverAdapter', function () {
         return {
           'currency': 'RUB',
           'floor': 3.33
-        }
+        };
       } else {
-        return {}
+        return {};
       }
     };
 

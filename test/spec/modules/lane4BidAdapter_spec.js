@@ -167,14 +167,15 @@ describe('lane4 adapter', function () {
   describe('Validate Banner Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(bannerRequest);
-      const bidRequest = spec.buildRequests(bannerRequest);
+      spec.buildRequests(bannerRequest);
+
       expect(bannerRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
       const _Request = spec.buildRequests(bannerRequest);
       expect(_Request.url).to.equal('https://rtb.lane4.io/hb');
       expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
+      expect(_Request.options.contentType).to.equal('text/plain');
     });
     it('Validate bid request : Impression', function () {
       const _Request = spec.buildRequests(bannerRequest);
@@ -234,14 +235,15 @@ describe('lane4 adapter', function () {
   describe('Validate Native Request', function () {
     it('Immutable bid request validate', function () {
       const _Request = utils.deepClone(nativeRequest);
-      const bidRequest = spec.buildRequests(nativeRequest);
+      spec.buildRequests(nativeRequest);
+
       expect(nativeRequest).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function () {
       const _Request = spec.buildRequests(nativeRequest);
       expect(_Request.url).to.equal('https://rtb.lane4.io/hb');
       expect(_Request.method).to.equal('POST');
-      expect(_Request.options.contentType).to.equal('application/json');
+      expect(_Request.options.contentType).to.equal('text/plain');
     });
     it('Validate bid request : Impression', function () {
       const _Request = spec.buildRequests(nativeRequest);
@@ -270,6 +272,12 @@ describe('lane4 adapter', function () {
     });
   });
   describe('Validate native response ', function () {
+    it('Validate bid response : invalid bid response', function () {
+      const _Request = spec.buildRequests(nativeRequest);
+      const bResponse = spec.interpretResponse(invalidNativeResponse, _Request);
+      expect(bResponse).to.be.an('array').that.is.empty;
+    });
+
     it('Validate bid response : valid bid response', function () {
       const _Request = spec.buildRequests(nativeRequest);
       const bResponse = spec.interpretResponse(nativeResponse, _Request);

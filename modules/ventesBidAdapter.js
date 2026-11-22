@@ -2,7 +2,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { convertCamelToUnderscore } from '../libraries/appnexusUtils/anUtils.js';
+import { convertUserParams } from '../libraries/appnexusUtils/anUtils.js';
 import { hasUserInfo } from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const BID_METHOD = 'POST';
@@ -86,7 +86,7 @@ function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
 function validateServerRequest(serverRequest) {
   return isPlainObject(serverRequest) &&
       isPlainObject(serverRequest.data) &&
-      isArray(serverRequest.data.imp)
+      isArray(serverRequest.data.imp);
 }
 
 function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
@@ -98,33 +98,12 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
       contentType: 'application/json',
       withCredentials: false
     }
-  }
+  };
 }
 
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = ((bidRequests) || []).find(hasUserInfo);
-  const userObj = {};
-  if (userObjBid) {
-    Object.keys(userObjBid.params.user)
-      .forEach((param) => {
-        const uparam = convertCamelToUnderscore(param);
-        if (param === 'segments' && isArray(userObjBid.params.user[param])) {
-          const segs = [];
-          userObjBid.params.user[param].forEach(val => {
-            if (isNumber(val)) {
-              segs.push({
-                'id': val
-              });
-            } else if (isPlainObject(val)) {
-              segs.push(val);
-            }
-          });
-          userObj[uparam] = segs;
-        } else if (param !== 'segments') {
-          userObj[uparam] = userObjBid.params.user[param];
-        }
-      });
-  }
+  const userObj = userObjBid ? convertUserParams(userObjBid.params.user) : {};
 
   const deviceObjBid = ((bidRequests) || []).find(hasDeviceInfo);
   let deviceObj;
@@ -146,14 +125,14 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     deviceObj.language = navigator.language;
   }
 
-  const payload = {}
-  payload.id = bidRequestId
-  payload.at = 1
-  payload.cur = ['USD']
-  payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
+  const payload = {};
+  payload.id = bidRequestId;
+  payload.at = 1;
+  payload.cur = ['USD'];
+  payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, []);
   const appDeviceObjBid = ((bidRequests) || []).find(hasAppInfo);
   if (!appDeviceObjBid) {
-    payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
+    payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext);
   } else {
     let appIdObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
@@ -166,8 +145,8 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
     payload.app = appIdObj;
   }
   payload.device = deviceObj;
-  payload.user = userObj
-  return payload
+  payload.user = userObj;
+  return payload;
 }
 
 function generateImpressionsFromAdUnit(acc, adUnit) {
@@ -181,7 +160,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   } = params;
   const pmp = {};
 
-  if (placementId) pmp.deals = [{ id: placementId }]
+  if (placementId) pmp.deals = [{ id: placementId }];
 
   const imps = Object
     .keys(mediaTypes)
@@ -207,7 +186,7 @@ function generateBannerFromAdUnit(impId, data, params) {
     placementId
   };
 
-  if (placementId) pmp.deals = [{ id: placementId }]
+  if (placementId) pmp.deals = [{ id: placementId }];
 
   return data.sizes.map(([w, h]) => ({
     id: `${impId}`,
@@ -332,13 +311,13 @@ function getCreativeFromBid(bid) {
 
 function hasDeviceInfo(bid) {
   if (bid.params) {
-    return !!bid.params.device
+    return !!bid.params.device;
   }
 }
 
 function hasAppInfo(bid) {
   if (bid.params) {
-    return !!bid.params.app
+    return !!bid.params.app;
   }
 }
 
@@ -366,10 +345,10 @@ const venavenBidderSpec = {
       const bidRequestId = group.id;
       const adUnits = groupBy(group.values, 'bidId').map((group) => {
         const length = group.values.length;
-        return length > 0 && group.values[length - 1]
+        return length > 0 && group.values[length - 1];
       });
 
-      return createServerRequestFromAdUnits(adUnits, bidRequestId, bidderRequest)
+      return createServerRequestFromAdUnits(adUnits, bidRequestId, bidderRequest);
     });
   },
   interpretResponse(serverResponse, serverRequest) {

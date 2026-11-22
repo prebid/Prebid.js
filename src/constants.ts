@@ -23,6 +23,7 @@ export const EVENTS = {
   BID_TIMEOUT: 'bidTimeout',
   BID_REQUESTED: 'bidRequested',
   BID_RESPONSE: 'bidResponse',
+  BID_ACCEPTED: 'bidAccepted',
   BID_REJECTED: 'bidRejected',
   NO_BID: 'noBid',
   BID_WON: 'bidWon',
@@ -37,6 +38,8 @@ export const EVENTS = {
   TCF2_ENFORCEMENT: 'tcf2Enforcement',
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
+  BID_CLICK_INFERRED: 'bidClickInferred',
+  BID_CLICK: 'bidClick',
   STALE_RENDER: 'staleRender',
   EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
@@ -52,7 +55,8 @@ export const AD_RENDER_FAILED_REASON = {
   NO_AD: 'noAd',
   EXCEPTION: 'exception',
   CANNOT_FIND_AD: 'cannotFindAd',
-  MISSING_DOC_OR_ADID: 'missingDocOrAdid'
+  MISSING_DOC_OR_ADID: 'missingDocOrAdid',
+  INVALID_ELEMENT: 'invalidElement',
 } as const;
 
 export const EVENT_ID_PATHS = {
@@ -117,6 +121,7 @@ export const NATIVE_KEYS = {
   phone: 'hb_native_phone',
   price: 'hb_native_price',
   salePrice: 'hb_native_saleprice',
+  video: 'hb_native_video',
   rendererUrl: 'hb_renderer_url',
   adTemplate: 'hb_adTemplate'
 };

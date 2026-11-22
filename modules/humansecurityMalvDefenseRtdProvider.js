@@ -7,11 +7,13 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { loadExternalScript } from '../src/adloader.js';
-import { logError, generateUUID, insertElement } from '../src/utils.js';
+import { loadExternalScript, preloadExternalScript } from '../src/adloader.js';
+import { generateUUID, logError } from '../src/utils.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+
+const MODULE_CODE = 'humansecurityMalvDefense';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -83,7 +85,7 @@ export function createRtdSubmodule(moduleName) {
         bidId: winnerBidResponse.requestId,
       });
     });
-  }
+  };
 
   // ============================ MODULE LOGIC ===============================
 
@@ -92,14 +94,11 @@ export function createRtdSubmodule(moduleName) {
    * @param {string} scriptURL The script URL to preload
    */
   function pageInitStepPreloadScript(scriptURL) {
-    // TODO: this bypasses adLoader
-    const linkElement = document.createElement('link');
-    linkElement.rel = 'preload';
-    linkElement.as = 'script';
-    linkElement.href = scriptURL;
-    linkElement.onload = () => { preloadStatus = 1; };
-    linkElement.onerror = () => { preloadStatus = -1; };
-    insertElement(linkElement);
+    preloadExternalScript(scriptURL, MODULE_TYPE_RTD, moduleName).then(() => {
+      preloadStatus = 1;
+    }, () => {
+      preloadStatus = -1;
+    });
   }
 
   /**
@@ -186,6 +185,7 @@ export function createRtdSubmodule(moduleName) {
    * The function which performs submodule registration.
    */
   function beforeInit() {
+    preloadStatus = 0;
     submodule('realTimeData', /** @type {RtdSubmodule} */ ({
       name: moduleName,
 
@@ -226,7 +226,7 @@ export function createRtdSubmodule(moduleName) {
   };
 }
 
-const internals = createRtdSubmodule('humansecurityMalvDefense');
+const internals = createRtdSubmodule(MODULE_CODE);
 
 /**
  * Exporting encapsulated to this module functions

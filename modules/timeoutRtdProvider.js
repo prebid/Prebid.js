@@ -1,8 +1,9 @@
 import { submodule } from '../src/hook.js';
-import * as ajax from '../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { bidderTimeoutFunctions } from '../libraries/bidderTimeoutUtils/bidderTimeoutUtils.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -27,13 +28,13 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   const timeoutUrl = deepAccess(config, 'params.endpoint.url');
   if (timeoutUrl) {
     logInfo('Timeout url', timeoutUrl);
-    ajax.ajaxBuilder()(timeoutUrl, {
+    qualifiedAjaxBuilder(MODULE_TYPE_RTD, SUBMODULE_NAME)(timeoutUrl, {
       success: function(response) {
         try {
           const rules = JSON.parse(response);
           timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
         } catch (e) {
-          logError('Error parsing json response from timeout provider.')
+          logError('Error parsing json response from timeout provider.');
         }
         callback();
       },

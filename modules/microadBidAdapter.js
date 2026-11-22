@@ -1,4 +1,4 @@
-import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -21,18 +21,6 @@ const EXT_APPID_STRING = '${COMPASS_EXT_APPID}';
 const BANNER_CODE = 1;
 const NATIVE_CODE = 2;
 const VIDEO_CODE = 4;
-
-const AUDIENCE_IDS = [
-  { type: 6, bidKey: 'userId.imuid', source: 'intimatemerger.com' },
-  { type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com' },
-  { type: 9, bidKey: 'userId.tdid', source: 'adserver.org' },
-  { type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com' },
-  { type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp' },
-  { type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com' },
-  { type: 14, bidKey: 'userId.criteoId', source: 'criteo.com' },
-  { type: 15, bidKey: 'userId.pubcid', source: 'pubcid.org' },
-  { type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com' }
-];
 
 function createCBT() {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
@@ -89,28 +77,6 @@ export const spec = {
 
       if (bidParams.appid) {
         params['appid'] = bidParams.appid.replace(EXT_APPID_STRING, '');
-      }
-
-      const aidsParams = []
-      const userIdAsEids = bid.userIdAsEids;
-      AUDIENCE_IDS.forEach((audienceId) => {
-        const bidAudienceId = deepAccess(bid, audienceId.bidKey);
-        if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
-          const aidParam = { type: audienceId.type, id: bidAudienceId };
-          // Set ext
-          if (isArray(userIdAsEids)) {
-            const targetEid = ((userIdAsEids) || []).find((eid) => eid.source === audienceId.source) || {};
-            if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
-              aidParam.ext = targetEid.uids[0].ext;
-            }
-          }
-          aidsParams.push(aidParam);
-          // Set Ramp ID
-          if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
-        }
-      })
-      if (aidsParams.length > 0) {
-        params['aids'] = JSON.stringify(aidsParams)
       }
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');

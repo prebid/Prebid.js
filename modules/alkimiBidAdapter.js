@@ -1,20 +1,19 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
+import { deepClone, generateUUID, replaceAuctionPrice } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getDNT } from '../libraries/dnt/index.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'alkimi';
-const GVLID = 1169;
 const USER_ID_KEY = 'alkimiUserID';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -41,12 +40,12 @@ export const spec = {
         exp: bidRequest.params.exp,
         bidFloor: floorInfo.floor,           // Floor amount
         currency: floorInfo.currency,        // Floor currency (NEW)
-        sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
-        playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
+        sizes: prepareSizes(bidRequest?.mediaTypes?.banner?.sizes),
+        playerSizes: prepareSizes(bidRequest?.mediaTypes?.video?.playerSize),
         impMediaTypes: formatTypes,
         adUnitCode: bidRequest.adUnitCode,
-        video: deepAccess(bidRequest, 'mediaTypes.video'),
-        banner: deepAccess(bidRequest, 'mediaTypes.banner'),
+        video: bidRequest?.mediaTypes?.video,
+        banner: bidRequest?.mediaTypes?.banner,
         ext: bidRequest.ortb2Imp?.ext
       });
       bidIds.push(bidRequest.bidId);
@@ -59,11 +58,11 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
     const fpa = ortb2?.source?.ext?.fpa;
     const source = fpa !== undefined ? { ext: { fpa } } : undefined;
-    const userWalletAddress = alkimiConfig && alkimiConfig.userWalletAddress
-    const userParams = alkimiConfig && alkimiConfig.userParams
-    const userWalletConnected = alkimiConfig && alkimiConfig.userWalletConnected
-    const userWalletProtocol = normalizeToArray(alkimiConfig && alkimiConfig.userWalletProtocol)
-    const userTokenType = normalizeToArray(alkimiConfig && alkimiConfig.userTokenType)
+    const userWalletAddress = alkimiConfig && alkimiConfig.userWalletAddress;
+    const userParams = alkimiConfig && alkimiConfig.userParams;
+    const userWalletConnected = alkimiConfig && alkimiConfig.userWalletConnected;
+    const userWalletProtocol = normalizeToArray(alkimiConfig && alkimiConfig.userWalletProtocol);
+    const userTokenType = normalizeToArray(alkimiConfig && alkimiConfig.userTokenType);
 
     const user = ((userWalletAddress !== null && userWalletAddress !== undefined) ||
               (userParams !== null && userParams !== undefined) ||
@@ -81,7 +80,7 @@ export const spec = {
             userTokenType
           }
         }
-      : undefined
+      : undefined;
 
     let payload = {
       requestId: generateUUID(),
@@ -90,7 +89,7 @@ export const spec = {
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
-      cpp: config.getConfig('coppa') ? 1 : 0,
+      cpp: (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0,
       device: {
         dnt: getDNT() ? 1 : 0,
         w: screen.width,
@@ -245,8 +244,8 @@ function getBidFloor(bidRequest, formatTypes) {
 
 const getFormatType = bidRequest => {
   let formats = [];
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner');
-  if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video');
+  if (bidRequest?.mediaTypes?.banner) formats.push('Banner');
+  if (bidRequest?.mediaTypes?.video) formats.push('Video');
   return formats;
 };
 

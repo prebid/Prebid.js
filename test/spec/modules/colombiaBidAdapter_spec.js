@@ -1,14 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/colombiaBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as ajaxLib from 'src/ajax.js';
+import { dep, spec } from 'modules/colombiaBidAdapter';
 
-const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'colombia',
@@ -69,14 +64,6 @@ describe('colombiaBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-    const bidderRequest = {
-      refererInfo: {
-        numIframes: 0,
-        reachedTop: true,
-        referer: 'http://example.com',
-        stack: ['http://example.com']
-      }
-    };
 
     const request = spec.buildRequests(bidRequests);
     it('sends bid request to our endpoint via POST', function () {
@@ -144,7 +131,6 @@ describe('colombiaBidAdapter', function () {
           'uid': '23beaa6af6cdde',
           'height': 0,
           'creativeId': '',
-          'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0
         }
@@ -156,7 +142,7 @@ describe('colombiaBidAdapter', function () {
   describe('onBidWon', function () {
     let ajaxStub;
     beforeEach(() => {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(() => {
@@ -199,7 +185,7 @@ describe('colombiaBidAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+      ajaxStub = sinon.stub(dep, 'ajax');
     });
 
     afterEach(function () {

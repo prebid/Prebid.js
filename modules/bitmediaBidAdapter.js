@@ -36,7 +36,7 @@ const USER_FINGERPRINT_KEY = 'bitmedia_fid';
 const _handleOnBidWon = (endpoint) => {
   logInfo(BIDDER_CODE, `____handle bid won____`, endpoint);
   triggerPixel(endpoint);
-}
+};
 
 const _getFidFromBitmediaFid = (bitmediaFid) => {
   try {
@@ -48,7 +48,7 @@ const _getFidFromBitmediaFid = (bitmediaFid) => {
     logError(BIDDER_CODE, 'Failed to parse bitmedia_fid', e);
     return null;
   }
-}
+};
 
 const _getBidFloor = (bid, size) => {
   logInfo(BIDDER_CODE, '[Bid Floor] Retrieving bid floor for bid:', bid, size);
@@ -68,7 +68,7 @@ const _getBidFloor = (bid, size) => {
   }
   logInfo(BIDDER_CODE, '[Bid Floor] Returning null for bid floor.');
   return null;
-}
+};
 
 const CONVERTER = ortbConverter({
   context: {
@@ -251,7 +251,7 @@ const onBidWon = (bid) => {
   const cpm = bid.adserverTargeting?.hb_pb || '';
   logInfo(BIDDER_CODE, `-----Bid won-----`, { bid, cpm: cpm });
   _handleOnBidWon(bid.nurl);
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,

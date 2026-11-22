@@ -56,7 +56,7 @@ export const spec = {
         data: dataString,
         bidRequest: currentBidRequest
       };
-    }
+    };
 
     const constructSupplyChain = (currentBidRequest, bidderRequest) => {
       // Add schain object
@@ -68,8 +68,8 @@ export const spec = {
         schain = currentBidRequest.schain;
       }
 
-      return this.serializeSupplyChain(schain)
-    }
+      return this.serializeSupplyChain(schain);
+    };
 
     const constructGlobalParams = currentBidRequest => {
       const sdkVersion = getSDKVersion(currentBidRequest);
@@ -86,17 +86,17 @@ export const spec = {
         mode: currentBidRequest.params.mode ? currentBidRequest.params.mode : 'on-demand',
         vclr: `js-${sdkVersion}-prebid-${prebidVersion}`
       };
-    }
+    };
 
     const getRandomNumber = () => {
       return (new Date().getTime() * Math.random()).toFixed(0);
-    }
+    };
 
     const setFlagParameter = optionalFlags => {
       logInfo('setFlagParameter, optionalFlags: ', optionalFlags);
       const requiredFlags = '+fwssp+emcr+nucr+aeti+rema+exvt+fwpbjs';
       return optionalFlags ? optionalFlags + requiredFlags : requiredFlags;
-    }
+    };
 
     const constructKeyValues = (currentBidRequest, bidderRequest) => {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
@@ -105,6 +105,17 @@ export const spec = {
       const { floor, currency } = getBidFloor(currentBidRequest, config);
       keyValues._fw_bidfloor = floor;
       keyValues._fw_bidfloorcur = currency;
+
+      // Add transaction ID (TID) and transaction ID type (TIDT) with priority handling
+      const { tid, tidt } = extractTransactionIds(currentBidRequest, bidderRequest);
+      if (tid) {
+        keyValues._fw_programmatic_tid = tid;
+        if (tidt) {
+          keyValues._fw_programmatic_tidt = tidt;
+        }
+      } else {
+        delete keyValues._fw_programmatic_tid;
+      }
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -155,7 +166,7 @@ export const spec = {
         keyValues.loc = location;
       }
 
-      let playerSize = [];
+      let playerSize;
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
         if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
@@ -208,7 +219,7 @@ export const spec = {
         keyValues._fw_is_lat = lmt;
       }
 
-      PRIVACY_VALUES = {}
+      PRIVACY_VALUES = {};
       if (keyValues._fw_coppa != null) {
         PRIVACY_VALUES._fw_coppa = keyValues._fw_coppa;
       }
@@ -221,7 +232,7 @@ export const spec = {
       }
 
       return keyValues;
-    }
+    };
 
     const constructSlotParams = currentBidRequest => {
       /**
@@ -243,7 +254,7 @@ export const spec = {
         ptgt: 'a',   // Currently only support temporal slot
         slid: currentBidRequest.params.slid ? currentBidRequest.params.slid : 'Preroll_1',
         slau: currentBidRequest.params.slau ? currentBidRequest.params.slau : 'preroll',
-      }
+      };
       const video = deepAccess(currentBidRequest, 'mediaTypes.video') || {};
       const mind = video.minduration || currentBidRequest.params.minD;
       const maxd = video.maxduration || currentBidRequest.params.maxD;
@@ -254,8 +265,8 @@ export const spec = {
       if (maxd) {
         slotParams.maxd = maxd;
       }
-      return slotParams
-    }
+      return slotParams;
+    };
 
     const constructDataString = (globalParams, keyValues, serializedSChain, slotParams) => {
       const globalParamsString = appendParams(globalParams) + ';';
@@ -264,7 +275,7 @@ export const spec = {
       const slotParamsString = appendParams(slotParams) + ';';
 
       return globalParamsString + keyValuesString + slotParamsString;
-    }
+    };
 
     return bidRequests.map(function(currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
@@ -295,7 +306,7 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, request) {
     const bidrequest = request.bidRequest;
-    let playerSize = [];
+    let playerSize;
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
       if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
@@ -357,7 +368,7 @@ export const spec = {
       };
 
       bidResponse.vastXml = serverResponse;
-      bidResponse.ad = formatAdHTML(bidrequest, playerSize, serverResponse);
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 
@@ -410,7 +421,7 @@ export const spec = {
 
     return syncs;
   }
-}
+};
 
 /**
  * Generates structured HTML for FreeWheel MRM ad integration with Prebid.js
@@ -422,8 +433,8 @@ export function formatAdHTML(bidrequest, size) {
   const sdkUrl = getSdkUrl(bidrequest);
   const displayBaseId = 'fwssp_display_base';
 
-  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true
-  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false
+  const startMuted = typeof bidrequest.params.isMuted === 'boolean' ? bidrequest.params.isMuted : true;
+  const showMuteButton = typeof bidrequest.params.showMuteButton === 'boolean' ? bidrequest.params.showMuteButton : false;
 
   let playerParams = null;
   try {
@@ -496,7 +507,7 @@ function getSdkUrl(bidrequest) {
   const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
-  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
+  return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`;
 }
 
 /**
@@ -541,10 +552,6 @@ function getSdkVersionFromBidRequest(bidRequest) {
  * @returns {number} Returns 1 if versionA is greater, -1 if versionB is greater, 0 if equal
  */
 function compareVersions(versionA, versionB) {
-  if (!versionA || !versionB) {
-    return 0;
-  }
-
   const normalize = (v) => v.split('.').map(Number);
 
   const partsA = normalize(versionA);
@@ -593,6 +600,50 @@ export function getBidFloor(bid, config) {
     }
   }
   return { floor, currency };
+}
+
+/**
+ * Extracts transaction ID (TID) and transaction ID type (TIDT) from bid request
+ * Priority order for TID:
+ * 1. ortb2Imp.ext.tid from bidRequest
+ * 2. ortb2.source.tid from bidderRequest
+ *
+ * Priority order for TIDT:
+ * 1. ortb2Imp.ext.tidt from bidRequest
+ *
+ * @param {object} bidRequest - The bid request object
+ * @param {object} bidderRequest - The bidder request object
+ * @returns {object} Object containing tid and tidt values
+ */
+export function extractTransactionIds(bidRequest, bidderRequest) {
+  let tid = null;
+  let tidt = null;
+
+  // Priority 1: Check ortb2Imp.ext.tid
+  const ortb2ImpTid = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  if (ortb2ImpTid != null) {
+    tid = ortb2ImpTid;
+  }
+
+  // Priority 2: Check ortb2.source.tid
+  if (tid == null && bidderRequest) {
+    const ortb2SourceTid = deepAccess(bidderRequest, 'ortb2.source.tid');
+    if (ortb2SourceTid != null) {
+      tid = ortb2SourceTid;
+    }
+  }
+
+  // TIDT extraction (only if TID exists)
+  if (tid != null) {
+    // Check ortb2Imp.ext.tidt
+    const ortb2Tidt = deepAccess(bidRequest, 'ortb2Imp.ext.tidt');
+    if (ortb2Tidt != null) {
+      tidt = ortb2Tidt;
+    }
+  }
+
+  logInfo('PREBID - TID DEBUG: Final TID/TIDT values - TID:', tid, 'TIDT:', tidt);
+  return { tid, tidt };
 }
 
 function isValidUrl(str) {

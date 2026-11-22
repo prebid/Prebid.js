@@ -9,10 +9,10 @@ import {
   getWindowTop
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
-import { config } from '../src/config.js';
 import { getBoundingBox, percentInView } from '../libraries/percentInView/percentInView.js';
 import { isIframe } from '../libraries/omsUtils/index.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'valuad';
 const GVL_ID = 1478;
@@ -38,7 +38,7 @@ const converter = ortbConverter({
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
-    const coppa = config.getConfig('coppa') === true ? 1 : 0;
+    const coppa = (bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa()) ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 

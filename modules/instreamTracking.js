@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
+import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -118,4 +118,4 @@ export function trackInstreamDeliveredImpressions({ adUnits, bidsReceived, bidde
   return true;
 }
 
-events.on(AUCTION_END, trackInstreamDeliveredImpressions)
+events.on(AUCTION_END, trackInstreamDeliveredImpressions);

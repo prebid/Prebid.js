@@ -1,11 +1,9 @@
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { spec } from 'modules/coinzillaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';
 
 describe('coinzillaBidAdapter', function () {
-  const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'coinzilla',
@@ -93,7 +91,6 @@ describe('coinzillaBidAdapter', function () {
         'cpm': 4.2,
         'creativeId': '12345asdfg',
         'currency': 'EUR',
-        'statusMessage': 'Bid available',
         'requestId': 'bidId123',
         'width': 300,
         'height': 250,

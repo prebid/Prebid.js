@@ -1,16 +1,19 @@
 import { getBidRequest } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getANKeywordParam } from '../libraries/appnexusUtils/anKeywords.js';
+import { getRtbBid, parseMediaType } from '../libraries/appnexusUtils/anUtils.js';
 import { interpretResponseUtil } from '../libraries/interpretResponseUtils/index.js';
+import { getBidFloor } from '../libraries/xeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
+const CURRENCY = 'JPY';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
@@ -30,7 +33,7 @@ export const spec = {
     const schain = bidRequest.ortb2?.source?.ext?.schain;
     const payload = {
       tags: [...tags],
-      ua: navigator.userAgent,
+      ua: bidderRequest.ortb2?.device?.ua,
       sdk: {
         version: '$prebid.version$',
       },
@@ -60,9 +63,6 @@ export const spec = {
           refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',');
         }
         payload.referrer_detection = refererinfo;
-      }
-      if (bidRequest.userId) {
-        payload.userId = bidRequest.userId
       }
     }
     const request = formatRequest(payload, bidderRequest);
@@ -116,7 +116,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
-    currency: 'JPY',
+    currency: CURRENCY,
     width: rtbBid.rtb.banner.width,
     height: rtbBid.rtb.banner.height,
     ad: rtbBid.rtb.banner.content,
@@ -151,6 +151,10 @@ function bidToTag(bid) {
   if (keywords.length) {
     tag.keywords = keywords;
   }
+  const bidfloor = getBidFloor(bid, CURRENCY);
+  if (bidfloor) {
+    tag.bidfloor = bidfloor;
+  }
   if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);
   }
@@ -159,21 +163,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
-}
-
-function parseMediaType(rtbBid) {
-  const adType = rtbBid.ad_type;
-  if (adType === VIDEO) {
-    return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
-  } else {
-    return BANNER;
-  }
 }
 
 function isAmp() {

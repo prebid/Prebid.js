@@ -238,9 +238,9 @@ function sendEvent(completeObject) {
     const dataToSend = JSON.stringify({ query: mutation });
     let ajaxEndpoint = defaultUrl;
     if (adxpremiumAnalyticsAdapter.initOptions.sid) {
-      ajaxEndpoint = 'https://' + adxpremiumAnalyticsAdapter.initOptions.sid + '.adxpremium.services/graphql'
+      ajaxEndpoint = 'https://' + adxpremiumAnalyticsAdapter.initOptions.sid + '.adxpremium.services/graphql';
     }
-    ajax(ajaxEndpoint, function () { logInfo('AdxPremium Analytics - Sending complete events at ' + Date.now()) }, dataToSend, {
+    ajax(ajaxEndpoint, function () { logInfo('AdxPremium Analytics - Sending complete events at ' + Date.now()); }, dataToSend, {
       contentType: 'application/json',
       method: 'POST'
     });

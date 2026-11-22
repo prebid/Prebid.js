@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'cpmstar';
 
@@ -101,8 +101,8 @@ export const spec = {
         url.searchParams.set('us_privacy', bidderRequest.uspConsent);
       }
 
-      if (config.getConfig('coppa')) {
-        url.searchParams.set('tfcd', (config.getConfig('coppa') ? 1 : 0));
+      if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
+        url.searchParams.set('tfcd', 1);
       }
 
       const adUnitCode = bidRequest.adUnitCode;

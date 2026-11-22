@@ -129,9 +129,9 @@ function flush() {
 
 function handleEvent(eventType, eventArgs) {
   if (eventArgs) {
-    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs);
   } else {
-    eventArgs = {}
+    eventArgs = {};
   }
 
   let invisiblyEvent = {};

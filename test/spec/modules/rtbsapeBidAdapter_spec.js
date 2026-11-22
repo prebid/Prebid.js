@@ -123,7 +123,7 @@ describe('rtbsapeBidAdapterTests', function () {
         let spy = false;
 
         window.sapeRtbPlayerHandler = function (id, w, h, m) {
-          const player = { addSlot: () => [id, w, h, m] }
+          const player = { addSlot: () => [id, w, h, m] };
           expect(spy).to.equal(false);
           spy = sinon.spy(player, 'addSlot');
           return player;

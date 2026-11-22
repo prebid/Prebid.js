@@ -46,11 +46,11 @@ export function ttlCollection<T>(
   const pendingPurge = [];
   const markForPurge = monotonic
     ? (entry) => pendingPurge.push(entry)
-    : (entry) => pendingPurge.splice(binarySearch(pendingPurge, entry, (el) => el.expiry), 0, entry)
+    : (entry) => pendingPurge.splice(binarySearch(pendingPurge, entry, (el) => el.expiry), 0, entry);
   let nextPurge, task;
 
   function reschedulePurge() {
-    task && clearTimeout(task);
+    task && clearTimeout(task());
     if (pendingPurge.length > 0) {
       const now = timestamp();
       nextPurge = Math.max(now, pendingPurge[0].expiry + slack);
@@ -61,12 +61,12 @@ export function ttlCollection<T>(
           if (entry.expiry > now) break;
           callbacks.forEach(cb => {
             try {
-              cb(entry.item)
+              cb(entry.item);
             } catch (e) {
               logError(e);
             }
           });
-          items.delete(entry.item)
+          items.delete(entry.item);
           cnt++;
         }
         pendingPurge.splice(0, cnt);
@@ -106,8 +106,8 @@ export function ttlCollection<T>(
             update();
           }
         });
-      }
-    })
+      };
+    });
 
     const entry = {
       item,
@@ -186,7 +186,7 @@ export function ttlCollection<T>(
         if (idx >= 0) {
           callbacks.splice(idx, 1);
         }
-      }
+      };
     }
   };
 }

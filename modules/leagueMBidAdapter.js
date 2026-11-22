@@ -12,6 +12,6 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => buildRequests(validBidRequests, bidderRequest, ENDPOINT),
   interpretResponse,
   getUserSyncs
-}
+};
 
 registerBidder(spec);

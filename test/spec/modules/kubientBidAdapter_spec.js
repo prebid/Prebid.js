@@ -1,6 +1,6 @@
-import { expect, assert } from 'chai';
+import { expect } from 'chai';
 import { spec } from 'modules/kubientBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 
 function encodeQueryData(data) {
@@ -503,5 +503,5 @@ describe('KubientAdapter', function () {
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
-  })
+  });
 });

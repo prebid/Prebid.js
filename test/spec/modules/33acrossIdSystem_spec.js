@@ -847,8 +847,6 @@ describe('33acrossIdSystem', () => {
       });
 
       it('should call endpoint with the GPP applicable sections', () => {
-        const gppString = 'foo';
-
         [
           { applicableSections: [], expected: '' },
           { applicableSections: undefined, expected: '' },
@@ -1116,7 +1114,7 @@ describe('33acrossIdSystem', () => {
             hem: {
               sha256: 'fake-sha256-hashed-email+'
             }
-          }
+          };
         });
 
         afterEach(() => {
@@ -1607,8 +1605,8 @@ describe('33acrossIdSystem', () => {
 
         expect(completeCallback.calledOnceWithExactly()).to.be.true;
       });
-    })
-  })
+    });
+  });
 
   describe('decode', () => {
     it('should wrap the given value inside an object literal', () => {
@@ -1622,7 +1620,7 @@ describe('33acrossIdSystem', () => {
   describe('eid', () => {
     before(() => {
       attachIdSystem(thirtyThreeAcrossIdSubmodule);
-    })
+    });
     it('33acrossId', function() {
       const userId = {
         '33acrossId': {
@@ -1639,5 +1637,5 @@ describe('33acrossIdSystem', () => {
         }]
       });
     });
-  })
+  });
 });

@@ -183,8 +183,8 @@
                             }
                         ]
                     }
-                })
-            })
+                });
+            });
 
             // Request Bids
             pbjs.que.push(function () {
@@ -192,7 +192,7 @@
                 pbjs.requestBids({
                     bidsBackHandler: initAdserver,
                 });
-            })
+            });
             // Timeout
             setTimeout(function () {
                 initAdserver();
@@ -417,7 +417,7 @@ pbjs.onEvent("bidRequested", function(bidRequest) {
                 };
                 console.log("Neuwo data stored in global \"neuwoData\" variable:", neuwoData);
 
-                updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields)
+                updateDisplayElements(neuwoSiteData, neuwoUserData, ortb25Fields);
             } else {
                 console.warn("No ortb2 data found in bidRequest. This may indicate the RTD module has not enriched the bid request yet.");
             }

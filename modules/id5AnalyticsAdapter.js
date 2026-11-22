@@ -9,7 +9,7 @@ const {
   AUCTION_END,
   TCF2_ENFORCEMENT,
   BID_WON
-} = EVENTS
+} = EVENTS;
 
 const GVLID = 131;
 const COMPRESSION_THRESHOLD = 2048;
@@ -20,7 +20,7 @@ const STANDARD_EVENTS_TO_TRACK = [
   BID_WON,
 ];
 
-const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
+const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics';
 const TZ = new Date().getTimezoneOffset();
 const PBJS_VERSION = 'v' + '$prebid.version$';
 const ID5_REDACTED = '__ID5_REDACTED__';
@@ -46,15 +46,24 @@ const id5Analytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), 
 
   sendEvent: (eventToSend) => {
     const serializedEvent = JSON.stringify(eventToSend);
-    if (!id5Analytics.options.compressionDisabled && isGzipCompressionSupported() && serializedEvent.length > COMPRESSION_THRESHOLD) {
-      compressDataWithGZip(serializedEvent).then(compressedData => {
-        ajax(id5Analytics.options.ingestUrl, null, compressedData, {
-          contentType: 'application/json',
-          customHeaders: {
-            'Content-Encoding': 'gzip'
-          }
-        });
-      })
+    if (!id5Analytics.options.compressionDisabled && serializedEvent.length > COMPRESSION_THRESHOLD) {
+      const sendUncompressed = () => ajax(id5Analytics.options.ingestUrl, null, serializedEvent);
+      isGzipCompressionSupported().then((supported) => {
+        if (supported) {
+          return compressDataWithGZip(serializedEvent)
+            .then(compressedData => {
+              ajax(id5Analytics.options.ingestUrl, null, compressedData, {
+                contentType: 'application/json',
+                customHeaders: {
+                  'Content-Encoding': 'gzip'
+                }
+              });
+            })
+            .catch(sendUncompressed);
+        } else {
+          sendUncompressed();
+        }
+      }).catch(sendUncompressed);
     } else {
       // By giving some content this will be automatically a POST
       ajax(id5Analytics.options.ingestUrl, null, serializedEvent);

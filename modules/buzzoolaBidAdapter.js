@@ -46,7 +46,7 @@ export const spec = {
       url: ENDPOINT,
       method: 'POST',
       data: bidderRequest,
-    }
+    };
   },
 
   /**
@@ -84,7 +84,7 @@ export const spec = {
         });
 
         renderer.setRender(setOutstreamRenderer);
-        validBid.renderer = renderer
+        validBid.renderer = renderer;
       }
 
       return validBid;

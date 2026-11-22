@@ -274,110 +274,30 @@ describe('microadBidAdapter', () => {
       const bidRequestWithOutLiveramp = Object.assign({}, bidRequestTemplate, {
         userId: {}
       });
-      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest)
+      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
             cbt: request.data.cbt
           })
         );
-      })
+      });
     });
 
-    Object.entries({
-      'IM-UID': {
-        userId: { imuid: 'imuid-sample' },
-        expected: { aids: JSON.stringify([{ type: 6, id: 'imuid-sample' }]) }
-      },
-      'ID5 ID': {
-        userId: { id5id: { uid: 'id5id-sample' } },
-        expected: { aids: JSON.stringify([{ type: 8, id: 'id5id-sample' }]) }
-      },
-      'Unified ID': {
-        userId: { tdid: 'unified-sample' },
-        expected: { aids: JSON.stringify([{ type: 9, id: 'unified-sample' }]) }
-      },
-      'Novatiq Snowflake ID': {
-        userId: { novatiq: { snowflake: 'novatiq-sample' } },
-        expected: { aids: JSON.stringify([{ type: 10, id: 'novatiq-sample' }]) }
-      },
-      'AudienceOne User ID': {
-        userId: { dacId: { id: 'audience-one-sample' } },
-        expected: { aids: JSON.stringify([{ type: 12, id: 'audience-one-sample' }]) }
-      },
-      'Ramp ID and Liveramp identity': {
-        userId: { idl_env: 'idl-env-sample' },
-        expected: { idl_env: 'idl-env-sample', aids: JSON.stringify([{ type: 13, id: 'idl-env-sample' }]) }
-      },
-      'Criteo ID': {
-        userId: { criteoId: 'criteo-id-sample' },
-        expected: { aids: JSON.stringify([{ type: 14, id: 'criteo-id-sample' }]) }
-      },
-      'Shared ID': {
-        userId: { pubcid: 'shared-id-sample' },
-        expected: { aids: JSON.stringify([{ type: 15, id: 'shared-id-sample' }]) }
-      }
-    }).forEach(([test, arg]) => {
-      it(`should add ${test} if it is available in request parameters`, () => {
-        const bidRequestWithUserId = { ...bidRequestTemplate, userId: arg.userId }
-        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
-        requests.forEach((request) => {
-          expect(request.data).to.deep.equal({
-            ...expectedResultTemplate,
-            cbt: request.data.cbt,
-            ...arg.expected
-          })
-        })
-      })
-    })
-
-    Object.entries({
-      'ID5 ID': {
-        userId: { id5id: { uid: 'id5id-sample' } },
-        userIdAsEids: [
-          {
-            source: 'id5-sync.com',
-            uids: [{ id: 'id5id-sample', aType: 1, ext: { linkType: 2, abTestingControlGroup: false } }]
-          }
-        ],
-        expected: {
-          aids: JSON.stringify([{ type: 8, id: 'id5id-sample', ext: { linkType: 2, abTestingControlGroup: false } }])
-        }
-      },
-      'Unified ID': {
-        userId: { tdid: 'unified-sample' },
-        userIdAsEids: [
-          {
-            source: 'adserver.org',
-            uids: [{ id: 'unified-sample', aType: 1, ext: { rtiPartner: 'TDID' } }]
-          }
-        ],
-        expected: { aids: JSON.stringify([{ type: 9, id: 'unified-sample', ext: { rtiPartner: 'TDID' } }]) }
-      },
-      'not add': {
-        userId: { id5id: { uid: 'id5id-sample' } },
-        userIdAsEids: [],
-        expected: {
-          aids: JSON.stringify([{ type: 8, id: 'id5id-sample' }])
-        }
-      }
-    }).forEach(([test, arg]) => {
-      it(`should ${test} ext if it is available in request parameters`, () => {
-        const bidRequestWithUserId = {
-          ...bidRequestTemplate,
-          userId: arg.userId,
-          userIdAsEids: arg.userIdAsEids
-        }
-        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
-        requests.forEach((request) => {
-          expect(request.data).to.deep.equal({
-            ...expectedResultTemplate,
-            cbt: request.data.cbt,
-            ...arg.expected
-          })
-        })
+    it('should not send aids or idl_env from a raw bid.userId', () => {
+      const bidRequestWithUserId = {
+        ...bidRequestTemplate,
+        userId: { imuid: 'imuid-sample', idl_env: 'idl-env-sample', pubcid: 'shared-id-sample' },
+        userIdAsEids: [{ source: 'id5-sync.com', uids: [{ id: 'id5id-sample', atype: 1 }] }]
+      };
+      const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest);
+      requests.forEach((request) => {
+        expect(request.data).to.deep.equal({
+          ...expectedResultTemplate,
+          cbt: request.data.cbt
+        });
       });
-    })
+    });
 
     describe('should send gpid', () => {
       it('from gpid', () => {
@@ -392,7 +312,7 @@ describe('microadBidAdapter', () => {
             }
           }
         });
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -401,8 +321,8 @@ describe('microadBidAdapter', () => {
               pbadslot: '3333/4444'
             })
           );
-        })
-      })
+        });
+      });
 
       it('from pbadslot', () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -414,7 +334,7 @@ describe('microadBidAdapter', () => {
             }
           }
         });
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -422,9 +342,9 @@ describe('microadBidAdapter', () => {
               gpid: '3333/4444',
             })
           );
-        })
-      })
-    })
+        });
+      });
+    });
 
     const notGettingGpids = {
       'they are not existing': bidRequestTemplate,
@@ -439,12 +359,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingGpids).forEach(([testTitle, param]) => {
       it(`should not send gpid because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -453,9 +373,9 @@ describe('microadBidAdapter', () => {
           );
           expect(request.data.gpid).to.be.undefined;
           expect(request.data.pbadslot).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('should send adservname', () => {
       const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -470,7 +390,7 @@ describe('microadBidAdapter', () => {
           }
         }
       });
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
@@ -478,8 +398,8 @@ describe('microadBidAdapter', () => {
             adservname: 'gam'
           })
         );
-      })
-    })
+      });
+    });
 
     const notGettingAdservnames = {
       'it is not existing': bidRequestTemplate,
@@ -495,12 +415,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingAdservnames).forEach(([testTitle, param]) => {
       it(`should not send adservname because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -508,9 +428,9 @@ describe('microadBidAdapter', () => {
             })
           );
           expect(request.data.adservname).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
 
     it('should send adservadslot', () => {
       const bidRequest = Object.assign({}, bidRequestTemplate, {
@@ -525,7 +445,7 @@ describe('microadBidAdapter', () => {
           }
         }
       });
-      const requests = spec.buildRequests([bidRequest], bidderRequest)
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
       requests.forEach(request => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
@@ -533,8 +453,8 @@ describe('microadBidAdapter', () => {
             adservadslot: '/1111/home'
           })
         );
-      })
-    })
+      });
+    });
 
     const notGettingAdservadslots = {
       'it is not existing': bidRequestTemplate,
@@ -550,12 +470,12 @@ describe('microadBidAdapter', () => {
           }
         }
       }
-    }
+    };
 
     Object.entries(notGettingAdservadslots).forEach(([testTitle, param]) => {
       it(`should not send adservadslot because ${testTitle}`, () => {
         const bidRequest = Object.assign({}, bidRequestTemplate, param);
-        const requests = spec.buildRequests([bidRequest], bidderRequest)
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         requests.forEach(request => {
           expect(request.data).to.deep.equal(
             Object.assign({}, expectedResultTemplate, {
@@ -563,9 +483,9 @@ describe('microadBidAdapter', () => {
             })
           );
           expect(request.data.adservadslot).to.be.undefined;
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('interpretResponse', () => {

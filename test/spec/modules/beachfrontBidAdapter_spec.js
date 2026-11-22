@@ -333,54 +333,13 @@ describe('BeachfrontAdapter', function () {
         expect(data.source.ext.schain).to.deep.equal(schain);
       });
 
-      it('must add supported user IDs to the request', () => {
-        const userId = {
-          tdid: '54017816',
-          idl_env: '13024996',
-          uid2: { id: '45843401' },
-          hadronId: { hadronId: '60314917', auSeg: ['segment1', 'segment2'] }
-        };
+      it('must not add user IDs from a raw bid.userId to the request', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.userId = userId;
+        bidRequest.userId = { tdid: '54017816', idl_env: '13024996' };
         const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
-        expect(data.user.ext.eids).to.deep.equal([
-          {
-            source: 'adserver.org',
-            uids: [{
-              id: userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          },
-          {
-            source: 'liveramp.com',
-            uids: [{
-              id: userId.idl_env,
-              ext: {
-                rtiPartner: 'idl'
-              }
-            }]
-          },
-          {
-            source: 'uidapi.com',
-            uids: [{
-              id: userId.uid2.id,
-              ext: {
-                rtiPartner: 'UID2'
-              }
-            }]
-          },
-          {
-            source: 'audigent.com',
-            uids: [{
-              id: userId.hadronId,
-              atype: 1,
-            }]
-          }
-        ]);
+        expect(data.user?.ext?.eids).to.equal(undefined);
       });
     });
 
@@ -571,22 +530,13 @@ describe('BeachfrontAdapter', function () {
         expect(data.schain).to.deep.equal(schain);
       });
 
-      it('must add supported user IDs to the request', () => {
-        const userId = {
-          tdid: '54017816',
-          idl_env: '13024996',
-          uid2: { id: '45843401' },
-          hadronId: { hadronId: '60314917', auSeg: ['segment1', 'segment2'] }
-        };
+      it('must not add user IDs from a raw bid.userId to the request', () => {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
-        bidRequest.userId = userId;
+        bidRequest.userId = { tdid: '54017816', idl_env: '13024996' };
         const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
-        expect(data.tdid).to.equal(userId.tdid);
-        expect(data.idl).to.equal(userId.idl_env);
-        expect(data.uid2).to.equal(userId.uid2.id);
-        expect(data.hadronid).to.equal(userId.hadronId);
+        expect(data).to.not.have.any.keys('tdid', 'idl', 'uid2', 'hadronid');
       });
     });
 

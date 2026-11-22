@@ -57,7 +57,7 @@ export function createBannerRequest(br) {
     h,
     format,
     id: br.transactionId
-  }
+  };
 }
 
 /**

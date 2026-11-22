@@ -66,7 +66,7 @@ export const spec = {
     let isCorrectCPM = true;
     let minCPM;
     let maxCPM;
-    let bid = {};
+    let bid;
 
     const body = serverResponse.body;
 

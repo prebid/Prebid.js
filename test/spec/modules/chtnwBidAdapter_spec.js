@@ -42,7 +42,7 @@ describe('ChtnwAdapter', function () {
     let request;
     before(() => {
       request = spec.buildRequests(bidRequests);
-    })
+    });
 
     it('Returns POST method', function () {
       expect(request.method).to.equal('POST');
@@ -99,7 +99,7 @@ describe('ChtnwAdapter', function () {
     it('should register type is image', function () {
       const syncOptions = {
         'pixelEnabled': 'true'
-      }
+      };
       const userSync = spec.getUserSyncs(syncOptions);
       expect(userSync[0].type).to.equal('image');
       expect(userSync[0].url).to.have.string('ssp');

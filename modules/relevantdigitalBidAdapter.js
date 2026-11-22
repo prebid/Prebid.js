@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { deepSetValue, isEmpty, deepClone, shuffle, triggerPixel, deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'relevantdigital';
@@ -56,7 +56,7 @@ const getBidderConfig = (bids) => {
     }
   }
   return cfg;
-}
+};
 
 const converter = ortbConverter({
   context: {
@@ -100,10 +100,10 @@ export const spec = {
   /** Trigger impression-pixel */
   onBidWon(bid) {
     if (bid.pbsWurl) {
-      triggerPixel(bid.pbsWurl)
+      triggerPixel(bid.pbsWurl);
     }
     if (bid.burl) {
-      triggerPixel(bid.burl)
+      triggerPixel(bid.burl);
     }
   },
 

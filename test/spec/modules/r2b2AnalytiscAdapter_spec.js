@@ -1,12 +1,11 @@
-import r2b2Analytics, { resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
+import r2b2Analytics, { dep, resetAnalyticAdapter } from '../../../modules/r2b2AnalyticsAdapter.js';
 
 import { expect } from 'chai';
-import { EVENTS, AD_RENDER_FAILED_REASON, REJECTION_REASON } from 'src/constants.js';
+import { AD_RENDER_FAILED_REASON, EVENTS, REJECTION_REASON } from 'src/constants.js';
 import * as pbEvents from 'src/events.js';
-import * as ajax from 'src/ajax.js';
 import * as utils from 'src/utils';
-import { getGlobal } from 'src/prebidGlobal';
 import * as prebidGlobal from 'src/prebidGlobal';
+
 const adapterManager = require('src/adapterManager').default;
 
 const {
@@ -21,7 +20,7 @@ const AD_UNIT_1_CODE = 'prebid_300x300';
 const AD_UNIT_2_CODE = 'prebid_320x150';
 const R2B2_PID_1 = 'test.cz/s2s/300x300/mobile';
 const R2B2_PID_2 = 'test.cz/s2s/320x150/mobile';
-const AD_UNIT_1_TID = '0b3464bb-d80a-490e-8367-a65201a37ba3'
+const AD_UNIT_1_TID = '0b3464bb-d80a-490e-8367-a65201a37ba3';
 const AD_UNIT_2_TID = 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45';
 const AD_UNIT_2_AD_ID = '22c828c62d44da5';
 const AD_UNIT_1 = {
@@ -43,7 +42,7 @@ const AD_UNIT_1 = {
       'tid': AD_UNIT_1_TID
     }
   }
-}
+};
 const AD_UNIT_2 = {
   'code': AD_UNIT_2_CODE,
   'mediaTypes': {
@@ -117,7 +116,7 @@ const ADFORM_BIDDER_REQUEST = {
   'auctionStart': 1727160493004,
   'timeout': 10000,
   'start': 1727160493016
-}
+};
 const STROEER_BIDDER_REQUEST = {
   'bidderCode': 'stroeerCore',
   'auctionId': AUCTION_ID,
@@ -140,12 +139,11 @@ const STROEER_BIDDER_REQUEST = {
   'auctionStart': 1727160493004,
   'timeout': 10000,
   'start': 1727160493023
-}
+};
 const R2B2_AD_UNIT_2_BID = {
   'bidderCode': 'r2b2',
   'width': 300,
   'height': 100,
-  'statusMessage': 'Bid available',
   'adId': '22c828c62d44da5',
   'requestId': '3c296eca6b08f4',
   'transactionId': 'c8c3643c-9de0-43ea-bcd6-cc0072ec9b45',
@@ -180,7 +178,7 @@ const R2B2_AD_UNIT_2_BID = {
   },
   'latestTargetedAuctionId': AUCTION_ID,
   'status': 1
-}
+};
 
 const MOCK = {
   AUCTION_INIT: {
@@ -272,11 +270,11 @@ const MOCK = {
   },
   STALE_RENDER: R2B2_AD_UNIT_2_BID,
   BID_VIEWABLE: R2B2_AD_UNIT_2_BID
-}
+};
 function fireEvents(events) {
   return events.map((ev, i) => {
     ev = Array.isArray(ev) ? ev : [ev, { i: i }];
-    pbEvents.emit.apply(null, ev)
+    pbEvents.emit.apply(null, ev);
     return ev;
   });
 }
@@ -292,7 +290,7 @@ function expectEvents(events, sandbox) {
       },
       beBundledTo(bundleFn) {
         events.forEach(([eventType, args]) => {
-          sandbox.assert.calledWithMatch(bundleFn, sandbox.match.any, eventType, sandbox.match(args))
+          sandbox.assert.calledWithMatch(bundleFn, sandbox.match.any, eventType, sandbox.match(args));
         });
       },
     },
@@ -363,7 +361,7 @@ describe('r2b2 Analytics', function () {
 
   before(() => {
     enableAnalytics = r2b2Analytics.enableAnalytics;
-  })
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -372,7 +370,7 @@ describe('r2b2 Analytics', function () {
     getGlobalStub = sandbox.stub(prebidGlobal, 'getGlobal').returns({
       getHighestCpmBids: () => [R2B2_AD_UNIT_2_BID]
     });
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(dep, 'ajax');
 
     adapterManager.registerAnalyticsAdapter({
       code: 'r2b2',
@@ -490,7 +488,7 @@ describe('r2b2 Analytics', function () {
       }, 500);
 
       clock.tick(500);
-    })
+    });
 
     it('auction init content', (done) => {
       fireEvents([[AUCTION_INIT, MOCK.AUCTION_INIT]]);
@@ -506,13 +504,13 @@ describe('r2b2 Analytics', function () {
             [AD_UNIT_2_CODE]: ['r2b2', 'stroeerCore']
           },
           o: 1
-        })
+        });
 
         done();
       }, 500);
 
       clock.tick(500);
-    })
+    });
 
     it('auction multiple init', (done) => {
       const auction_init = MOCK.AUCTION_INIT;
@@ -932,8 +930,7 @@ describe('r2b2 Analytics', function () {
     });
 
     it('bid viewable content', (done) => {
-      const dateStub = sandbox.stub(Date, 'now');
-      dateStub.returns(100);
+      clock.setSystemTime(100);
 
       fireEvents([
         [AUCTION_INIT, MOCK.AUCTION_INIT],
@@ -941,7 +938,7 @@ describe('r2b2 Analytics', function () {
         [AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED]
       ]);
 
-      dateStub.returns(150);
+      clock.setSystemTime(150);
 
       fireEvents([[BID_VIEWABLE, MOCK.BID_VIEWABLE]]);
 
@@ -962,7 +959,6 @@ describe('r2b2 Analytics', function () {
       }, 500);
 
       clock.tick(500);
-      dateStub.restore();
     });
 
     it('no auction data error', (done) => {
@@ -992,7 +988,7 @@ describe('r2b2 Analytics', function () {
       fireEvents([
         [AUCTION_INIT, emptyAuctionInit],
         [AUCTION_END, emptyAuctionEnd],
-      ])
+      ]);
 
       setTimeout(() => {
         expect(ajaxStub.calledOnce).to.be.true;

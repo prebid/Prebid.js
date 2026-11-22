@@ -3,23 +3,23 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 // load modules that register ORTB processors
-import 'src/prebid.js'
-import 'modules/currency.js';
+import 'src/prebid.js';
+import { setConfig as setCurrencyConfig } from 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 
-const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
-const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
+const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p';
+const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p';
 
-const ADTYPE_IMG = 'Img';
-const ADTYPE_VIDEO = 'Video';
-const ADTYPE_NATIVE = 'Native';
+const MTYPE_BANNER = 1;
+const MTYPE_VIDEO = 2;
+const MTYPE_NATIVE = 4;
 
-const REFERRER = 'http://example.com/page.html'
-const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
+const REFERRER = 'http://example.com/page.html';
+const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU';
 const AUCTION_ID = '6653';
 
 const defaultBidderRequest = {
@@ -38,7 +38,7 @@ const defaultBidderRequest = {
 
 const BANNER_PREBID_MEDIATYPE = {
   sizes: [[300, 50]]
-}
+};
 
 const singleBannerBidRequest = {
   bidder: 'smaato',
@@ -63,7 +63,7 @@ const singleBannerBidRequest = {
 const extractPayloadOfFirstAndOnlyRequest = (reqs) => {
   expect(reqs).to.have.length(1);
   return JSON.parse(reqs[0].data);
-}
+};
 
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
@@ -111,7 +111,7 @@ describe('smaatoBidAdapterTest', () => {
         }
       ],
       topframe: 0,
-    }
+    };
 
     describe('common', () => {
       const MINIMAL_BIDDER_REQUEST = {
@@ -127,14 +127,14 @@ describe('smaatoBidAdapterTest', () => {
 
       afterEach(() => {
         sandbox.restore();
-      })
+      });
 
       it('auction type is 1 (first price auction)', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.at).to.be.equal(1);
-      })
+      });
 
       it('can override endpoint', () => {
         const overridenEndpoint = 'https://prebid/bidder';
@@ -170,9 +170,9 @@ describe('smaatoBidAdapterTest', () => {
             return {
               currency: 'USD',
               floor: 0.123
-            }
+            };
           }
-        }
+        };
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
@@ -192,9 +192,9 @@ describe('smaatoBidAdapterTest', () => {
             return {
               currency: 'USD',
               floor: 0.101
-            }
+            };
           }
-        }
+        };
         const reqs = spec.buildRequests([singleBannerMultipleSizesBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
@@ -203,23 +203,23 @@ describe('smaatoBidAdapterTest', () => {
 
       it('sends undefined bidfloor when not a function', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
-        singleBannerBidRequestWithFloor.getFloor = 0
+        singleBannerBidRequestWithFloor.getFloor = 0;
 
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].bidfloor).to.be.undefined
+        expect(req.imp[0].bidfloor).to.be.undefined;
       });
 
       it('sends undefined bidfloor when invalid', () => {
         const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest);
         singleBannerBidRequestWithFloor.getFloor = function () {
           return undefined;
-        }
+        };
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.imp[0].bidfloor).to.be.undefined
+        expect(req.imp[0].bidfloor).to.be.undefined;
       });
 
       it('sends undefined bidfloor when not a number', () => {
@@ -227,8 +227,8 @@ describe('smaatoBidAdapterTest', () => {
         singleBannerBidRequestWithFloor.getFloor = function () {
           return {
             currency: 'USD',
-          }
-        }
+          };
+        };
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
@@ -241,12 +241,55 @@ describe('smaatoBidAdapterTest', () => {
           return {
             currency: 'EUR',
             floor: 0.123
-          }
-        }
+          };
+        };
         const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.imp[0].bidfloor).to.be.undefined;
+      });
+
+      it('sends the bidfloor set in ortb2Imp when getFloor is not available', () => {
+        const bidRequestWithImpFloor = Object.assign({}, singleBannerBidRequest, {
+          ortb2Imp: { bidfloor: 0.5, bidfloorcur: 'USD' }
+        });
+
+        const reqs = spec.buildRequests([bidRequestWithImpFloor], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0]).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      });
+
+      describe('with currency conversion rates', () => {
+        beforeEach(() => {
+          setCurrencyConfig({ adServerCurrency: 'USD', rates: { USD: { EUR: 0.5 } } });
+        });
+
+        afterEach(() => {
+          setCurrencyConfig({});
+        });
+
+        it('converts a bidfloor in another currency to USD', () => {
+          const singleBannerBidRequestWithFloor = Object.assign({}, singleBannerBidRequest, {
+            getFloor: () => ({ currency: 'EUR', floor: 1 })
+          });
+
+          const reqs = spec.buildRequests([singleBannerBidRequestWithFloor], defaultBidderRequest);
+
+          const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+          expect(req.imp[0]).to.include({ bidfloor: 2, bidfloorcur: 'USD' });
+        });
+
+        it('converts an ortb2Imp bidfloor in another currency to USD', () => {
+          const bidRequestWithImpFloor = Object.assign({}, singleBannerBidRequest, {
+            ortb2Imp: { bidfloor: 1, bidfloorcur: 'EUR' }
+          });
+
+          const reqs = spec.buildRequests([bidRequestWithImpFloor], defaultBidderRequest);
+
+          const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+          expect(req.imp[0]).to.include({ bidfloor: 2, bidfloorcur: 'USD' });
+        });
       });
 
       it('sends correct site', () => {
@@ -258,7 +301,7 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.site.page).to.exist.and.to.be.a('string');
         expect(req.site.ref).to.equal(REFERRER);
         expect(req.site.publisher.id).to.equal('publisherId');
-      })
+      });
 
       it('sends correct site from ortb2', () => {
         const domain = 'domain';
@@ -282,7 +325,7 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.site.ref).to.equal(ref);
         expect(req.site.publisher.id).to.equal('publisherId');
         expect(req.dooh).to.be.undefined;
-      })
+      });
 
       it('sends correct dooh from ortb2', () => {
         const name = 'name';
@@ -308,15 +351,15 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.dooh.venuetypetax).to.equal(venuetypetax);
         expect(req.dooh.publisher.id).to.equal('publisherId');
         expect(req.site).to.be.undefined;
-      })
+      });
 
       it('sends correct device from ortb2', () => {
-        const language = 'language'
-        const ua = 'ua'
-        const sua = 'sua'
-        const dnt = 1
-        const w = 2
-        const h = 3
+        const language = 'language';
+        const ua = 'ua';
+        const sua = 'sua';
+        const dnt = 1;
+        const w = 2;
+        const h = 3;
         const ortb2 = {
           device: {
             language: language,
@@ -337,7 +380,7 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.device.dnt).to.equal(dnt);
         expect(req.device.w).to.equal(w);
         expect(req.device.h).to.equal(h);
-      })
+      });
 
       it('sends gdpr applies if exists', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
@@ -358,7 +401,7 @@ describe('smaatoBidAdapterTest', () => {
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.regs.coppa).to.equal(1);
-      })
+      });
 
       it('sends no gdpr applies if no gdpr exists', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], MINIMAL_BIDDER_REQUEST);
@@ -535,57 +578,57 @@ describe('smaatoBidAdapterTest', () => {
       });
     });
 
-    describe('buildRequests for video imps', () => {
-      const VIDEO_OUTSTREAM_PREBID_MEDIATYPE = {
-        context: 'outstream',
-        playerSize: [[768, 1024]],
-        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-        minduration: 5,
-        maxduration: 30,
-        startdelay: 0,
-        linearity: 1,
-        protocols: [7],
-        skip: 1,
-        skipmin: 5,
-        api: [7],
-        ext: { rewarded: 0 }
-      };
-      const VIDEO_OUTSTREAM_OPENRTB_IMP = {
-        mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
-        minduration: 5,
-        startdelay: 0,
-        linearity: 1,
-        h: 1024,
-        maxduration: 30,
-        skip: 1,
-        protocols: [7],
-        ext: {
-          rewarded: 0
-        },
-        skipmin: 5,
-        api: [7],
-        w: 768
-      };
-      const singleVideoBidRequest = {
-        bidder: 'smaato',
-        params: {
-          publisherId: 'publisherId',
-          adspaceId: 'adspaceId'
-        },
-        mediaTypes: {
-          video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
-        },
-        adUnitCode: '/19968336/header-bid-tag-0',
-        transactionId: 'transactionId',
-        bidId: 'bidId',
-        bidderRequestId: 'bidderRequestId',
-        src: 'client',
-        bidRequestsCount: 1,
-        bidderRequestsCount: 1,
-        bidderWinsCount: 0
-      };
+    if (FEATURES.VIDEO) {
+      describe('buildRequests for video imps', () => {
+        const VIDEO_OUTSTREAM_PREBID_MEDIATYPE = {
+          context: 'outstream',
+          playerSize: [[768, 1024]],
+          mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+          minduration: 5,
+          maxduration: 30,
+          startdelay: 0,
+          linearity: 1,
+          protocols: [7],
+          skip: 1,
+          skipmin: 5,
+          api: [7],
+          ext: { rewarded: 0 }
+        };
+        const VIDEO_OUTSTREAM_OPENRTB_IMP = {
+          mimes: ['video/mp4', 'video/quicktime', 'video/3gpp', 'video/x-m4v'],
+          minduration: 5,
+          startdelay: 0,
+          linearity: 1,
+          h: 1024,
+          maxduration: 30,
+          skip: 1,
+          protocols: [7],
+          ext: {
+            rewarded: 0
+          },
+          skipmin: 5,
+          api: [7],
+          w: 768
+        };
+        const singleVideoBidRequest = {
+          bidder: 'smaato',
+          params: {
+            publisherId: 'publisherId',
+            adspaceId: 'adspaceId'
+          },
+          mediaTypes: {
+            video: VIDEO_OUTSTREAM_PREBID_MEDIATYPE
+          },
+          adUnitCode: '/19968336/header-bid-tag-0',
+          transactionId: 'transactionId',
+          bidId: 'bidId',
+          bidderRequestId: 'bidderRequestId',
+          src: 'client',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        };
 
-      if (FEATURES.VIDEO) {
         it('sends correct video imps', () => {
           const reqs = spec.buildRequests([singleVideoBidRequest], defaultBidderRequest);
 
@@ -605,9 +648,9 @@ describe('smaatoBidAdapterTest', () => {
               return {
                 currency: 'USD',
                 floor: 0.456
-              }
+              };
             }
-          }
+          };
           const reqs = spec.buildRequests([singleVideoBidRequestWithFloor], defaultBidderRequest);
 
           const req = extractPayloadOfFirstAndOnlyRequest(reqs);
@@ -654,8 +697,8 @@ describe('smaatoBidAdapterTest', () => {
           expect(JSON.parse(reqs[1].data).imp[0].banner).to.not.exist;
           expect(JSON.parse(reqs[1].data).imp[0].video).to.deep.equal(VIDEO_OUTSTREAM_OPENRTB_IMP);
         });
-      }
-    });
+      });
+    }
 
     if (FEATURES.NATIVE) {
       describe('buildRequests for native imps', () => {
@@ -752,7 +795,7 @@ describe('smaatoBidAdapterTest', () => {
             },
             {
               id: 12,
-              require: 0,
+              required: 0,
               data: {
                 type: 10
               }
@@ -810,9 +853,9 @@ describe('smaatoBidAdapterTest', () => {
               return {
                 currency: 'USD',
                 floor: 0.123
-              }
+              };
             }
-          }
+          };
           const reqs = spec.buildRequests([singleNativeBidRequestWithFloor], defaultBidderRequest);
 
           const req = extractPayloadOfFirstAndOnlyRequest(reqs);
@@ -824,8 +867,8 @@ describe('smaatoBidAdapterTest', () => {
       const LOCATION = {
         lat: 33.3,
         lon: -88.8
-      }
-      const DEVICE_ID = 'aDeviceId'
+      };
+      const DEVICE_ID = 'aDeviceId';
       const inAppBidRequestWithoutAppParams = {
         bidder: 'smaato',
         params: {
@@ -975,6 +1018,16 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.source.ext.schain).to.deep.equal(schain);
       });
+
+      it('keeps the other source fields', () => {
+        const ortb2 = { source: { tid: 'sourceTid', ext: { schain: { ver: '1.0', complete: 1, nodes: [] } } } };
+        const bidRequestWithSource = Object.assign({}, singleBannerBidRequest, { ortb2 });
+
+        const reqs = spec.buildRequests([bidRequestWithSource], { ...defaultBidderRequest, ortb2 });
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.tid).to.equal('sourceTid');
+      });
     });
   });
 
@@ -984,7 +1037,7 @@ describe('smaatoBidAdapterTest', () => {
         method: 'POST',
         url: 'https://prebid.ad.smaato.net/oapi/prebid',
         data: JSON.stringify(payloadAsJsObj)
-      }
+      };
     }
 
     const NATIVE_RESPONSE = {
@@ -1061,23 +1114,23 @@ describe('smaatoBidAdapterTest', () => {
         }
       ],
       privacy: 'https://privacy.com/'
-    }
+    };
 
-    const buildOpenRtbBidResponse = (adType) => {
-      let adm = '';
+    const buildOpenRtbBidResponse = (mtype) => {
+      let adm;
 
-      switch (adType) {
-        case ADTYPE_IMG:
-          adm = '<a rel="nofollow" href="https://prebid.net/click"><img src="https://prebid.net/images/image.png" alt="" width="480" height="320" /></a>'
+      switch (mtype) {
+        case MTYPE_BANNER:
+          adm = '<a rel="nofollow" href="https://prebid.net/click"><img src="https://prebid.net/images/image.png" alt="" width="480" height="320" /></a>';
           break;
-        case ADTYPE_VIDEO:
+        case MTYPE_VIDEO:
           adm = '<VAST version="2.0"></VAST>';
           break;
-        case ADTYPE_NATIVE:
-          adm = JSON.stringify({ native: NATIVE_RESPONSE })
+        case MTYPE_NATIVE:
+          adm = JSON.stringify({ native: NATIVE_RESPONSE });
           break;
         default:
-          throw Error('Invalid AdType');
+          throw Error('Invalid mtype');
       }
 
       return {
@@ -1101,6 +1154,7 @@ describe('smaatoBidAdapterTest', () => {
                   'id': '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
                   'impid': '226416e6e6bf41',
                   'iurl': 'https://prebid/iurl',
+                  'mtype': mtype,
                   'nurl': 'https://prebid/nurl',
                   'price': 0.01,
                   'w': 350,
@@ -1115,11 +1169,7 @@ describe('smaatoBidAdapterTest', () => {
           ],
         },
         headers: {
-          get: function (header) {
-            if (header === 'X-SMT-ADTYPE') {
-              return adType;
-            }
-          }
+          get: () => undefined
         }
       };
     };
@@ -1134,7 +1184,7 @@ describe('smaatoBidAdapterTest', () => {
 
     describe('non ad pod', () => {
       it('single banner response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_BANNER), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1160,7 +1210,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('single video response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_VIDEO), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_VIDEO), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1186,7 +1236,7 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('single native response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_NATIVE), buildBidRequest());
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(MTYPE_NATIVE), buildBidRequest());
 
         expect(bids).to.deep.equal([
           {
@@ -1213,69 +1263,41 @@ describe('smaatoBidAdapterTest', () => {
         ]);
       });
 
-      it('ignores bid response with invalid ad type', () => {
-        const serverResponse = buildOpenRtbBidResponse(ADTYPE_IMG);
-        serverResponse.headers.get = (header) => {
-          if (header === 'X-SMT-ADTYPE') {
-            return undefined;
-          }
-        };
+      it('ignores a bid without mtype', () => {
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
+        delete serverResponse.body.seatbid[0].bid[0].mtype;
 
         const bids = spec.interpretResponse(serverResponse, buildBidRequest());
 
         expect(bids).to.be.empty;
       });
-    });
 
-    describe('ad pod', () => {
-      const PRIMARY_CAT_ID = 1337
-      const serverResponse = {
-        body: {
-          bidid: '04db8629-179d-4bcd-acce-e54722969006',
-          cur: 'USD',
-          ext: {},
-          id: '5ebea288-f13a-4754-be6d-4ade66c68877',
-          seatbid: [
-            {
-              bid: [
-                {
-                  adm: '<VAST version="2.0"></VAST>',
-                  adomain: [
-                    'smaato.com'
-                  ],
-                  bidderName: 'smaato',
-                  cid: 'CM6523',
-                  crid: 'CR69381',
-                  dealid: '12345',
-                  id: '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
-                  impid: '226416e6e6bf41',
-                  iurl: 'https://prebid/iurl',
-                  nurl: 'https://prebid/nurl',
-                  price: 0.01,
-                  w: 350,
-                  h: 50,
-                  cat: [PRIMARY_CAT_ID],
-                  ext: {
-                    duration: 42
-                  }
-                }
-              ],
-              seat: 'CM6523'
-            }
-          ]
-        },
-        headers: { get: () => undefined }
-      };
+      it('ignores a bid with an unsupported mtype', () => {
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
+        serverResponse.body.seatbid[0].bid[0].mtype = 3;
+
+        const bids = spec.interpretResponse(serverResponse, buildBidRequest());
+
+        expect(bids).to.be.empty;
+      });
+
+      it('escapes single quotes in click tracking urls', () => {
+        const clickUrl = "https://prebid/track/click?q=it's";
+        const serverResponse = buildOpenRtbBidResponse(MTYPE_BANNER);
+        serverResponse.body.seatbid[0].bid[0].ext.curls = [clickUrl];
+
+        const bids = spec.interpretResponse(serverResponse, buildBidRequest());
+
+        const [, quotedUrl] = bids[0].ad.match(/decodeURIComponent\('([^']*)'\)/);
+        expect(decodeURIComponent(quotedUrl)).to.equal(clickUrl);
+      });
     });
 
     it('uses correct TTL when expire header exists', () => {
       const clock = sinon.useFakeTimers();
       clock.tick(2000);
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       resp.headers.get = (header) => {
-        if (header === 'X-SMT-ADTYPE') {
-          return ADTYPE_IMG;
-        }
         if (header === 'X-SMT-Expires') {
           return 2000 + (400 * 1000);
         }
@@ -1289,7 +1311,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('uses net revenue flag send from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       resp.body.seatbid[0].bid[0].ext = { net: false };
 
       const bids = spec.interpretResponse(resp, buildBidRequest());
@@ -1298,7 +1320,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('uses dsa object sent from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
       const dsa = {
         behalf: 'advertiser',
         paid: 'advertiser',
@@ -1318,8 +1340,8 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('does not use dsa object if not sent from server', () => {
-      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
-      resp.body.seatbid[0].bid[0].ext = {}
+      const resp = buildOpenRtbBidResponse(MTYPE_BANNER);
+      resp.body.seatbid[0].bid[0].ext = {};
 
       const bids = spec.interpretResponse(resp, buildBidRequest());
 
@@ -1330,11 +1352,11 @@ describe('smaatoBidAdapterTest', () => {
   describe('getUserSyncs', () => {
     afterEach(() => {
       config.resetConfig();
-    })
+    });
 
     it('when pixelEnabled and iframeEnabled false then returns no syncs', () => {
-      expect(spec.getUserSyncs()).to.be.empty
-    })
+      expect(spec.getUserSyncs()).to.be.empty;
+    });
 
     it('when pixelEnabled true then returns image sync', () => {
       expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null)).to.deep.equal(
@@ -1344,8 +1366,8 @@ describe('smaatoBidAdapterTest', () => {
             url: IMAGE_SYNC_URL
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when iframeEnabled true then returns iframe sync', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, null, null, null)).to.deep.equal(
@@ -1355,8 +1377,8 @@ describe('smaatoBidAdapterTest', () => {
             url: IFRAME_SYNC_URL
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when iframeEnabled true and syncsPerBidder then returns iframe sync', () => {
       config.setConfig({ userSync: { syncsPerBidder: 5 } });
@@ -1367,8 +1389,8 @@ describe('smaatoBidAdapterTest', () => {
             url: `${IFRAME_SYNC_URL}&maxUrls=5`
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when iframeEnabled and pixelEnabled true then returns iframe sync', () => {
       expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, null, null, null)).to.deep.equal(
@@ -1378,8 +1400,8 @@ describe('smaatoBidAdapterTest', () => {
             url: IFRAME_SYNC_URL
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when pixelEnabled true and gdprConsent then returns image sync with gdpr params', () => {
       expect(spec.getUserSyncs({ pixelEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, null)).to.deep.equal(
@@ -1389,8 +1411,8 @@ describe('smaatoBidAdapterTest', () => {
             url: `${IMAGE_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when iframeEnabled true and gdprConsent then returns iframe with gdpr params', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, null)).to.deep.equal(
@@ -1400,8 +1422,8 @@ describe('smaatoBidAdapterTest', () => {
             url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when pixelEnabled true and gdprConsent without gdpr then returns pixel sync with gdpr_consent', () => {
       expect(spec.getUserSyncs({ pixelEnabled: true }, null, { consentString: CONSENT_STRING }, null), null).to.deep.equal(
@@ -1411,8 +1433,8 @@ describe('smaatoBidAdapterTest', () => {
             url: `${IMAGE_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
           }
         ]
-      )
-    })
+      );
+    });
 
     it('when iframeEnabled true and gdprConsent without gdpr then returns iframe sync with gdpr_consent', () => {
       expect(spec.getUserSyncs({ iframeEnabled: true }, null, { consentString: CONSENT_STRING }, null), null).to.deep.equal(
@@ -1422,7 +1444,52 @@ describe('smaatoBidAdapterTest', () => {
             url: `${IFRAME_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
           }
         ]
-      )
-    })
-  })
+      );
+    });
+
+    it('when pixelEnabled true and uspConsent then returns image sync with us_privacy', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, '1YNN')).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&us_privacy=1YNN`
+          }
+        ]
+      );
+    });
+
+    it('when pixelEnabled true and gppConsent then returns image sync with gpp params', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null, { gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [7, 8] })).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&gpp=DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gpp_sid=7%2C8`
+          }
+        ]
+      );
+    });
+
+    it('when pixelEnabled true and coppa then returns image sync with coppa', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, null, null, null, null, true)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&coppa=1`
+          }
+        ]
+      );
+    });
+
+    it('when iframeEnabled true and all consent signals then returns iframe sync with all consent params', () => {
+      config.setConfig({ userSync: { syncsPerBidder: 5 } });
+      expect(spec.getUserSyncs({ iframeEnabled: true }, null, { gdprApplies: true, consentString: CONSENT_STRING }, '1YNN', { gppString: 'GPP', applicableSections: [2] }, true)).to.deep.equal(
+        [
+          {
+            type: 'iframe',
+            url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}&us_privacy=1YNN&gpp=GPP&gpp_sid=2&coppa=1&maxUrls=5`
+          }
+        ]
+      );
+    });
+  });
 });

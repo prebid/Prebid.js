@@ -34,8 +34,8 @@ export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: bid => {
     requestId = '';
-    requestId = bid.bidId
-    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'bedigitech'
+    requestId = bid.bidId;
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'bedigitech';
   },
 
   buildRequests: (bidRequests) => {

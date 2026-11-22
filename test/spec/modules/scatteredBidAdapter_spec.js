@@ -1,6 +1,5 @@
 import { spec, converter } from 'modules/scatteredBidAdapter.js';
 import { assert } from 'chai';
-import { config } from 'src/config.js';
 import { deepClone, mergeDeep } from '../../../src/utils.js';
 describe('Scattered adapter', function () {
   describe('isBidRequestValid', function () {
@@ -104,7 +103,7 @@ describe('Scattered adapter', function () {
     it('should configure the site object', function () {
       const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
       const site = request.data.site;
-      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name)
+      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name);
     });
 
     it('should configure site with ortb2', function () {
@@ -131,20 +130,17 @@ describe('Scattered adapter', function () {
     });
 
     it('should send device info', function () {
-      it('should send info about device', function () {
-        config.setConfig({
-          device: { w: 375, h: 273 }
-        });
-
-        const request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
-
-        assert.equal(request.device.ua, navigator.userAgent);
-        assert.equal(request.device.w, 375);
-        assert.equal(request.device.h, 273);
+      const bidderRequest = Object.assign({}, validBidderRequest, {
+        ortb2: Object.assign({}, validBidderRequest.ortb2, { device: { ua: navigator.userAgent, w: 375, h: 273 } })
       });
-    })
-  })
-})
+      const request = spec.buildRequests(arrayOfValidBidRequests, bidderRequest);
+
+      assert.equal(request.data.device.ua, navigator.userAgent);
+      assert.equal(request.data.device.w, 375);
+      assert.equal(request.data.device.h, 273);
+    });
+  });
+});
 
 describe('interpretResponse', function () {
   const serverResponse = {

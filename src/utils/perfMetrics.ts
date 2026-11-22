@@ -31,7 +31,7 @@ export type InstrumentedNext<F extends AnyFunction> = Next<F> & {
    */
   untimed: Next<F>;
   stopTiming: MetricsTimer;
-}
+};
 
 function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () => void): Wraps<F> {
   return function (...args) {
@@ -74,7 +74,7 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
         const names = rename(name);
         self.dfWalk({
           follow(inEdge, outEdge) {
-            return outEdge.propagate && (!inEdge || !inEdge.stopPropagation)
+            return outEdge.propagate && (!inEdge || !inEdge.stopPropagation);
           },
           visit(edge, node) {
             names.forEach(name => {
@@ -86,7 +86,7 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
                 }
                 node.groups[name].push(value);
               }
-            })
+            });
           }
         });
       }
@@ -141,7 +141,7 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
        * @param name metric name
        */
       function startTiming(name: string): MetricsTimer {
-        return mkTimer(now, (val) => setMetric(name, val))
+        return mkTimer(now, (val) => setMetric(name, val));
       }
 
       /**
@@ -179,10 +179,18 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
        * Get all registered metrics.
        */
       function getMetrics(): { [name: string]: unknown } {
-        let result = {}
+        const result = {};
         self.dfWalk({
           visit(edge, node) {
-            result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
+            const addMetric = (name, value) => {
+              if (!Object.prototype.hasOwnProperty.call(result, name)) {
+                result[name] = value;
+              }
+            };
+            Object.entries(node.metrics).forEach(([name, value]) => addMetric(name, value));
+            if (!edge || edge.includeGroups) {
+              Object.entries(node.groups).forEach(([name, value]) => addMetric(name, value));
+            }
           }
         });
         return result;
@@ -301,7 +309,7 @@ export function metricsFactory({ now = getTime, mkNode = makeNode, mkTimer = mak
     }
 
     return makeMetrics(mkNode([]));
-  }
+  };
 }
 
 function makeTimer(now: () => number, cb: (elapsed: number) => void): MetricsTimer {
@@ -366,7 +374,7 @@ const nullMetrics: Metrics = (() => {
 })();
 
 let enabled = true;
-config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE] });
+config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE]; });
 
 /**
  * convenience fallback function for metrics that may be undefined, especially during tests.
@@ -379,7 +387,7 @@ export const newMetrics = (() => {
   const makeMetrics = metricsFactory();
   return function (): Metrics {
     return enabled ? makeMetrics() : nullMetrics;
-  }
+  };
 })();
 
 export function hookTimer<TYP extends HookType, F extends AnyFunction>(prefix: string, getMetrics: (...args: Parameters<F>) => Metrics) {
@@ -388,9 +396,9 @@ export function hookTimer<TYP extends HookType, F extends AnyFunction>(prefix: s
       return useMetrics(getMetrics.apply(this, args)).measureHookTime(prefix + name, next, (next) => {
         return hookFn.call(this, next, ...args);
       });
-    }
-  }
+    };
+  };
 }
 
 export const timedAuctionHook = hookTimer<'async', (options: PrivRequestBidsOptions | StartAuctionOptions) => void>('requestBids.', (req) => req.metrics);
-export const timedBidResponseHook = hookTimer<'async', typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics)
+export const timedBidResponseHook = hookTimer<'async', typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics);

@@ -67,7 +67,7 @@ export function getBidFloor(bid, currency, mediaType) {
  */
 function getFloor(bid, mediaType, width, height, currency) {
   return bid.getFloor?.({ currency, mediaType, size: [width, height] })
-    .floor || bid.params.bidfloor || -1;
+    .floor || bid.params?.bidfloor || -1;
 }
 
 /**

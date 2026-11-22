@@ -1,10 +1,12 @@
 import type { BidderCode, StorageDisclosure } from "../../src/types/common";
 import { STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType } from "../../src/storageManager.ts";
-import type { AllConsentData } from "../../src/consentHandler.ts";
+import type { AllConsentData, GVLIDs, VENDORLESS_GVLID } from "../../src/consentHandler.ts";
 import type { Ext } from '../../src/types/ortb/common';
 import type { ORTBRequest } from "../../src/types/ortb/request";
 
 export type UserIdProvider = string;
+
+export type EID = NonNullable<NonNullable<ORTBRequest['user']>['eids']>[number];
 
 export interface UserId {
   [idName: string]: unknown;
@@ -69,10 +71,10 @@ export interface UserIdConfig<P extends UserIdProvider> {
    * Used only if the page has a separate mechanism for storing a User ID.
    * The value is an object containing the values to be sent to the adapters.
    */
-  value?: UserIdFor<P>;
+  value?: DecodedId<P>;
 }
 
-type SerializableId = string | Record<string, unknown>;
+export type SerializableId = string | Record<string, unknown>;
 
 /**
  * If your module can provide ID data synchronously it should set id directly; otherwise it should provide a callback that calls its first argument setId passing it ID data.
@@ -86,10 +88,50 @@ export type ProviderResponse = {
    */
   id?: SerializableId;
   /**
-   * If provided, will be invoked at a later point.
+   * If provided, will be invoked at a later point. Its first `setId` call completes it; later calls still update
+   * the ID.
    */
-  callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
-}
+  callback?: (
+    setId: (id?: SerializableId) => void,
+    /**
+     * @deprecated use the `handle` passed to getId / extendId
+     */
+    getStoredValue: (key?: string) => SerializableId | undefined
+  ) => void;
+};
+
+/**
+ * Storage access passed to getId / extendId, usable until the invocation completes: when getId / extendId returns
+ * without a callback, or when its callback first calls `setId`.
+ *
+ * By default the User ID module stores the ID data a submodule reports (as `id`, or through the callback's
+ * `setId`), and reporting none keeps the current ID. A submodule that calls `manage`, `set`, `touch` or `remove`
+ * manages storage itself instead: the ID data it reports then only updates the ID in memory, and reporting none
+ * clears it.
+ */
+export type IdHandle = {
+  /**
+   * The stored ID data, if any.
+   */
+  get(): SerializableId | undefined;
+  /**
+   * Manage storage for this invocation without writing anything (yet).
+   */
+  manage(): void;
+  /**
+   * Store ID data, as the User ID module does with the ID data a submodule reports.
+   */
+  set(value: SerializableId): void;
+  /**
+   * Mark the stored ID data as current (for consent and refresh checks, and html5 expiry) without writing it,
+   * for example because something else, such as a server's Set-Cookie, wrote it.
+   */
+  touch(): void;
+  /**
+   * Delete the stored ID data.
+   */
+  remove(): void;
+};
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
 
@@ -123,9 +165,9 @@ type EIDConfig<K extends keyof UserId> = {
    * Returns an object to use for eids.uid.ext
    */
   getUidExt?: (id: IdValue<K>) => Ext;
-}
+};
 
-type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => ORTBRequest['user']['eids'] | ORTBRequest['user']['eids'][number];
+type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => EID | EID[];
 
 export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   /**
@@ -135,8 +177,16 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   aliasName?: UserIdProvider;
   /**
    * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
+   * May be a list, for modules that act on behalf of several vendors; all of them then need a legal basis.
    */
-  gvlid?: number;
+  gvlid?: GVLIDs | typeof VENDORLESS_GVLID;
+  /**
+   * Google Additional Consent provider ID, for vendors that are not on the GVL.
+   * Used by the TCF control module to check vendor consent against the CMP's Additional Consent string
+   * when the module has no GVL ID. This is a different ID space from GVL IDs.
+   * @see https://support.google.com/admanager/answer/9681920
+   */
+  acpId?: number;
   disclosureURL?: string;
   /**
    * Invoked when:
@@ -146,9 +196,10 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
    *  - the publisher explicitly asked for a refresh using refreshUserIds.
    * @param config Configuration for your module as provided by the publisher
    * @param consentData available consent data (when the relevant modules are present)
-   * @param storedId Your previously stored ID data, if any, as was returned by getId or extendId
+   * @param storedId Your previously stored ID data, if any
+   * @param handle Storage access for this invocation
    */
-  getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId?: SerializableId) => ProviderResponse;
+  getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId: SerializableId | undefined, handle: IdHandle) => ProviderResponse;
   /**
    * If provided, it’s invoked when getId is not; namely:
    *
@@ -177,7 +228,7 @@ export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
   eids?: {
     [K in keyof UserId]?: K extends string ? EIDConfig<K> | EIDFn<K, P> : never;
   }
-}
+};
 
 declare module '../../src/hook' {
   interface Submodules {

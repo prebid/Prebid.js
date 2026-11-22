@@ -71,8 +71,8 @@ describe('TNCID tests', function () {
     it('TNCID is returned if page has TNC script with ns: __tnc', async function () {
       Object.defineProperty(window, '__tnc', {
         value: {
-          ready: (readyFunc) => { readyFunc() },
-          getTNCID: async (name) => { return 'TNCID_TEST_ID_1' },
+          ready: (readyFunc) => { readyFunc(); },
+          getTNCID: async (name) => { return 'TNCID_TEST_ID_1'; },
         },
         configurable: true
       });
@@ -95,8 +95,8 @@ describe('TNCID tests', function () {
     it('TNCID is returned if page has TNC script with ns: __tncPbjs', async function () {
       Object.defineProperty(window, '__tncPbjs', {
         value: {
-          ready: (readyFunc) => { readyFunc() },
-          getTNCID: async (name) => { return 'TNCID_TEST_ID_2' },
+          ready: (readyFunc) => { readyFunc(); },
+          getTNCID: async (name) => { return 'TNCID_TEST_ID_2'; },
           options: {},
         },
         configurable: true,

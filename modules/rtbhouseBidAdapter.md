@@ -57,7 +57,7 @@ Please reach out to pmp@rtbhouse.com to receive your own
                         bidder: "rtbhouse",
                         params: {
                             region: 'prebid-eu',
-                            publisherId: 'PREBID_TEST_ID'
+                            publisherId: 'PREBID_TEST_ID',
                             bidfloor: 0.01  // optional
                         }
                     }

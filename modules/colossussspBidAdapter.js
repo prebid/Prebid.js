@@ -13,24 +13,12 @@ import {
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('./colossussspBidAdapter.d.ts').ColossussspBidParams} ColossussspBidParams
  */
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
 const G_URL_SYNC = 'https://sync.colossusssp.com';
-
-function getUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [uid]
-    });
-  }
-}
 
 const addPlacementType = (bid, bidderRequest, placement) => {
   placement.placementId = bid.params.placement_id;
@@ -53,12 +41,6 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   placement.eids = placement.eids || [];
-  if (bid.userId) {
-    getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
-    getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
-    getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
-    getUserId(placement.eids, bid.userId.tdid, 'adserver.org', { rtiPartner: 'TDID' });
-  }
 
   placement.floor = {};
   if (typeof bid.getFloor === 'function' && placement.sizes) {
@@ -71,6 +53,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   delete placement.bidfloor;
+  delete placement.floors;
   delete placement.plcmt;
   delete placement.ext;
 };

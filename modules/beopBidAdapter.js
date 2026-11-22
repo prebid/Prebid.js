@@ -64,10 +64,10 @@ export const spec = {
   isBidRequestValid: function(bid) {
     const id = bid.params.accountId || bid.params.networkId;
     if (id === null || typeof id === 'undefined') {
-      return false
+      return false;
     }
     if (!validIdRegExp.test(id)) {
-      return false
+      return false;
     }
     return bid.mediaTypes.banner !== null && typeof bid.mediaTypes.banner !== 'undefined';
   },
@@ -130,7 +130,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString
-    }
+    };
   },
   interpretResponse: function(serverResponse, request) {
     if (serverResponse && serverResponse.body && isArray(serverResponse.body.bids) && serverResponse.body.bids.length > 0) {
@@ -198,7 +198,7 @@ export const spec = {
 
     return syncs;
   }
-}
+};
 
 function buildTrackingParams(data, info, value) {
   const params = Array.isArray(data.params) ? data.params[0] : data.params || {};
@@ -280,15 +280,15 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
     eids: bid.userIdAsEids,
-  }
+  };
 }
 
-const protocolRelativeRegExp = /^\/\//
+const protocolRelativeRegExp = /^\/\//;
 function isProtocolRelativeUrl(url) {
   return url && url.match(protocolRelativeRegExp) != null;
 }
 
-const withProtocolRegExp = /[a-z]{1,}:\/\//
+const withProtocolRegExp = /[a-z]{1,}:\/\//;
 function isNoProtocolUrl(url) {
   return url && url.match(withProtocolRegExp) == null;
 }
@@ -309,7 +309,7 @@ function ensureProtocolInUrl(url, defaultProtocol) {
  */
 function safeDeepAccess(obj, path) {
   try {
-    return deepAccess(obj, path)
+    return deepAccess(obj, path);
   } catch (_e) {
     return null;
   }

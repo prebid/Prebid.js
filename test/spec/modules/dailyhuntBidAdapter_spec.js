@@ -2,14 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/dailyhuntBidAdapter.js';
 
 const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
-
-const _encodeURIComponent = function (a) {
-  if (!a) { return }
-  let b = window.encodeURIComponent(a);
-  b = b.replace(/'/g, '%27');
-  return b;
-}
 
 describe('DailyhuntAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -375,13 +367,13 @@ describe('DailyhuntAdapter', function () {
             }
           },
         ]
-      }
+      };
       const result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
       result.forEach((r, i) => {
         expect(Object.keys(r)).to.have.members(Object.keys(expectedResponse[i]));
       });
     });
-  })
+  });
   describe('onBidWon', function () {
     it('should hit win url when bid won', function () {
       const bid = {
@@ -399,5 +391,5 @@ describe('DailyhuntAdapter', function () {
       };
       expect(spec.onBidWon(bid)).to.equal(undefined);
     });
-  })
-})
+  });
+});

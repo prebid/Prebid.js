@@ -1,10 +1,14 @@
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const addCommonConfig = require('./webpack.common.js');
 
-module.exports = {
+module.exports = addCommonConfig({
   mode: 'production',
   context: helpers.getPrecompiledPath(),
   devtool: false,
+  experiments: {
+    typescript: false
+  },
   resolve: {
     modules: [
       helpers.getPrecompiledPath(),
@@ -20,14 +24,19 @@ module.exports = {
     },
     'renderers/native': {
       import: './creative/renderers/native/renderer.js'
+    },
+    'renderers/safe': {
+      import: './creative/renderers/safe/renderer.js'
     }
   },
   output: {
     path: path.resolve('./build/creative'),
   },
   module: {
-    rules: [{
-      use: 'source-map-loader'
-    }]
+    rules: [
+      {
+        extractSourceMap: true
+      }
+    ]
   }
-}
+});

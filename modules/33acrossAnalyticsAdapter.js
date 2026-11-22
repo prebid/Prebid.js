@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
+import { logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 /**
@@ -20,7 +20,7 @@ const BidStatus = {
   REJECTED: 'rejected',
   NOBID: 'noBid',
   ERROR: 'error',
-}
+};
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
@@ -194,7 +194,7 @@ export const locals = {
     };
     this.adUnitMap = {};
   }
-}
+};
 
 /**
  * @typedef {Object} AnalyticsAdapter
@@ -210,7 +210,8 @@ export const locals = {
  * @type {AnalyticsAdapter}
  */
 const analyticsAdapter = Object.assign(
-  buildAdapter({ analyticsType: 'endpoint' }),
+  // track only updates the cache, or sends the report with sendBeacon
+  buildAdapter({ analyticsType: 'endpoint', flushOnPageHide: true }),
   { track: analyticEventHandler }
 );
 
@@ -338,7 +339,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [auctions[completedAuctionId]],
-  }
+  };
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();
   }
@@ -442,13 +443,13 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
         // The value of the UNIQUIFIER is likely to be the div-id,
         // but, if div-id is randomized / unavailable, may be something else like the media size)
-        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || au.code,
+        slotId: au.ortb2Imp?.ext?.gpid || au.code,
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],
-      }
+      };
     }),
-    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {})),
+    userIds: Object.keys(bidderRequests?.[0]?.bids?.[0]?.userId || {}),
   };
 
   locals.transactionManagers[auctionId] ||=
@@ -602,7 +603,7 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
     error: {
       next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
-  }
+  };
 
   const winningStatuses = [BidStatus.RENDERED];
 
@@ -649,5 +650,5 @@ function getLogger() {
     info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...deepClone(args)),
     warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...deepClone(args)),
     error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...deepClone(args)),
-  }
+  };
 }

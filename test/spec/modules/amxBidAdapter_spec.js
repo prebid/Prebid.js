@@ -121,9 +121,7 @@ const sampleBidRequestVideo = {
   mediaTypes: {
     [VIDEO]: {
       sizes: [[360, 250]],
-      context: 'adpod',
-      adPodDurationSec: 90,
-      contentMode: 'live',
+      context: 'video'
     },
   },
 };
@@ -304,7 +302,7 @@ describe('AmxBidAdapter', () => {
           ref: 'http://search-traffic-source.com',
         },
       });
-      expect(data.do).to.equal('localhost');
+      expect(data.do).to.equal(window.location.hostname);
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
@@ -560,9 +558,7 @@ describe('AmxBidAdapter', () => {
         sc: schainConfig,
         vd: {
           sizes: [[360, 250]],
-          context: 'adpod',
-          adPodDurationSec: 90,
-          contentMode: 'live',
+          context: 'video',
         },
         tf: 0,
         f: 0.5,
@@ -835,6 +831,27 @@ describe('AmxBidAdapter', () => {
       expect(event.cn).to.equal(300);
       expect(event.bid).to.equal('test-bid-id');
       expect(event.a).to.equal('div-gpt-ad');
+    });
+
+    it('will report a timeout under the custom adUnitId, as the bid request does', () => {
+      spec.onTimeout([
+        {
+          bidder: 'example',
+          bidId: 'test-bid-id',
+          adUnitCode: 'div-gpt-ad',
+          params: {
+            tagId: 'tag-id',
+            adUnitId: 'custom-auid',
+          },
+          timeout: 300,
+          auctionId: utils.getUniqueIdentifierStr(),
+        },
+      ]);
+
+      const [request] = server.requests;
+      request.respond(204, { 'Content-Type': 'text/html' }, null);
+      const { e: [event] } = JSON.parse(request.requestBody);
+      expect(event.a).to.equal('custom-auid');
     });
 
     it('will log an event for prebid win', () => {

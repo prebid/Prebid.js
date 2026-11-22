@@ -6,7 +6,7 @@ const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/hea
 
 const EXPECTED_TARGETING_KEYS = {
   hb_pb: '8.00' // response is 10; currency conversion is set to 0.8
-}
+};
 
 setupTest({
   url: TEST_PAGE_URL,
@@ -21,4 +21,4 @@ setupTest({
     const targetingKeys = result['/19968336/prebid_native_example_2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
   });
-})
+});

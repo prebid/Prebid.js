@@ -137,7 +137,7 @@ export const spec = {
     );
     ajax(winUrl, null);
   }
-}
+};
 
 function generateImpId() {
   var l = 16;

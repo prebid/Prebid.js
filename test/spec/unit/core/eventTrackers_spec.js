@@ -55,7 +55,7 @@ describe('event trackers', () => {
     }).forEach(([t, { eventtrackers, expected }]) => {
       it(`can parse ${t}`, () => {
         expect(parseEventTrackers(eventtrackers)).to.eql(expected);
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

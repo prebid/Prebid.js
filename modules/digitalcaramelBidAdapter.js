@@ -16,6 +16,6 @@ export const spec = {
   interpretResponse: sspInterpretResponse(TIME_TO_LIVE, ADOMAIN),
   getUserSyncs: getUserSyncs(SYNC_ENDPOINT, { usp: 'usp', consent: 'consent' }),
   supportedMediaTypes: [BANNER, VIDEO]
-}
+};
 
 registerBidder(spec);

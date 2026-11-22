@@ -4,9 +4,10 @@ import { ACTIVITY_ADD_BID_RESPONSE, ACTIVITY_FETCH_BIDS } from "../../src/activi
 import { MODULE_TYPE_BIDDER } from "../../src/activities/modules.ts";
 import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE } from "../../src/activities/params.js";
 import { registerActivityControl } from "../../src/activities/rules.js";
-import { ajax } from "../../src/ajax.ts";
+import { noCredsAjax as ajax } from "../../src/ajax.ts";
 import { AuctionIndex } from "../../src/auctionIndex.js";
 import { auctionManager } from "../../src/auctionManager.js";
+import type { Bid } from "../../src/bidfactory.ts";
 import { config } from "../../src/config.ts";
 import { getHook } from "../../src/hook.ts";
 import { generateUUID, logInfo, logWarn } from "../../src/utils.ts";
@@ -151,7 +152,7 @@ declare module '../../src/config' {
 
 const MODULE_NAME = 'shapingRules';
 
-const globalRandomStore = new WeakMap<{ auctionId: string }, number>();
+const globalRandomStore = new WeakMap<object, number>();
 
 let auctionConfigStore = new Map<string, any>();
 
@@ -170,7 +171,7 @@ function getGlobalRandom(auctionId: string, auctionIndex: AuctionIndex = auction
   return globalRandomStore.get(auction);
 }
 
-const unregisterFunctions: Array<() => void> = []
+const unregisterFunctions: Array<() => void> = [];
 
 let moduleConfig: ShapingRulesConfig = {
   endpoint: {
@@ -270,7 +271,7 @@ function evaluateRules(rules, schema, stage, analyticsKey, auctionId: string, de
 const schemaEvaluators = {
   percent: (args, context) => () => {
     const auctionId = context.auctiondId || context.bid?.auctionId;
-    return dep.getGlobalRandom(auctionId) * 100 < args[0]
+    return dep.getGlobalRandom(auctionId) * 100 < args[0];
   },
   adUnitCode: (args, context) => () => context.adUnit.code,
   adUnitCodeIn: (args, context) => () => args[0].includes(context.adUnit.code),
@@ -358,7 +359,7 @@ export function evaluateSchema(func, args, context) {
 function evaluateCondition(condition, func) {
   switch (condition) {
     case '*':
-      return true
+      return true;
     case 'true':
       return func() === true;
     case 'false':
@@ -397,10 +398,11 @@ export function registerActivities() {
     [ACTIVITY_ADD_BID_RESPONSE]: 'processed-auction',
   };
 
-  [ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE].forEach(activity => {
+  ([ACTIVITY_FETCH_BIDS, ACTIVITY_ADD_BID_RESPONSE] as const).forEach(activity => {
     unregisterFunctions.push(
       registerActivityControl(activity, MODULE_NAME, (params) => {
-        const auctionId = params.auctionId || params.bid?.auctionId;
+        // fetchBids passes auctionId; acceptBid only has it on the bid response
+        const auctionId = params.auctionId || (params.bid as Partial<Bid>)?.auctionId;
         if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
         if (!auctionId) return;
 
@@ -412,7 +414,7 @@ export function registerActivities() {
             }
           }
           return false;
-        }
+        };
 
         const results = [];
         let modelGroups = auctionConfigStore.get(auctionId) || [];
@@ -467,7 +469,7 @@ export const requestBidsHook = timedAuctionHook('rules', function requestBidsHoo
 
   if (!rulesLoaded && auctionDelay > 0) {
     delayedAuctions.submit(auctionDelay, continueAuction, () => {
-      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`);
       continueAuction();
     });
   } else {

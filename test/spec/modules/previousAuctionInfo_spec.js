@@ -48,7 +48,7 @@ describe('previous auction info', () => {
 
   before(() => {
     config.resetConfig();
-  })
+  });
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -183,24 +183,24 @@ describe('previous auction info', () => {
       runHook();
       expect(global).to.eql({});
       expect(bidder).to.eql({});
-    })
+    });
     it('should call next', () => {
       runHook();
       sinon.assert.called(next);
-    })
+    });
     describe('when info is available', () => {
       beforeEach(() => {
         Object.assign(previousAuctionInfo.auctionState, {
           bidder1: [{ transactionId: 'tid1', auction: '1' }],
           bidder2: [{ transactionId: 'tid2', auction: '2' }]
-        })
-      })
+        });
+      });
 
       function extractInfo() {
         return Object.fromEntries(
           Object.entries(bidder)
             .map(([bidder, ortb2]) => [bidder, ortb2.ext?.prebid?.previousauctioninfo])
-        )
+        );
       }
 
       it('should set info for enabled bidders, when only some are enabled', () => {
@@ -208,7 +208,7 @@ describe('previous auction info', () => {
         runHook();
         expect(extractInfo()).to.eql({
           bidder1: [{ auction: '1' }]
-        })
+        });
       });
 
       it('should set info for all bidders, when none is specified', () => {
@@ -217,10 +217,10 @@ describe('previous auction info', () => {
         expect(extractInfo()).to.eql({
           bidder1: [{ auction: '1' }],
           bidder2: [{ auction: '2' }]
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+  });
 
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {

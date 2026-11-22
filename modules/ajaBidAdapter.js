@@ -13,6 +13,7 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
  */
 
 const BIDDER_CODE = 'aja';
+const ACP_ID = 550; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 const SDK_TYPE = 5;
 
@@ -69,6 +70,7 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
 
   /**
@@ -98,7 +100,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'skt', SDK_TYPE);
       queryString = tryAppendQueryString(queryString, 'gpid', bidRequest.ortb2Imp?.ext?.gpid);
       queryString = tryAppendQueryString(queryString, 'tid', bidRequest.ortb2Imp?.ext?.tid);
-      queryString = tryAppendQueryString(queryString, 'cdep', bidRequest.ortb2?.device?.ext?.cdep);
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
       queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);

@@ -1,8 +1,8 @@
-import { deepAccess, isEmpty } from '../src/utils.js'
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js'
-import { getGlobal } from '../src/prebidGlobal.js'
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { deepAccess, isEmpty } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const converter = ortbConverter({
   context: {
@@ -11,34 +11,34 @@ const converter = ortbConverter({
     ttl: 30, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context)
-    imp.tagid = bidRequest.adUnitCode
-    if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = bidRequest.adUnitCode;
+    if (imp.ext) imp.ext.placementId = bidRequest.params.placementId;
 
-    return imp
+    return imp;
   },
-})
+});
 
-const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
+const BIDDER_CODE = 'nativo';
+const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid';
 
-const GVLID = 263
+const GVLID = 263;
 
-const TIME_TO_LIVE = 360
+const TIME_TO_LIVE = 360;
 
-const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE]
-const FLOOR_PRICE_CURRENCY = 'USD'
-const PRICE_FLOOR_WILDCARD = '*'
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
+const FLOOR_PRICE_CURRENCY = 'USD';
+const PRICE_FLOOR_WILDCARD = '*';
 
-const localPbjsRef = getGlobal()
+const localPbjsRef = getGlobal();
 
 function getMediaType(accessObj) {
   if (deepAccess(accessObj, 'mediaTypes.video')) {
-    return VIDEO
+    return VIDEO;
   } else if (deepAccess(accessObj, 'mediaTypes.native')) {
-    return NATIVE
+    return NATIVE;
   } else {
-    return BANNER
+    return BANNER;
   }
 }
 
@@ -47,8 +47,8 @@ function getMediaType(accessObj) {
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
 export function BidDataMap() {
-  const referenceMap = {}
-  const bids = []
+  const referenceMap = {};
+  const bids = [];
 
   /**
    * Add a refence to the index by key value
@@ -57,7 +57,7 @@ export function BidDataMap() {
    */
   function addKeyReference(key, index) {
     if (!referenceMap.hasOwnProperty(key)) {
-      referenceMap[key] = index
+      referenceMap[key] = index;
     }
   }
 
@@ -67,17 +67,17 @@ export function BidDataMap() {
    * @param {(Array|string)} keys - Keys to reference the index value
    */
   function addBidData(bid, keys) {
-    const index = bids.length
-    bids.push(bid)
+    const index = bids.length;
+    bids.push(bid);
 
     if (Array.isArray(keys)) {
       keys.forEach((key) => {
-        addKeyReference(String(key), index)
-      })
-      return
+        addKeyReference(String(key), index);
+      });
+      return;
     }
 
-    addKeyReference(String(keys), index)
+    addKeyReference(String(keys), index);
   }
 
   /**
@@ -86,9 +86,9 @@ export function BidDataMap() {
    * @returns {Object} - The bid data
    */
   function getBidData(key) {
-    const stringKey = String(key)
+    const stringKey = String(key);
     if (referenceMap.hasOwnProperty(stringKey)) {
-      return bids[referenceMap[stringKey]]
+      return bids[referenceMap[stringKey]];
     }
   }
 
@@ -96,17 +96,17 @@ export function BidDataMap() {
   return {
     addBidData,
     getBidData,
-  }
+  };
 }
 
-const bidRequestMap = {}
-const adUnitsRequested = {}
-const extData = {}
+const bidRequestMap = {};
+const adUnitsRequested = {};
+const extData = {};
 
 // Filtering
-const adsToFilter = new Set()
-const advertisersToFilter = new Set()
-const campaignsToFilter = new Set()
+const adsToFilter = new Set();
+const advertisersToFilter = new Set();
+const campaignsToFilter = new Set();
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -114,11 +114,11 @@ const campaignsToFilter = new Set()
 const validParameter = {
   url: (value) => typeof value === 'string',
   placementId: (value) => {
-    const isString = typeof value === 'string'
-    const isNumber = typeof value === 'number'
-    return isString || isNumber
+    const isString = typeof value === 'string';
+    const isNumber = typeof value === 'number';
+    return isString || isNumber;
   },
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -134,21 +134,21 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     // We don't need any specific parameters to make a bid request
-    if (!bid.params) return true
+    if (!bid.params) return true;
 
     // Check if any supplied parameters are invalid
     const hasInvalidParameters = Object.keys(bid.params).some((key) => {
-      const value = bid.params[key]
-      const validityCheck = validParameter[key]
+      const value = bid.params[key];
+      const validityCheck = validParameter[key];
 
       // We don't have a test for this so it's not a parameter we care about
-      if (!validityCheck) return false
+      if (!validityCheck) return false;
 
       // Return if the check is not passed
-      return !validityCheck(value)
-    })
+      return !validityCheck(value);
+    });
 
-    return !hasInvalidParameters
+    return !hasInvalidParameters;
   },
 
   /**
@@ -164,52 +164,52 @@ export const spec = {
     const openRTBData = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest,
-    })
-    const openRTBDataString = JSON.stringify(openRTBData)
+    });
+    const openRTBDataString = JSON.stringify(openRTBData);
 
-    const requestData = new RequestData()
-    requestData.addBidRequestDataSource(new UserEIDs())
+    const requestData = new RequestData();
+    requestData.addBidRequestDataSource(new UserEIDs());
 
     // Parse values from bid requests
-    const placementIds = new Set()
-    const bidDataMap = BidDataMap()
-    const placementSizes = { length: 0 }
-    const floorPriceData = {}
-    let placementId, pageUrl
+    const placementIds = new Set();
+    const bidDataMap = BidDataMap();
+    const placementSizes = { length: 0 };
+    const floorPriceData = {};
+    let placementId, pageUrl;
     validBidRequests.forEach((bidRequest) => {
       pageUrl =
         getPageUrlFromBidRequest(bidRequest) ||
-        bidderRequest.refererInfo.location
+        bidderRequest.refererInfo.location;
 
-      placementId = deepAccess(bidRequest, 'params.placementId')
+      placementId = deepAccess(bidRequest, 'params.placementId');
 
-      const bidDataKeys = [bidRequest.adUnitCode]
+      const bidDataKeys = [bidRequest.adUnitCode];
 
       if (placementId && !placementIds.has(placementId)) {
-        placementIds.add(placementId)
-        bidDataKeys.push(placementId)
+        placementIds.add(placementId);
+        bidDataKeys.push(placementId);
 
-        placementSizes[placementId] = bidRequest.sizes
-        placementSizes.length++
+        placementSizes[placementId] = bidRequest.sizes;
+        placementSizes.length++;
       }
 
       const bidData = {
         bidId: bidRequest.bidId,
         size: getLargestSize(bidRequest.sizes),
-      }
-      bidDataMap.addBidData(bidData, bidDataKeys)
+      };
+      bidDataMap.addBidData(bidData, bidDataKeys);
 
-      const bidRequestFloorPriceData = parseFloorPriceData(bidRequest)
+      const bidRequestFloorPriceData = parseFloorPriceData(bidRequest);
       if (bidRequestFloorPriceData) {
-        floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
+        floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData;
       }
 
-      requestData.processBidRequestData(bidRequest, bidderRequest)
-    })
-    bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
+      requestData.processBidRequestData(bidRequest, bidderRequest);
+    });
+    bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap;
 
     // Build adUnit data
-    const adUnitData = buildAdUnitData(validBidRequests)
+    const adUnitData = buildAdUnitData(validBidRequests);
 
     // Build basic required QS Params
     const params = [
@@ -235,14 +235,14 @@ export const spec = {
         key: 'ntv_url',
         value: encodeURIComponent(pageUrl),
       },
-    ]
+    ];
 
     // Floor pricing
     if (Object.keys(floorPriceData).length) {
       params.unshift({
         key: 'ntv_ppf',
         value: btoa(JSON.stringify(floorPriceData)),
-      })
+      });
     }
 
     // Add filtering
@@ -250,21 +250,21 @@ export const spec = {
       params.unshift({
         key: 'ntv_atf',
         value: Array.from(adsToFilter).join(','),
-      })
+      });
     }
 
     if (advertisersToFilter.size > 0) {
       params.unshift({
         key: 'ntv_avtf',
         value: Array.from(advertisersToFilter).join(','),
-      })
+      });
     }
 
     if (campaignsToFilter.size > 0) {
       params.unshift({
         key: 'ntv_ctf',
         value: Array.from(campaignsToFilter).join(','),
-      })
+      });
     }
 
     // Placement Sizes
@@ -272,16 +272,16 @@ export const spec = {
       params.unshift({
         key: 'ntv_pas',
         value: btoa(JSON.stringify(placementSizes)),
-      })
+      });
     }
 
     // Add placement IDs
     if (placementIds.size > 0) {
       // Convert Set to Array (IE 11 Safe)
-      const placements = []
-      placementIds.forEach((value) => placements.push(value))
+      const placements = [];
+      placementIds.forEach((value) => placements.push(value));
       // Append to query string parameters
-      params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
+      params.unshift({ key: 'ntv_ptd', value: placements.join(',') });
     }
 
     // Add GDPR params
@@ -290,7 +290,7 @@ export const spec = {
       params.unshift({
         key: 'ntv_gdpr_consent',
         value: bidderRequest.gdprConsent.consentString,
-      })
+      });
     }
 
     // Add GPP params
@@ -298,29 +298,29 @@ export const spec = {
       params.unshift({
         key: 'ntv_gpp_consent',
         value: bidderRequest.gppConsent.gppString,
-      })
+      });
     }
 
     // Add USP params
     if (bidderRequest.uspConsent) {
       // Put on the beginning of the qs param array
-      params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent })
+      params.unshift({ key: 'us_privacy', value: bidderRequest.uspConsent });
     }
 
     const qsParamStrings = [
       requestData.getRequestDataQueryString(),
       arrayToQS(params),
-    ]
-    const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
+    ];
+    const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings);
 
     const serverRequest = {
       method: 'POST',
       url: requestUrl,
       data: openRTBDataString,
       bidderRequest: bidderRequest,
-    }
+    };
 
-    return serverRequest
+    return serverRequest;
   },
 
   /**
@@ -334,22 +334,22 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     // If the bid response was empty, return []
-    if (!response || !response.body || isEmpty(response.body)) return []
+    if (!response || !response.body || isEmpty(response.body)) return [];
 
     try {
       const body =
         typeof response.body === 'string'
           ? JSON.parse(response.body)
-          : response.body
+          : response.body;
 
-      const bidResponses = []
-      const seatbids = body.seatbid
+      const bidResponses = [];
+      const seatbids = body.seatbid;
 
       // Step through and grab pertinent data
-      let bidResponse, adUnit
+      let bidResponse, adUnit;
       seatbids.forEach((seatbid, i) => {
         seatbid.bid.forEach((bid) => {
-          adUnit = this.getAdUnitData(body.id, bid)
+          adUnit = this.getAdUnitData(body.id, bid);
 
           bidResponse = {
             requestId: adUnit.bidId,
@@ -366,28 +366,28 @@ export const spec = {
               advertiserDomains: bid.adomain,
             },
             mediaType: getMediaType(request.bidderRequest.bids[i]),
-          }
+          };
 
-          if (bid.ext) extData[bid.id] = bid.ext
+          if (bid.ext) extData[bid.id] = bid.ext;
           if (bidResponse.mediaType === VIDEO) {
-            bidResponse.vastUrl = bid.adm
+            bidResponse.vastUrl = bid.adm;
           }
           if (bidResponse.mediaType === NATIVE) {
             bidResponse.native = {
               ortb: JSON.parse(bidResponse.ad),
-            }
+            };
           }
-          bidResponses.push(bidResponse)
-        })
-      })
+          bidResponses.push(bidResponse);
+        });
+      });
 
       // Don't need the map anymore as it was unique for one request/response
-      delete bidRequestMap[body.id]
+      delete bidRequestMap[body.id];
 
-      return bidResponses
+      return bidResponses;
     } catch (error) {
       // If there is an error, return []
-      return []
+      return [];
     }
   },
 
@@ -408,19 +408,19 @@ export const spec = {
     uspConsent
   ) {
     // Generate consent qs string
-    let params = ''
+    let params = '';
     // GDPR
     if (gdprConsent) {
       params = appendQSParamString(
         params,
         'gdpr',
         gdprConsent.gdprApplies ? 1 : 0
-      )
+      );
       params = appendQSParamString(
         params,
         'gdpr_consent',
         encodeURIComponent(gdprConsent.consentString || '')
-      )
+      );
     }
     // CCPA
     if (uspConsent) {
@@ -428,34 +428,34 @@ export const spec = {
         params,
         'us_privacy',
         encodeURIComponent(uspConsent.uspConsent)
-      )
+      );
     }
 
     // Get sync urls from the respnse and inject cinbsent params
     const types = {
       iframe: syncOptions.iframeEnabled,
       image: syncOptions.pixelEnabled,
-    }
-    const syncs = []
+    };
+    const syncs = [];
 
-    let body
+    let body;
     serverResponses.forEach((response) => {
       // If the bid response was empty, return []
       if (!response || !response.body || isEmpty(response.body)) {
-        return syncs
+        return syncs;
       }
 
       try {
         body =
           typeof response.body === 'string'
             ? JSON.parse(response.body)
-            : response.body
+            : response.body;
       } catch (err) {
-        return
+        return;
       }
 
       // Make sure we have valid content
-      if (!body || !body.seatbid || body.seatbid.length === 0) return
+      if (!body || !body.seatbid || body.seatbid.length === 0) return;
 
       body.seatbid.forEach((seatbid) => {
         // Grab the syncs for each seatbid
@@ -466,15 +466,15 @@ export const spec = {
                 syncs.push({
                   type: sync.type,
                   url: sync.url.replace('{GDPR_params}', params),
-                })
+                });
               }
             }
-          })
+          });
         }
-      })
-    })
+      });
+    });
 
-    return syncs
+    return syncs;
   },
 
   /**
@@ -482,13 +482,13 @@ export const spec = {
    * @param {Object} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
-    const ext = extData[bid.dealId]
+    const ext = extData[bid.dealId];
 
-    if (!ext) return
+    if (!ext) return;
 
-    appendFilterData(adsToFilter, ext.adsToFilter)
-    appendFilterData(advertisersToFilter, ext.advertisersToFilter)
-    appendFilterData(campaignsToFilter, ext.campaignsToFilter)
+    appendFilterData(adsToFilter, ext.adsToFilter);
+    appendFilterData(advertisersToFilter, ext.advertisersToFilter);
+    appendFilterData(campaignsToFilter, ext.campaignsToFilter);
   },
 
   /**
@@ -498,109 +498,109 @@ export const spec = {
    * @returns {String} - The bidId value associated with the corresponding placementId
    */
   getAdUnitData: function (bidderRequestId, bid) {
-    const bidDataMap = bidRequestMap[bidderRequestId]
+    const bidDataMap = bidRequestMap[bidderRequestId];
 
-    const placementId = bid.impid
-    const adUnitCode = deepAccess(bid, 'ext.ad_unit_id')
+    const placementId = bid.impid;
+    const adUnitCode = deepAccess(bid, 'ext.ad_unit_id');
 
     return (
       bidDataMap.getBidData(adUnitCode) || bidDataMap.getBidData(placementId)
-    )
+    );
   },
-}
-registerBidder(spec)
+};
+registerBidder(spec);
 
 // Utils
 export class RequestData {
   constructor() {
-    this.bidRequestDataSources = []
+    this.bidRequestDataSources = [];
   }
 
   addBidRequestDataSource(bidRequestDataSource) {
-    if (!(bidRequestDataSource instanceof BidRequestDataSource)) return
+    if (!(bidRequestDataSource instanceof BidRequestDataSource)) return;
 
-    this.bidRequestDataSources.push(bidRequestDataSource)
+    this.bidRequestDataSources.push(bidRequestDataSource);
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
     for (const bidRequestDataSource of this.bidRequestDataSources) {
-      bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
+      bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest);
     }
   }
 
   getRequestDataQueryString() {
-    if (this.bidRequestDataSources.length === 0) return
+    if (this.bidRequestDataSources.length === 0) return;
 
     const queryParams = this.bidRequestDataSources
       .map((dataSource) => dataSource.getRequestQueryString())
-      .filter((queryString) => queryString !== '')
-    return queryParams.join('&')
+      .filter((queryString) => queryString !== '');
+    return queryParams.join('&');
   }
 }
 
 export class BidRequestDataSource {
   constructor() {
-    this.type = 'BidRequestDataSource'
+    this.type = 'BidRequestDataSource';
   }
 
   processBidRequestData(bidRequest, bidderRequest) {}
   getRequestQueryString() {
-    return ''
+    return '';
   }
 }
 
 export class UserEIDs extends BidRequestDataSource {
   constructor() {
-    super()
-    this.type = 'UserEIDs'
-    this.qsParam = new QueryStringParam('ntv_pb_eid')
-    this.eids = []
+    super();
+    this.type = 'UserEIDs';
+    this.qsParam = new QueryStringParam('ntv_pb_eid');
+    this.eids = [];
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
-    if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
-    this.eids = bidRequest.userIdAsEids
+    if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return;
+    this.eids = bidRequest.userIdAsEids;
   }
 
   getRequestQueryString() {
-    if (this.eids.length === 0) return ''
+    if (this.eids.length === 0) return '';
 
-    const encodedValueArray = encodeToBase64(this.eids)
-    this.qsParam.value = encodedValueArray
-    return this.qsParam.toString()
+    const encodedValueArray = encodeToBase64(this.eids);
+    this.qsParam.value = encodedValueArray;
+    return this.qsParam.toString();
   }
 }
 
 export class QueryStringParam {
   constructor(key, value) {
-    this.key = key
-    this.value = value
+    this.key = key;
+    this.value = value;
   }
 }
 
 QueryStringParam.prototype.toString = function () {
-  return `${this.key}=${this.value}`
-}
+  return `${this.key}=${this.value}`;
+};
 
 export function encodeToBase64(value) {
   try {
-    return btoa(JSON.stringify(value))
+    return btoa(JSON.stringify(value));
   } catch (err) {}
 }
 
 export function parseFloorPriceData(bidRequest) {
-  if (typeof bidRequest.getFloor !== 'function') return
+  if (typeof bidRequest.getFloor !== 'function') return;
 
   // Setup price floor data per bid request
-  const bidRequestFloorPriceData = {}
-  const bidMediaTypes = bidRequest.mediaTypes
-  const sizeOptions = new Set()
+  const bidRequestFloorPriceData = {};
+  const bidMediaTypes = bidRequest.mediaTypes;
+  const sizeOptions = new Set();
   // Step through meach media type so we can get floor data for each media type per bid request
   Object.keys(bidMediaTypes).forEach((mediaType) => {
     // Setup price floor data per media type
-    const mediaTypeData = bidMediaTypes[mediaType]
-    const mediaTypeFloorPriceData = {}
-    const mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
+    const mediaTypeData = bidMediaTypes[mediaType];
+    const mediaTypeFloorPriceData = {};
+    const mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || [];
     // Step through each size of the media type so we can get floor data for each size per media type
     mediaTypeSizes.forEach((size) => {
       // Get floor price data per the getFloor method and respective media type / size combination
@@ -608,29 +608,29 @@ export function parseFloorPriceData(bidRequest) {
         currency: FLOOR_PRICE_CURRENCY,
         mediaType,
         size,
-      })
+      });
       // Save the data and track the sizes
-      mediaTypeFloorPriceData[sizeToString(size)] = priceFloorData?.floor
-      sizeOptions.add(size)
-    })
-    bidRequestFloorPriceData[mediaType] = mediaTypeFloorPriceData
+      mediaTypeFloorPriceData[sizeToString(size)] = priceFloorData?.floor;
+      sizeOptions.add(size);
+    });
+    bidRequestFloorPriceData[mediaType] = mediaTypeFloorPriceData;
 
     // Get floor price of current media type with a wildcard size
-    const sizeWildcardFloor = getSizeWildcardPrice(bidRequest, mediaType)
+    const sizeWildcardFloor = getSizeWildcardPrice(bidRequest, mediaType);
     // Save the wildcard floor price if it was retrieved successfully
     if (sizeWildcardFloor?.floor > 0) {
-      mediaTypeFloorPriceData['*'] = sizeWildcardFloor.floor
+      mediaTypeFloorPriceData['*'] = sizeWildcardFloor.floor;
     }
-  })
+  });
 
   // Get floor price for wildcard media type using all of the sizes present in the previous media types
   const mediaWildCardPrices = getMediaWildcardPrices(bidRequest, [
     PRICE_FLOOR_WILDCARD,
     ...Array.from(sizeOptions),
-  ])
-  bidRequestFloorPriceData['*'] = mediaWildCardPrices
+  ]);
+  bidRequestFloorPriceData['*'] = mediaWildCardPrices;
 
-  return bidRequestFloorPriceData
+  return bidRequestFloorPriceData;
 }
 
 /**
@@ -644,7 +644,7 @@ export function getSizeWildcardPrice(bidRequest, mediaType) {
     currency: FLOOR_PRICE_CURRENCY,
     mediaType,
     size: PRICE_FLOOR_WILDCARD,
-  })
+  });
 }
 
 /**
@@ -657,26 +657,26 @@ export function getMediaWildcardPrices(
   bidRequest,
   sizes = [PRICE_FLOOR_WILDCARD]
 ) {
-  const sizePrices = {}
+  const sizePrices = {};
   sizes.forEach((size) => {
     // MODIFY the bid request's mediaTypes property (so we can get the wildcard media type value)
-    const temp = bidRequest.mediaTypes
-    bidRequest.mediaTypes = { PRICE_FLOOR_WILDCARD: temp.sizes }
+    const temp = bidRequest.mediaTypes;
+    bidRequest.mediaTypes = { PRICE_FLOOR_WILDCARD: temp.sizes };
     // Get price floor data
     const priceFloorData = bidRequest.getFloor({
       currency: FLOOR_PRICE_CURRENCY,
       mediaType: PRICE_FLOOR_WILDCARD,
       size,
-    })
+    });
     // RESTORE initial property value
-    bidRequest.mediaTypes = temp
+    bidRequest.mediaTypes = temp;
 
     // Only save valid floor price data
     const key =
-      size !== PRICE_FLOOR_WILDCARD ? sizeToString(size) : PRICE_FLOOR_WILDCARD
-    sizePrices[key] = priceFloorData.floor
-  })
-  return sizePrices
+      size !== PRICE_FLOOR_WILDCARD ? sizeToString(size) : PRICE_FLOOR_WILDCARD;
+    sizePrices[key] = priceFloorData.floor;
+  });
+  return sizePrices;
 }
 
 /**
@@ -685,8 +685,8 @@ export function getMediaWildcardPrices(
  * @returns {String} - Formated size string
  */
 export function sizeToString(size) {
-  if (!Array.isArray(size) || size.length < 2) return ''
-  return `${size[0]}x${size[1]}`
+  if (!Array.isArray(size) || size.length < 2) return '';
+  return `${size[0]}x${size[1]}`;
 }
 
 /**
@@ -700,13 +700,13 @@ function buildAdUnitData(requests) {
     adUnitsRequested[request.adUnitCode] =
       adUnitsRequested[request.adUnitCode] !== undefined
         ? adUnitsRequested[request.adUnitCode] + 1
-        : 0
+        : 0;
     // Return a new object with only the data we need
     return {
       adUnitCode: request.adUnitCode,
       mediaTypes: request.mediaTypes,
-    }
-  })
+    };
+  });
 }
 
 /**
@@ -717,7 +717,7 @@ function buildAdUnitData(requests) {
  * @returns
  */
 function appendQSParamString(str, key, value) {
-  return str + `${str.length ? '&' : ''}${key}=${value}`
+  return str + `${str.length ? '&' : ''}${key}=${value}`;
 }
 
 /**
@@ -727,8 +727,8 @@ function appendQSParamString(str, key, value) {
  */
 function arrayToQS(arr) {
   return arr.reduce((value, obj) => {
-    return appendQSParamString(value, obj.key, obj.value)
-  }, '')
+    return appendQSParamString(value, obj.key, obj.value);
+  }, '');
 }
 
 /**
@@ -737,16 +737,16 @@ function arrayToQS(arr) {
  * @returns Size array with the largest area
  */
 function getLargestSize(sizes, method = area) {
-  if (!sizes || sizes.length === 0) return []
-  if (sizes.length === 1) return sizes[0]
+  if (!sizes || sizes.length === 0) return [];
+  if (sizes.length === 1) return sizes[0];
 
   return sizes.reduce((prev, current) => {
     if (method(current) > method(prev)) {
-      return current
+      return current;
     } else {
-      return prev
+      return prev;
     }
-  })
+  });
 }
 
 /**
@@ -754,21 +754,21 @@ function getLargestSize(sizes, method = area) {
  */
 export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
   if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) {
-    return baseUrl
+    return baseUrl;
   }
 
   const nonEmptyQSParamStrings = qsParamStringArray.filter(
     (qsParamString) => qsParamString.trim() !== ''
-  )
+  );
 
-  if (nonEmptyQSParamStrings.length === 0) return baseUrl
+  if (nonEmptyQSParamStrings.length === 0) return baseUrl;
 
-  let requestUrl = `${baseUrl}?${nonEmptyQSParamStrings[0]}`
+  let requestUrl = `${baseUrl}?${nonEmptyQSParamStrings[0]}`;
   for (let i = 1; i < nonEmptyQSParamStrings.length; i++) {
-    requestUrl += `&${nonEmptyQSParamStrings[i]}`
+    requestUrl += `&${nonEmptyQSParamStrings[i]}`;
   }
 
-  return requestUrl
+  return requestUrl;
 }
 
 /**
@@ -776,7 +776,7 @@ export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
  * @param {Array} size - [width, height]
  * @returns The calculated area
  */
-const area = (size) => size[0] * size[1]
+const area = (size) => size[0] * size[1];
 
 /**
  * Save any filter data from winning bid requests for subsequent requests
@@ -785,40 +785,40 @@ const area = (size) => size[0] * size[1]
  */
 function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
-    filterData.forEach((ad) => filter.add(ad))
+    filterData.forEach((ad) => filter.add(ad));
   }
 }
 
 export function getPageUrlFromBidRequest(bidRequest) {
-  let paramPageUrl = deepAccess(bidRequest, 'params.url')
+  let paramPageUrl = deepAccess(bidRequest, 'params.url');
 
-  if (paramPageUrl === undefined) return
+  if (paramPageUrl === undefined) return;
 
-  if (hasProtocol(paramPageUrl)) return paramPageUrl
+  if (hasProtocol(paramPageUrl)) return paramPageUrl;
 
-  paramPageUrl = addProtocol(paramPageUrl)
+  paramPageUrl = addProtocol(paramPageUrl);
 
   try {
-    const url = new URL(paramPageUrl)
-    return url.href
+    const url = new URL(paramPageUrl);
+    return url.href;
   } catch (err) {}
 }
 
 export function hasProtocol(url) {
-  const protocolRegexp = /^http[s]?:/
-  return protocolRegexp.test(url)
+  const protocolRegexp = /^http[s]?:/;
+  return protocolRegexp.test(url);
 }
 
 export function addProtocol(url) {
   if (hasProtocol(url)) {
-    return url
+    return url;
   }
 
-  let protocolPrefix = 'https:'
+  let protocolPrefix = 'https:';
 
   if (url.indexOf('//') !== 0) {
-    protocolPrefix += '//'
+    protocolPrefix += '//';
   }
 
-  return `${protocolPrefix}${url}`
+  return `${protocolPrefix}${url}`;
 }

@@ -1,5 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
-'use strict'
+'use strict';
 
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -14,6 +14,7 @@ import {
   sizeTupleToRtbSize,
   sizesToSizeTuples
 } from '../src/utils.js';
+import { coppaDataHandler } from '../src/consentHandler.js';
 
 const { getConfig } = config;
 
@@ -65,7 +66,7 @@ export const spec = {
     if (schain) {
       request.schain = schain;
     }
-    if (config.getConfig('coppa')) {
+    if ((bidderRequest?.ortb2?.regs?.coppa === 1 || coppaDataHandler.getCoppa())) {
       deepSetValue(request, 'privacy.coppa', 1);
     }
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
@@ -96,7 +97,7 @@ export const spec = {
     if (!serverResponse.body) {
       return;
     }
-    const { ok, error } = serverResponse.body
+    const { ok, error } = serverResponse.body;
     if (error) {
       logError(BIDDER_CODE, ': server caught', error.message);
       return;
@@ -118,20 +119,20 @@ export const spec = {
             },
             ad: bid.ad,
             placementId: bid.placement_id
-          }
+          };
           if (bid.adserver_targeting) {
-            ret.adserverTargeting = bid.adserver_targeting
+            ret.adserverTargeting = bid.adserver_targeting;
           }
-          return ret
+          return ret;
         })
         .filter(Boolean);
     } catch (e) {
       logError(BIDDER_CODE, ': caught', e);
     }
   }
-}
+};
 
-registerBidder(spec)
+registerBidder(spec);
 
 function getFirstWithKey (collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
@@ -157,7 +158,7 @@ function getORTBCommon (bidderRequest) {
   const commonFpd = bidderRequest.ortb2 || {};
   const { user } = commonFpd;
   if (typeof getConfig('app') === 'object') {
-    app = getConfig('app') || {}
+    app = getConfig('app') || {};
     if (commonFpd.app) {
       mergeDeep(app, commonFpd.app);
     }
@@ -214,5 +215,5 @@ function getImps (validBidRequests, common) {
       imp.video = videoParams;
     }
     return imp;
-  })
+  });
 }

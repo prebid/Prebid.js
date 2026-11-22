@@ -10,14 +10,14 @@ Maintainer: programmatic@impactify.io
 
 Module that connects to the Impactify solution.
 The impactify bidder need 3 parameters:
-- appId : This is your unique publisher identifier
-- format : This is the ad format needed, can be : screen or display (Only for video media type)
-- style : This is the ad style needed, can be : inline, impact or static (Only for video media type)
+- appId : This is your unique publisher identifier.
+- format : This is the ad format needed, can be : screen, display or player.
+- style : This is the ad style needed, can be : inline, impact or static.
 
 Note : Impactify adapter need storage access to work properly (Do not forget to set storageAllowed to true).
 
 # Test Parameters
-```
+```javascript
     pbjs.bidderSettings = {
         impactify: {
             storageAllowed: true // Mandatory

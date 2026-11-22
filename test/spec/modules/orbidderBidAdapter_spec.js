@@ -114,7 +114,7 @@ describe('orbidderBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        page: 'https://localhost:9876/'
+        page: 'https://example.com/'
       }
     })[0];
   };
@@ -206,7 +206,7 @@ describe('orbidderBidAdapter', () => {
     before(() => {
       request = buildRequest(defaultBidRequestBanner);
       nativeRequest = buildRequest(defaultBidRequestNative);
-    })
+    });
 
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
@@ -223,7 +223,7 @@ describe('orbidderBidAdapter', () => {
       expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequestBanner).length + 2);
 
       const expectedBidRequest = deepClone(defaultBidRequestBanner);
-      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.pageUrl = 'https://example.com/';
       expectedBidRequest.v = getGlobal().version;
       expect(request.data).to.deep.equal(expectedBidRequest);
     });
@@ -233,7 +233,7 @@ describe('orbidderBidAdapter', () => {
       expect(Object.keys(nativeRequest.data).length).to.equal(Object.keys(defaultBidRequestNative).length + 2);
 
       const expectedBidRequest = deepClone(defaultBidRequestNative);
-      expectedBidRequest.pageUrl = 'https://localhost:9876/';
+      expectedBidRequest.pageUrl = 'https://example.com/';
       expectedBidRequest.v = getGlobal().version;
       expect(nativeRequest.data).to.deep.equal(expectedBidRequest);
     });
@@ -331,7 +331,7 @@ describe('orbidderBidAdapter', () => {
         floor: bidRequest.floors.values['banner|640x480'],
         currency: floorObj.currency,
         mediaType: floorObj.mediaType
-      }
+      };
     };
 
     bidRequest.floors = {

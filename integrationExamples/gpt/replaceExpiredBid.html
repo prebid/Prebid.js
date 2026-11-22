@@ -1,0 +1,181 @@
+<!--
+An example of `auctionOptions.replaceExpiredBid`: rendering a fresh bid in place of one that expired before it could be shown.
+
+Bids can expire between the time their targeting is sent to the ad server and the time they are rendered - for example
+when the ad server request is delayed until the slot comes into view (lazy loading), or for interstitials, which are
+shown only when the user navigates. `replaceExpiredBid` lets Prebid render a different bid instead.
+
+Here the auction runs and targeting is set when the page loads, but the ad server request is delayed until "LOAD AD"
+is clicked. Bids are mocked with the debugging module, with a short TTL so that they expire quickly:
+ 1. wait for the countdown to reach zero (the bid is now expired);
+ 2. click "LOAD AD".
+With "Replace expired bids" checked, the slot shows the bid from a new auction; unchecked, it shows the expired bid.
+-->
+
+<html>
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        #log {
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+<h2>Replacing expired bids</h2>
+<p>Bid expires in: <b id="countdown">-</b></p>
+<p>
+    <label><input type="checkbox" id="replace" checked> Replace expired bids</label>
+</p>
+<p>
+    <button id="load" disabled>LOAD AD</button>
+</p>
+<div id="div-gpt-ad-1460505748561-0"></div>
+<h3>Events</h3>
+<div id="log"></div>
+<script>
+  window.pbjs = window.pbjs || {};
+  pbjs.que = pbjs.que || [];
+
+  window.googletag = window.googletag || {};
+  googletag.cmd = googletag.cmd || [];
+
+  const PREBID_TIMEOUT = 1000;
+  const AD_UNIT_CODE = 'div-gpt-ad-1460505748561-0';
+  const BID_TTL = 3;
+
+  const adUnits = [{
+    code: AD_UNIT_CODE,
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      }
+    },
+    bids: [{
+      bidder: 'appnexus',
+      params: {
+        placementId: 13144370
+      }
+    }]
+  }];
+
+  function log(msg) {
+    document.getElementById('log').textContent += `${new Date().toLocaleTimeString()} ${msg}\n`;
+  }
+
+  let auctionNo = 0;
+
+  // Ask for a bid to render in place of an expired one - here, from a new auction for the same ad unit.
+  // The ad server's targeting cannot be updated at this point: it still reflects the expired bid.
+  function replaceExpiredBid(expiredBid) {
+    if (!document.getElementById('replace').checked) {
+      return null;
+    }
+    log(`replaceExpiredBid: running a new auction to replace ${expiredBid.adId}`);
+    return new Promise((resolve) => {
+      pbjs.requestBids({
+        adUnitCodes: [expiredBid.adUnitCode],
+        timeout: PREBID_TIMEOUT,
+        bidsBackHandler() {
+          // returning nothing renders the expired bid as usual
+          resolve(pbjs.getHighestCpmBids(expiredBid.adUnitCode)[0]);
+        }
+      });
+    });
+  }
+
+  pbjs.que.push(function () {
+    pbjs.setConfig({
+      debug: true,
+      debugging: {
+        enabled: true,
+        intercept: [
+          {
+            when: {},
+            then: {
+              ttl: BID_TTL,
+              ad: () => {
+                const label = auctionNo === 1 ? 'Original bid' : `Replacement bid (auction #${auctionNo})`;
+                return `<html><body style="margin: 0"><div style="width: 300px; height: 250px; display: flex; align-items: center; justify-content: center; text-align: center; font: bold 24px sans-serif; background: ${auctionNo === 1 ? '#f4c7c3' : '#b7e1cd'}">${label}</div></body></html>`;
+              }
+            }
+          }
+        ]
+      },
+      auctionOptions: {
+        replaceExpiredBid
+      }
+    });
+
+    pbjs.onEvent('auctionInit', () => {
+      auctionNo++;
+    });
+    pbjs.onEvent('bidResponse', (bid) => {
+      log(`bidResponse: ${bid.adId} (auction #${auctionNo}, ttl ${bid.ttl}s)`);
+    });
+    pbjs.onEvent('expiredRender', (bid) => log(`expiredRender: ${bid.adId}`));
+    pbjs.onEvent('bidWon', (bid) => log(`bidWon: ${bid.adId}`));
+    pbjs.onEvent('adRenderSucceeded', ({ bid }) => log(`adRenderSucceeded: ${bid.adId}`));
+    pbjs.onEvent('adRenderFailed', ({ adId, reason }) => log(`adRenderFailed: ${adId} (${reason})`));
+
+    pbjs.addAdUnits(adUnits);
+    pbjs.requestBids({
+      bidsBackHandler: setTargeting,
+      timeout: PREBID_TIMEOUT
+    });
+  });
+
+  // Targeting is set right after the auction, but the ad server is not called until "LOAD AD" is clicked.
+  function setTargeting() {
+    googletag.cmd.push(function () {
+      pbjs.que.push(function () {
+        pbjs.setTargetingForGPTAsync([AD_UNIT_CODE]);
+        log(`targeting set: hb_adid=${googletag.pubads().getSlots()[0].getTargeting('hb_adid')}`);
+        startCountdown();
+        document.getElementById('load').disabled = false;
+      });
+    });
+  }
+
+  function startCountdown() {
+    const [bid] = pbjs.getHighestCpmBids(AD_UNIT_CODE);
+    if (bid == null) return;
+    // bids are considered expired `ttlBuffer` seconds before their TTL runs out
+    const expiresAt = bid.responseTimestamp + (bid.ttl - (pbjs.getConfig('ttlBuffer') ?? 1)) * 1000;
+    const el = document.getElementById('countdown');
+    const timer = setInterval(() => {
+      const left = Math.ceil((expiresAt - Date.now()) / 1000);
+      if (left > 0) {
+        el.textContent = `${left}s`;
+      } else {
+        el.textContent = 'expired - load the ad now';
+        clearInterval(timer);
+      }
+    }, 250);
+  }
+
+  document.getElementById('load').addEventListener('click', function () {
+    this.disabled = true;
+    log('calling the ad server');
+    googletag.cmd.push(function () {
+      googletag.pubads().refresh();
+    });
+  });
+
+  googletag.cmd.push(function () {
+    googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], AD_UNIT_CODE).addService(googletag.pubads());
+    googletag.pubads().disableInitialLoad();
+    googletag.pubads().enableSingleRequest();
+    googletag.enableServices();
+    googletag.display(AD_UNIT_CODE);
+  });
+</script>
+</body>
+</html>

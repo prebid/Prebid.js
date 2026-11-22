@@ -51,7 +51,7 @@ describe('AdriverIdSystem', function () {
     const responses = [
       { adrcid: 'adrcidValue' },
       { adrcid: undefined }
-    ]
+    ];
 
     responses.forEach(response => describe('test user sync response behavior', function () {
       const config = {
@@ -71,7 +71,7 @@ describe('AdriverIdSystem', function () {
         const minimalDate = new Date(0).toString();
 
         function dateStringFor(date, maxDeltaMs = 2000) {
-          return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs)
+          return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs);
         }
 
         if (response.adrcid) {

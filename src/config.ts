@@ -9,6 +9,7 @@ import {
   getParameterByName,
   isArray,
   isBoolean,
+  isFn,
   isPlainObject,
   isStr,
   logError,
@@ -20,8 +21,9 @@ import { DEBUG_MODE } from './constants.js';
 import type { UserSyncConfig } from "./userSync.ts";
 import type { DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty } from "./types/objects.d.ts";
 import type { BidderCode } from "./types/common.d.ts";
+import type { GptSlot } from "./types/gpt.d.ts";
 import type { ORTBRequest } from "./types/ortb/request.d.ts";
-import { Bid } from './bidfactory.ts';
+import type { Bid } from './bidfactory.ts';
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -30,7 +32,7 @@ const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
-const DEFAULT_MAXBID_VALUE = 5000
+const DEFAULT_MAXBID_VALUE = 5000;
 
 const DEFAULT_IFRAMES_CONFIG = {};
 
@@ -61,41 +63,53 @@ function attachProperties(config, useDefaultValues = true) {
     mediaTypePriceGranularity: {},
     bidderSequence: DEFAULT_BIDDER_SEQUENCE,
     auctionOptions: {}
-  } : {}
+  } : {};
 
   const validateauctionOptions = (() => {
-    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes'];
-    const arrKeys = ['secondaryBidders']
-    const allKeys = [].concat(boolKeys).concat(arrKeys);
+    const boolKeys = ['suppressStaleRender', 'suppressExpiredRender', 'legacyRender', 'rejectUnknownMediaTypes', 'rejectInvalidMediaTypes', 'yield'];
+    const arrKeys = ['secondaryBidders'];
+    const fnKeys = ['replaceExpiredBid'];
+    const enumKeys = { viewabilityMeasurement: ['observer', 'boundingBox'] };
+    const allKeys = [].concat(boolKeys).concat(arrKeys).concat(fnKeys).concat(Object.keys(enumKeys));
 
     return function validateauctionOptions(val) {
       if (!isPlainObject(val)) {
-        logWarn('Auction Options must be an object')
-        return false
+        logWarn('Auction Options must be an object');
+        return false;
       }
 
       for (const k of Object.keys(val)) {
         if (!allKeys.includes(k)) {
-          logWarn(`Auction Options given an incorrect param: ${k}`)
-          return false
+          logWarn(`Auction Options given an incorrect param: ${k}`);
+          return false;
         }
         if (arrKeys.includes(k)) {
           if (!isArray(val[k])) {
             logWarn(`Auction Options ${k} must be of type Array`);
-            return false
+            return false;
           } else if (!val[k].every(isStr)) {
             logWarn(`Auction Options ${k} must be only string`);
-            return false
+            return false;
           }
         } else if (boolKeys.includes(k)) {
           if (!isBoolean(val[k])) {
             logWarn(`Auction Options ${k} must be of type boolean`);
             return false;
           }
+        } else if (fnKeys.includes(k)) {
+          if (!isFn(val[k])) {
+            logWarn(`Auction Options ${k} must be a function`);
+            return false;
+          }
+        } else if (enumKeys.hasOwnProperty(k)) {
+          if (!enumKeys[k].includes(val[k])) {
+            logWarn(`Auction Options ${k} must be one of: ${enumKeys[k].join(', ')}`);
+            return false;
+          }
         }
       }
       return true;
-    }
+    };
   })();
   function getProp(name) {
     return values[name];
@@ -112,7 +126,7 @@ function attachProperties(config, useDefaultValues = true) {
     publisherDomain: {
       set(val) {
         if (val != null) {
-          logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
+          logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead');
         }
         setProp('publisherDomain', val);
       }
@@ -124,7 +138,7 @@ function attachProperties(config, useDefaultValues = true) {
             setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
           } else if (isPlainObject(val)) {
             setProp('customPriceBucket', val);
-            setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM)
+            setProp('priceGranularity', GRANULARITY_OPTIONS.CUSTOM);
             logMessage('Using custom price granularity');
           }
         }
@@ -135,9 +149,9 @@ function attachProperties(config, useDefaultValues = true) {
       set(val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
-            if (typeof val === 'string') {
+            if (typeof val[item] === 'string') {
               aggregate[item] = (hasGranularity(val[item])) ? val[item] : getProp('priceGranularity');
-            } else if (isPlainObject(val)) {
+            } else if (isPlainObject(val[item])) {
               aggregate[item] = val[item];
               logMessage(`Using custom price granularity for ${item}`);
             }
@@ -164,7 +178,7 @@ function attachProperties(config, useDefaultValues = true) {
         }
       }
     }
-  }
+  };
 
   Object.defineProperties(config, Object.fromEntries(
     Object.entries(props)
@@ -201,7 +215,8 @@ function attachProperties(config, useDefaultValues = true) {
   }
 }
 
-export interface Config {
+/** P is inferred by the setters to keep each provider's configuration tied to its name. */
+export interface Config<P extends string = string> {
   /**
    * Enable debug mode. In debug mode, Prebid.js will post additional messages to the browser console and cause
    * Prebid Server to return additional information in its response.
@@ -221,6 +236,21 @@ export interface Config {
    */
   useBidCache?: boolean;
   /**
+   * When Bid Caching is turned on, a custom Filter Function can be defined to gain more granular control over which “cached” bids can be used.
+   * This function will only be called for “cached” bids from previous auctions, not “current” bids from the most recent auction.
+   * The function should take a single bid object argument, and return true to use the cached bid, or false to not use the cached bid.
+   *
+   * For Example, to turn on Bid Caching, but exclude cached video bids, you could do this:
+   *
+   * ```
+   * pbjs.setConfig({
+   *   useBidCache: true,
+   *   bidCacheFilterFunction: bid => bid.mediaType !== 'video'
+   * });
+   * ```
+   */
+  bidCacheFilterFunction?: (bid: Bid) => boolean;
+  /**
    * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
    */
   deviceAccess?: boolean;
@@ -236,7 +266,7 @@ export interface Config {
    * The default maxBid value is 5000.
    */
   maxBid?: number;
-  userSync?: UserSyncConfig;
+  userSync?: UserSyncConfig<P>;
   /**
    * Set the order in which bidders are called.
    */
@@ -262,17 +292,21 @@ export interface Config {
    */
   bidTargetingExclusion?: (bid: Bid, bids: Bid[]) => boolean;
   /**
+   * Customize how a GPT slot is matched to an ad unit code during targeting.
+   */
+  customGptSlotMatching?: (slot: GptSlot) => ((adUnitCode: string) => boolean) | undefined;
+  /**
    * List of fingerprinting APIs to disable. When an API is listed, the corresponding library
    * returns a safe default instead of reading the real value. Supported: 'devicepixelratio', 'webdriver', 'resolvedoptions'.
    */
   disableFingerprintingApis?: Array<'devicepixelratio' | 'webdriver' | 'resolvedoptions'>;
 }
 
-type PartialConfig = Partial<Config> & { [setting: string]: unknown };
-type BidderConfig = {
+type PartialConfig<P extends string = string> = Partial<Config<P>> & { [setting: string]: unknown };
+type BidderConfig<P extends string = string> = {
   bidders: BidderCode[];
-  config: PartialConfig;
-}
+  config: PartialConfig<P>;
+};
 
 type TopicalConfig<S extends string> = { [K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown };
 type UnregistrationFn = () => void;
@@ -282,13 +316,13 @@ type GetConfigOptions = {
    * If true, the listener will be called immediately (instead of only on the next configuration change).
    */
   init?: boolean;
-}
+};
 
 interface GetConfig {
   (): Config;
     <S extends DeepProperty<Config> | string>(setting: S): S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown;
     (topic: typeof ALL_TOPICS, listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
-    <S extends DeepProperty<Config> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
+    <S extends NonNullable<DeepProperty<Config>> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
     (listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
 }
 
@@ -374,7 +408,7 @@ export function newConfig() {
     const conf = _getConfig();
     Object.defineProperty(conf, 'ortb2', {
       get: function () {
-        throw new Error('invalid access to \'orbt2\' config - use request parameters instead');
+        throw new Error('invalid access to \'ortb2\' config - use request parameters instead');
       }
     });
     return conf;
@@ -396,7 +430,7 @@ export function newConfig() {
       }
 
       return subscribe(...args);
-    }
+    };
   }) as any;
 
   const [readConfig, readAnyConfig]: [GetConfig, GetConfig] = [getConfig, getAnyConfig].map(wrapee => {
@@ -409,7 +443,7 @@ export function newConfig() {
         res = deepClone(res);
       }
       return res;
-    }
+    };
   }) as any;
 
   /**
@@ -422,7 +456,7 @@ export function newConfig() {
   /*
    * Set configuration.
    */
-  function setConfig(options: PartialConfig) {
+  function setConfig<const P extends string>(options: PartialConfig<P>) {
     if (!isPlainObject(options)) {
       logError('setConfig options must be an object');
       return;
@@ -441,7 +475,7 @@ export function newConfig() {
       try {
         topicalConfig[topic] = config[topic] = option;
       } catch (e) {
-        logWarn(`Cannot set config for property ${topic} : `, e)
+        logWarn(`Cannot set config for property ${topic} : `, e);
       }
     });
 
@@ -540,7 +574,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config: BidderConfig, mergeFlag = false) {
+  function setBidderConfig<const P extends string>(config: BidderConfig<P>, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -575,19 +609,25 @@ export function newConfig() {
     }
   }
 
-  function mergeConfig(config: PartialConfig) {
+  function mergeConfig<const P extends string>(config: PartialConfig<P>) {
     if (!isPlainObject(config)) {
       logError('mergeConfig input must be an object');
       return;
     }
 
     const mergedConfig = mergeDeep(_getConfig(), config);
+    const updatedConfig = Object.keys(config).reduce((accumulator, topic) => {
+      if (Object.prototype.hasOwnProperty.call(mergedConfig, topic)) {
+        accumulator[topic] = mergedConfig[topic];
+      }
+      return accumulator;
+    }, {});
 
-    setConfig({ ...mergedConfig });
+    setConfig(updatedConfig);
     return mergedConfig;
   }
 
-  function mergeBidderConfig(config: BidderConfig) {
+  function mergeBidderConfig<const P extends string>(config: BidderConfig<P>) {
     return setBidderConfig(config, true);
   }
 
@@ -595,23 +635,24 @@ export function newConfig() {
    * Internal functions for core to execute some synchronous code while having an active bidder set.
    */
   function runWithBidder(bidder, fn) {
+    const prevBidder = currBidder;
     currBidder = bidder;
     try {
       return fn();
     } finally {
-      resetBidder();
+      currBidder = prevBidder;
     }
   }
   function callbackWithBidder(bidder) {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, cb.bind(this, ...args))
+          return runWithBidder(bidder, cb.bind(this, ...args));
         } else {
           logWarn('config.callbackWithBidder callback is not a function');
         }
-      }
-    }
+      };
+    };
   }
 
   function getCurrentBidder() {

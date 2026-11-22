@@ -1,4 +1,4 @@
-import { getAdMarkup, getReplacements, getReplacer } from '../../../creative/renderers/native/renderer.js';
+import { getAdMarkup, getReplacer, render } from '../../../creative/renderers/native/renderer.js';
 import { ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE } from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
@@ -13,7 +13,7 @@ describe('Native creative renderer', () => {
       loadScript = sinon.stub();
     });
     it('uses rendererUrl if present', () => {
-      win.document = {}
+      win.document = {};
       const data = {
         assets: ['1', '2'],
         ortb: 'ortb',
@@ -43,7 +43,7 @@ describe('Native creative renderer', () => {
       });
       afterEach(() => {
         document.body.removeChild(frame);
-      })
+      });
       it('with adTemplate, if present', () => {
         return getAdMarkup('123', { adTemplate: 'tpl' }, replacer, win).then((result) => {
           expect(result).to.eql('markup');
@@ -51,20 +51,20 @@ describe('Native creative renderer', () => {
         });
       });
       it('with document body otherwise', () => {
-        win.document.body.innerHTML = 'body'
+        win.document.body.innerHTML = 'body';
         return getAdMarkup('123', {}, replacer, win).then((result) => {
           expect(result).to.eql('markup');
           sinon.assert.calledWith(replacer, 'body');
-        })
-      })
-    })
+        });
+      });
+    });
   });
 
   describe('getReplacer', () => {
     function expectReplacements(replacer, replacements) {
       Object.entries(replacements).forEach(([placeholder, repl]) => {
         expect(replacer(`.${placeholder}.${placeholder}.`)).to.eql(`.${repl}.${repl}.`);
-      })
+      });
     }
     it('uses empty strings for missing legacy assets', () => {
       const repl = getReplacer('123', {
@@ -75,7 +75,7 @@ describe('Native creative renderer', () => {
       expectReplacements(repl, {
         '##hb_native_k##': '',
         'hb_native_k:123': ''
-      })
+      });
     });
 
     it('uses empty string for missing ORTB assets', () => {
@@ -111,7 +111,7 @@ describe('Native creative renderer', () => {
         'hb_native_k1:123': 'v1',
         '##hb_native_k2##': 'v2',
         'hb_native_k2:123': 'v2'
-      })
+      });
     });
 
     describe('ORTB response top-level (non-asset) fields', () => {
@@ -152,7 +152,7 @@ describe('Native creative renderer', () => {
         expectReplacements(repl, {
           '##hb_native_linkurl##': '',
           '##hb_native_privacy##': '',
-        })
+        });
       });
     });
 
@@ -178,14 +178,14 @@ describe('Native creative renderer', () => {
           const repl = getReplacer('', { ortb });
           expectReplacements(repl, {
             '##hb_native_asset_id_123##': 'val'
-          })
+          });
         });
         it('replaces link placeholders', () => {
           ortb.assets[0].link = { url: 'link' };
           const repl = getReplacer('', { ortb });
           expectReplacements(repl, {
             '##hb_native_asset_link_id_123##': 'link'
-          })
+          });
         });
       });
     });
@@ -195,9 +195,9 @@ describe('Native creative renderer', () => {
     let getMarkup, sendMessage, adId, nativeData, exc, frame;
     beforeEach(() => {
       adId = '123';
-      nativeData = {}
+      nativeData = {};
       getMarkup = sinon.stub();
-      sendMessage = sinon.stub()
+      sendMessage = sinon.stub();
       exc = sinon.stub();
       frame = document.createElement('iframe');
       document.body.appendChild(frame);
@@ -206,14 +206,14 @@ describe('Native creative renderer', () => {
 
     afterEach(() => {
       document.body.removeChild(frame);
-    })
+    });
 
     function runRender() {
-      return render({ adId, native: nativeData }, { sendMessage, exc }, win, getMarkup)
+      return render({ adId, native: nativeData }, { sendMessage, exc }, win, getMarkup);
     }
 
     it('replaces placeholders in head, if present', () => {
-      getMarkup.returns(Promise.resolve(''))
+      getMarkup.returns(Promise.resolve(''));
       win.document.head.innerHTML = '##hb_native_asset_id_1##';
       nativeData.ortb = {
         assets: [
@@ -222,23 +222,23 @@ describe('Native creative renderer', () => {
       };
       return runRender().then(() => {
         expect(win.document.head.innerHTML).to.eql('repl');
-      })
+      });
     });
 
     it('does not replace iframes with srcdoc that contain "renderer"', () => {
       win.document.head.innerHTML = win.document.body.innerHTML = '<iframe srcdoc="renderer"></iframe>';
-      getMarkup.returns(Promise.resolve(''))
+      getMarkup.returns(Promise.resolve(''));
       return runRender().then(() => {
         expect(Array.from(win.document.querySelectorAll('iframe[srcdoc="renderer"]')).length).to.eql(2);
-      })
-    })
+      });
+    });
 
     it('drops markup on body, and fires imp trackers', () => {
       getMarkup.returns(Promise.resolve('markup'));
       return runRender().then(() => {
         expect(win.document.body.innerHTML).to.eql('markup');
         sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_IMP });
-      })
+      });
     });
 
     it('runs postRenderAd if defined', () => {
@@ -248,9 +248,9 @@ describe('Native creative renderer', () => {
         sinon.assert.calledWith(win.postRenderAd, sinon.match({
           adId,
           ...nativeData
-        }))
-      })
-    })
+        }));
+      });
+    });
 
     it('rejects on error', (done) => {
       const err = new Error('failure');
@@ -258,7 +258,7 @@ describe('Native creative renderer', () => {
       runRender().catch((e) => {
         expect(e).to.eql(err);
         done();
-      })
+      });
     });
 
     describe('requests resize', () => {
@@ -273,7 +273,7 @@ describe('Native creative renderer', () => {
             cloneNode: () => node
           };
           return node;
-        }
+        };
         win.document = {
           head: mkNode(),
           body: Object.assign(mkNode(), {
@@ -289,8 +289,8 @@ describe('Native creative renderer', () => {
       it('immediately, if document is loaded', () => {
         win.document.readyState = 'complete';
         return runRender().then(() => {
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_RESIZE, height: 123, width: 321 })
-        })
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_RESIZE, height: 123, width: 321 });
+        });
       });
 
       it('on document load otherwise', () => {
@@ -298,7 +298,7 @@ describe('Native creative renderer', () => {
           sinon.assert.neverCalledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_RESIZE }));
           win.onload();
           sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_RESIZE, height: 123, width: 321 });
-        })
+        });
       });
 
       it('uses scrollHeight if offsetHeight is 0', () => {
@@ -306,10 +306,10 @@ describe('Native creative renderer', () => {
         win.document.documentElement = { scrollHeight: 200 };
         return runRender().then(() => {
           win.onload();
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_RESIZE, height: 200 }))
-        })
-      })
-    })
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_RESIZE, height: 200 }));
+        });
+      });
+    });
 
     describe('click trackers', () => {
       let iframe;
@@ -317,24 +317,24 @@ describe('Native creative renderer', () => {
         iframe = document.createElement('iframe');
         document.body.appendChild(iframe);
         win.document = iframe.contentDocument;
-      })
+      });
       afterEach(() => {
         document.body.removeChild(iframe);
-      })
+      });
 
       it('are fired on click', () => {
         getMarkup.returns(Promise.resolve('<div class="pb-click"><div id="target"></div></div>'));
         return runRender().then(() => {
           win.document.querySelector('#target').click();
           sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({ action: ACTION_CLICK }));
-        })
+        });
       });
 
       it('pass assetId if provided', () => {
         getMarkup.returns(Promise.resolve('<div class="pb-click" hb_native_asset_id="123" id="target"></div>'));
         return runRender().then(() => {
           win.document.querySelector('#target').click();
-          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_CLICK, assetId: '123' })
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, { action: ACTION_CLICK, assetId: '123' });
         });
       });
     });

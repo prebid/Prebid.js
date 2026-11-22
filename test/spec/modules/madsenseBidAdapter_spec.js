@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/madsenseBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import { generateUUID } from '../../../src/utils.js';
 
 const getCommonParams = () => ({
@@ -186,3 +186,9 @@ function validateBid(actualBid, expectedBid) {
   });
   expect(actualBid.meta).to.have.property('advertiserDomains');
 }
+
+describe('madsenseBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1659);
+  });
+});

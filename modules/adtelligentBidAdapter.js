@@ -1,4 +1,4 @@
-import { _map, deepAccess, flatten, isArray, parseSizesInput } from '../src/utils.js';
+import { _map, flatten, isArray, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -23,20 +23,15 @@ const HOST_GETTERS = {
     let num = 0;
     return function () {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
-    }
+    };
   }()),
-  streamkey: () => 'ghb.hb.streamkey.net',
-  janet: () => 'ghb.bidder.jmgads.com',
-  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
-  '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
-  stellormedia: () => 'ghb.ads.stellormedia.com'
-}
+};
 const getUri = function (bidderCode) {
   const bidderWithoutSuffix = bidderCode.split('_')[0];
   const getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
-  return PROTOCOL + getter() + AUCTION_PATH
-}
+  return PROTOCOL + getter() + AUCTION_PATH;
+};
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
@@ -47,18 +42,12 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: [
-    'streamkey',
-    'janet',
-    { code: 'selectmedia', gvlid: 775 },
-    { code: 'ocm', gvlid: 1148 },
-    '9dotsmedia',
     'indicue',
-    'stellormedia'
   ],
   supportedMediaTypes,
   isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache);
   },
   /**
    * Make a server request from the list of BidRequests
@@ -66,8 +55,8 @@ export const spec = {
    * @param adapterRequest
    */
   buildRequests: function (bidRequests, adapterRequest) {
-    const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
+    const adapterSettings = config.getConfig(adapterRequest.bidderCode);
+    const chunkSize = adapterSettings?.chunkSize ?? 10;
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
 
@@ -78,7 +67,7 @@ export const spec = {
         method: 'POST',
         url: getUri(adapterRequest.bidderCode)
       };
-    })
+    });
   },
 
   /**
@@ -142,7 +131,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.GPP = adapterRequest.ortb2.regs.gpp;
     tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
   }
-  const ageVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
+  const ageVerification = adapterRequest?.ortb2?.regs?.ext?.age_verification;
 
   if (ageVerification) {
     tag.AgeVerification = ageVerification;
@@ -166,10 +155,10 @@ function bidToTag(bidRequests, adapterRequest) {
  * @returns {object}
  */
 function prepareBidRequests(bidReq) {
-  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
-  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
-  const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
-  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq)
+  const mediaType = bidReq?.mediaTypes?.video ? VIDEO : DISPLAY;
+  const sizes = mediaType === VIDEO ? bidReq?.mediaTypes?.video?.playerSize : bidReq?.mediaTypes?.banner?.sizes;
+  const gpid = bidReq?.ortb2Imp?.ext?.gpid;
+  const placementInfo = getPlacementPositionUtils().getPlacementInfo(bidReq);
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
@@ -199,7 +188,7 @@ function prepareBidRequests(bidReq) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return bidderRequest?.mediaTypes?.video ? VIDEO : BANNER;
 }
 
 /**
@@ -209,8 +198,8 @@ function getMediaType(bidderRequest) {
  * @returns {object}
  */
 function createBid(bidResponse, bidRequest) {
-  const mediaType = getMediaType(bidRequest)
-  const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+  const mediaType = getMediaType(bidRequest);
+  const context = bidRequest?.mediaTypes?.video?.context;
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,

@@ -1,9 +1,14 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
-import { spec, resetInvibes, stubDomainOptions, readGdprConsent, storage } from 'modules/invibesBidAdapter.js';
+import { resetInvibes, spec, storage } from 'modules/invibesBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('invibesBidAdapter:', function () {
+  // the adapter keeps this on the top window, which every later spec file shares (test/vitest/stateGuard.mjs)
+  after(() => {
+    delete window.top.invibes;
+  });
+
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
   const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
@@ -132,11 +137,7 @@ describe('invibesBidAdapter:', function () {
         [400, 300],
         [125, 125]
       ],
-      transactionId: 't1',
-      userId: {
-        pubcid: 'pub-cid-code',
-        pubProvidedId: 'pub-provided-id'
-      }
+      transactionId: 't1'
     }, {
       bidId: 'b2',
       bidder: BIDDER_CODE,
@@ -159,22 +160,6 @@ describe('invibesBidAdapter:', function () {
       page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
     },
     auctionStart: Date.now()
-  }
-
-  const StubbedPersistence = function (initialValue) {
-    var value = initialValue;
-    return {
-      load: function () {
-        const str = value || '';
-        try {
-          return JSON.parse(str);
-        } catch (e) {
-        }
-      },
-      save: function (obj) {
-        value = JSON.stringify(obj);
-      }
-    }
   };
 
   const SetBidderAccess = function() {
@@ -186,7 +171,7 @@ describe('invibesBidAdapter:', function () {
         storageAllowed: true
       }
     };
-  }
+  };
 
   let sandbox;
 
@@ -216,17 +201,17 @@ describe('invibesBidAdapter:', function () {
           params: {
             placementId: PLACEMENT_ID
           }
-        }
+        };
 
         expect(spec.isBidRequestValid(validBid)).to.be.true;
-      })
+      });
     });
 
     context('invalid bid request:', function () {
       it('returns false when no params', function () {
         const invalidBid = {
           bidder: BIDDER_CODE
-        }
+        };
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
@@ -237,7 +222,7 @@ describe('invibesBidAdapter:', function () {
           params: {
             id: '5'
           }
-        }
+        };
 
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
@@ -248,7 +233,7 @@ describe('invibesBidAdapter:', function () {
           params: {
             placementId: PLACEMENT_ID
           }
-        }
+        };
 
         top.window.invibes.bidResponse = { prop: 'prop' };
         expect(spec.isBidRequestValid(validBid)).to.be.true;
@@ -447,7 +432,7 @@ describe('invibesBidAdapter:', function () {
       const now = new Date().getTime();
       localStorage.ivvcap = JSON.stringify({
         9731: [1, now + (24 * 60 * 60 * 1000)]
-      })
+      });
       SetBidderAccess();
 
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
@@ -512,7 +497,7 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.invibbvlog).to.equal(true);
     });
 
-    it('does not send query string params from localstorage if unknwon', function () {
+    it('does not send query string params from localstorage if unknown', function () {
       localStorage.ivbs = JSON.stringify({ someparam: true });
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.someparam).to.be.undefined;
@@ -530,9 +515,9 @@ describe('invibesBidAdapter:', function () {
       expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
     });
 
-    it('sends all Placement Ids and userId', function () {
+    it('does not send a raw userId', function () {
       const request = spec.buildRequests(bidRequestsWithUserId, bidderRequestWithPageInfo);
-      expect(JSON.parse(request.data.bidParamsJson).userId).to.exist;
+      expect(JSON.parse(request.data.bidParamsJson)).to.not.have.property('userId');
     });
 
     it('sends undefined lid when no cookie', function () {
@@ -573,7 +558,7 @@ describe('invibesBidAdapter:', function () {
     it('does not send handIid when it doesnt exist in cookie', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
-      sandbox.stub(storage, 'getCookie').returns(null)
+      sandbox.stub(storage, 'getCookie').returns(null);
       const bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -1286,7 +1271,7 @@ describe('invibesBidAdapter:', function () {
           }],
           ShouldSetLId: true,
           LId: 'dvdjkams6nkq'
-        }
+        };
       }
 
       return {
@@ -1372,7 +1357,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('does not make multiple bids', function () {
-        const result = spec.interpretResponse({ body: response }, { bidRequests });
+        spec.interpretResponse({ body: response }, { bidRequests });
         const secondResult = spec.interpretResponse({ body: response }, { bidRequests });
         expect(secondResult).to.be.empty;
       });
@@ -1415,6 +1400,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1424,6 +1410,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
@@ -1433,6 +1420,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
 
@@ -1442,6 +1430,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
 
@@ -1451,6 +1440,7 @@ describe('invibesBidAdapter:', function () {
 
         var firstResult = spec.interpretResponse({ body: firstResponse }, { bidRequests });
         var secondResult = spec.interpretResponse({ body: secondResponse }, { bidRequests });
+        expect(firstResult[0].creativeId).to.equal(123);
         expect(secondResult).to.be.empty;
       });
     });

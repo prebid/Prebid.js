@@ -33,7 +33,7 @@ function fillParameters(bid) {
     if (global[k]) {
       bid.params[k] = global[k];
     }
-  })
+  });
 
   return bid.params;
 }
@@ -46,27 +46,27 @@ export const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const params = fillParameters(bidderRequest?.bids[0])
+    const params = fillParameters(bidderRequest?.bids[0]);
 
     if (params?.test) {
-      deepSetValue(request, 'test', 1)
+      deepSetValue(request, 'test', 1);
     }
 
     deepSetValue(request, 'ext.adapter', {
       version: VERSION,
       name: 'prebidjs'
-    })
+    });
 
     return request;
   }
-})
+});
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
-    fillParameters(bid)
+    fillParameters(bid);
 
     if (bid && typeof bid.params !== 'object') {
       logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
@@ -86,7 +86,7 @@ export const spec = {
     const video = deepAccess(bid, `mediaTypes.video`);
 
     if (!banner && !video) {
-      logWarn(BIDDER_CODE + ': either banner or video mediaType must be provided')
+      logWarn(BIDDER_CODE + ': either banner or video mediaType must be provided');
       return false;
     }
 
@@ -109,7 +109,7 @@ export const spec = {
         data: converter.toORTB({ bidRequests: [bid], bidderRequest }),
         bidRequest: bid,
       };
-    })
+    });
   },
   interpretResponse(response, request) {
     return converter.fromORTB({ response: response.body, request: request.data }).bids;

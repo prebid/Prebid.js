@@ -1,4 +1,5 @@
-import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
+import { getElementStyle } from '../libraries/elementStyle/elementStyle.js';
+import { inIframe, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getViewportSize } from '../libraries/viewport/viewport.js';
@@ -56,14 +57,6 @@ export const spec = {
         pubcontainerid,
       };
 
-      let windowTop;
-      try {
-        windowTop = window.top;
-      } catch (e) {
-        logMessage(e);
-        windowTop = window;
-      }
-
       return {
         method: 'POST',
         url: requestUrl,
@@ -78,7 +71,6 @@ export const spec = {
           refererUrl: deepAccess(bidderRequest, 'refererInfo.ref', window.document.referrer),
           isiframe,
           version: '$prebid.version$',
-          ExtUserIDs: bidRequest.userId,
           visitorInfo: {
             localTime: getLocalDateFormatted(),
             dayOfWeek: new Date().getDay(),
@@ -86,8 +78,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: windowTop.scrollX,
-            scrollbary: windowTop.scrollY,
+            scrollbarx: getWinDimensions().scrollX,
+            scrollbary: getWinDimensions().scrollY,
           },
           bidrequest,
         },
@@ -144,7 +136,7 @@ export const spec = {
         .replace('{gdpr_cs}', gdprConsent.consentString)
         .replace('{usp}', uspApplies)
         .replace('{usp_cs}', uspString);
-    }
+    };
 
     serverResponses.forEach(serverResponse => {
       const userSyncUrls = serverResponse.body.usersync || [];
@@ -161,12 +153,12 @@ export const spec = {
             url: userSyncUrlProcess(sync.url),
           });
         }
-      })
+      });
     });
 
     return syncs;
   },
-}
+};
 
 function getContext(elem) {
   try {
@@ -182,7 +174,7 @@ function isDefined(val) {
 
 function getIsHidden(elem) {
   let lastElem = elem;
-  let elemHidden = false;
+  let elemHidden;
   let m;
   m = 0;
 
@@ -190,8 +182,8 @@ function getIsHidden(elem) {
     m = m + 1;
     try {
       if (
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('display') === 'none' ||
-        getContext(elem).getComputedStyle(lastElem).getPropertyValue('visibility') === 'hidden'
+        getElementStyle(lastElem, getContext(elem)).display === 'none' ||
+        getElementStyle(lastElem, getContext(elem)).visibility === 'hidden'
       ) {
         return true;
       } else {
@@ -225,7 +217,7 @@ function getDocumentDimensions() {
     const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
     return [width, height];
   } catch (t) {
-    return [-1, -1]
+    return [-1, -1];
   }
 }
 
@@ -244,13 +236,13 @@ function getFramePos() {
     m = m + 1;
     try {
       if (m > 1) {
-        t = t.parent
+        t = t.parent;
       }
       frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
       frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
-  } while ((m < 100) && (t.parent !== t.self))
+  } while ((m < 100) && (t.parent !== t.self));
 
   return [frmLeft, frmTop];
 }

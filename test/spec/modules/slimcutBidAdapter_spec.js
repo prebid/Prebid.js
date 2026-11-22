@@ -103,18 +103,18 @@ describe('slimcutBidAdapter', function() {
       expect(payload.gdpr_iab.consent).to.equal(consentString);
     });
     it('should add referer info to payload', function() {
-      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         refererInfo: {
           page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
-      }
+      };
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html');
     });
   });
   describe('getUserSyncs', () => {

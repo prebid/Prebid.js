@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { submodule } from '../src/hook.js'
+import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
@@ -15,17 +15,17 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
  */
 
 // Returns StorageManager
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'czechAdId' })
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'czechAdId' });
 
 // Returns the id string from either cookie or localstorage
 const readId = () => {
-  const id = storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid')
-  return id && isValidUUID(id) ? id : null
-}
+  const id = storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid');
+  return id && isValidUUID(id) ? id : null;
+};
 const isValidUUID = (str) => {
-  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/
-  return uuidRegex.test(str)
-}
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  return uuidRegex.test(str);
+};
 
 /** @type {Submodule} */
 export const czechAdIdSubmodule = {
@@ -46,8 +46,8 @@ export const czechAdIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode () {
-    const id = readId()
-    return id ? { czechAdId: readId() } : undefined
+    const id = readId();
+    return id ? { czechAdId: readId() } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -55,8 +55,8 @@ export const czechAdIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId () {
-    const id = readId()
-    return id ? { id: id } : undefined
+    const id = readId();
+    return id ? { id: id } : undefined;
   },
   eids: {
     'czechAdId': {
@@ -64,6 +64,6 @@ export const czechAdIdSubmodule = {
       atype: 1
     },
   }
-}
+};
 
-submodule('userId', czechAdIdSubmodule)
+submodule('userId', czechAdIdSubmodule);

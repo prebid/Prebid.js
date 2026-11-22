@@ -39,7 +39,7 @@ function buildBidRequests(validBidRequests, bidderRequest) {
     };
 
     return bidRequest;
-  })
+  });
 }
 
 function buildBid(bidData) {
@@ -185,7 +185,7 @@ export const spec = {
       options: {
         contentType: 'application/json'
       }
-    }
+    };
   },
 
   /**
@@ -213,5 +213,5 @@ export const spec = {
     }
   }
 
-}
+};
 registerBidder(spec);

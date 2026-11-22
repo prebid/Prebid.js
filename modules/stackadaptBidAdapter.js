@@ -4,6 +4,10 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, formatQS, isFn, isPlainObject } from '../src/utils.js';
 import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
+/**
+ * @typedef {import('./stackadaptBidAdapter.d.ts').StackadaptBidParams} StackadaptBidParams
+ */
+
 const BIDDER_CODE = 'stackadapt';
 const ENDPOINT_URL = 'https://pjs.srv.stackadapt.com/br';
 const USER_SYNC_ENDPOINT = 'https://sync.srv.stackadapt.com/sync?nid=pjs';
@@ -19,7 +23,7 @@ export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const bid = context.bidRequests[0];
-    request.id = bidderRequest.bidderRequestId
+    request.id = bidderRequest.bidderRequestId;
 
     deepSetValue(request, 'site.publisher.id', bid.params.publisherId);
     deepSetValue(request, 'test', bid.params.testMode);
@@ -44,7 +48,7 @@ export const converter = ortbConverter({
     }
 
     if (!isNumber(imp.secure)) {
-      imp.secure = 1
+      imp.secure = 1;
     }
 
     return imp;
@@ -64,7 +68,7 @@ export const converter = ortbConverter({
       }
     }
 
-    bid.adm = replaceAuctionPrice(bid.adm, bid.price)
+    bid.adm = replaceAuctionPrice(bid.adm, bid.price);
     return buildBidResponse(bid, context);
   }
 });

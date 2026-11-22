@@ -134,19 +134,19 @@ const getReqBidsConfig = () => {
       global: {},
       bidder: {}
     }
-  }
-}
+  };
+};
 
 const setUpOneKey = () => {
   window.OneKey.queue = [];
   OneKey.generateSeed = (_transactionIds) => {
     return Promise.resolve(defaultSeed);
   };
-}
+};
 
 const executeOneKeyQueue = () => {
   while (window.OneKey.queue.length > 0) {
     window.OneKey.queue[0]();
     window.OneKey.queue.shift();
   }
-}
+};

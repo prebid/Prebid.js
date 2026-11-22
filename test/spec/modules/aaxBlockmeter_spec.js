@@ -3,7 +3,6 @@ import * as sinon from 'sinon';
 import { assert } from 'chai';
 
 let sandbox;
-let getTargetingDataSpy;
 
 const config = {
   dataProviders: [{
@@ -18,7 +17,7 @@ describe('aaxBlockmeter realtime module', function () {
   beforeEach(function () {
     sandbox = sinon.createSandbox();
     window.aax = window.aax || {};
-    window.aax.getTargetingData = getTargetingDataSpy = sandbox.spy();
+    sandbox.spy();
   });
 
   afterEach(function () {

@@ -162,12 +162,10 @@ describe('mediafuseBidAdapter', function () {
       expect(req.data.user?.ext?.addtl_consent).to.be.undefined;
     });
 
-    it('should set regs.coppa=1 when coppa config is true', function () {
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        if (key === 'coppa') return true;
-        return undefined;
-      });
-      const [req] = spec.buildRequests([deepClone(BASE_BID)], deepClone(BASE_BIDDER_REQUEST));
+    it('should set regs.coppa=1 when ortb2 regs coppa is 1', function () {
+      const bidderRequest = deepClone(BASE_BIDDER_REQUEST);
+      bidderRequest.ortb2 = { regs: { coppa: 1 } };
+      const [req] = spec.buildRequests([deepClone(BASE_BID)], bidderRequest);
       expect(req.data.regs.coppa).to.equal(1);
     });
   });
@@ -175,8 +173,8 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // buildRequests — video RTB targeting
   // -------------------------------------------------------------------------
-  describe('buildRequests - video RTB targeting', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video RTB targeting', function () {
       it('should map skip, skipafter, playbackmethod, and api to AN fields', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = {
@@ -249,8 +247,8 @@ describe('mediafuseBidAdapter', function () {
         expect(req.data.imp[0].video.minduration).to.equal(5);
         expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — OMID support
@@ -342,7 +340,7 @@ describe('mediafuseBidAdapter', function () {
         expect(bids[0].vastUrl).to.equal('https://vast.example.com/vast.xml');
       });
 
-      it('should set vastImpUrl from nurl and vastUrl from asset_url when both present', function () {
+      it('should set vastTrackers with impression URL from nurl when present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
@@ -367,8 +365,36 @@ describe('mediafuseBidAdapter', function () {
         };
 
         const bids = spec.interpretResponse(serverResponse, req);
-        expect(bids[0].vastUrl).to.equal('https://vast.example.com/vast.xml');
-        expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
+        expect(bids[0].vastTrackers).to.exist;
+        expect(bids[0].vastTrackers.impression).to.be.an('array');
+        expect(bids[0].vastTrackers.impression).to.deep.equal(['https://notify.example.com/win']);
+      });
+
+      it('should not set vastTrackers when nurl is not present', function () {
+        const bid = deepClone(BASE_BID);
+        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
+        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
+        const impId = req.data.imp[0].id;
+
+        const serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: impId,
+                price: 1.0,
+                ext: {
+                  appnexus: {
+                    bid_ad_type: 1,
+                    asset_url: 'https://vast.example.com/vast.xml'
+                  }
+                }
+              }]
+            }]
+          }
+        };
+
+        const bids = spec.interpretResponse(serverResponse, req);
+        expect(bids[0].vastTrackers).to.be.undefined;
       });
     });
   } // FEATURES.VIDEO
@@ -834,8 +860,8 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // buildRequests — custom_renderer_present via bid.renderer
   // -------------------------------------------------------------------------
-  describe('buildRequests - custom renderer present', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - custom renderer present', function () {
       it('should set custom_renderer_present when bid.renderer is set for video imp', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'outstream', playerSize: [640, 480] } };
@@ -843,8 +869,8 @@ describe('mediafuseBidAdapter', function () {
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].ext.appnexus.custom_renderer_present).to.be.true;
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — catch-all unknown camelCase params
@@ -1005,8 +1031,8 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // buildRequests — video minduration already set (skip overwrite)
   // -------------------------------------------------------------------------
-  describe('buildRequests - video minduration skip overwrite', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video minduration skip overwrite', function () {
       it('should not overwrite minduration set by params.video when mediaTypes.video.minduration also present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], minduration: 10 } };
@@ -1015,42 +1041,42 @@ describe('mediafuseBidAdapter', function () {
         // params.video sets minduration=5 first; mediaTypes check sees it's already a number → skips
         expect(req.data.imp[0].video.minduration).to.equal(5);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — playbackmethod out of range (>4)
   // -------------------------------------------------------------------------
-  describe('buildRequests - video playbackmethod out of range', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video playbackmethod out of range', function () {
       it('should not set playback_method when playbackmethod[0] > 4', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: [5] } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.playback_method).to.be.undefined;
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — video api val=6 filtered out
   // -------------------------------------------------------------------------
-  describe('buildRequests - video api val=6 filtered', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video api val=6 filtered', function () {
       it('should produce empty video_frameworks when api=[6] since 6 is out of 1-5 range', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [6] } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([]);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — video_frameworks already set; api should not override
   // -------------------------------------------------------------------------
-  describe('buildRequests - video_frameworks not overridden by api', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video_frameworks not overridden by api', function () {
       it('should keep frameworks from params.video when mediaTypes.video.api is also present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], api: [4] } };
@@ -1058,8 +1084,8 @@ describe('mediafuseBidAdapter', function () {
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2]);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // interpretResponse — adomain string vs empty array
@@ -1548,8 +1574,8 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // buildRequests — video params.video takes priority over mediaTypes.video for maxduration
   // -------------------------------------------------------------------------
-  describe('buildRequests - video maxduration skip overwrite', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video maxduration skip overwrite', function () {
       it('should not overwrite maxduration set by params.video when mediaTypes.video.maxduration also present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], maxduration: 15 } };
@@ -1557,14 +1583,14 @@ describe('mediafuseBidAdapter', function () {
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.maxduration).to.equal(30);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — video params.video takes priority over mediaTypes.video for skippable
   // -------------------------------------------------------------------------
-  describe('buildRequests - video skippable skip overwrite', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video skippable skip overwrite', function () {
       it('should not overwrite skippable set by params.video when mediaTypes.video.skip is also present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skip: 1 } };
@@ -1572,14 +1598,14 @@ describe('mediafuseBidAdapter', function () {
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.skippable).to.be.false;
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — video params.video takes priority over mediaTypes.video for skipoffset
   // -------------------------------------------------------------------------
-  describe('buildRequests - video skipoffset skip overwrite', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video skipoffset skip overwrite', function () {
       it('should not overwrite skipoffset set by params.video when mediaTypes.video.skipafter is also present', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], skipafter: 10 } };
@@ -1587,58 +1613,22 @@ describe('mediafuseBidAdapter', function () {
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.skipoffset).to.equal(5);
       });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // buildRequests — video playbackmethod type guard
   // -------------------------------------------------------------------------
-  describe('buildRequests - video playbackmethod', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video playbackmethod', function () {
       it('should not set playback_method when mediaTypes.video.playbackmethod is not an array', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480], playbackmethod: 2 } };
         const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
         expect(req.data.imp[0].video.playback_method).to.be.undefined;
       });
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // interpretResponse — video nurl without asset_url
-  // -------------------------------------------------------------------------
-  describe('interpretResponse - video nurl without asset_url', function () {
-    if (FEATURES.VIDEO) {
-      it('should set vastImpUrl from nurl and not override vastUrl with redir pattern when asset_url is absent', function () {
-        const bid = deepClone(BASE_BID);
-        bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
-        const [req] = spec.buildRequests([bid], deepClone(BASE_BIDDER_REQUEST));
-        const impId = req.data.imp[0].id;
-
-        const serverResponse = {
-          body: {
-            seatbid: [{
-              bid: [{
-                impid: impId,
-                price: 1.0,
-                nurl: 'https://notify.example.com/win',
-                ext: {
-                  appnexus: {
-                    bid_ad_type: 1
-                    // no asset_url, no renderer_url/renderer_id
-                  }
-                }
-              }]
-            }]
-          }
-        };
-        const bids = spec.interpretResponse(serverResponse, req);
-        expect(bids[0].vastImpUrl).to.equal('https://notify.example.com/win');
-        // ortbConverter sets vastUrl from nurl; our adapter does not override it with a redir pattern
-        expect(bids[0].vastUrl).to.equal('https://notify.example.com/win');
-      });
-    }
-  });
+    });
+  }
 
   // -------------------------------------------------------------------------
   // onBidWon — viewability script reload
@@ -1788,8 +1778,8 @@ describe('mediafuseBidAdapter', function () {
   // -------------------------------------------------------------------------
   // buildRequests — video params.video.frameworks branch
   // -------------------------------------------------------------------------
-  describe('buildRequests - video params.video.frameworks', function () {
-    if (FEATURES.VIDEO) {
+  if (FEATURES.VIDEO) {
+    describe('buildRequests - video params.video.frameworks', function () {
       it('should set video_frameworks from bid.params.video.frameworks', function () {
         const bid = deepClone(BASE_BID);
         bid.mediaTypes = { video: { context: 'instream', playerSize: [640, 480] } };
@@ -1798,6 +1788,6 @@ describe('mediafuseBidAdapter', function () {
         expect(req.data.imp[0].ext.appnexus.video_frameworks).to.deep.equal([1, 2, 6]);
         expect(req.data.imp[0].video.minduration).to.equal(5);
       });
-    }
-  });
+    });
+  }
 });

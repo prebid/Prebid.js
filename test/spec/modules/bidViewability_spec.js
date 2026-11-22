@@ -3,11 +3,11 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import { expect, spy } from 'chai';
+import { expect } from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.js';
-import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
-import parse from 'url-parse';
+import adapterManager from 'src/adapterManager.js';
+import 'url-parse';
 import { EVENT_TYPE_VIEWABLE, TRACKER_METHOD_IMG } from 'src/eventTrackers.js';
 
 const GPT_SLOT = {
@@ -22,7 +22,7 @@ const GPT_SLOT = {
 
 const EVENT_OBJ = {
   slot: GPT_SLOT
-}
+};
 
 const VIEWABILITY_PIXEL_URLS = [
   'https://domain-1.com/end-point?a=1',
@@ -36,7 +36,6 @@ const PBJS_WINNING_BID = {
   'bidder': 'pubmatic',
   'width': 300,
   'height': 250,
-  'statusMessage': 'Bid available',
   'adId': 'id',
   'requestId': 1024,
   'source': 'client',
@@ -51,16 +50,15 @@ const PBJS_WINNING_BID = {
 
 describe('#bidViewability', function() {
   let gptSlot;
-  let pbjsWinningBid;
 
   beforeEach(function() {
     gptSlot = Object.assign({}, GPT_SLOT);
-    pbjsWinningBid = Object.assign({}, PBJS_WINNING_BID);
+    Object.assign({}, PBJS_WINNING_BID);
   });
 
   describe('getMatchingWinningBidForGPTSlot', function() {
     let winningBidsArray;
-    let sandbox
+    let sandbox;
     beforeEach(function() {
       sandbox = sinon.createSandbox();
       // mocking winningBidsArray
@@ -74,7 +72,7 @@ describe('#bidViewability', function() {
 
     afterEach(function() {
       sandbox.restore();
-    })
+    });
 
     it('should find a match by using customGptSlotMatching provided in config', function() {
       config.setConfig({
@@ -118,7 +116,7 @@ describe('#bidViewability', function() {
     let sandbox;
     let triggerPixelSpy;
     let eventsEmitSpy;
-    let logWinningBidNotFoundSpy;
+
     let callBidViewableBidderSpy;
     let winningBidsArray;
     let triggerBillingSpy;
@@ -151,7 +149,7 @@ describe('#bidViewability', function() {
 
     afterEach(function() {
       sandbox.restore();
-    })
+    });
 
     it('matching winning bid is found', function() {
       const moduleConfig = {
@@ -188,7 +186,7 @@ describe('#bidViewability', function() {
       const bid = {
         ...PBJS_WINNING_BID,
         deferBilling: true
-      }
+      };
       winningBidsArray.push(bid);
       bidViewability.impressionViewableHandler(moduleConfig, EVENT_OBJ);
       expect(triggerBillingSpy.callCount).to.equal(1);

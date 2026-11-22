@@ -4,6 +4,19 @@ import type { Bid } from "./bidfactory.ts";
 import type { MediaTypes } from "./mediaTypes.ts";
 import type { DeepPartial } from "./types/objects.d.ts";
 
+/**
+ * Configuration for the creative SafeRenderer (iframe script URL + optional config, resolved at render time).
+ */
+export interface SafeRendererConfig {
+  url: string;
+  config?: any; // set by the bidder adapter
+  getConfig?(bidResponse: Bid): any; // set by the publisher
+  /** If true, this safeRenderer is used only when the bid adapter doesn't provide its own. */
+  backupOnly?: boolean;
+  /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
+  requiresVastUrl?: boolean;
+}
+
 export interface RendererConfig {
   /**
    * URL to the renderer script that will be loaded before invoking `render`.
@@ -19,6 +32,9 @@ export interface RendererConfig {
    * if set to true, this renderer config will be used only when the bid adapter doesn't provide its own renderer.
    */
   backupOnly?: boolean;
+
+  /** Cache XML-only outstream bids so this renderer receives a VAST URL. */
+  requiresVastUrl?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -27,6 +43,9 @@ export interface BidderParams {
    * Adapter-specific parameters - to be extended in the adapters
    */
 }
+
+// Expand interfaces so typed params also satisfy the open Record<string, unknown> shape.
+type ParamsObject<T> = { [K in keyof T]: T[K] };
 
 export interface BaseAdUnitBidDefinition {
   /**
@@ -56,7 +75,7 @@ export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBi
   /**
    * Bid request parameters for a given bidder.
    */
-  params: BIDDER extends keyof BidderParams ? BidderParams[BIDDER] : Record<string, unknown>;
+  params: BIDDER extends keyof BidderParams ? ParamsObject<BidderParams[BIDDER]> : Record<string, unknown>;
   /**
    * One or more s2sConfig.name. If provided, this bid will be requested only from the given S2S instance(s).
    */
@@ -79,9 +98,13 @@ export interface AdUnitModuleBid extends BaseAdUnitBidDefinition {
   }
 }
 
-export type AdUnitBidDefinition = AdUnitModuleBid | AdUnitBidderBid<keyof BidderParams> | AdUnitBidderBid<BidderCode>;
+/** Map names separately to preserve the relationship between each bidder and its params. */
+// Keep bidder visible outside the mapping so predeclared bids also contribute to name inference.
+export type AdUnitBidDefinition<B extends BidderCode = BidderCode> = (AdUnitModuleBid
+  | { [K in keyof BidderParams]: AdUnitBidderBid<K> }[keyof BidderParams]
+  | { [K in B]: AdUnitBidderBid<K> }[B]) & { bidder?: B };
 
-export interface AdUnitDefinition {
+export interface AdUnitDefinition<B extends BidderCode = BidderCode> {
   /**
    * An identifier you create and assign to this ad unit.
    * Generally this is set to the ad slot name or the div element ID.
@@ -96,8 +119,16 @@ export interface AdUnitDefinition {
   /**
    * Bid requests representing demand partners and associated parameters.
    */
-  bids?: AdUnitBidDefinition[];
+  bids?: AdUnitBidDefinition<B>[];
   mediaTypes?: MediaTypes;
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules): the ad unit is active if any of these labels is.
+   */
+  labelAny?: string[];
+  /**
+   * Used for conditional ads (sizeMapping or sizeMappingV2 modules): the ad unit is active only if all of these labels are.
+   */
+  labelAll?: string[];
   /**
    * TTL buffer override for this adUnit.
    */
@@ -120,6 +151,11 @@ export interface AdUnitDefinition {
    * @deprecated - use mediaType specific size parameters instead.
    */
   sizes?: Size | Size[];
+
+  /**
+   * Safe iframe renderer: script URL and optional publisher config for `pbRenderInFrame`.
+   */
+  safeRenderer?: SafeRendererConfig;
 }
 
 /**
@@ -144,14 +180,14 @@ const AUCTIONS = 'auctions';
 
 let adUnits = {};
 export function reset() {
-  adUnits = {}
+  adUnits = {};
 }
 
 function ensureAdUnit(adunit, bidderCode?) {
   const adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
-    adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
-    return adUnit.bidders[bidderCode]
+    adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {};
+    return adUnit.bidders[bidderCode];
   }
   return adUnit;
 }
@@ -165,13 +201,13 @@ function incrementer<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): C
     const counters = ensureAdUnit(adUnit, byBidder && bidder);
     counters[counter] = (counters[counter] ?? 0) + 1;
     return counters[counter];
-  }
+  };
 }
 
 function getter<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
   return function (adUnit, bidder?) {
     return ensureAdUnit(adUnit, byBidder && bidder)[counter] ?? 0;
-  }
+  };
 }
 
 /**
@@ -202,7 +238,7 @@ export const getRequestsCounter = getter(REQUESTS, false);
 /**
  * Returns current Adunit requests counter for a specific bidder code
  */
-export const getBidderRequestsCounter = getter(REQUESTS, true)
+export const getBidderRequestsCounter = getter(REQUESTS, true);
 
 /**
  * Returns current Adunit requests counter for a specific bidder code

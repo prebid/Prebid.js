@@ -108,7 +108,7 @@ describe('jwplayerRtdProvider', function() {
     describe('Fetch fails', function () {
       beforeEach(function () {
         fetchTargetingForMediaId(testIdForFailure);
-        request = server.requests[0]
+        request = server.requests[0];
       });
 
       it('should not write to cache when response is malformed', function() {
@@ -366,12 +366,10 @@ describe('jwplayerRtdProvider', function() {
         id: contentIdForSuccess
       }
     };
-    let bidRequestSpy;
+
     let clock;
 
     beforeEach(function () {
-      bidRequestSpy = sinon.spy();
-
       clock = sinon.useFakeTimers();
     });
 
@@ -720,7 +718,7 @@ describe('jwplayerRtdProvider', function() {
     it('should return undefined when Publisher Params are absent', function () {
       const targeting = extractPublisherParams({}, null);
       expect(targeting).to.be.undefined;
-    })
+    });
   });
 
   describe('Get content id', function() {
@@ -831,14 +829,14 @@ describe('jwplayerRtdProvider', function() {
             id: 'appId'
           }
         }
-      }
+      };
       const copy = deepClone(ortb2);
       addOrtbSiteContent(copy);
       expect(copy).to.eql(ortb2);
     });
 
     it('should create a structure compliant with the oRTB 2 spec', function() {
-      const ortb2 = {}
+      const ortb2 = {};
       const expectedId = 'expectedId';
       const expectedUrl = 'expectedUrl';
       const expectedTitle = 'expectedTitle';
@@ -1792,7 +1790,6 @@ describe('jwplayerRtdProvider', function() {
       });
 
       it('excludes segments when absent', function () {
-        const adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
           ortb2Imp: {

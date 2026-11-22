@@ -41,7 +41,7 @@ describe('viqeoBidAdapter', function () {
     }];
     const request = spec.buildRequests(bidRequestData);
     const requestData = request[0].data;
-    expect(requestData.id).to.equal('id1')
+    expect(requestData.id).to.equal('id1');
     expect(requestData.imp[0].bidfloorcur).to.equal('EUR');
     expect(requestData.imp[0].bidfloor).to.equal(0.5);
     expect(requestData.imp[0].video.w).to.equal(240);
@@ -62,7 +62,7 @@ describe('viqeoBidAdapter', function () {
       },
     }];
     const request = spec.buildRequests(bidRequestData);
-    expect(request[0].url).to.equal('https://ad.vqserve.com/ads/prebid')
+    expect(request[0].url).to.equal('https://ad.vqserve.com/ads/prebid');
   });
   it('response_params common case', function () {
     const bidRequestData = {
@@ -111,11 +111,11 @@ describe('viqeoBidAdapter', function () {
         return {
           currency: 'EUR',
           floor: 3.32
-        }
+        };
       },
     }];
     const request = spec.buildRequests(bidRequestData);
     const requestData = request[0].data;
-    expect(requestData.imp[0].bidfloor).to.equal(3.32)
+    expect(requestData.imp[0].bidfloor).to.equal(3.32);
   });
 });

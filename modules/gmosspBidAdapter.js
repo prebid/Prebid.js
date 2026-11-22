@@ -4,7 +4,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
-  deepAccess,
   deepSetValue, getBidIdParameter,
   getWindowTop,
   isEmpty,
@@ -57,9 +56,6 @@ export const spec = {
       const request = validBidRequests[i];
       const tid = request.ortb2Imp?.ext?.tid;
       const bid = request.bidId;
-      const imuid = deepAccess(request, 'userId.imuid');
-      const sharedId = deepAccess(request, 'userId.pubcid');
-      const idlEnv = deepAccess(request, 'userId.idl_env');
       const ver = '$prebid.version$';
       const sid = getBidIdParameter('sid', request.params);
 
@@ -67,9 +63,6 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'bid', bid);
       queryString = tryAppendQueryString(queryString, 'ver', ver);
       queryString = tryAppendQueryString(queryString, 'sid', sid);
-      queryString = tryAppendQueryString(queryString, 'im_uid', imuid);
-      queryString = tryAppendQueryString(queryString, 'shared_id', sharedId);
-      queryString = tryAppendQueryString(queryString, 'idl_env', idlEnv);
       queryString = tryAppendQueryString(queryString, 'url', urlInfo.url);
       queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
@@ -145,10 +138,10 @@ export const spec = {
           syncs.push({
             type: 'image',
             url: sync
-          })
-        })
+          });
+        });
       }
-    })
+    });
     return syncs;
   },
 

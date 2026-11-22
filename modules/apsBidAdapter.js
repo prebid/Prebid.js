@@ -10,10 +10,11 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('./apsBidAdapter.d.ts').ApsAdapterConfig} ApsAdapterConfig
  */
 
 const GVLID = 793;
-export const ADAPTER_VERSION = '2.1.0';
+export const ADAPTER_VERSION = '2.2.0';
 const BIDDER_CODE = 'aps';
 const AAX_ENDPOINT = 'https://web.ads.aps.amazon-adsystem.com/e/pb/bid';
 const DEFAULT_PREBID_CREATIVE_JS_URL =
@@ -44,6 +45,7 @@ function record(eventName, data) {
   const finalEventName =
     parts.length < 3 ? `${prefixedEventName}/didTrigger` : prefixedEventName;
 
+  /** @type {ApsAdapterConfig['accountID']|undefined} */
   const accountID = config.readConfig('aps.accountID');
   if (!accountID) {
     return;
@@ -130,12 +132,9 @@ export const converter = ortbConverter({
       // Remove sensitive user data.
       delete request.user.gender;
       delete request.user.yob;
-      // Remove both 'keywords' and alternate 'kwarry' if present.
-      delete request.user.keywords;
       delete request.user.kwarry;
       delete request.user.customdata;
       delete request.user.geo;
-      delete request.user.data;
     }
 
     request.ext = request.ext ?? {};
@@ -197,6 +196,13 @@ export const converter = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
+    bidResponse.meta = bidResponse.meta || {};
+    if (bid.ext?.bidder) {
+      bidResponse.meta.networkId = bid.ext.bidder;
+    }
+    if (context.seatbid?.seat) {
+      bidResponse.meta.seat = context.seatbid.seat;
+    }
     if (bidResponse.mediaType === VIDEO) {
       bidResponse.vastUrl = vastUrl;
     }

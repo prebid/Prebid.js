@@ -4,7 +4,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'mabidder';
 export const baseUrl = 'https://prebid.ecdrsvc.com/bid';
-const converter = ortbConverter({})
+const converter = ortbConverter({});
 
 export const spec = {
   supportedMediaTypes: [BANNER],
@@ -13,7 +13,7 @@ export const spec = {
     if (typeof bid.params === 'undefined') {
       return false;
     }
-    return !!(bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
+    return !!(bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const fpd = converter.toORTB({ bidRequests: validBidRequests, bidderRequest: bidderRequest });
@@ -32,7 +32,7 @@ export const spec = {
         sizes: sizes,
         ppid: bidRequest.params.ppid,
         mediaType: BANNER
-      })
+      });
     });
     const req = {
       url: baseUrl,
@@ -61,5 +61,5 @@ export const spec = {
     }
     return bidResponses;
   }
-}
+};
 registerBidder(spec);

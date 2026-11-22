@@ -59,8 +59,8 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ ANALYTICS_SERVER
       analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
     }
 
-    analyticsOptions.pbuid = config.options.pbuid
-    analyticsOptions.adid = config.options.adid
+    analyticsOptions.pbuid = config.options.pbuid;
+    analyticsOptions.adid = config.options.adid;
     analyticsOptions.server = ANALYTICS_SERVER;
     return true;
   },

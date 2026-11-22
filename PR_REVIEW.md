@@ -8,7 +8,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 
 ### Running Tests and Verifying Integrations
 
-General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combinese those into one command.
+General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combines those into one command.
 
 - Run `gulp review-start`, adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
     - A page will open which provides a hub for common reviewer tools.
@@ -19,7 +19,7 @@ General gulp commands include separate commands for serving the codebase on a bu
 
 ### General PR review Process
 
-- Whenever possible, new modules should provide Typescript types for their public interface. Examples of public interface are bid parameters and configuration (including configuration for analytics, userId, or real time data modules).
+- Whenever possible, new modules should provide TypeScript types for their public interface. Examples of public interface are bid parameters and configuration (including configuration for analytics, userId, or real time data modules).
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - Checkout the branch (these instructions are available on the GitHub PR page as well).
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.
@@ -29,10 +29,12 @@ General gulp commands include separate commands for serving the codebase on a bu
 - Make sure the code is not setting cookies or localstorage directly -- it must use the `StorageManager`.
 - Review for obvious errors or bad coding practice / use best judgement here.
 - Don't allow needless code duplication with other js files; require both files import common code. Do not allow commits designed to fool the code duplication checker.
+- Module filenames should match module codes. Exceptions in https://github.com/prebid/Prebid.js/blob/master/metadata/overrides.mjs should almost never be needed.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
-- If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
-- Once there are 2 `LGTM` on the PR, merge to master
+- If all above is good, add a `LGTM` comment.
+- If the PR is for a standard bid adapter or a standard analytics adapter, 1 `LGTM` from a core member is sufficient and the PR may be merged.
+- If the PR is for modules or core platform updates, request 1 additional core member review and merge only after there are 2 `LGTM` from the core team.
 - The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A GitHub action will use that information to build the release notes.
     - Adjust the PR Title to be appropriate for release notes
     - Add a label for `feature`, `maintenance`, `fix`, `bugfix` or `bug` to categorize the PR
@@ -48,7 +50,9 @@ Follow steps above for general review process. In addition, please verify the fo
     - The bidder code should be unique for the first 6 characters
     - Reserved words that cannot be used as bidder names: all, context, data, general, prebid, and skadn
 - Verify that bidder has submitted valid bid params and that bids are being received.
+- Verify filenames are correct, eg bidderCode must match {{biddermodule}}BidAdapter
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
+- Verify the adapter doesn't trade the publisher's page performance, data or settings for the bidder's benefit (see "Review guidelines" in [AGENTS.md](AGENTS.md)). In particular, timeout, win, error and other telemetry must stay off the critical path (`politeTriggerPixel` or `runBackgroundTask`, never one immediate request per bid), and changes that make such beacons more urgent should be turned down, however they're justified.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - Look for redundant validations, core already validates the types of mediaTypes.video for example.
@@ -61,9 +65,10 @@ Follow steps above for general review process. In addition, please verify the fo
     - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
     - Eids object is to be preferred to Userids object in the bid request, as the userid object may be removed in a future version
     - Global OpenRTB fields should come from bidrequest.ortb2
-        - bcat, battr, badv
+        - bcat, badv
     - Impression-specific OpenRTB fields should come from bidrequest.ortb2imp
         - instl
+        - battr (from media objects, e.g. bidrequest.ortb2imp.banner.battr or bidrequest.ortb2imp.video.battr)
 - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/BIDDER.md file):
     - If they support the TCF consentManagementTcf module and TCF2, add `tcf2_supported: true`
     - If they support the US Privacy consentManagementUsp module, add `usp_supported: true`
@@ -75,11 +80,15 @@ Follow steps above for general review process. In addition, please verify the fo
     - If their bidder doesn't work well with safeframed creatives, add `safeframes_ok: false`. This will alert publishers to not use safeframed creatives when creating the ad server entries for their bidder.
     - If they're setting a deal ID in some scenarios, add `bidder_supports_deals: true`
     - If they have an IAB Global Vendor List ID, add `gvl_id: ID`. There's no default.
-- After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
+
 
 ### Reviewing a New or Updated Analytics Adapter
 
 Documentation: https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
+
+Make sure a disableAnalytics method is provided.
+
+Make sure events are sent off the critical path (batched, `sendBeacon`, or `politeTriggerPixel`/`runBackgroundTask`), not as an immediate request per bid or auction event, and that the adapter collects only what its reporting needs.
 
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
 
@@ -132,6 +141,11 @@ Follow steps above for general review process. In addition:
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
 - Make sure there's a docs pull request
 
+### Storage use
+
+- Make sure any uses of storage have a device disclosure description field set following https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md#example-1 in the https://vendor-list.consensu.org/v3/vendor-list.json if they have a gvlid, if they do not have a gvlid, encourage storage disclosure metadata is committed. Also encourage any use of storage is well described in the module md file.
+- Make sure the gvlid is published on https://vendor-list.consensu.org/v3/vendor-list.json if it is declared and that the company name roughly matches.
+
 ### Reviewing changes to the `debugging` module
 
 The debugging module cannot import from core in the same way that other modules can. See this [warning](https://github.com/prebid/Prebid.js/blob/master/modules/debugging/WARNING.md) for more details.
@@ -141,7 +155,7 @@ The debugging module cannot import from core in the same way that other modules 
 Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each Monday to see if you're on-duty.
 
 When on-duty:
-- Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
+- Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48 hours. 
 - For PRs: assign PRs to individuals on the **PR review list**. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
 - For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed. Please add labels as appropriate (I.E. bug, question, backlog etc).
 - Issues that are questions or troubleshooting requests may be closed if the originator doesn't respond within a week to requests for confirmation or details.

@@ -43,7 +43,7 @@ function makeAdUnitNameMap() {
 
 function addAdUnitNameForArray(ar, map) {
   if (isArray(ar)) {
-    ar.forEach((it) => { addAdUnitName(it, map) });
+    ar.forEach((it) => { addAdUnitName(it, map); });
   }
 }
 
@@ -178,7 +178,8 @@ yieldoneAnalytics.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: yieldoneAnalytics,
-  code: ANALYTICS_CODE
+  code: ANALYTICS_CODE,
+  acpId: 385 // Google Additional Consent provider ID
 });
 
 export default yieldoneAnalytics;

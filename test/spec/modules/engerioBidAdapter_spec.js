@@ -1,0 +1,597 @@
+import { expect } from 'chai';
+import { spec } from 'modules/engerioBidAdapter.js';
+import { config } from 'src/config.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import * as utils from 'src/utils.js';
+import * as sinon from 'sinon';
+
+import { server } from 'test/mocks/xhr.js';
+
+const ENDPOINT_URL = 'https://api.engerio.sk/api/v1/adserver/prebid/auction/';
+
+describe('engerioBidAdapter', () => {
+  // ── Fixtures ────────────────────────────────────────────────────────────────
+
+  const validBid = {
+    bidder: 'engerio',
+    bidId: 'bid-001',
+    adUnitCode: 'div-banner',
+    params: {
+      adUnitCode: 'homepage-sidebar',
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [728, 90]],
+      },
+    },
+  };
+
+  const fallbackBid = {
+    bidder: 'engerio',
+    bidId: 'bid-003',
+    adUnitCode: 'homepage-sidebar',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      },
+    },
+  };
+
+  const validBidRequest = {
+    method: 'POST',
+    url: ENDPOINT_URL,
+    data: JSON.stringify({
+      id: 'req-001',
+      imp: [
+        {
+          id: 'bid-001',
+          banner: { format: [{ w: 300, h: 250 }, { w: 728, h: 90 }], w: 300, h: 250 },
+          ext: { adUnitCode: 'homepage-sidebar' },
+        },
+      ],
+      site: { page: 'https://example.com/article', domain: 'example.com' },
+      device: { ua: 'Mozilla/5.0 (test)' },
+    }),
+  };
+
+  const serverResponse = {
+    body: {
+      id: 'req-001',
+      cur: 'EUR',
+      seatbid: [
+        {
+          seat: 'engerio',
+          bid: [
+            {
+              id: 'response-bid-001',
+              impid: 'bid-001',
+              price: 1.75,
+              adm: '<a href="https://example.com"><img src="https://cdn.example.com/ad.png" width="300" height="250"></a>',
+              crid: '44444444-0000-0000-0000-000000000001',
+              w: 300,
+              h: 250,
+              nurl: 'https://api.engerio.sk/api/v1/adserver/prebid/win/abc-123/',
+              adomain: ['example.com'],
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  // ── isBidRequestValid ────────────────────────────────────────────────────────
+
+  describe('isBidRequestValid', () => {
+    it('returns true for a valid bid with params.adUnitCode', () => {
+      expect(spec.isBidRequestValid(validBid)).to.be.true;
+    });
+
+    it('returns true when params.adUnitCode is missing but adUnitCode is present', () => {
+      expect(spec.isBidRequestValid(fallbackBid)).to.be.true;
+    });
+
+    it('returns false when params.adUnitCode and adUnitCode are both missing', () => {
+      const bid = { bidder: 'engerio', bidId: 'bid-002' };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('uses adUnitCode as a fallback when params.adUnitCode is an empty string', () => {
+      const bid = { ...fallbackBid, params: { adUnitCode: '' } };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+  });
+
+  // ── buildRequests ────────────────────────────────────────────────────────────
+
+  describe('buildRequests', () => {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://example.com/article',
+        domain: 'example.com',
+      },
+      ortb2: {
+        regs: {
+          ext: {
+            gdpr: 1,
+          },
+        },
+        user: {
+          ext: {
+            consent: 'consent-string',
+          },
+        },
+        site: {
+          page: 'https://stale.example.com/page',
+          domain: 'stale.example.com',
+          ext: {
+            data: {
+              section: 'sports',
+            },
+          },
+        },
+        device: {
+          ua: 'Mozilla/5.0 (normalized by Prebid)',
+          lmt: 1,
+        },
+      },
+    };
+
+    it('returns a single POST request to the Engerio endpoint', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT_URL);
+    });
+
+    it('sets Content-Type to text/plain', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      expect(request.options.contentType).to.equal('text/plain');
+    });
+
+    it('does not send credentials', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      expect(request.options.withCredentials).to.be.false;
+    });
+
+    it('populates imp[].ext.adUnitCode from params.adUnitCode', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
+    });
+
+    it('falls back to bid.adUnitCode when params.adUnitCode is absent', () => {
+      const request = spec.buildRequests([fallbackBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
+    });
+
+    it('maps bid ID to imp[].id', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].id).to.equal('bid-001');
+    });
+
+    it('builds banner format array from mediaTypes.banner.sizes', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].banner.format).to.deep.equal([
+        { w: 300, h: 250 },
+        { w: 728, h: 90 },
+      ]);
+    });
+
+    it('sets banner.w and banner.h from the first size', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp[0].banner.w).to.equal(300);
+      expect(body.imp[0].banner.h).to.equal(250);
+    });
+
+    it('populates site.page and site.domain from refererInfo', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.site.page).to.equal('https://example.com/article');
+      expect(body.site.domain).to.equal('example.com');
+    });
+
+    it('preserves consent and other ortb2 fields while overriding site.page/site.domain', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.regs.ext.gdpr).to.equal(1);
+      expect(body.user.ext.consent).to.equal('consent-string');
+      expect(body.site.ext.data.section).to.equal('sports');
+      expect(body.device.lmt).to.equal(1);
+      expect(body.site.page).to.equal('https://example.com/article');
+      expect(body.site.domain).to.equal('example.com');
+    });
+
+    it('populates device.ua from normalized bidderRequest.ortb2.device.ua', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.device.ua).to.equal('Mozilla/5.0 (normalized by Prebid)');
+    });
+
+    it('builds one imp per bid request', () => {
+      const secondBid = {
+        ...validBid,
+        bidId: 'bid-002',
+        params: { adUnitCode: 'article-leaderboard' },
+      };
+      const request = spec.buildRequests([validBid, secondBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.imp).to.have.lengthOf(2);
+      expect(body.imp[1].ext.adUnitCode).to.equal('article-leaderboard');
+    });
+
+    it('handles missing refererInfo gracefully', () => {
+      const request = spec.buildRequests([validBid], {});
+      const body = JSON.parse(request.data);
+      expect(body.site).to.be.undefined;
+      expect(body.device).to.be.undefined;
+    });
+
+    it('forwards the supply chain from ortb2.source.ext.schain', () => {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'api.engerio.sk', sid: '1000', hp: 1 }],
+      };
+      const request = spec.buildRequests([validBid], {
+        ...bidderRequest,
+        ortb2: { ...bidderRequest.ortb2, source: { ext: { schain } } },
+      });
+      const body = JSON.parse(request.data);
+      expect(body.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('forwards the supply chain from the legacy per-bid schain field', () => {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{ asi: 'api.engerio.sk', sid: '1001', hp: 1 }],
+      };
+      const request = spec.buildRequests([{ ...validBid, schain }], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.source.ext.schain).to.deep.equal(schain);
+    });
+
+    it('omits source when no supply chain is configured', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const body = JSON.parse(request.data);
+      expect(body.source).to.be.undefined;
+    });
+  });
+
+  // ── interpretResponse ────────────────────────────────────────────────────────
+
+  describe('interpretResponse', () => {
+    it('returns an array of Prebid bid objects', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids).to.be.an('array').with.lengthOf(1);
+    });
+
+    it('maps price to cpm', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].cpm).to.equal(1.75);
+    });
+
+    it('maps response currency', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].currency).to.equal('EUR');
+    });
+
+    it('defaults currency to EUR when not present in response', () => {
+      const resp = { body: { ...serverResponse.body, cur: undefined } };
+      const bids = spec.interpretResponse(resp, validBidRequest);
+      expect(bids[0].currency).to.equal('EUR');
+    });
+
+    it('maps adm to ad', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].ad).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+    });
+
+    it('maps impid to requestId', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].requestId).to.equal('bid-001');
+    });
+
+    it('maps width and height', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].width).to.equal(300);
+      expect(bids[0].height).to.equal(250);
+    });
+
+    it('maps crid to creativeId', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].creativeId).to.equal('44444444-0000-0000-0000-000000000001');
+    });
+
+    it('sets netRevenue to true', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].netRevenue).to.be.true;
+    });
+
+    it('includes nurl when present', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].nurl).to.equal(
+        'https://api.engerio.sk/api/v1/adserver/prebid/win/abc-123/'
+      );
+    });
+
+    it('populates meta.advertiserDomains from adomain', () => {
+      const bids = spec.interpretResponse(serverResponse, validBidRequest);
+      expect(bids[0].meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+
+    it('returns empty array for empty seatbid', () => {
+      const resp = { body: { id: 'req-001', cur: 'EUR', seatbid: [] } };
+      expect(spec.interpretResponse(resp, validBidRequest)).to.deep.equal([]);
+    });
+
+    it('returns empty array when body is missing', () => {
+      expect(spec.interpretResponse({}, validBidRequest)).to.deep.equal([]);
+    });
+
+    it('logs the no-bid reason and returns an empty array', () => {
+      const logInfoStub = sinon.stub(utils, 'logInfo');
+      try {
+        const resp = { body: { id: 'req-001', seatbid: [], nbr: 2, ext: { nobid: 'no eligible campaign' } } };
+        expect(spec.interpretResponse(resp, validBidRequest)).to.deep.equal([]);
+        expect(logInfoStub.calledWith('engerio: no bid', 'no eligible campaign')).to.be.true;
+      } finally {
+        logInfoStub.restore();
+      }
+    });
+
+    it('skips bids with empty adm', () => {
+      const resp = {
+        body: {
+          ...serverResponse.body,
+          seatbid: [
+            {
+              bid: [{ ...serverResponse.body.seatbid[0].bid[0], adm: '' }],
+            },
+          ],
+        },
+      };
+      expect(spec.interpretResponse(resp, validBidRequest)).to.have.lengthOf(0);
+    });
+
+    it('skips bids with zero price', () => {
+      const resp = {
+        body: {
+          ...serverResponse.body,
+          seatbid: [
+            {
+              bid: [{ ...serverResponse.body.seatbid[0].bid[0], price: 0 }],
+            },
+          ],
+        },
+      };
+      expect(spec.interpretResponse(resp, validBidRequest)).to.have.lengthOf(0);
+    });
+  });
+
+  // ── onBidWon ─────────────────────────────────────────────────────────────────
+
+  describe('onBidWon', () => {
+    // The win notice is sent through Prebid's `ajax` helper. The `ajax` binding is
+    // rewritten at build time by the callerContext babel plugin and is a `const`
+    // export, so it can't be stubbed on the module namespace; instead we assert
+    // against the global fetch mock's recorded requests (server.requests).
+    it('fires a GET request to the nurl', () => {
+      const bid = {
+        nurl: 'https://api.engerio.sk/api/v1/adserver/prebid/win/abc-123/',
+      };
+      spec.onBidWon(bid);
+      const winRequests = server.requests.filter((req) => req.url === bid.nurl);
+      expect(winRequests.length).to.equal(1);
+      expect(winRequests[0].method).to.equal('GET');
+      expect(winRequests[0].fetch.request.keepalive).to.be.true;
+    });
+
+    it('does nothing when nurl is absent', () => {
+      spec.onBidWon({ cpm: 1.5 });
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+
+  // ── first-party data ─────────────────────────────────────────────────────────
+
+  describe('first-party data', () => {
+    const bidderRequest = {
+      refererInfo: { page: 'https://example.com/article', domain: 'example.com' },
+      ortb2: {
+        site: { content: { data: [{ id: 'publisher-taxonomy', segment: [{ id: 'sports' }] }] } },
+        user: { data: [{ id: 'audience-provider', segment: [{ id: 'in-market-auto' }] }] },
+      },
+    };
+
+    it('passes page- and user-level first-party data through', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.site.content.data[0].id).to.equal('publisher-taxonomy');
+      expect(payload.user.data[0].id).to.equal('audience-provider');
+    });
+
+    it('merges ad-unit-level first-party data into the imp', () => {
+      const bid = { ...validBid, ortb2Imp: { ext: { data: { placementType: 'in-article' } } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.data).to.deep.equal({ placementType: 'in-article' });
+    });
+
+    it('keeps our own imp fields when ortb2Imp would collide', () => {
+      const bid = { ...validBid, ortb2Imp: { id: 'attacker-supplied', ext: { adUnitCode: 'wrong' } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].id).to.equal('bid-001');
+      expect(payload.imp[0].ext.adUnitCode).to.equal('homepage-sidebar');
+    });
+
+    it('takes sizes from mediaTypes.banner rather than ortb2Imp', () => {
+      const bid = { ...validBid, ortb2Imp: { banner: { format: [{ w: 1, h: 1 }] } } };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+    });
+
+    // A multi-format ad unit carries its other formats in ortb2Imp too; we serve banner only.
+    it('drops media sections other than banner that ortb2Imp carries', () => {
+      const bid = {
+        ...validBid,
+        ortb2Imp: {
+          video: { mimes: ['video/mp4'], w: 640, h: 480 },
+          native: { request: '{}' },
+          audio: { mimes: ['audio/mp4'] },
+          ext: { data: { placementType: 'in-article' } },
+        },
+      };
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0]).to.not.have.any.keys('video', 'native', 'audio');
+      expect(payload.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }, { w: 728, h: 90 }]);
+      expect(payload.imp[0].ext.data).to.deep.equal({ placementType: 'in-article' });
+    });
+  });
+
+  // ── viewability ──────────────────────────────────────────────────────────────
+
+  describe('viewability', () => {
+    // `bidderRequest` in the buildRequests block is scoped to it; this is the minimum the
+    // adapter needs to build a request here.
+    const bidderRequest = {
+      refererInfo: { page: 'https://example.com/article', domain: 'example.com' },
+    };
+
+    // Pinned rather than left to the build, which registers whatever modules the loaded specs import.
+    let installedModulesSandbox;
+    let installedModulesStub;
+
+    beforeEach(() => {
+      installedModulesSandbox = sinon.createSandbox();
+      installedModulesStub = installedModulesSandbox.stub(getGlobal(), 'installedModules')
+        .value(['bidViewability', 'bidViewabilityIO']);
+    });
+
+    afterEach(() => {
+      installedModulesSandbox.restore();
+      config.resetConfig();
+    });
+
+    it('reports viewability as measured when bidViewability is enabled', () => {
+      config.setConfig({ bidViewability: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+    });
+
+    it('reports viewability as measured when bidViewabilityIO is enabled', () => {
+      config.setConfig({ bidViewabilityIO: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+    });
+
+    // bidViewabilityIO registers nothing without IntersectionObserver, so no viewable event
+    // can follow; reporting "measured" would turn unmeasured impressions into unviewed ones.
+    describe('without IntersectionObserver', () => {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(window, 'IntersectionObserver').value(undefined);
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('reports viewability as unmeasured when bidViewabilityIO is the only module enabled', () => {
+        config.setConfig({ bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+      });
+
+      it('still reports viewability as measured when bidViewability is enabled too', () => {
+        config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+        const request = spec.buildRequests([validBid], bidderRequest);
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].ext.viewabilityMeasured).to.be.true;
+      });
+    });
+
+    // The whole point of the flag: Engerio uses it to tell "measured, not viewed" apart from
+    // "never measured". A module present but switched off measures nothing.
+    it('reports viewability as unmeasured when no module is enabled', () => {
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('reports viewability as unmeasured when the module is present but disabled', () => {
+      config.setConfig({ bidViewability: { enabled: false } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    // setConfig accepts both topics whether or not the module is in the build; without the
+    // module nothing listens for the render, so no viewable event can follow.
+    it('reports viewability as unmeasured when the enabled modules are not in the build', () => {
+      installedModulesStub.value([]);
+      config.setConfig({ bidViewability: { enabled: true }, bidViewabilityIO: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('requires the enabled module itself to be in the build, not just either one', () => {
+      installedModulesStub.value(['bidViewabilityIO']);
+      config.setConfig({ bidViewability: { enabled: true } });
+      const request = spec.buildRequests([validBid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.viewabilityMeasured).to.be.false;
+    });
+
+    it('passes vurl and eventtrackers through to the Prebid bid', () => {
+      const vurl = 'https://api.engerio.sk/api/v1/adserver/prebid/viewable/abc-123/';
+      const resp = {
+        body: {
+          id: 'req-1',
+          cur: 'EUR',
+          seatbid: [{
+            bid: [{
+              id: 'bid-1',
+              impid: 'bid-id-1',
+              price: 1.5,
+              adm: '<div>ad</div>',
+              vurl,
+              eventtrackers: [{ event: 2, method: 1, url: vurl }],
+            }],
+          }],
+        },
+      };
+      const [bid] = spec.interpretResponse(resp);
+      expect(bid.vurl).to.equal(vurl);
+      expect(bid.eventtrackers).to.deep.equal([{ event: 2, method: 1, url: vurl }]);
+    });
+
+    it('fires a GET request to the vurl when the bid becomes viewable', () => {
+      const bid = {
+        vurl: 'https://api.engerio.sk/api/v1/adserver/prebid/viewable/abc-123/',
+      };
+      spec.onBidViewable(bid);
+      const requests = server.requests.filter((req) => req.url === bid.vurl);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].method).to.equal('GET');
+      expect(requests[0].fetch.request.keepalive).to.be.true;
+    });
+
+    it('does nothing when vurl is absent', () => {
+      spec.onBidViewable({ cpm: 1.5 });
+      expect(server.requests.length).to.equal(0);
+    });
+  });
+});

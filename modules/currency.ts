@@ -1,7 +1,7 @@
 import { deepSetValue, logError, logInfo, logMessage, logWarn } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
-import { ajax } from '../src/ajax.js';
+import { noCredsAjax as ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import { defer } from '../src/utils/promise.js';
@@ -28,6 +28,9 @@ export var currencySupportEnabled = false;
 export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
+// incremented to supersede a rates file request that is still in flight
+let ratesRequestId = 0;
+let shouldUseDefaults = true;
 
 export let responseReady = defer<void>();
 
@@ -93,11 +96,13 @@ export function setConfig(config: CurrencyConfig) {
 
   if (config.rates !== null && typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
+    shouldUseDefaults = false;
     currencyRatesLoaded = true;
     needToCallForCurrencyFile = false; // don't call if rates are already specified
+    ratesRequestId++; // and ignore the result of any request already in flight
   }
 
-  if (config.defaultRates !== null && typeof config.defaultRates === 'object') {
+  if (shouldUseDefaults && config.defaultRates !== null && typeof config.defaultRates === 'object') {
     defaultRates = config.defaultRates;
 
     // set up the default rates to be used if the rate file doesn't get loaded in time
@@ -155,30 +160,56 @@ function errorSettingsRates(msg) {
   }
 }
 
+// a request superseded by explicitly configured rates (or a reset) must not change the rates or retry.
+// If configured rates are in place, let queued bids and delayed auctions continue with them; otherwise a newer
+// request is responsible for that
+function ratesRequestSuperseded() {
+  if (currencyRatesLoaded) {
+    processBidResponseQueue();
+    delayedAuctions.resume();
+  }
+}
+
+// let queued bids and delayed auctions continue without fresh rates, and retry on the next auction
+function ratesLoadFailed(msg) {
+  errorSettingsRates(msg);
+  currencyRatesLoaded = true;
+  processBidResponseQueue();
+  delayedAuctions.resume();
+  needToCallForCurrencyFile = true;
+}
+
 function loadRates() {
   if (needToCallForCurrencyFile) {
     needToCallForCurrencyFile = false;
     currencyRatesLoaded = false;
+    const requestId = ++ratesRequestId;
+    const isSuperseded = () => requestId !== ratesRequestId;
     ajax(ratesURL,
       {
         success: function (response) {
+          if (isSuperseded()) {
+            ratesRequestSuperseded();
+            return;
+          }
           try {
             currencyRates = JSON.parse(response);
             logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
             conversionCache = {};
             currencyRatesLoaded = true;
+            shouldUseDefaults = false;
             processBidResponseQueue();
             delayedAuctions.resume();
           } catch (e) {
-            errorSettingsRates('Failed to parse currencyRates response: ' + response);
+            ratesLoadFailed('Failed to parse currencyRates response: ' + response);
           }
         },
         error: function (err) {
-          errorSettingsRates(err);
-          currencyRatesLoaded = true;
-          processBidResponseQueue();
-          delayedAuctions.resume();
-          needToCallForCurrencyFile = true;
+          if (isSuperseded()) {
+            ratesRequestSuperseded();
+            return;
+          }
+          ratesLoadFailed(err);
         }
       }
     );
@@ -197,7 +228,7 @@ declare module '../src/prebidGlobal' {
  * Convert `amount` in currency `fromCurrency` to `toCurrency`.
  */
 function convertCurrency(cpm, fromCurrency, toCurrency) {
-  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)
+  return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
 }
 
 function initCurrency() {
@@ -231,7 +262,10 @@ export function resetCurrency() {
     currencySupportEnabled = false;
     currencyRatesLoaded = false;
     needToCallForCurrencyFile = true;
+    shouldUseDefaults = true;
     currencyRates = {};
+    defaultRates = undefined;
+    ratesRequestId++;
     bidderCurrencyDefault = {};
     responseReady = defer();
   }
@@ -249,6 +283,10 @@ declare module '../src/bidfactory' {
      */
     getCpmInNewCurrency(toCurrency: Currency): string
   }
+}
+
+function roundCpm(value) {
+  return Number(parseFloat(value).toFixed(4));
 }
 
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
@@ -290,10 +328,20 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
 function rejectOnAuctionTimeout({ auctionId }) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
-      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
+      reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
       return false;
     } else {
       return true;
+    }
+  });
+}
+
+// meta.deal amounts are in the bid's currency, so they are scaled along with bid.cpm
+function convertDealMeta(deal, conversion) {
+  if (deal == null) return;
+  ['cpm', 'priorityAdjustedCpm'].forEach(key => {
+    if (typeof deal[key] === 'number') {
+      deal[key] = roundCpm(deal[key] * conversion);
     }
   });
 }
@@ -306,8 +354,9 @@ function processBidResponseQueue() {
       try {
         const conversion = getCurrencyConversion(fromCurrency);
         if (conversion !== 1) {
-          bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
+          bid.cpm = roundCpm(parseFloat(bid.cpm) * conversion);
           bid.currency = adServerCurrency;
+          convertDealMeta(bid.meta?.deal, conversion);
         }
       } catch (e) {
         logWarn('getCurrencyConversion threw error: ', e);
@@ -321,7 +370,7 @@ function processBidResponseQueue() {
 }
 
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
-  var conversionRate = null;
+  var conversionRate;
   var rates;
   const cacheKey = `${fromCurrency}->${toCurrency}`;
   if (cacheKey in conversionCache) {
@@ -401,7 +450,7 @@ function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
     deepSetValue(ortb2, 'ext.prebid.adServerCurrency', adServerCurrency);
     return ortb2;
-  }))
+  }));
 }
 
 export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
@@ -409,7 +458,7 @@ export const requestBidsHook = timedAuctionHook('currency', function requestBids
 
   if (!currencyRatesLoaded && auctionDelay > 0) {
     delayedAuctions.submit(auctionDelay, continueAuction, () => {
-      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`)
+      logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction ${reqBidsConfigObj.auctionId}`);
       continueAuction();
     });
   } else {

@@ -8,15 +8,17 @@ import { isArray, logError, logInfo } from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'pxyz';
+const GVLID = 490;
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
   // This adapter was previously named playgroundxyz - this alias ensures
   // backwards compatibility for publishers
-  aliases: ['playgroundxyz'],
+  aliases: [{ code: 'playgroundxyz', gvlid: GVLID }],
 
   supportedMediaTypes: [BANNER],
 
@@ -106,8 +108,7 @@ export const spec = {
     }
 
     if (!isArray(serverResponse.seatbid)) {
-      let errorMessage = `in response for ${bidderRequest.bidderCode} adapter `;
-      logError(errorMessage += 'Malformed seatbid response');
+      logError(`in response for ${bidderRequest.bidderCode} adapter Malformed seatbid response`);
       return bids;
     }
 
@@ -138,7 +139,7 @@ export const spec = {
       url: '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D'
     }];
   }
-}
+};
 
 function newBid(bid, currency) {
   const { adomain } = bid;

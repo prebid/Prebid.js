@@ -57,4 +57,4 @@ export type DSAResponse = Partial<{
    * 1 = buyer/advertiser will render
    */
   adrender: 0 | 1;
-}>
+}>;

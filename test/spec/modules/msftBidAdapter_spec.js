@@ -12,10 +12,22 @@ import {
 import {
   deepClone
 } from '../../../src/utils.js';
+import {
+  appnexusAliases
+} from '../../../libraries/appnexusUtils/anUtils.js';
 
 const ENDPOINT_URL_NORMAL = 'https://ib.adnxs.com/openrtb2/prebidjs';
 
 describe('msftBidAdapter', function () {
+  describe('aliases', function () {
+    it('should register Project Agora with Microsoft only', function () {
+      const projectAgoraAlias = { code: 'projectagora', gvlid: 1032 };
+
+      expect(spec.aliases).to.deep.include(projectAgoraAlias);
+      expect(appnexusAliases).to.not.deep.include(projectAgoraAlias);
+    });
+  });
+
   const baseBidRequests = {
     bidder: 'msft',
     adUnitCode: 'adunit-code',
@@ -137,7 +149,9 @@ describe('msftBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false, 'inv_code is number, should be string');
     });
+  });
 
+  describe('buildRequests', function () {
     it('should build a basic banner request', function () {
       let testBidRequest = deepClone(baseBidRequests);
       testBidRequest.params = Object.assign({}, testBidRequest.params, {
@@ -193,7 +207,6 @@ describe('msftBidAdapter', function () {
 
     it('should build a banner request without eids but request.user.ext exists', function () {
       let testBidRequest = deepClone(baseBidRequests);
-      // testBidRequest.user.ext = {};
       const bidRequests = [{
         ...testBidRequest,
         mediaTypes: {
@@ -217,6 +230,99 @@ describe('msftBidAdapter', function () {
       expect(data.user.ext).to.exist;
     });
 
+    it('should parse addtlConsent with ~ separator and set user.ext.addtl_consent', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '1~7.12.35.62.66.70.89.93.108'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
+    });
+
+    it('should ignore disclosed-vendor identifiers in v2 addtlConsent strings', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '2~1.35.41.101~dv.9.21.81'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([1, 35, 41, 101]);
+    });
+
+    it('should preserve existing user.ext sibling properties when setting addtl_consent', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '1~7.12.35'
+        }
+      });
+      bidderRequest.ortb2.user.ext = {
+        ...bidderRequest.ortb2.user.ext,
+        custom_flag: 'keep-me',
+        consented_providers_settings: {
+          addtl_consent: 'legacy-value'
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.custom_flag).to.equal('keep-me');
+      expect(request.data.user.ext.consented_providers_settings.addtl_consent).to.equal('legacy-value');
+      expect(request.data.user.ext.addtl_consent).to.deep.equal([7, 12, 35]);
+    });
+
+    it('should not set addtl_consent when addtlConsent has no ~ separator', function () {
+      const bidRequests = [{
+        ...deepClone(baseBidRequests),
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+      const bidderRequest = Object.assign({}, deepClone(baseBidderRequest), {
+        bids: bidRequests,
+        gdprConsent: {
+          ...deepClone(baseBidderRequest).gdprConsent,
+          addtlConsent: '7.12.35.62'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.user.ext.addtl_consent).to.be.undefined;
+    });
+
     if (FEATURES.VIDEO) {
       it('should build a video request', function () {
         const testBidRequests = deepClone(baseBidRequests);
@@ -231,6 +337,7 @@ describe('msftBidAdapter', function () {
                 [640, 480]
               ],
               plcmt: 4,
+              placement: 1,
               mimes: ['video/mp4'],
               protocols: [2, 3],
               api: [2]
@@ -248,7 +355,8 @@ describe('msftBidAdapter', function () {
         expect(data).to.exist;
         expect(data.imp).to.have.lengthOf(1);
         expect(data.imp[0].video).to.exist;
-        expect(data.imp[0].video.placement).to.equal(4);
+        expect(data.imp[0].video.plcmt).to.equal(4);
+        expect(data.imp[0].video.placement).to.equal(1);
         expect(data.imp[0].video.w).to.equal(640);
         expect(data.imp[0].video.h).to.equal(480);
         expect(data.imp[0].ext.appnexus.require_asset_url).to.be.true;
@@ -263,7 +371,7 @@ describe('msftBidAdapter', function () {
         testBidRequest.params = {
           member: 123,
           inv_code: 'inv_code_123'
-        }
+        };
         const nativeRequest = {
           assets: [{
             id: 1,
@@ -545,6 +653,7 @@ describe('msftBidAdapter', function () {
             ],
             "w": 640,
             "h": 360,
+            "plcmt": 4,
             "placement": 1,
             "maxextended": -1,
             "boxingallowed": 1,
@@ -594,6 +703,7 @@ describe('msftBidAdapter', function () {
               ]
             ],
             "context": "instream",
+            "plcmt": 4,
             "placement": 1,
             "startdelay": 0
           }
@@ -825,7 +935,8 @@ describe('msftBidAdapter', function () {
             ],
             "w": 640,
             "h": 480,
-            "plcmt": 4
+            "plcmt": 4,
+            "placement": 1
           },
           "ext": {
             "data": {
@@ -858,6 +969,7 @@ describe('msftBidAdapter', function () {
               8
             ],
             "plcmt": 4,
+            "placement": 1,
             "w": 640,
             "h": 480
           }
@@ -998,7 +1110,7 @@ describe('msftBidAdapter', function () {
         "source": {}
       },
       "start": 1759325217463
-    }
+    };
 
     const videoOutstreamBidResponse = {
       "body": {
@@ -1054,7 +1166,7 @@ describe('msftBidAdapter', function () {
         }
       },
       "headers": {}
-    }
+    };
 
     const nativeBidderRequest = {
       "bidderCode": "msft",
@@ -1400,7 +1512,7 @@ describe('msftBidAdapter', function () {
         expect(bid.native.ortb.assets[2].data.value).to.equal('AST');
         expect(bid.native.ortb.eventtrackers[0].event).to.equal(1);
         expect(bid.native.ortb.eventtrackers[0].method).to.equal(1);
-        expect(bid.native.ortb.eventtrackers[0].url).to.contains(['https://nym2-ib.adnxs.com/it']);
+        expect(bid.native.ortb.eventtrackers[0].url).to.include('https://nym2-ib.adnxs.com/it');
       });
     }
   });

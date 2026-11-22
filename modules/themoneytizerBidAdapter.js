@@ -85,7 +85,7 @@ export const spec = {
             p.usersync.type = 'image';
           }
           s.push(p.usersync);
-        })
+        });
       }
     });
 

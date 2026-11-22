@@ -224,7 +224,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify full passback', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
-    const bids = spec.interpretResponse({ body: null }, request)
+    const bids = spec.interpretResponse({ body: null }, request);
     expect(bids).to.have.lengthOf(0);
   });
 
@@ -540,7 +540,7 @@ describe('PulsePoint Adapter Tests', function () {
           }
         }
       }
-    }
+    };
     const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(br));
     expect(request).to.be.not.null;
     expect(request.data).to.be.not.null;
@@ -681,10 +681,10 @@ describe('PulsePoint Adapter Tests', function () {
   it('Verify bid request timeouts', function () {
     const mkRequest = (bidderRequest) => spec.buildRequests(slotConfigs, bidderRequest).data;
     // assert default is used when no bidderRequest.timeout value is available
-    expect(mkRequest(bidderRequest).tmax).to.equal(500)
+    expect(mkRequest(bidderRequest).tmax).to.equal(500);
 
     // assert bidderRequest value is used when available
-    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000)
+    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000);
   });
 
   it('Verify deals', async function () {
@@ -708,5 +708,5 @@ describe('PulsePoint Adapter Tests', function () {
       private_auction: 0,
       deals
     });
-  })
+  });
 });

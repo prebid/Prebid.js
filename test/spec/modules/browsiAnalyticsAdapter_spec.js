@@ -1,4 +1,4 @@
-import 'src/prebid.js'
+import 'src/prebid.js';
 import browsiAnalytics, { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
 import adapterManager from '../../../src/adapterManager.js';
 import { expect } from 'chai';
@@ -143,14 +143,14 @@ describe('browsi analytics adapter', function () {
       'realtid_mobile-mobil-1_:r1:',
       'realtid_mobile-mobil-2_:r2:'
     ]
-  }
+  };
   const browsiInit = {
     'moduleName': 'browsi',
     't': 1740559969178,
     'pvid': '123456',
     'pk': 'pub_key',
     'sk': 'site_key',
-  }
+  };
   const dataSet1 = {
     moduleName: 'browsi',
     pvid: '123456',
@@ -161,7 +161,7 @@ describe('browsi analytics adapter', function () {
     sk: 'site_key',
     pk: 'pub_key',
     t: 1740559969178
-  }
+  };
   const dataSet2 = {
     moduleName: 'browsi',
     pvid: '123456',
@@ -172,7 +172,7 @@ describe('browsi analytics adapter', function () {
     sk: 'site_key',
     pk: 'pub_key',
     t: 1740559969178
-  }
+  };
 
   let sandbox;
 

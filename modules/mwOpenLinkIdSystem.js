@@ -20,7 +20,7 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 const openLinkID = {
   name: 'mwol',
   cookie_expiration: (86400 * 1000 * 365 * 1) // 1 year
-}
+};
 
 const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: openLinkID.name });
 
@@ -95,8 +95,8 @@ function register(configParams, olid) {
             '&partner_id=' + partnerId +
             '&uid=' + uid +
             '&olid=' + olid +
-            '&cb=' + Math.random()
-            ;
+            '&cb=' + Math.random();
+
   ajax(url);
 }
 

@@ -5,19 +5,19 @@ describe('auction index', () => {
 
   function mockAuction(id, adUnits, bidderRequests, ortb2) {
     return {
-      getAuctionId() { return id },
+      getAuctionId() { return id; },
       getAdUnits() { return adUnits; },
       getBidRequests() { return bidderRequests; },
       getFPD() {
-        return { global: { ortb2 } }
+        return { global: ortb2 };
       }
-    }
+    };
   }
 
   beforeEach(() => {
     auctions = [];
     index = new AuctionIndex(() => auctions);
-  })
+  });
 
   describe('getAuction', () => {
     beforeEach(() => {
@@ -68,7 +68,7 @@ describe('auction index', () => {
       auctions = [
         mockAuction('a1', [], [{ bids: [bidRequests[0], {}] }]),
         mockAuction('a2', [], [{ bids: [bidRequests[1]] }])
-      ]
+      ];
     });
 
     it('should find bidRequests by requestId', () => {
@@ -82,25 +82,33 @@ describe('auction index', () => {
     it('should return undef if no requestId is provided', () => {
       expect(index.getBidRequest({})).to.be.undefined;
     });
+
+    it('should prefer originalRequestId over requestId', () => {
+      expect(index.getBidRequest({ requestId: 'b1', originalRequestId: 'b2' })).to.equal(bidRequests[1]);
+    });
+
+    it('should not fall back to requestId if originalRequestId does not match', () => {
+      expect(index.getBidRequest({ requestId: 'b1', originalRequestId: 'missing' })).to.be.undefined;
+    });
   });
 
   describe('getMediaTypes', () => {
     let bidderRequests, mediaTypes, adUnits;
 
     beforeEach(() => {
-      mediaTypes = [{ mockMT: '1' }, { mockMT: '2' }, { mockMT: '3' }, { mockMT: '4' }]
+      mediaTypes = [{ mockMT: '1' }, { mockMT: '2' }, { mockMT: '3' }, { mockMT: '4' }];
       adUnits = [
         { adUnitId: 'au1', mediaTypes: mediaTypes[0] },
         { adUnitId: 'au2', mediaTypes: mediaTypes[1] }
-      ]
+      ];
       bidderRequests = [
         { bidderRequestId: 'ber1', bids: [{ bidId: 'b1', mediaTypes: mediaTypes[2], adUnitId: 'au1' }, {}] },
         { bidderRequestId: 'ber2', bids: [{ bidId: 'b2', mediaTypes: mediaTypes[3], adUnitId: 'au2' }] }
-      ]
+      ];
       auctions = [
         mockAuction('a1', [adUnits[0]], [bidderRequests[0], {}]),
         mockAuction('a2', [adUnits[1]], [bidderRequests[1]])
-      ]
+      ];
     });
 
     it('should find mediaTypes by adUnitId', () => {
@@ -123,11 +131,34 @@ describe('auction index', () => {
       expect(index.getMediaTypes({})).to.be.undefined;
     });
 
+    it('should find mediaTypes by originalRequestId when requestId has been replaced', () => {
+      expect(index.getMediaTypes({ requestId: 'replaced', originalRequestId: 'b2', adUnitId: 'au2' })).to.equal(mediaTypes[3]);
+    });
+
     ['requestId', 'adUnitId'].forEach(param => {
       it(`should return undef if ${param} is missing`, () => {
         expect(index.getMediaTypes({ [param]: 'missing' })).to.be.undefined;
       });
-    })
+    });
+  });
+
+  describe('getBidderRequest', () => {
+    let bidderRequests;
+    beforeEach(() => {
+      bidderRequests = [
+        { bidderRequestId: 'ber1', bids: [{ bidId: 'b1' }] },
+        { bidderRequestId: 'ber2', bids: [{ bidId: 'b2' }] }
+      ];
+      auctions = [mockAuction('a1', [], bidderRequests)];
+    });
+
+    it('should find bidderRequest by requestId', () => {
+      expect(index.getBidderRequest({ requestId: 'b2' })).to.equal(bidderRequests[1]);
+    });
+
+    it('should find bidderRequest by originalRequestId when requestId has been replaced', () => {
+      expect(index.getBidderRequest({ requestId: 'replaced', originalRequestId: 'b2', bidderRequestId: 'ber2' })).to.equal(bidderRequests[1]);
+    });
   });
 
   describe('getOrtb2', () => {
@@ -136,20 +167,24 @@ describe('auction index', () => {
       bidderRequests = [
         { bidderRequestId: 'ber1', ortb2: {}, bids: [{ bidId: 'b1', adUnitId: 'au1' }, {}] },
         { bidderRequestId: 'ber2', bids: [{ bidId: 'b2', adUnitId: 'au2' }] }
-      ]
+      ];
       auctions = [
         mockAuction('a1', [adUnits[0]], [bidderRequests[0], {}]),
         mockAuction('a2', [adUnits[1]], [bidderRequests[1]], { ortb2Field: true })
-      ]
+      ];
     });
     it('should return ortb2 for bid if exists on bidder request', () => {
       const ortb2 = index.getOrtb2({ bidderRequestId: 'ber1' });
       expect(ortb2).to.be.a('object');
-    })
+    });
 
     it('should return ortb2 from auction if does not exist on bidder request', () => {
       const ortb2 = index.getOrtb2({ bidderRequestId: 'ber2', auctionId: 'a2' });
       expect(ortb2).to.be.deep.equals({ ortb2Field: true });
-    })
-  })
+    });
+
+    it('should find ortb2 through originalRequestId when requestId has been replaced', () => {
+      expect(index.getOrtb2({ requestId: 'replaced', originalRequestId: 'b1' })).to.equal(bidderRequests[0].ortb2);
+    });
+  });
 });

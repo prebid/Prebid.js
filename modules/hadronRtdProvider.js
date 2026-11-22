@@ -32,7 +32,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleNa
  * @returns {string}
  */
 const urlAddParams = (url, params) => {
-  return url + (url.indexOf('?') > -1 ? '&' : '?') + params
+  return url + (url.indexOf('?') > -1 ? '&' : '?') + params;
 };
 
 /**
@@ -144,7 +144,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     );
     loadExternalScript(scriptUrl, MODULE_TYPE_RTD, SUBMODULE_NAME, () => {
       logInfo(LOG_PREFIX, 'hadronId JS snippet loaded', scriptUrl);
-    })
+    });
   }
   if (rtdConfig && isPlainObject(rtdConfig.params) && rtdConfig.params.segmentCache) {
     const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);

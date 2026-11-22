@@ -19,9 +19,9 @@ describe('findRootDomain', function () {
           cookies[cookie] = value;
         }
       }
-    })
+    });
     sandbox.stub(coreStorage, 'getCookie').callsFake((cookie) => {
-      return cookies[cookie]
+      return cookies[cookie];
     });
   });
 
@@ -32,7 +32,7 @@ describe('findRootDomain', function () {
 
   after(() => {
     findRootDomain.clear();
-  })
+  });
 
   it('should just find the root domain', function () {
     rejectDomain = 'co.uk';
@@ -58,6 +58,8 @@ describe('findRootDomain', function () {
     const domain = findRootDomain();
     expect(domain.length > 0).to.be.true;
     expect(findRootDomain()).to.eql(domain);
-    sinon.assert.calledOnce(coreStorage.getCookie);
+    // memoized: the second call doesn't run findRootDomain again (on a two-part host such as bs-local.com it
+    // returns before probing cookies, so count the cookiesAreEnabled check it always makes)
+    sinon.assert.calledOnce(coreStorage.cookiesAreEnabled);
   });
 });

@@ -5,18 +5,20 @@
  * @requires module:modules/userId
  */
 import { triggerPixel, logError } from '../../src/utils.js';
-import { ajaxBuilder } from '../../src/ajax.js';
+import { qualifiedAjaxBuilder } from '../../src/ajax.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../src/adapterManager.js';
 import { submodule } from '../../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { getStorageManager } from '../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js'
+import { DEFAULT_AJAX_TIMEOUT, MODULE_NAME, composeResult, eids, GVLID, DEFAULT_DELAY, PRIMARY_IDS, parseRequestedAttributes, makeSourceEventToSend, setUpTreatment } from './shared.js';
 
 /**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../../modules/userId/index.js').IdResponse} IdResponse
+ * @typedef {import('../../modules/userId/spec.js').IdProviderSpec} IdProviderSpec
+ * @typedef {import('../../modules/liveIntentIdSystem.d.ts').LiveIntentIdSystemModuleName} LiveIntentIdSystemModuleName
  */
 
 const EVENTS_TOPIC = 'pre_lips';
@@ -24,7 +26,7 @@ const EVENTS_TOPIC = 'pre_lips';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout, headers) => {
-    ajaxBuilder(timeout)(
+    qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, timeout)(
       url,
       {
         success: onSuccess,
@@ -36,10 +38,10 @@ const calls = {
         withCredentials: true,
         customHeaders: headers
       }
-    )
+    );
   },
   pixelGet: (url, onload) => triggerPixel(url, onload)
-}
+};
 
 let eventFired = false;
 let liveConnect = null;
@@ -137,7 +139,7 @@ function initializeLiveConnect(configParams) {
   // The third param is the ajax and pixel object, the AJAX and pixel use PBJS.
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
 
-  const sourceEvent = makeSourceEventToSend(configParams)
+  const sourceEvent = makeSourceEventToSend(configParams);
   if (sourceEvent != null) {
     liveConnect.push(sourceEvent);
   }
@@ -157,12 +159,12 @@ function tryFireEvent() {
   }
 }
 
-/** @type {Submodule} */
+/** @type {IdProviderSpec<LiveIntentIdSystemModuleName>} */
 export const liveIntentIdSubmodule = {
   moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * Used to link submodule with config.
-   * @type {string}
+   * @type {LiveIntentIdSystemModuleName}
    */
   name: MODULE_NAME,
   gvlid: GVLID,
@@ -220,8 +222,8 @@ export const liveIntentIdSubmodule = {
           logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
           callback();
         }
-      )
-    }
+      );
+    };
 
     return { callback: result };
   },

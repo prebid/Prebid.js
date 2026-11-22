@@ -38,23 +38,23 @@ const bidderRequest = {
 describe('lassoBidAdapter', function () {
   describe('All needed functions are available', function() {
     it(`isBidRequestValid is present and type function`, function () {
-      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
+      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
     });
 
     it(`buildRequests is present and type function`, function () {
-      expect(spec.buildRequests).to.exist.and.to.be.a('function')
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
     it(`interpretResponse is present and type function`, function () {
-      expect(spec.interpretResponse).to.exist.and.to.be.a('function')
+      expect(spec.interpretResponse).to.exist.and.to.be.a('function');
     });
 
     it(`onTimeout is present and type function`, function () {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function')
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
 
     it(`onBidWon is present and type function`, function () {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function')
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
   });
 
@@ -69,7 +69,7 @@ describe('lassoBidAdapter', function () {
           zone: 1,
           publisher: 'test'
         }
-      })
+      });
       expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
     it('should return false when there are no params', function () {
@@ -85,7 +85,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([bid], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -100,9 +100,18 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to get uid and trc via get request', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(GET_IUD_URL + ENDPOINT_URL + '/request');
+    });
+
+    it('uses coppa from bidderRequest ortb2 regs', () => {
+      const [request] = spec.buildRequests([bid], {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
+      });
+
+      expect(request.data.coppa).to.equal(1);
     });
   });
 
@@ -118,7 +127,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -133,7 +142,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with dgid', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -151,7 +160,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -166,7 +175,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with aimOnly true', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -184,7 +193,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -199,8 +208,8 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with testDk and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
-      expect(bidRequest.data.testDk).to.equal('123')
+      expect(bidRequest.data.test).to.equal(true);
+      expect(bidRequest.data.testDk).to.equal('123');
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -218,7 +227,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -233,7 +242,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -251,7 +260,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -266,7 +275,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.data.test).to.equal(true);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -284,7 +293,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -299,7 +308,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with dgid and test param', () => {
-      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.data.test).to.equal(true);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -317,7 +326,7 @@ describe('lassoBidAdapter', function () {
       validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
       expect(validBidRequests).to.be.an('array').that.is.not.empty;
       bidRequest = validBidRequests[0];
-    })
+    });
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -332,7 +341,7 @@ describe('lassoBidAdapter', function () {
     });
 
     it('should send request to trc via get request with npi', () => {
-      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.data.test).to.equal(false);
       expect(bidRequest.method).to.equal('GET');
       expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
@@ -384,6 +393,41 @@ describe('lassoBidAdapter', function () {
       };
       const result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse));
+      // secondaryCatIds/advertiserDomains are carried on serverResponse.body.meta
+      // (a sibling of serverResponse.body.bid, not a property of it) -- assert the
+      // actual values, not just the response shape, so a wrong source path is caught.
+      expect(result[0]).to.deep.equal(expectedResponse);
+    });
+
+    it('should fall back to response.bid.cat/advertiserDomains when response.meta does not carry them', function () {
+      // The server may (still, or again in the future) place cat/advertiserDomains
+      // directly on the bid object instead of on the sibling meta object. The
+      // mapping should be agnostic to which location the server uses.
+      const legacyServerResponse = {
+        body: {
+          bidid: '123456789',
+          id: '33302780340222111',
+          bid: {
+            price: 1,
+            w: 728,
+            h: 90,
+            crid: 123456,
+            ad: '<script>console.log("ad");</script>',
+            mediaType: 'banner',
+            cat: ['5', '6'],
+            advertiserDomains: ['legacy-lassomarketing.io']
+          },
+          meta: {
+            advertiserName: 'Lasso'
+          },
+          cur: 'USD',
+          netRevenue: false,
+          ttl: 300,
+        }
+      };
+      const result = spec.interpretResponse(legacyServerResponse);
+      expect(result[0].meta.secondaryCatIds).to.deep.equal(['5', '6']);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['legacy-lassomarketing.io']);
     });
   });
 

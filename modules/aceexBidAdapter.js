@@ -5,12 +5,21 @@ import {
   buildPlacementProcessingFunction,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
-import { deepAccess } from '../src/utils.js';
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./aceexBidAdapter.d.ts').AceexBidderParams} AceexBidderParams
+ * @typedef {BidRequest & { params: AceexBidderParams }} AceexBidRequest
+ */
 
 const BIDDER_CODE = 'aceex';
 const GVLID = 1387;
 const AD_REQUEST_URL = 'https://bl-us.aceex.io/?secret_key=prebidjs';
 
+/**
+ * @param {AceexBidRequest} bid
+ * @param bidderRequest
+ * @param placement
+ */
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   placement.trafficType = placement.adFormat;
   placement.publisherId = bid.params.publisherId;
@@ -24,6 +33,9 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
+  /**
+   * @param {AceexBidRequest} bid
+   */
   isBidRequestValid: (bid) => {
     return !!(bid.bidId && bid.params?.publisherId && bid.params?.trafficType);
   },
@@ -31,11 +43,11 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     const base = buildRequestsBase({ adUrl: AD_REQUEST_URL, validBidRequests, bidderRequest, placementProcessingFunction });
 
-    base.data.cat = deepAccess(bidderRequest, 'ortb2.cat');
-    base.data.keywords = deepAccess(bidderRequest, 'ortb2.keywords');
-    base.data.badv = deepAccess(bidderRequest, 'ortb2.badv');
-    base.data.wseat = deepAccess(bidderRequest, 'ortb2.wseat');
-    base.data.bseat = deepAccess(bidderRequest, 'ortb2.bseat');
+    base.data.cat = bidderRequest?.ortb2?.cat;
+    base.data.keywords = bidderRequest?.ortb2?.keywords;
+    base.data.badv = bidderRequest?.ortb2?.badv;
+    base.data.wseat = bidderRequest?.ortb2?.wseat;
+    base.data.bseat = bidderRequest?.ortb2?.bseat;
 
     return base;
   },
@@ -87,7 +99,7 @@ export const spec = {
         };
 
         repackedBids.push(repackedBid);
-      })
+      });
     });
 
     return repackedBids;

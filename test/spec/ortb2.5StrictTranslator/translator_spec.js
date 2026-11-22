@@ -4,7 +4,7 @@ describe('toOrtb25Strict', () => {
   let translator;
   beforeEach(() => {
     translator = sinon.stub().callsFake((o) => o);
-  })
+  });
   it('uses provided translator', () => {
     translator.resetBehavior();
     translator.resetHistory();

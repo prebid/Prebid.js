@@ -1,4 +1,4 @@
-import { ajax } from '../../src/ajax.js'
+import { noCredsAjax as ajax } from '../../src/ajax.js';
 import { cyrb53Hash, logError } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
@@ -18,6 +18,41 @@ function logInfoWrapper(logInfo, ...args) {
 }
 
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
+/**
+ * Normalize an email address as UID2 and EUID define it
+ * (https://unifiedid.com/docs/getting-started/gs-normalization-encoding): trim it and lowercase it; for a gmail.com
+ * address, also drop the dots and anything from a `+` in the part before the `@`. Also used by modules that hash an
+ * email address themselves (idImportLibrary), so the same address typed differently gives the same hash.
+ * @param {string} email the address
+ * @returns {string|undefined} the normalized address, or undefined if it isn't one (empty, a space inside, not exactly
+ * one `@`, or an empty part either side of it)
+ */
+export function normalizeEmail(email) {
+  if (!email || !email.length) return;
+
+  const parsedEmail = email.trim().toLowerCase();
+  if (/\s/.test(parsedEmail)) return;
+
+  const parts = parsedEmail.split('@');
+  if (parts.length !== 2 || parts.some(part => part === '')) return;
+  const [address, domain] = parts;
+
+  const parsedAddress = domain === 'gmail.com' ? address.replaceAll('.', '').split('+')[0] : address;
+  return parsedAddress ? `${parsedAddress}@${domain}` : undefined;
+}
+
+/**
+ * Hash a value as UID2 and EUID hash a normalized email address or phone number
+ * (https://unifiedid.com/docs/getting-started/gs-normalization-encoding): SHA-256, base64-encoded. Uses WebCrypto,
+ * which is only there in a secure context (HTTPS).
+ * @param {string} value the value to hash
+ * @returns {Promise<string>} the base64-encoded SHA-256 digest
+ */
+export async function sha256Base64(value) {
+  const hash = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return btoa(Array.from(new Uint8Array(hash), (x) => String.fromCodePoint(x)).join(''));
+}
+
 export class Uid2ApiClient {
   constructor(opts, clientId, logInfo, logWarn) {
     this._baseUrl = opts.baseUrl;
@@ -72,21 +107,26 @@ export class Uid2ApiClient {
           } else {
             this._logInfo('Decrypting refresh API response');
             const encodeResp = this.createArrayBuffer(atob(responseText));
-            window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
-              this._logInfo('Imported decryption key')
-              // returns the symmetric key
-              window.crypto.subtle.decrypt({
-                name: 'AES-GCM',
-                iv: encodeResp.slice(0, 12),
-                tagLength: 128, // The tagLength you used to encrypt (if any)
-              }, key, encodeResp.slice(12)).then((decrypted) => {
+            window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt'])
+              .then((key) => {
+                this._logInfo('Imported decryption key');
+                return window.crypto.subtle.decrypt({
+                  name: 'AES-GCM',
+                  iv: encodeResp.slice(0, 12),
+                  tagLength: 128, // The tagLength you used to encrypt (if any)
+                }, key, encodeResp.slice(12));
+              })
+              .then((decrypted) => {
                 const decryptedResponse = String.fromCharCode(...new Uint8Array(decrypted));
                 this._logInfo('Decrypted to:', decryptedResponse);
                 const response = JSON.parse(decryptedResponse);
                 const result = this.ResponseToRefreshResult(response);
                 if (typeof result === 'string') { rejectPromise(prependMessage(result)); } else { resolvePromise(result); }
-              }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
-            }, (reason) => this._logWarn(prependMessage(`Call to UID2 API failed`), reason));
+              })
+              .catch((reason) => {
+                this._logWarn(prependMessage(`Call to UID2 API failed`), reason);
+                rejectPromise(prependMessage('Call to UID2 API failed'));
+              });
           }
         } catch (_err) {
           rejectPromise(prependMessage(responseText));
@@ -132,7 +172,8 @@ export class Uid2StorageManager {
   }
 
   writeModuleCookie(value) {
-    this._storage.setCookie(this._storageName, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
+    const expires = new Date(Date.now() + 60 * 60 * 24 * 1000).toUTCString();
+    this._storage.setCookie(this._storageName, JSON.stringify(value), expires);
   }
 
   readModuleStorage() {
@@ -170,7 +211,7 @@ export class Uid2StorageManager {
     if (!storedValue) {
       const fallbackValue = fallbackStorageGet();
       if (fallbackValue) {
-        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value.`)
+        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value.`);
         if (typeof fallbackValue === 'object') {
           this._logInfo(`Copying the fallback value to ${preferredStorageLabel}.`);
           preferredStorageSet(fallbackValue);
@@ -343,10 +384,6 @@ if (FEATURES.UID2_CSTG) {
   };
 
   class UID2DiiNormalization {
-    static EMAIL_EXTENSION_SYMBOL = '+';
-    static EMAIL_DOT = '.';
-    static GMAIL_DOMAIN = 'gmail.com';
-
     static isBase64Hash(value) {
       if (!(value && value.length === 44)) {
         return false;
@@ -364,52 +401,7 @@ if (FEATURES.UID2_CSTG) {
     }
 
     static normalizeEmail(email) {
-      if (!email || !email.length) return;
-
-      const parsedEmail = email.trim().toLowerCase();
-      if (parsedEmail.indexOf(' ') > 0) return;
-
-      const emailParts = this.splitEmailIntoAddressAndDomain(parsedEmail);
-      if (!emailParts) return;
-
-      const { address, domain } = emailParts;
-
-      const emailIsGmail = this.isGmail(domain);
-      const parsedAddress = this.normalizeAddressPart(
-        address,
-        emailIsGmail,
-        emailIsGmail
-      );
-
-      return parsedAddress ? `${parsedAddress}@${domain}` : undefined;
-    }
-
-    static splitEmailIntoAddressAndDomain(email) {
-      const parts = email.split('@');
-      if (
-        parts.length !== 2 ||
-        parts.some((part) => part === '')
-      ) { return; }
-
-      return {
-        address: parts[0],
-        domain: parts[1],
-      };
-    }
-
-    static isGmail(domain) {
-      return domain === this.GMAIL_DOMAIN;
-    }
-
-    static dropExtension(address, extensionSymbol = this.EMAIL_EXTENSION_SYMBOL) {
-      return address.split(extensionSymbol)[0];
-    }
-
-    static normalizeAddressPart(address, shouldRemoveDot, shouldDropExtension) {
-      let parsedAddress = address;
-      if (shouldRemoveDot) { parsedAddress = parsedAddress.replaceAll(this.EMAIL_DOT, ''); }
-      if (shouldDropExtension) parsedAddress = this.dropExtension(parsedAddress);
-      return parsedAddress;
+      return normalizeEmail(email);
     }
   }
 
@@ -560,7 +552,7 @@ if (FEATURES.UID2_CSTG) {
                 }
               } else if (xhr.status === 403) {
                 const response = JSON.parse(xhr.responseText);
-                if (this.isCstgApiForbiddenResponse(xhr)) {
+                if (this.isCstgApiForbiddenResponse(response)) {
                   rejectPromise(prependMessage(`Forbidden: ${response.message}`));
                 } else {
                   // A 403 should always be a forbidden response.
@@ -694,11 +686,7 @@ if (FEATURES.UID2_CSTG) {
     }
 
     static async hash(value) {
-      const hash = await window.crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(value)
-      );
-      return this.bytesToBase64(new Uint8Array(hash));
+      return sha256Base64(value);
     }
   }
 }

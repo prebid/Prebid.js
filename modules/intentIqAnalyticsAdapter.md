@@ -4,15 +4,15 @@ Module Name: iiqAnalytics
 Module Type: Analytics Adapter
 Maintainer: julian@intentiq.com
 
-### Description
+## Description
 
 By using this Intent IQ adapter, you will be able to obtain comprehensive analytics and metrics regarding the performance of the Intent IQ Unified ID module. This includes how the module impacts your revenue, CPMs, and fill rates related to bidders and domains.
 
-#### Intent IQ Universal ID Registration
+### Intent IQ Universal ID Registration
 
 No registration for this module is required.
 
-#### Intent IQ Universal ID Configuration
+### Intent IQ Universal ID Configuration
 
 **IMPORTANT**: only effective when Intent IQ Universal ID module be installed and configured. [(How-To)](https://docs.prebid.org/dev-docs/modules/userid-submodules/intentiq.html)
 
@@ -21,7 +21,7 @@ No registration for this module is required.
 {: .table .table-bordered .table-striped }
 | Parameter | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| options.partner| Required | Number | This is the partner ID value obtained from registering with IntentIQ. | `1177538` |
+| options.partner | Required | Number | This is the partner ID value obtained from registering with IntentIQ. | `1177538` |
 | options.manualWinReportEnabled | Optional | Boolean | This variable determines whether the bidWon event is triggered automatically. If set to false, the event will occur automatically, and manual reporting with reportExternalWin will be disabled. If set to true, the event will not occur automatically, allowing manual reporting through reportExternalWin. The default value is false. | `false` |
 | options.reportMethod | Optional | String | Defines the HTTP method used to send the analytics report. If set to `"POST"`, the report payload will be sent in the body of the request. If set to `"GET"` (default), the payload will be included as a query parameter in the request URL. | `"GET"` |
 | options.reportingServerAddress | Optional | String | The base URL for the IntentIQ reporting server. If parameter is provided in `configParams`, it will be used. | `"https://domain.com"` |
@@ -30,9 +30,9 @@ No registration for this module is required.
 | options.ABTestingConfigurationSource | Optional | String | Determines how AB group will be defined. Possible values: `"IIQServer"` – group defined by IIQ server, `"percentage"` – generated group based on abPercentage, `"group"` – define group based on value provided by partner. | `IIQServer` |
 | options.abPercentage | Optional | Number | Percentage for A/B testing group. Default value is `95` | `95` |
 | options.group | Optional | String | Define group provided by partner, possible values: `"A"`, `"B"` | `"A"` |
-| options.gamObjectReference | Optional | Object | This is a reference to the Google Ad Manager (GAM) object, which will be used to set targeting. If this parameter is not provided, the group reporting will not be configured.| `googletag`|
-| options.browserBlackList | Optional | String | This is the name of a browser that can be added to a blacklist.| `"chrome"`|
-| options.domainName | Optional | String | Specifies the domain of the page in which the IntentIQ object is currently running and serving the impression. This domain will be used later in the revenue reporting breakdown by domain. For example, cnn.com. It identifies the primary source of requests to the IntentIQ servers, even within nested web pages.| `"currentDomain.com"`|
+| options.gamObjectReference | Optional | Object | This is a reference to the Google Ad Manager (GAM) object, which will be used to set targeting. If this parameter is not provided, the group reporting will not be configured. | `googletag` |
+| options.browserBlackList | Optional | String | This is the name of a browser that can be added to a blacklist. | `"chrome"` |
+| options.domainName | Optional | String | Specifies the domain of the page in which the IntentIQ object is currently running and serving the impression. This domain will be used later in the revenue reporting breakdown by domain. For example, cnn.com. It identifies the primary source of requests to the IntentIQ servers, even within nested web pages. | `"currentDomain.com"` |
 | options. additionalParams | Optional | Array | This parameter allows sending additional custom key-value parameters with specific destination logic (sync, VR, winreport). Each custom parameter is defined as an object in the array. | `[ { parameterName: “abc”, parameterValue: 123, destination: [1,1,0] } ]` |
 | options. additionalParams[0].parameterName | Optional | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
 | options. additionalParams[0].parameterValue | Optional | String / Number | Value to assign to the parameter. | `123` |
@@ -95,7 +95,7 @@ pos: 0 // The following values are defined in the ORTB 2.5 spec
 
 {: .table .table-bordered .table-striped }
 | Field | Data Type | Description | Example | Mandatory |
-|--------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|-----------|
+| -------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------- |
 | biddingPlatformId | Integer | Specify the platform in which this ad impression was rendered – 1 – Prebid, 2 – Amazon, 3 – Google, 4 – Open RTB (including your local Prebid server) | 1 | Yes |
 | partnerAuctionId | String | Use this when you are running multiple auction solutions across your assets and have a unified identifier for auctions | 3d44542d-xx-4662-xxxx-4xxxx3d8e | No |
 | bidderCode | String | Specifies the name of the bidder that won the auction as reported by Prebid and all other bidding platforms | newAppnexus | Yes |
@@ -105,7 +105,7 @@ pos: 0 // The following values are defined in the ORTB 2.5 spec
 | originalCpm | Decimal | Leave empty or undefined if Prebid is not the bidding platform | 5.5 | No |
 | originalCurrency | String | Currency of the original auction | USD | No |
 | status | String | Status of the impression. Leave empty or undefined if Prebid is not the bidding platform | rendered | No |
-| placementId | String | Unique identifier of the ad unit on the webpage that showed this ad | div-1 | No |
+| placementId | String | Unique identifier of the ad unit on the webpage that showed this ad | div-1 | Yes |
 | adType | String | Specifies the type of ad served. Possible values: “banner“, “video“, “native“, “audio“. | banner | No |
 
 To report the auction win, call the function as follows:

@@ -1,11 +1,13 @@
 import { logMessage } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import * as ajax from '../src/ajax.js'
+import { qualifiedAjaxBuilder } from '../src/ajax.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 export const graphUrl = 'https://rtga.tapad.com/v1/graph';
+const MODULE_NAME = 'tapadId';
 
 export const tapadIdSubmodule = {
-  name: 'tapadId',
+  name: MODULE_NAME,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -34,7 +36,7 @@ export const tapadIdSubmodule = {
 
     return {
       callback: (complete) => {
-        ajax.ajaxBuilder(10000)(
+        qualifiedAjaxBuilder(MODULE_TYPE_UID, MODULE_NAME, 10000)(
           `${graphUrl}?company_id=${configParams.companyId}&tapad_id_type=TAPAD_ID`,
           {
             success: (response) => {
@@ -54,7 +56,7 @@ export const tapadIdSubmodule = {
           }
         );
       }
-    }
+    };
   },
   eids: {
     'tapadId': {
@@ -62,5 +64,5 @@ export const tapadIdSubmodule = {
       atype: 1
     },
   }
-}
+};
 submodule('userId', tapadIdSubmodule);

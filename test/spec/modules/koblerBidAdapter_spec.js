@@ -55,7 +55,7 @@ describe('KoblerAdapter', function () {
   });
 
   afterEach(() => {
-    sandbox.restore()
+    sandbox.restore();
   });
 
   describe('inherited functions', function () {
@@ -420,16 +420,16 @@ describe('KoblerAdapter', function () {
           if (utils.isArray(params.size) && params.size[0] === 580 && params.size[1] === 400) {
             floorPrice = floorPriceFor580x400;
           } else if (params.size === '*') {
-            floorPrice = floorPriceForAnySize
+            floorPrice = floorPriceForAnySize;
           } else {
-            floorPrice = 0
+            floorPrice = 0;
           }
           return {
             currency: params.currency,
             floor: floorPrice
-          }
-        }
-      })
+          };
+        };
+      });
       const bidderRequest = createBidderRequest();
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
@@ -440,6 +440,25 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].bidfloor).to.be.equal(floorPriceFor580x400);
       expect(openRtbRequest.imp[1].id).to.be.equal('c7698d4a-94f4-4a6b-a928-7e1facfbf752');
       expect(openRtbRequest.imp[1].bidfloor).to.be.equal(floorPriceForAnySize);
+    });
+
+    it('should read user agent from ortb2 and derive device type from it', function () {
+      const bidderRequest = createBidderRequest();
+      const expectedDeviceTypes = {
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1': 4,
+        'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1': 5,
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36': 2
+      };
+
+      Object.entries(expectedDeviceTypes).forEach(([ua, devicetype]) => {
+        const validBidRequest = createValidBidRequest();
+        validBidRequest.ortb2 = { device: { ua } };
+
+        const openRtbRequest = JSON.parse(spec.buildRequests([validBidRequest], bidderRequest).data);
+
+        expect(openRtbRequest.device.ua).to.be.equal(ua);
+        expect(openRtbRequest.device.devicetype).to.be.equal(devicetype);
+      });
     });
 
     it('should create whole OpenRTB request', function () {
@@ -470,6 +489,8 @@ describe('KoblerAdapter', function () {
           'ad-unit-3'
         )
       ];
+      validBidRequests[0].ortb2 = { device: { ua: 'test-user-agent' } };
+      validBidRequests[0].ortb2Imp = { ext: { gpid: '/1234/ad-unit-1' } };
       const bidderRequest = createBidderRequest(
         '9ff580cf-e10e-4b66-add7-40ac0c804e21',
         4500,
@@ -525,6 +546,7 @@ describe('KoblerAdapter', function () {
               ]
             },
             ext: {
+              gpid: '/1234/ad-unit-1',
               prebid: {
                 adunitcode: 'ad-unit-1'
               }
@@ -592,7 +614,7 @@ describe('KoblerAdapter', function () {
         ],
         device: {
           devicetype: 2,
-          ua: navigator.userAgent
+          ua: 'test-user-agent'
         },
         site: {
           page: 'bid.kobler.no'
@@ -616,7 +638,7 @@ describe('KoblerAdapter', function () {
       const responseWithEmptyBody = {
         body: undefined
       };
-      const bids = spec.interpretResponse(responseWithEmptyBody)
+      const bids = spec.interpretResponse(responseWithEmptyBody);
 
       expect(bids.length).to.be.equal(0);
     });
@@ -666,7 +688,7 @@ describe('KoblerAdapter', function () {
           cur: 'USD'
         }
       };
-      const bids = spec.interpretResponse(responseWithTwoBids, {})
+      const bids = spec.interpretResponse(responseWithTwoBids, {});
 
       const expectedBids = [
         {
@@ -756,7 +778,7 @@ describe('KoblerAdapter', function () {
         const bidToWon = bids[0];
         bidToWon.adserverTargeting = {
           hb_pb: 8
-        }
+        };
         spec.onBidWon(bidToWon);
 
         expect(utils.triggerPixel.callCount).to.be.equal(1);

@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/alliance_gravityBidAdapter.js';
+import { createRenderer, mediaTypeOverride, videoResponseOverride } from 'libraries/alliance_gravityUtils/index.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import sinon from 'sinon';
 const sandbox = sinon.createSandbox();
 
@@ -28,7 +30,7 @@ describe('Alliance Gravity bid adapter tests', () => {
         bidId: '4906582fc87d0c',
         bidderRequestId: '332fda16002dbe',
         auctionId: '98932591-c822-42e3-850e-4b3cf748d063',
-      }
+      };
     });
 
     it('No srid', () => {
@@ -166,7 +168,12 @@ describe('Alliance Gravity bid adapter tests', () => {
             },
           ],
           id: requestContent.id,
-          test: 0
+          test: 0,
+          ext: {
+            alliance_gravity: {
+              channel: 'pbjs',
+            },
+          },
         };
         expect(requestContent).to.be.eql(expectedRequest);
       });
@@ -225,12 +232,48 @@ describe('Alliance Gravity bid adapter tests', () => {
         });
       }
     });
+    describe('Slot dimensions', () => {
+      it('adds slot dimensions to imp.ext.dimensions when the ad unit element exists in the DOM', () => {
+        const bid = {
+          bidder: 'alliance_gravity',
+          params: { srid: '12345' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          adUnitCode: 'div-1',
+          transactionId: '469a570d-f187-488d-b1cb-48c1a2009be9',
+          sizes: [[300, 250]],
+          bidId: '44a2706ac3574',
+          bidderRequestId: '359bf8a3c06b2e',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+        };
+        const bidderRequest = {
+          bidderCode: 'alliance_gravity',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+          bidderRequestId: '359bf8a3c06b2e',
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.imp[0].ext.dimensions).to.eql({
+          slotW: 200,
+          slotH: 250,
+          cssMaxW: '400px',
+          cssMaxH: '350px',
+        });
+      });
+    });
+
     after(() => {
-      sandbox.restore()
+      sandbox.restore();
     });
   });
 
   describe('intepretResponse()', () => {
+    const baseBidderRequest = {
+      bidderCode: 'alliance_gravity',
+      auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+      bidderRequestId: '359bf8a3c06b2e',
+    };
+
+    const buildAdapterRequest = (bidRequest) => spec.buildRequests([bidRequest], baseBidderRequest);
+
     it('empty response', () => {
       const response = {
         body: ''
@@ -239,6 +282,16 @@ describe('Alliance Gravity bid adapter tests', () => {
       expect(output.length).to.be.eql(0);
     });
     it('banner responses with adm', () => {
+      const adapterRequest = buildAdapterRequest({
+        bidder: 'alliance_gravity',
+        params: { srid: '12345' },
+        adUnitCode: 'div-1',
+        mediaTypes: { banner: { sizes: [[300, 600]] } },
+        sizes: [[300, 600]],
+        bidId: '226175918ebeda',
+        bidderRequestId: '359bf8a3c06b2e',
+        auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+      });
       const response = {
         body: {
           id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
@@ -278,234 +331,348 @@ describe('Alliance Gravity bid adapter tests', () => {
           },
         },
       };
-      const output = spec.interpretResponse(response);
+      const output = spec.interpretResponse(response, adapterRequest);
       const expectedOutput = [{
         requestId: '226175918ebeda',
+        seatBidId: '4427551302944024629',
         cpm: 1.5,
         width: 300,
         height: 600,
+        creative_id: '98493581',
         creativeId: '98493581',
         currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
+        netRevenue: false,
+        ttl: 90,
         mediaType: 'banner',
         meta: {
           advertiserDomains: [
             'http://prebid.org',
           ],
+          primaryCatId: 'IAB3-1',
+          secondaryCatIds: [],
           demandSource: 'appnexus',
         },
         ad: '<div>TestAd</div>',
+        eventtrackers: [],
       }];
       expect(output).to.eql(expectedOutput);
     });
 
-    it('instream responses', () => {
-      const response = {
-        body: {
-          id: '2be64380-ba0c-405a-ab53-51f51c7bde51',
-          cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '8275140264321181514',
-                  impid: '263cba3b8bfb72',
-                  price: 5,
-                  adomain: [
-                    'appnexus.com',
-                  ],
-                  crid: '97517771',
-                  h: 1,
-                  w: 1,
-                  adm: '<VAST>vast</VAST>',
-                  ext: {
-                    mediaType: 'instream',
-                    ssp: 'appnexus',
-                    adUnitCode: 'video1'
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
-      };
-
-      const output = spec.interpretResponse(response);
-      const expectedOutput = [{
-        requestId: '263cba3b8bfb72',
-        cpm: 5,
-        width: 1,
-        height: 1,
-        creativeId: '97517771',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'video',
-        meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
-        vastXml: '<VAST>vast</VAST>',
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
-
-    it('outstream responses', () => {
-      const response = {
-        body: {
-          id: '40c23932-135e-4602-9701-ca36f8d80c07',
-          cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '1186971142548769361',
-                  impid: '4ce809b61a3928',
-                  price: 5,
-                  adomain: [
-                    'appnexus.com',
-                  ],
-                  crid: '97517771',
-                  h: 1,
-                  w: 1,
-                  adm: '<VAST>vast</VAST>',
-                  ext: {
-                    mediaType: 'outstream',
-                    ssp: 'appnexus',
-                    adUnitCode: 'div-1'
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
-      };
-
-      const output = spec.interpretResponse(response);
-      const expectedOutput = [{
-        requestId: '4ce809b61a3928',
-        cpm: 5,
-        width: 1,
-        height: 1,
+    it('banner response with burl and win event is converted to eventtrackers', () => {
+      const adapterRequest = buildAdapterRequest({
+        bidder: 'alliance_gravity',
+        params: { srid: '12345' },
         adUnitCode: 'div-1',
-        creativeId: '97517771',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'video',
-        meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
-        vastXml: '<VAST>vast</VAST>',
-        renderer: output[0].renderer,
-      }];
-      expect(output).to.eql(expectedOutput);
-    });
-
-    it('native responses', () => {
+        mediaTypes: { banner: { sizes: [[300, 600]] } },
+        sizes: [[300, 600]],
+        bidId: '226175918ebeda',
+        bidderRequestId: '359bf8a3c06b2e',
+        auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+      });
       const response = {
         body: {
-          id: '3c0290c1-6e75-4ef7-9e37-17f5ebf3bfa3',
+          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
           cur: 'USD',
           seatbid: [
             {
               bid: [
                 {
-                  id: '6624930625245272225',
-                  impid: '23e11d845514bb',
-                  price: 10,
+                  id: '4427551302944024629',
+                  impid: '226175918ebeda',
+                  price: 1.5,
                   adomain: [
-                    'prebid.org',
+                    'http://prebid.org',
                   ],
-                  crid: '97494204',
-                  h: 1,
-                  w: 1,
-                  cat: [
-                    'IAB3-1',
-                  ],
+                  crid: '98493581',
+                  ssp: 'appnexus',
+                  h: 600,
+                  w: 300,
+                  adm: '<div>TestAd</div>',
+                  burl: 'https://pbs.production.agrvt.com/burl?price=${AUCTION_PRICE}',
                   ext: {
-                    mediaType: 'native',
+                    adUnitCode: 'div-1',
+                    mediaType: 'banner',
                     ssp: 'appnexus',
-                    adUnitCode: '/19968336/prebid_native_example_1',
-                  },
-                  adm: '{"ver":"1.2","assets":[{"id":1,"img":{"url":"https:\\/\\/vcdn.adnxs.com\\/p\\/creative-image\\/f8\\/7f\\/0f\\/13\\/f87f0f13-230c-4f05-8087-db9216e393de.jpg","w":989,"h":742,"ext":{"appnexus":{"prevent_crop":0}}}},{"id":0,"title":{"text":"This is a Prebid Native Creative"}},{"id":2,"data":{"value":"Prebid.org"}}],"link":{"url":"https:\\/\\/ams3-ib.adnxs.com\\/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA.\\/bcr=AAAAAAAA8D8=\\/pp=${AUCTION_PRICE}\\/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA\\/cca=OTMyNSNBTVMzOjYxMzU=\\/bn=97062\\/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html"},"eventtrackers":[{"event":1,"method":1,"url":"https:\\/\\/ams3-ib.adnxs.com\\/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}"}]}',
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            cookies: [],
-          },
-        },
-      };
-
-      const output = spec.interpretResponse(response);
-      const expectOutput = [{
-        requestId: '23e11d845514bb',
-        cpm: 10,
-        width: 1,
-        height: 1,
-        creativeId: '97494204',
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 120,
-        mediaType: 'native',
-        meta: {
-          advertiserDomains: [
-            'prebid.org',
-          ],
-          demandSource: 'appnexus',
-        },
-        native: {
-          ortb: {
-            ver: '1.2',
-            assets: [
-              {
-                id: 1,
-                img: {
-                  url: 'https://vcdn.adnxs.com/p/creative-image/f8/7f/0f/13/f87f0f13-230c-4f05-8087-db9216e393de.jpg',
-                  w: 989,
-                  h: 742,
-                  ext: {
-                    appnexus: {
-                      prevent_crop: 0,
+                    prebid: {
+                      events: {
+                        win: 'https://pbs.production.agrvt.com/event?type=win&bidid=4427551302944024629',
+                      },
                     },
                   },
                 },
-              },
-              {
-                id: 0,
-                title: {
-                  text: 'This is a Prebid Native Creative',
-                },
-              },
-              {
-                id: 2,
-                data: {
-                  value: 'Prebid.org',
-                },
-              },
-            ],
-            link: {
-              url: 'https://ams3-ib.adnxs.com/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA./bcr=AAAAAAAA8D8=/pp=${AUCTION_PRICE}/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA/cca=OTMyNSNBTVMzOjYxMzU=/bn=97062/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html',
+              ],
+              seat: 'appnexus',
             },
-            eventtrackers: [
-              {
-                event: 1,
-                method: 1,
-                url: 'https://ams3-ib.adnxs.com/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}',
-              },
-            ],
+          ],
+          ext: {
+            id: 'de3de7c7-e1cf-4712-80a9-94eb26bfc718',
+            cookies: [],
           },
         },
-      }];
-      expect(output).to.eql(expectOutput);
+      };
+      const output = spec.interpretResponse(response, adapterRequest);
+      expect(output[0].eventtrackers).to.eql([
+        {
+          method: 1,
+          event: 1,
+          url: 'https://pbs.production.agrvt.com/burl?price=${AUCTION_PRICE}',
+        },
+        {
+          method: 1,
+          event: 500,
+          url: 'https://pbs.production.agrvt.com/event?type=win&bidid=4427551302944024629',
+        },
+      ]);
     });
+
+    if (FEATURES.VIDEO) {
+      it('instream responses', () => {
+        const adapterRequest = buildAdapterRequest({
+          bidder: 'alliance_gravity',
+          params: { srid: '12345' },
+          adUnitCode: 'video1',
+          mediaTypes: { video: { context: 'instream' } },
+          bidId: '263cba3b8bfb72',
+          bidderRequestId: '359bf8a3c06b2e',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+        });
+        const response = {
+          body: {
+            id: '2be64380-ba0c-405a-ab53-51f51c7bde51',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: '8275140264321181514',
+                    impid: '263cba3b8bfb72',
+                    price: 5,
+                    adomain: [
+                      'appnexus.com',
+                    ],
+                    crid: '97517771',
+                    h: 1,
+                    w: 1,
+                    adm: '<VAST>vast</VAST>',
+                    ext: {
+                      mediaType: 'instream',
+                      ssp: 'appnexus',
+                      adUnitCode: 'video1'
+                    },
+                  },
+                ],
+                seat: 'appnexus',
+              },
+            ],
+            ext: {
+              cookies: [],
+            },
+          },
+        };
+
+        const output = spec.interpretResponse(response, adapterRequest);
+        const expectedOutput = [{
+          requestId: '263cba3b8bfb72',
+          seatBidId: '8275140264321181514',
+          cpm: 5,
+          width: 1,
+          height: 1,
+          creative_id: '97517771',
+          creativeId: '97517771',
+          currency: 'USD',
+          netRevenue: false,
+          ttl: 90,
+          mediaType: 'video',
+          meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
+          vastXml: '<VAST>vast</VAST>',
+          eventtrackers: [],
+        }];
+        expect(output).to.eql(expectedOutput);
+      });
+
+      it('outstream responses', () => {
+        const adapterRequest = buildAdapterRequest({
+          bidder: 'alliance_gravity',
+          params: { srid: '12345' },
+          adUnitCode: 'div-1',
+          mediaTypes: { video: { context: 'outstream' } },
+          bidId: '4ce809b61a3928',
+          bidderRequestId: '359bf8a3c06b2e',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+        });
+        const response = {
+          body: {
+            id: '40c23932-135e-4602-9701-ca36f8d80c07',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: '1186971142548769361',
+                    impid: '4ce809b61a3928',
+                    price: 5,
+                    adomain: [
+                      'appnexus.com',
+                    ],
+                    crid: '97517771',
+                    h: 1,
+                    w: 1,
+                    adm: '<VAST>vast</VAST>',
+                    ext: {
+                      mediaType: 'outstream',
+                      ssp: 'appnexus',
+                      adUnitCode: 'div-1'
+                    },
+                  },
+                ],
+                seat: 'appnexus',
+              },
+            ],
+            ext: {
+              cookies: [],
+            },
+          },
+        };
+
+        const output = spec.interpretResponse(response, adapterRequest);
+        const expectedOutput = [{
+          requestId: '4ce809b61a3928',
+          seatBidId: '1186971142548769361',
+          cpm: 5,
+          width: 1,
+          height: 1,
+          adUnitCode: 'div-1',
+          creative_id: '97517771',
+          creativeId: '97517771',
+          currency: 'USD',
+          netRevenue: false,
+          ttl: 90,
+          mediaType: 'video',
+          meta: { advertiserDomains: ['appnexus.com'], demandSource: 'appnexus' },
+          vastXml: '<VAST>vast</VAST>',
+          renderer: output[0].renderer,
+          eventtrackers: [],
+        }];
+        expect(output).to.eql(expectedOutput);
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it('native responses', () => {
+        const adapterRequest = buildAdapterRequest({
+          bidder: 'alliance_gravity',
+          params: { srid: '12345' },
+          adUnitCode: '/19968336/prebid_native_example_1',
+          mediaTypes: { native: {} },
+          bidId: '23e11d845514bb',
+          bidderRequestId: '359bf8a3c06b2e',
+          auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
+        });
+        const response = {
+          body: {
+            id: '3c0290c1-6e75-4ef7-9e37-17f5ebf3bfa3',
+            cur: 'USD',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: '6624930625245272225',
+                    impid: '23e11d845514bb',
+                    price: 10,
+                    adomain: [
+                      'prebid.org',
+                    ],
+                    crid: '97494204',
+                    h: 1,
+                    w: 1,
+                    cat: [
+                      'IAB3-1',
+                    ],
+                    ext: {
+                      mediaType: 'native',
+                      ssp: 'appnexus',
+                      adUnitCode: '/19968336/prebid_native_example_1',
+                    },
+                    adm: '{"ver":"1.2","assets":[{"id":1,"img":{"url":"https:\\/\\/vcdn.adnxs.com\\/p\\/creative-image\\/f8\\/7f\\/0f\\/13\\/f87f0f13-230c-4f05-8087-db9216e393de.jpg","w":989,"h":742,"ext":{"appnexus":{"prevent_crop":0}}}},{"id":0,"title":{"text":"This is a Prebid Native Creative"}},{"id":2,"data":{"value":"Prebid.org"}}],"link":{"url":"https:\\/\\/ams3-ib.adnxs.com\\/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA.\\/bcr=AAAAAAAA8D8=\\/pp=${AUCTION_PRICE}\\/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA\\/cca=OTMyNSNBTVMzOjYxMzU=\\/bn=97062\\/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html"},"eventtrackers":[{"event":1,"method":1,"url":"https:\\/\\/ams3-ib.adnxs.com\\/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}"}]}',
+                  },
+                ],
+                seat: 'appnexus',
+              },
+            ],
+            ext: {
+              cookies: [],
+            },
+          },
+        };
+
+        const output = spec.interpretResponse(response, adapterRequest);
+        const expectOutput = [{
+          requestId: '23e11d845514bb',
+          seatBidId: '6624930625245272225',
+          cpm: 10,
+          width: 1,
+          height: 1,
+          creative_id: '97494204',
+          creativeId: '97494204',
+          currency: 'USD',
+          netRevenue: false,
+          ttl: 90,
+          mediaType: 'native',
+          meta: {
+            advertiserDomains: [
+              'prebid.org',
+            ],
+            primaryCatId: 'IAB3-1',
+            secondaryCatIds: [],
+            demandSource: 'appnexus',
+          },
+          eventtrackers: [],
+          native: {
+            ortb: {
+              ver: '1.2',
+              assets: [
+                {
+                  id: 1,
+                  img: {
+                    url: 'https://vcdn.adnxs.com/p/creative-image/f8/7f/0f/13/f87f0f13-230c-4f05-8087-db9216e393de.jpg',
+                    w: 989,
+                    h: 742,
+                    ext: {
+                      appnexus: {
+                        prevent_crop: 0,
+                      },
+                    },
+                  },
+                },
+                {
+                  id: 0,
+                  title: {
+                    text: 'This is a Prebid Native Creative',
+                  },
+                },
+                {
+                  id: 2,
+                  data: {
+                    value: 'Prebid.org',
+                  },
+                },
+              ],
+              link: {
+                url: 'https://ams3-ib.adnxs.com/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA./bcr=AAAAAAAA8D8=/pp=${AUCTION_PRICE}/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA/cca=OTMyNSNBTVMzOjYxMzU=/bn=97062/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html',
+              },
+              eventtrackers: [
+                {
+                  event: 1,
+                  method: 1,
+                  url: 'https://ams3-ib.adnxs.com/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}',
+                },
+              ],
+            },
+          },
+        }];
+        expect(output).to.eql(expectOutput);
+      });
+    }
   });
 
   describe('getUserSyncs()', () => {
@@ -531,6 +698,108 @@ describe('Alliance Gravity bid adapter tests', () => {
       expect(syncs).to.eql([]);
       syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
+    });
+  });
+
+  describe('alliance_gravityUtils', () => {
+    describe('createRenderer()', () => {
+      afterEach(() => {
+        delete window.ANOutstreamVideo;
+      });
+
+      it('returns undefined when the bid response has no VAST', () => {
+        const renderer = createRenderer({
+          requestId: '226175918ebeda',
+          vastXml: '',
+          adUnitCode: 'div-1',
+          width: 640,
+          height: 480,
+        });
+        expect(renderer).to.be.undefined;
+      });
+
+      it('renders the outstream creative via ANOutstreamVideo', () => {
+        const vastXml = '<VAST>test</VAST>';
+        const renderer = createRenderer({
+          requestId: '226175918ebeda',
+          vastXml,
+          adUnitCode: 'div-1',
+          width: 640,
+          height: 480,
+        });
+        renderer.loaded = true;
+        window.ANOutstreamVideo = { renderAd: sinon.stub() };
+        renderer._render({ renderer, vastXml });
+        sinon.assert.calledOnceWithExactly(window.ANOutstreamVideo.renderAd, {
+          sizes: [640, 480],
+          targetId: 'div-1',
+          adResponse: vastXml,
+          rendererOptions: {
+            showBigPlayButton: false,
+            showProgressBar: 'bar',
+            showVolume: false,
+            allowFullscreen: true,
+            skippable: false,
+            content: vastXml,
+          },
+        });
+      });
+    });
+
+    describe('mediaTypeOverride()', () => {
+      it('defers to orig when bidResponse.mediaType is already set', () => {
+        const orig = sinon.stub();
+        const bidResponse = { mediaType: BANNER };
+        const bid = {};
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+
+      it('defers to orig when bid.mtype is a known ORTB media type', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { mtype: 2 };
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+
+      it('sets mediaType from ext.prebid.type when mediaType and mtype are unknown', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { ext: { prebid: { type: VIDEO } } };
+        mediaTypeOverride(orig, bidResponse, bid, {});
+        expect(bidResponse.mediaType).to.equal(VIDEO);
+        sinon.assert.notCalled(orig);
+      });
+
+      it('falls back to orig when no mediaType can be determined', () => {
+        const orig = sinon.stub();
+        const bidResponse = {};
+        const bid = { ext: {} };
+        const context = {};
+        mediaTypeOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+      });
+    });
+
+    describe('videoResponseOverride()', () => {
+      it('logs when no renderer can be created for an outstream video bid', () => {
+        const orig = sinon.stub();
+        const bidResponse = { mediaType: VIDEO, vastXml: '' };
+        const bid = {};
+        const context = {
+          bidRequest: {
+            adUnitCode: 'div-1',
+            mediaTypes: { video: { context: 'outstream' } },
+          },
+        };
+        videoResponseOverride(orig, bidResponse, bid, context);
+        sinon.assert.calledOnceWithExactly(orig, bidResponse, bid, context);
+        expect(bidResponse.renderer).to.be.undefined;
+        expect(bidResponse.adUnitCode).to.be.undefined;
+      });
     });
   });
 });

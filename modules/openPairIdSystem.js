@@ -6,7 +6,7 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js';
 import { logInfo } from '../src/utils.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { VENDORLESS_GVLID } from '../src/consentHandler.js';
@@ -67,13 +67,13 @@ export const openPairIdSubmodule = {
    */
   getId(config) {
     const publisherIdsString = publisherIdFromLocalStorage(DEFAULT_PUBLISHER_ID_KEY) || publisherIdFromCookie(DEFAULT_PUBLISHER_ID_KEY);
-    let ids = []
+    let ids = [];
 
     if (publisherIdsString && typeof publisherIdsString === 'string') {
       try {
         ids = ids.concat(JSON.parse(atob(publisherIdsString)));
       } catch (error) {
-        logInfo(error)
+        logInfo(error);
       }
     }
 
@@ -111,7 +111,7 @@ export const openPairIdSubmodule = {
     }
 
     if (ids.length === 0) {
-      logInfo('Open Pair ID: no ids found')
+      logInfo('Open Pair ID: no ids found');
       return undefined;
     }
 
@@ -135,7 +135,7 @@ export const openPairIdSubmodule = {
             return {
               id: value,
               atype: atype
-            }
+            };
           })
         }
       ];

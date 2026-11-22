@@ -16,24 +16,24 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const MODULE_NAME = 'brandmetrics'
-const MODULE_CODE = MODULE_NAME
-const RECEIVED_EVENTS = []
-const GVL_ID = 422
-const TCF_PURPOSES = [1, 7]
+const MODULE_NAME = 'brandmetrics';
+const MODULE_CODE = MODULE_NAME;
+const RECEIVED_EVENTS = [];
+const GVL_ID = 422;
+const TCF_PURPOSES = [1, 7];
 
-let billableEventsInitialized = false
+let billableEventsInitialized = false;
 
 function init (config, userConsent) {
-  const hasConsent = checkConsent(userConsent)
-  const initialize = hasConsent !== false
+  const hasConsent = checkConsent(userConsent);
+  const initialize = hasConsent !== false;
 
   if (initialize) {
-    const moduleConfig = getMergedConfig(config)
-    initializeBrandmetrics(moduleConfig.params.scriptId)
-    initializeBillableEvents()
+    const moduleConfig = getMergedConfig(config);
+    initializeBrandmetrics(moduleConfig.params.scriptId);
+    initializeBillableEvents();
   }
-  return initialize
+  return initialize;
 }
 
 /**
@@ -42,38 +42,38 @@ function init (config, userConsent) {
  * @returns {boolean}
  */
 function checkConsent (userConsent) {
-  let consent
+  let consent;
 
   if (userConsent) {
     if (userConsent.gdpr && userConsent.gdpr.gdprApplies) {
-      const gdpr = userConsent.gdpr
+      const gdpr = userConsent.gdpr;
 
       if (gdpr.vendorData) {
-        const vendor = gdpr.vendorData.vendor
-        const purpose = gdpr.vendorData.purpose
+        const vendor = gdpr.vendorData.vendor;
+        const purpose = gdpr.vendorData.purpose;
 
-        let vendorConsent = false
+        let vendorConsent = false;
         if (vendor.consents) {
-          vendorConsent = vendor.consents[GVL_ID]
+          vendorConsent = vendor.consents[GVL_ID];
         }
 
         if (vendor.legitimateInterests) {
-          vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
+          vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID];
         }
 
         const purposes = TCF_PURPOSES.map(id => {
-          return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
-        })
-        const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
-        consent = vendorConsent && purposesValid
+          return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id]);
+        });
+        const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length;
+        consent = vendorConsent && purposesValid;
       }
     } else if (userConsent.usp) {
-      const usp = userConsent.usp
-      consent = usp[1] !== 'N' && usp[2] !== 'Y'
+      const usp = userConsent.usp;
+      consent = usp[1] !== 'N' && usp[2] !== 'Y';
     }
   }
 
-  return consent
+  return consent;
 }
 
 /**
@@ -85,16 +85,16 @@ function checkConsent (userConsent) {
 function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
   const callBidTargeting = (event) => {
     if (event.available && event.conf) {
-      const targetingConf = event.conf.displayOption || {}
+      const targetingConf = event.conf.displayOption || {};
       if (targetingConf.type === 'pbjs') {
-        setBidderTargeting(reqBidsConfigObj, moduleConfig, targetingConf.targetKey || 'brandmetrics_survey', event.survey.measurementId)
+        setBidderTargeting(reqBidsConfigObj, moduleConfig, targetingConf.targetKey || 'brandmetrics_survey', event.survey.measurementId);
       }
     }
-    callback()
-  }
+    callback();
+  };
 
   if (RECEIVED_EVENTS.length > 0) {
-    callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1])
+    callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1]);
   } else {
     window._brandmetrics.push({
       cmd: '_addeventlistener',
@@ -102,14 +102,14 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
         event: 'surveyloaded',
         reEmitLast: true,
         handler: (ev) => {
-          RECEIVED_EVENTS.push(ev)
+          RECEIVED_EVENTS.push(ev);
           if (RECEIVED_EVENTS.length === 1) {
             // Call bid targeting only for the first received event, if called subsequently, last event from the RECEIVED_EVENTS array is used
-            callBidTargeting(ev)
+            callBidTargeting(ev);
           }
         },
       }
-    })
+    });
   }
 }
 
@@ -121,11 +121,11 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
  * @param {string} val Targeting value
  */
 function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
-  const bidders = deepAccess(moduleConfig, 'params.bidders')
+  const bidders = deepAccess(moduleConfig, 'params.bidders');
   if (bidders && bidders.length > 0) {
     bidders.forEach(bidder => {
       deepSetValue(reqBidsConfigObj, `ortb2Fragments.bidder.${bidder}.user.ext.data.${key}`, val);
-    })
+    });
   }
 }
 
@@ -134,14 +134,14 @@ function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
  * @param {string} scriptId - The script- id provided by brandmetrics or brandmetrics partner
  */
 function initializeBrandmetrics(scriptId) {
-  window._brandmetrics = window._brandmetrics || []
+  window._brandmetrics = window._brandmetrics || [];
 
   if (scriptId) {
-    const path = 'https://cdn.brandmetrics.com/survey/script/'
-    const file = scriptId + '.js'
-    const url = path + file
+    const path = 'https://cdn.brandmetrics.com/survey/script/';
+    const file = scriptId + '.js';
+    const url = path + file;
 
-    loadExternalScript(url, MODULE_TYPE_RTD, MODULE_CODE)
+    loadExternalScript(url, MODULE_TYPE_RTD, MODULE_CODE);
   }
 }
 
@@ -168,8 +168,8 @@ function initializeBillableEvents() {
           }
         },
       }
-    })
-    billableEventsInitialized = true
+    });
+    billableEventsInitialized = true;
   }
 }
 
@@ -185,7 +185,7 @@ function getMergedConfig(customConfig) {
       bidders: [],
       scriptId: undefined,
     }
-  }, customConfig)
+  }, customConfig);
 }
 
 /** @type {RtdSubmodule} */
@@ -193,17 +193,17 @@ export const brandmetricsSubmodule = {
   name: MODULE_NAME,
   getBidRequestData: function (reqBidsConfigObj, callback, customConfig) {
     try {
-      const moduleConfig = getMergedConfig(customConfig)
+      const moduleConfig = getMergedConfig(customConfig);
       if (moduleConfig.waitForIt) {
-        processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback)
+        processBrandmetricsEvents(reqBidsConfigObj, moduleConfig, callback);
       } else {
-        callback()
+        callback();
       }
     } catch (e) {
-      logError(e)
+      logError(e);
     }
   },
   init
-}
+};
 
-submodule('realTimeData', brandmetricsSubmodule)
+submodule('realTimeData', brandmetricsSubmodule);

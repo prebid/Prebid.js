@@ -1,14 +1,18 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec } from 'modules/pubstackBidAdapter';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { hook } from 'src/hook.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 import 'src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 
 describe('pubstackBidAdapter', function () {
+  let sandbox;
+
   const baseBidRequest = {
     adUnitCode: 'adunit-code',
     auctionId: 'auction-1',
@@ -71,16 +75,38 @@ describe('pubstackBidAdapter', function () {
   const getDecodedSyncPayload = (sync) =>
     JSON.parse(atob(new URL(sync.url).searchParams.get('consent')));
 
+  const createPlacementElement = ({ id = 'placement-element', rect = {} } = {}) => {
+    const element = document.createElement('div');
+    element.id = id;
+    element.setAttribute('data-pubstack-test-element', 'true');
+    document.body.appendChild(element);
+    sandbox.stub(element, 'getBoundingClientRect').returns({
+      left: 0,
+      top: 0,
+      right: 300,
+      bottom: 250,
+      width: 300,
+      height: 250,
+      x: 0,
+      y: 0,
+      ...rect
+    });
+    return element;
+  };
+
   before(() => {
     hook.ready();
   });
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
     config.resetConfig();
   });
 
   afterEach(function () {
+    sandbox.restore();
     config.resetConfig();
+    document.querySelectorAll('[data-pubstack-test-element="true"]').forEach((element) => element.remove());
   });
 
   describe('isBidRequestValid', function () {
@@ -94,16 +120,22 @@ describe('pubstackBidAdapter', function () {
       expect(spec.isBidRequestValid(createBidRequest({ params: { adUnitName: undefined } }))).to.equal(false);
     });
 
-    it('returns true for invalid params when debug is enabled', function () {
+    it('returns false for invalid params when debug is enabled', function () {
       config.setConfig({ debug: true });
-      expect(spec.isBidRequestValid(createBidRequest({ params: { siteId: undefined } }))).to.equal(true);
-      expect(spec.isBidRequestValid(createBidRequest({ params: { adUnitName: undefined } }))).to.equal(true);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { siteId: undefined } }))).to.equal(false);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { adUnitName: undefined } }))).to.equal(false);
+    });
+
+    it('accepts a missing stackId and rejects a non string one', function () {
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: undefined } }))).to.equal(true);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: 'stack-1' } }))).to.equal(true);
+      expect(spec.isBidRequestValid(createBidRequest({ params: { stackId: 42 } }))).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
     it('builds a POST request with ORTB data and bidder extensions', function () {
-      const bidRequest = createBidRequest();
+      const bidRequest = createBidRequest({ element: createPlacementElement() });
       const bidderRequest = createBidderRequest(bidRequest);
       const request = spec.buildRequests([bidRequest], bidderRequest);
 
@@ -114,6 +146,7 @@ describe('pubstackBidAdapter', function () {
       expect(request.data.imp).to.have.lengthOf(1);
       expect(utils.deepAccess(request, 'data.imp.0.id')).to.equal('bid-1');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.adUnitName')).to.equal('adunit-1');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.stackId')).to.be.undefined;
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('adunit-code');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.be.a('number');
@@ -125,6 +158,14 @@ describe('pubstackBidAdapter', function () {
       expect(utils.deepAccess(request, 'data.ext.prebid.page.height')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.ext.prebid.page.viewportHeight')).to.be.a('number');
       expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.be.a('number');
+    });
+
+    it('sends the stackId in the bidder params when it is configured', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-stack', params: { stackId: 'stack-1' } });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.bidder.pubstack.stackId')).to.equal('stack-1');
     });
 
     it('sets test to 1 when prebid debug mode is enabled', function () {
@@ -160,6 +201,53 @@ describe('pubstackBidAdapter', function () {
       const secondBidRequest = createBidRequest({ bidId: 'bid-timeout-rate-2' });
       const secondRequest = spec.buildRequests([secondBidRequest], createBidderRequest(secondBidRequest));
       expect(utils.deepAccess(secondRequest, 'data.ext.prebid.request.timeoutCount')).to.equal(1);
+    });
+
+    it('uses the explicit ad unit element when adUnitCode does not match the DOM id', function () {
+      const element = createPlacementElement({ id: 'resolved-div-id' });
+      const bidRequest = createBidRequest({
+        adUnitCode: 'missing-adunit',
+        element
+      });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.code')).to.equal('missing-adunit');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.domId')).to.equal('resolved-div-id');
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.be.a('number');
+    });
+
+    it('omits placement details when no element is found', function () {
+      const bidRequest = createBidRequest({ adUnitCode: 'missing-element' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.domId')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewability')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.viewportDistance')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.height')).to.equal(undefined);
+      expect(utils.deepAccess(request, 'data.imp.0.ext.prebid.placement.auctionsCount')).to.equal(undefined);
+    });
+
+    it('uses unknown version when prebid global is unavailable', function () {
+      sandbox.stub(prebidGlobal, 'getGlobal').returns(null);
+
+      const bidRequest = createBidRequest({ bidId: 'bid-no-global' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.ext.prebid.version')).to.equal('unknown');
+    });
+
+    it('includes zero placement environment values', function () {
+      sandbox.stub(performance, 'now').returns(0);
+
+      const bidRequest = createBidRequest({ bidId: 'bid-falsy-env' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.tabActive')).to.be.a('boolean');
+      expect(utils.deepAccess(request, 'data.ext.prebid.page.timeFromNavigation')).to.equal(0);
     });
   });
 
@@ -231,6 +319,145 @@ describe('pubstackBidAdapter', function () {
 
       expect(extractBids(spec.interpretResponse(serverResponse, request))).to.deep.equal([]);
     });
+
+    it('converts burl and ext.prebid.events.win into event trackers, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-trackers' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              impid: 'bid-trackers',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-trackers',
+              burl: 'https://node.pbstck.com/billing',
+              ext: { prebid: { events: { win: 'https://node.pbstck.com/event?t=win' } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].eventtrackers).to.deep.equal([
+        { method: 1, event: 1, url: 'https://node.pbstck.com/billing' },
+        { method: 1, event: 500, url: 'https://node.pbstck.com/event?t=win' }
+      ]);
+    });
+
+    it('adds no event trackers when the bid has neither burl nor win url', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-no-trackers' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-no-trackers',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-no-trackers'
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].eventtrackers).to.deep.equal([]);
+    });
+
+    it('reads the video cache of an instream bid, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({
+        bidId: 'bid-instream',
+        mediaTypes: { video: { context: 'instream', playerSize: [[640, 480]], mimes: ['video/mp4'] } }
+      });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-instream',
+              mtype: 2,
+              price: 1.5,
+              w: 640,
+              h: 480,
+              adm: '<VAST version="3.0"></VAST>',
+              crid: 'creative-instream',
+              ext: { prebid: { cache: { vastXml: { cacheId: 'cache-uuid', url: 'https://cache.pbstck.com/cache?uuid=cache-uuid' } } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      if (FEATURES.VIDEO) {
+        expect(bids[0].videoCacheKey).to.equal('cache-uuid');
+        expect(bids[0].vastUrl).to.equal('https://cache.pbstck.com/cache?uuid=cache-uuid');
+      }
+    });
+
+    it('reads the media type of a multi-format bid without mtype from ext.prebid.type, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({
+        bidId: 'bid-multiformat',
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { context: 'outstream', playerSize: [[640, 480]], mimes: ['video/mp4'] }
+        }
+      });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-multiformat',
+              price: 1.5,
+              w: 640,
+              h: 480,
+              adm: '<VAST version="3.0"></VAST>',
+              crid: 'creative-multiformat',
+              ext: { prebid: { type: 'video' } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('video');
+      if (FEATURES.VIDEO) {
+        expect(bids[0].vastXml).to.equal('<VAST version="3.0"></VAST>');
+      }
+    });
+
+    it('reads ext.prebid.targeting, like the Prebid Server adapter', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-targeting' });
+      const request = spec.buildRequests([bidRequest], createBidderRequest(bidRequest));
+      const serverResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid-targeting',
+              mtype: 1,
+              price: 1.5,
+              w: 300,
+              h: 250,
+              adm: '<div>ad</div>',
+              crid: 'creative-targeting',
+              ext: { prebid: { targeting: { hb_cache_id: 'cache-uuid' } } }
+            }]
+          }]
+        }
+      };
+
+      const bids = extractBids(spec.interpretResponse(serverResponse, request));
+      expect(bids[0].adserverTargeting).to.deep.equal({ hb_cache_id: 'cache-uuid' });
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -260,6 +487,19 @@ describe('pubstackBidAdapter', function () {
         gpp: 'gpp-string',
         gpp_sid: [7, 8]
       });
+    });
+
+    it('url-encodes the consent payload so a + in its base64 survives', function () {
+      const bidRequest = createBidRequest({ bidId: 'bid-gpp-plus' });
+      const bidderRequest = createBidderRequest(bidRequest);
+      spec.buildRequests([bidRequest], bidderRequest);
+      const gppConsent = { gppString: 'DBABMA~~~CP', applicableSections: [7] };
+
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], null, null, gppConsent);
+
+      const siteSync = findSyncForSite(syncs, 'site-123');
+      expect(siteSync.url).to.include('%2B');
+      expect(getDecodedSyncPayload(siteSync)).to.deep.equal({ uspConsent: null, gpp: 'DBABMA~~~CP', gpp_sid: [7] });
     });
 
     it('returns image sync when iframe sync is disabled', function () {

@@ -45,11 +45,11 @@ export const spec = {
   supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     let isValid = false;
-    const accountID = bid?.params?.account_id
+    const accountID = bid?.params?.account_id;
     if (accountID && typeof accountID === 'string') {
       isValid = true;
     } else {
-      logError(`${LOG_PREFIX} account_id is missing from params or is not of type "string"`)
+      logError(`${LOG_PREFIX} account_id is missing from params or is not of type "string"`);
     }
     return isValid;
   },
@@ -81,7 +81,7 @@ export const spec = {
 
       if (testBidsRequested) {
         deepSetValue(data, 'test', 1);
-        logWarn(`${LOG_PREFIX} test bids are enabled as rediads-test-bids is present in page URL hash.`)
+        logWarn(`${LOG_PREFIX} test bids are enabled as rediads-test-bids is present in page URL hash.`);
       }
 
       // handle impression/bid level requirements
@@ -92,7 +92,7 @@ export const spec = {
         }
       });
     } catch (err) {
-      logError(`${LOG_PREFIX} encountered an error while building bid requests :: ${err}`)
+      logError(`${LOG_PREFIX} encountered an error while building bid requests :: ${err}`);
     }
 
     return [
@@ -109,9 +109,9 @@ export const spec = {
       bids = converter.fromORTB({
         response: response.body,
         request: request.data,
-      }).bids
+      }).bids;
     } catch (err) {
-      logError(`${LOG_PREFIX} encountered an error while processing bid responses :: ${err}`)
+      logError(`${LOG_PREFIX} encountered an error while processing bid responses :: ${err}`);
     }
     return bids;
   },

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
 
 /**
@@ -9,7 +9,8 @@ import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'viant';
-const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder'
+const GVLID = 1542;
+const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder';
 const ADAPTER_VERSION = '2.0.0';
 
 const DEFAULT_BID_TTL = 300;
@@ -18,7 +19,8 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['viantortb'],
+  gvlid: GVLID,
+  aliases: [{ code: 'viantortb', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {
@@ -63,7 +65,7 @@ export const spec = {
       utils.triggerPixel(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm));
     }
   }
-}
+};
 
 function buildRequests(bids, bidderRequest) {
   const videoBids = bids.filter(bid => isVideoBid(bid));
@@ -114,7 +116,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     method: 'POST',
     url: ENDPOINT,
     data: data
-  }
+  };
 }
 
 function isVideoBid(bid) {

@@ -1,9 +1,8 @@
 import sinon from 'sinon';
 import { attachIdSystem } from '../../../modules/userId/index.js';
-import { kinessoIdSubmodule } from '../../../modules/kinessoIdSystem.js';
+import { dep, kinessoIdSubmodule } from '../../../modules/kinessoIdSystem.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 import * as utils from '../../../src/utils.js';
-import * as ajaxLib from '../../../src/ajax.js';
 import { expect } from 'chai/index.mjs';
 
 describe('kinesso ID', () => {
@@ -64,7 +63,7 @@ describe('kinesso ID', () => {
       sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'logError');
       sandbox.stub(utils, 'logInfo');
-      ajaxStub = sandbox.stub(ajaxLib, 'ajax');
+      ajaxStub = sandbox.stub(dep, 'ajax');
     });
 
     afterEach(() => {

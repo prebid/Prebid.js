@@ -4,6 +4,10 @@ import { ajaxBuilder } from '../src/ajax.js';
 
 const MODULE_NAME = 'datamage';
 
+export const dep = {
+  ajaxBuilder
+};
+
 let fetchPromise = null;
 let lastTargeting = null;
 
@@ -107,7 +111,7 @@ function buildApiUrl(params) {
 function fetchContextData(apiUrl, fetchTimeoutMs) {
   if (fetchPromise) return fetchPromise;
 
-  const ajax = ajaxBuilder(fetchTimeoutMs);
+  const ajax = dep.ajaxBuilder(fetchTimeoutMs);
   fetchPromise = new Promise((resolve, reject) => {
     ajax(apiUrl, {
       success: (responseText) => {

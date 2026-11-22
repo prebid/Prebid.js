@@ -1,19 +1,18 @@
-import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
+import ooloAnalytics, { PAGEVIEW_ID, buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
-import { EVENTS } from 'src/constants.js'
-import * as events from 'src/events'
+import { EVENTS } from 'src/constants.js';
+import * as events from 'src/events';
 import { config } from 'src/config';
-import { buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter';
 
 const auctionId = '0ea14159-2058-4b87-a966-9d7652176a56';
-const auctionStart = 1598513385415
-const timeout = 3000
+const auctionStart = 1598513385415;
+const timeout = 3000;
 const adUnit1 = 'top_1';
 const adUnit2 = 'top_2';
-const bidId1 = '392b5a6b05d648'
-const bidId2 = '392b5a6b05d649'
-const bidId3 = '392b5a6b05d650'
+const bidId1 = '392b5a6b05d648';
+const bidId2 = '392b5a6b05d649';
+const bidId3 = '392b5a6b05d650';
 
 const auctionInit = {
   timestamp: auctionStart,
@@ -87,14 +86,14 @@ const bidRequested = {
       schain: {}
     },
   ],
-}
+};
 
 const noBid = {
   auctionId,
   adUnitCode: adUnit2,
   bidId: bidId2,
   requestId: bidId2
-}
+};
 
 const bidResponse = {
   auctionId,
@@ -102,7 +101,6 @@ const bidResponse = {
   mediaType: 'banner',
   width: 0,
   height: 0,
-  statusMessage: 'Bid available',
   adId: '222bb26f9e8bd',
   cpm: 0.112256,
   responseTimestamp: 1598513485254,
@@ -127,7 +125,7 @@ const bidResponse = {
   netRevenue: true,
   currency: 'USD',
   ttl: 300,
-}
+};
 
 const auctionEnd = {
   auctionId: auctionId
@@ -148,7 +146,7 @@ const bidWon = {
   adUnitCode: adUnit1,
   bidId: bidId1,
   cpm: 0.5
-}
+};
 
 function simulateAuction () {
   events.emit(EVENTS.AUCTION_INIT, auctionInit);
@@ -160,18 +158,18 @@ function simulateAuction () {
 }
 
 describe('oolo Prebid Analytic', () => {
-  let clock
+  let clock;
 
   beforeEach(() => {
     sinon.stub(events, 'getEvents').returns([]);
-    clock = sinon.useFakeTimers()
+    clock = sinon.useFakeTimers();
   });
 
   afterEach(() => {
     ooloAnalytics.disableAnalytics();
-    events.getEvents.restore()
+    events.getEvents.restore();
     clock.restore();
-  })
+  });
 
   describe('enableAnalytics init options', () => {
     it('should not enable analytics if invalid config', () => {
@@ -180,10 +178,10 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: undefined
         }
-      })
+      });
 
-      expect(server.requests).to.have.length(0)
-    })
+      expect(server.requests).to.have.length(0);
+    });
 
     it('should send prebid config to the server', () => {
       ooloAnalytics.enableAnalytics({
@@ -191,20 +189,20 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      const conf = {}
-      const pbjsConfig = JSON.parse(JSON.stringify(config.getConfig()))
+      const conf = {};
+      const pbjsConfig = JSON.parse(JSON.stringify(config.getConfig()));
 
       Object.keys(pbjsConfig).forEach(key => {
         if (key[0] !== '_') {
-          conf[key] = pbjsConfig[key]
+          conf[key] = pbjsConfig[key];
         }
-      })
+      });
 
-      expect(server.requests[1].url).to.contain('/hbconf')
-      expect(JSON.parse(server.requests[1].requestBody)).to.deep.equal(conf)
-    })
+      expect(server.requests[1].url).to.contain('/hbconf');
+      expect(JSON.parse(server.requests[1].requestBody)).to.deep.equal(conf);
+    });
 
     it('should request server config and send page data', () => {
       ooloAnalytics.enableAnalytics({
@@ -212,28 +210,28 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
-      expect(server.requests[0].url).to.contain('?pid=123')
+      expect(server.requests[0].url).to.contain('?pid=123');
 
-      const pageData = JSON.parse(server.requests[2].requestBody)
+      const pageData = JSON.parse(server.requests[2].requestBody);
 
-      expect(pageData).to.have.property('timestamp')
-      expect(pageData).to.have.property('screenWidth')
-      expect(pageData).to.have.property('screenHeight')
-      expect(pageData).to.have.property('url')
-      expect(pageData).to.have.property('protocol')
-      expect(pageData).to.have.property('origin')
-      expect(pageData).to.have.property('referrer')
-      expect(pageData).to.have.property('pbVersion')
-      expect(pageData).to.have.property('pvid')
-      expect(pageData).to.have.property('pid')
-      expect(pageData).to.have.property('pbModuleVersion')
-      expect(pageData).to.have.property('domContentLoadTime')
-      expect(pageData).to.have.property('pageLoadTime')
-    })
-  })
+      expect(pageData).to.have.property('timestamp');
+      expect(pageData).to.have.property('screenWidth');
+      expect(pageData).to.have.property('screenHeight');
+      expect(pageData).to.have.property('url');
+      expect(pageData).to.have.property('protocol');
+      expect(pageData).to.have.property('origin');
+      expect(pageData).to.have.property('referrer');
+      expect(pageData).to.have.property('pbVersion');
+      expect(pageData).to.have.property('pvid');
+      expect(pageData).to.have.property('pid');
+      expect(pageData).to.have.property('pbModuleVersion');
+      expect(pageData).to.have.property('domContentLoadTime');
+      expect(pageData).to.have.property('pageLoadTime');
+    });
+  });
 
   describe('data handling and sending events', () => {
     it('should send an "auction" event to the server', () => {
@@ -242,16 +240,16 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
-      server.requests[0].respond(500)
+      server.requests[0].respond(500);
 
-      simulateAuction()
+      simulateAuction();
 
-      expect(server.requests.length).to.equal(3)
-      clock.tick(2000)
-      expect(server.requests.length).to.equal(4)
+      expect(server.requests.length).to.equal(3);
+      clock.tick(2000);
+      expect(server.requests.length).to.equal(4);
 
       const request = JSON.parse(server.requests[3].requestBody);
 
@@ -262,56 +260,56 @@ describe('oolo Prebid Analytic', () => {
         auctionStart,
         auctionEnd: 0,
         timeout,
-      })
-      expect(request.pvid).to.be.a('number')
-      expect(request.adUnits).to.have.length(2)
+      });
+      expect(request.pvid).to.be.a('number');
+      expect(request.adUnits).to.have.length(2);
 
-      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
-      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0];
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0];
 
-      expect(auctionAdUnit1.auctionId).to.equal(auctionId)
-      expect(auctionAdUnit1.bids).to.be.an('array')
-      expect(auctionAdUnit1.bids).to.have.length(1)
+      expect(auctionAdUnit1.auctionId).to.equal(auctionId);
+      expect(auctionAdUnit1.bids).to.be.an('array');
+      expect(auctionAdUnit1.bids).to.have.length(1);
 
       // bid response
-      expect(auctionAdUnit1.bids[0].bidId).to.equal(bidId1)
-      expect(auctionAdUnit1.bids[0].bst).to.equal('bidReceived')
-      expect(auctionAdUnit1.bids[0].bidder).to.equal('appnexus')
-      expect(auctionAdUnit1.bids[0].cpm).to.equal(0.112256)
-      expect(auctionAdUnit1.bids[0].cur).to.equal('USD')
-      expect(auctionAdUnit1.bids[0].s).to.equal(bidRequested.start)
-      expect(auctionAdUnit1.bids[0].e).to.equal(bidResponse.responseTimestamp)
-      expect(auctionAdUnit1.bids[0].rs).to.equal(bidRequested.start - auctionStart)
-      expect(auctionAdUnit1.bids[0].re).to.equal(bidResponse.responseTimestamp - auctionStart)
-      expect(auctionAdUnit1.bids[0].h).to.equal(0)
-      expect(auctionAdUnit1.bids[0].w).to.equal(0)
-      expect(auctionAdUnit1.bids[0].mt).to.equal('banner')
-      expect(auctionAdUnit1.bids[0].nrv).to.equal(true)
-      expect(auctionAdUnit1.bids[0].params).to.have.keys('placementId')
-      expect(auctionAdUnit1.bids[0].size).to.equal('0x0')
-      expect(auctionAdUnit1.bids[0].crId).to.equal('123456')
-      expect(auctionAdUnit1.bids[0].ttl).to.equal(bidResponse.ttl)
-      expect(auctionAdUnit1.bids[0].ttr).to.equal(bidResponse.timeToRespond)
+      expect(auctionAdUnit1.bids[0].bidId).to.equal(bidId1);
+      expect(auctionAdUnit1.bids[0].bst).to.equal('bidReceived');
+      expect(auctionAdUnit1.bids[0].bidder).to.equal('appnexus');
+      expect(auctionAdUnit1.bids[0].cpm).to.equal(0.112256);
+      expect(auctionAdUnit1.bids[0].cur).to.equal('USD');
+      expect(auctionAdUnit1.bids[0].s).to.equal(bidRequested.start);
+      expect(auctionAdUnit1.bids[0].e).to.equal(bidResponse.responseTimestamp);
+      expect(auctionAdUnit1.bids[0].rs).to.equal(bidRequested.start - auctionStart);
+      expect(auctionAdUnit1.bids[0].re).to.equal(bidResponse.responseTimestamp - auctionStart);
+      expect(auctionAdUnit1.bids[0].h).to.equal(0);
+      expect(auctionAdUnit1.bids[0].w).to.equal(0);
+      expect(auctionAdUnit1.bids[0].mt).to.equal('banner');
+      expect(auctionAdUnit1.bids[0].nrv).to.equal(true);
+      expect(auctionAdUnit1.bids[0].params).to.have.keys('placementId');
+      expect(auctionAdUnit1.bids[0].size).to.equal('0x0');
+      expect(auctionAdUnit1.bids[0].crId).to.equal('123456');
+      expect(auctionAdUnit1.bids[0].ttl).to.equal(bidResponse.ttl);
+      expect(auctionAdUnit1.bids[0].ttr).to.equal(bidResponse.timeToRespond);
 
-      expect(auctionAdUnit2.auctionId).to.equal(auctionId)
-      expect(auctionAdUnit2.bids).to.be.an('array')
-      expect(auctionAdUnit2.bids).to.have.length(2)
+      expect(auctionAdUnit2.auctionId).to.equal(auctionId);
+      expect(auctionAdUnit2.bids).to.be.an('array');
+      expect(auctionAdUnit2.bids).to.have.length(2);
 
       // no bid
-      expect(auctionAdUnit2.bids[0].bidId).to.equal(bidId2)
-      expect(auctionAdUnit2.bids[0].bst).to.equal('noBid')
-      expect(auctionAdUnit2.bids[0].bidder).to.equal('rubicon')
-      expect(auctionAdUnit2.bids[0].s).to.be.a('number')
-      expect(auctionAdUnit2.bids[0].e).to.be.a('number')
-      expect(auctionAdUnit2.bids[0].params).to.have.keys('placementId')
+      expect(auctionAdUnit2.bids[0].bidId).to.equal(bidId2);
+      expect(auctionAdUnit2.bids[0].bst).to.equal('noBid');
+      expect(auctionAdUnit2.bids[0].bidder).to.equal('rubicon');
+      expect(auctionAdUnit2.bids[0].s).to.be.a('number');
+      expect(auctionAdUnit2.bids[0].e).to.be.a('number');
+      expect(auctionAdUnit2.bids[0].params).to.have.keys('placementId');
 
       // timeout
-      expect(auctionAdUnit2.bids[1].bidId).to.equal(bidId3)
-      expect(auctionAdUnit2.bids[1].bst).to.equal('bidTimedOut')
-      expect(auctionAdUnit2.bids[1].bidder).to.equal('ix')
-      expect(auctionAdUnit2.bids[1].s).to.be.a('number')
-      expect(auctionAdUnit2.bids[1].e).to.be.a('undefined')
-    })
+      expect(auctionAdUnit2.bids[1].bidId).to.equal(bidId3);
+      expect(auctionAdUnit2.bids[1].bst).to.equal('bidTimedOut');
+      expect(auctionAdUnit2.bids[1].bidder).to.equal('ix');
+      expect(auctionAdUnit2.bids[1].s).to.be.a('number');
+      expect(auctionAdUnit2.bids[1].e).to.be.a('undefined');
+    });
 
     it('should push events to a queue and process them once server configuration returns', () => {
       ooloAnalytics.enableAnalytics({
@@ -319,20 +317,20 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
       events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
       events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // configuration returned in an arbitrary moment
-      server.requests[0].respond(500)
+      server.requests[0].respond(500);
 
       events.emit(EVENTS.NO_BID, noBid);
       events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
       events.emit(EVENTS.AUCTION_END, auctionEnd);
 
-      clock.tick(1500)
+      clock.tick(1500);
 
       const request = JSON.parse(server.requests[3].requestBody);
 
@@ -343,56 +341,56 @@ describe('oolo Prebid Analytic', () => {
         auctionStart,
         auctionEnd: 0,
         timeout,
-      })
-      expect(request.pvid).to.be.a('number')
-      expect(request.adUnits).to.have.length(2)
+      });
+      expect(request.pvid).to.be.a('number');
+      expect(request.adUnits).to.have.length(2);
 
-      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
-      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0];
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0];
 
-      expect(auctionAdUnit1.auctionId).to.equal(auctionId)
-      expect(auctionAdUnit1.bids).to.be.an('array')
-      expect(auctionAdUnit1.bids).to.have.length(1)
+      expect(auctionAdUnit1.auctionId).to.equal(auctionId);
+      expect(auctionAdUnit1.bids).to.be.an('array');
+      expect(auctionAdUnit1.bids).to.have.length(1);
 
       // bid response
-      expect(auctionAdUnit1.bids[0].bidId).to.equal(bidId1)
-      expect(auctionAdUnit1.bids[0].bst).to.equal('bidReceived')
-      expect(auctionAdUnit1.bids[0].bidder).to.equal('appnexus')
-      expect(auctionAdUnit1.bids[0].cpm).to.equal(0.112256)
-      expect(auctionAdUnit1.bids[0].cur).to.equal('USD')
-      expect(auctionAdUnit1.bids[0].s).to.equal(bidRequested.start)
-      expect(auctionAdUnit1.bids[0].e).to.equal(bidResponse.responseTimestamp)
-      expect(auctionAdUnit1.bids[0].rs).to.equal(bidRequested.start - auctionStart)
-      expect(auctionAdUnit1.bids[0].re).to.equal(bidResponse.responseTimestamp - auctionStart)
-      expect(auctionAdUnit1.bids[0].h).to.equal(0)
-      expect(auctionAdUnit1.bids[0].w).to.equal(0)
-      expect(auctionAdUnit1.bids[0].mt).to.equal('banner')
-      expect(auctionAdUnit1.bids[0].nrv).to.equal(true)
-      expect(auctionAdUnit1.bids[0].params).to.have.keys('placementId')
-      expect(auctionAdUnit1.bids[0].size).to.equal('0x0')
-      expect(auctionAdUnit1.bids[0].crId).to.equal('123456')
-      expect(auctionAdUnit1.bids[0].ttl).to.equal(bidResponse.ttl)
-      expect(auctionAdUnit1.bids[0].ttr).to.equal(bidResponse.timeToRespond)
+      expect(auctionAdUnit1.bids[0].bidId).to.equal(bidId1);
+      expect(auctionAdUnit1.bids[0].bst).to.equal('bidReceived');
+      expect(auctionAdUnit1.bids[0].bidder).to.equal('appnexus');
+      expect(auctionAdUnit1.bids[0].cpm).to.equal(0.112256);
+      expect(auctionAdUnit1.bids[0].cur).to.equal('USD');
+      expect(auctionAdUnit1.bids[0].s).to.equal(bidRequested.start);
+      expect(auctionAdUnit1.bids[0].e).to.equal(bidResponse.responseTimestamp);
+      expect(auctionAdUnit1.bids[0].rs).to.equal(bidRequested.start - auctionStart);
+      expect(auctionAdUnit1.bids[0].re).to.equal(bidResponse.responseTimestamp - auctionStart);
+      expect(auctionAdUnit1.bids[0].h).to.equal(0);
+      expect(auctionAdUnit1.bids[0].w).to.equal(0);
+      expect(auctionAdUnit1.bids[0].mt).to.equal('banner');
+      expect(auctionAdUnit1.bids[0].nrv).to.equal(true);
+      expect(auctionAdUnit1.bids[0].params).to.have.keys('placementId');
+      expect(auctionAdUnit1.bids[0].size).to.equal('0x0');
+      expect(auctionAdUnit1.bids[0].crId).to.equal('123456');
+      expect(auctionAdUnit1.bids[0].ttl).to.equal(bidResponse.ttl);
+      expect(auctionAdUnit1.bids[0].ttr).to.equal(bidResponse.timeToRespond);
 
-      expect(auctionAdUnit2.auctionId).to.equal(auctionId)
-      expect(auctionAdUnit2.bids).to.be.an('array')
-      expect(auctionAdUnit2.bids).to.have.length(2)
+      expect(auctionAdUnit2.auctionId).to.equal(auctionId);
+      expect(auctionAdUnit2.bids).to.be.an('array');
+      expect(auctionAdUnit2.bids).to.have.length(2);
 
       // no bid
-      expect(auctionAdUnit2.bids[0].bidId).to.equal(bidId2)
-      expect(auctionAdUnit2.bids[0].bst).to.equal('noBid')
-      expect(auctionAdUnit2.bids[0].bidder).to.equal('rubicon')
-      expect(auctionAdUnit2.bids[0].s).to.be.a('number')
-      expect(auctionAdUnit2.bids[0].e).to.be.a('number')
-      expect(auctionAdUnit2.bids[0].params).to.have.keys('placementId')
+      expect(auctionAdUnit2.bids[0].bidId).to.equal(bidId2);
+      expect(auctionAdUnit2.bids[0].bst).to.equal('noBid');
+      expect(auctionAdUnit2.bids[0].bidder).to.equal('rubicon');
+      expect(auctionAdUnit2.bids[0].s).to.be.a('number');
+      expect(auctionAdUnit2.bids[0].e).to.be.a('number');
+      expect(auctionAdUnit2.bids[0].params).to.have.keys('placementId');
 
       // timeout
-      expect(auctionAdUnit2.bids[1].bidId).to.equal(bidId3)
-      expect(auctionAdUnit2.bids[1].bst).to.equal('bidTimedOut')
-      expect(auctionAdUnit2.bids[1].bidder).to.equal('ix')
-      expect(auctionAdUnit2.bids[1].s).to.be.a('number')
-      expect(auctionAdUnit2.bids[1].e).to.be.a('undefined')
-    })
+      expect(auctionAdUnit2.bids[1].bidId).to.equal(bidId3);
+      expect(auctionAdUnit2.bids[1].bst).to.equal('bidTimedOut');
+      expect(auctionAdUnit2.bids[1].bidder).to.equal('ix');
+      expect(auctionAdUnit2.bids[1].s).to.be.a('number');
+      expect(auctionAdUnit2.bids[1].e).to.be.a('undefined');
+    });
 
     it('should send "auction" event without all the fields that were set to undefined', () => {
       ooloAnalytics.enableAnalytics({
@@ -400,37 +398,37 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      server.requests[0].respond(500)
+      server.requests[0].respond(500);
 
-      simulateAuction()
-      clock.tick(1500)
+      simulateAuction();
+      clock.tick(1500);
 
       const request = JSON.parse(server.requests[3].requestBody);
 
-      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
-      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0];
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0];
 
-      expect(auctionAdUnit1.code).to.equal(undefined)
-      expect(auctionAdUnit1.transactionId).to.equal(undefined)
-      expect(auctionAdUnit1.adUnitCode).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].auctionStart).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].bids).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].refererInfo).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].bidRequestsCount).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].bidderRequestId).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].bidderRequestsCount).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].bidderWinsCount).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].schain).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].src).to.equal(undefined)
-      expect(auctionAdUnit1.bids[0].transactionId).to.equal(undefined)
+      expect(auctionAdUnit1.code).to.equal(undefined);
+      expect(auctionAdUnit1.transactionId).to.equal(undefined);
+      expect(auctionAdUnit1.adUnitCode).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].auctionStart).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].bids).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].refererInfo).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].bidRequestsCount).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].bidderRequestId).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].bidderRequestsCount).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].bidderWinsCount).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].schain).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].src).to.equal(undefined);
+      expect(auctionAdUnit1.bids[0].transactionId).to.equal(undefined);
 
       // no bid
-      expect(auctionAdUnit2.bids[0].schain).to.equal(undefined)
-      expect(auctionAdUnit2.bids[0].src).to.equal(undefined)
-      expect(auctionAdUnit2.bids[0].transactionId).to.equal(undefined)
-    })
+      expect(auctionAdUnit2.bids[0].schain).to.equal(undefined);
+      expect(auctionAdUnit2.bids[0].src).to.equal(undefined);
+      expect(auctionAdUnit2.bids[0].transactionId).to.equal(undefined);
+    });
 
     it('should mark bid winner and send to the server along with the auction data', () => {
       ooloAnalytics.enableAnalytics({
@@ -438,19 +436,19 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      server.requests[0].respond(500)
-      simulateAuction()
+      server.requests[0].respond(500);
+      simulateAuction();
       events.emit(EVENTS.BID_WON, bidWon);
-      clock.tick(1500)
+      clock.tick(1500);
 
       // no bidWon
-      expect(server.requests).to.have.length(4)
+      expect(server.requests).to.have.length(4);
 
       const request = JSON.parse(server.requests[3].requestBody);
-      expect(request.adUnits[0].bids[0].isW).to.equal(true)
-    })
+      expect(request.adUnits[0].bids[0].isW).to.equal(true);
+    });
 
     it('should take BID_WON_TIMEOUT from server config if exists', () => {
       ooloAnalytics.enableAnalytics({
@@ -458,27 +456,27 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {},
         'BID_WON_TIMEOUT': 500
-      }))
+      }));
 
-      simulateAuction()
+      simulateAuction();
       events.emit(EVENTS.BID_WON, bidWon);
-      clock.tick(499)
+      clock.tick(499);
 
       // no auction data
-      expect(server.requests).to.have.length(3)
+      expect(server.requests).to.have.length(3);
 
-      clock.tick(1)
+      clock.tick(1);
 
       // auction data
-      expect(server.requests).to.have.length(4)
+      expect(server.requests).to.have.length(4);
       const request = JSON.parse(server.requests[3].requestBody);
-      expect(request.adUnits[0].bids[0].isW).to.equal(true)
-    })
+      expect(request.adUnits[0].bids[0].isW).to.equal(true);
+    });
 
     it('should send a "bidWon" event to the server', () => {
       ooloAnalytics.enableAnalytics({
@@ -486,24 +484,24 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      server.requests[0].respond(500)
-      simulateAuction()
-      clock.tick(1500)
+      server.requests[0].respond(500);
+      simulateAuction();
+      clock.tick(1500);
       events.emit(EVENTS.BID_WON, bidWon);
 
-      expect(server.requests).to.have.length(5)
+      expect(server.requests).to.have.length(5);
 
       const request = JSON.parse(server.requests[4].requestBody);
 
-      expect(request.eventType).to.equal('bidWon')
-      expect(request.auctionId).to.equal(auctionId)
-      expect(request.adunid).to.equal(adUnit1)
-      expect(request.bid.bst).to.equal('bidWon')
-      expect(request.bid.cur).to.equal('USD')
-      expect(request.bid.cpm).to.equal(0.5)
-    })
+      expect(request.eventType).to.equal('bidWon');
+      expect(request.auctionId).to.equal(auctionId);
+      expect(request.adunid).to.equal(adUnit1);
+      expect(request.bid.bst).to.equal('bidWon');
+      expect(request.bid.cur).to.equal('USD');
+      expect(request.bid.cpm).to.equal(0.5);
+    });
 
     it('should sent adRenderFailed to the server', () => {
       ooloAnalytics.enableAnalytics({
@@ -511,22 +509,22 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      server.requests[0].respond(500)
-      simulateAuction()
-      clock.tick(1500)
+      server.requests[0].respond(500);
+      simulateAuction();
+      clock.tick(1500);
       events.emit(EVENTS.AD_RENDER_FAILED, { bidId: 'abcdef', reason: 'exception' });
 
-      expect(server.requests).to.have.length(5)
+      expect(server.requests).to.have.length(5);
 
       const request = JSON.parse(server.requests[4].requestBody);
 
-      expect(request.eventType).to.equal('adRenderFailed')
-      expect(request.pvid).to.equal(PAGEVIEW_ID)
-      expect(request.bidId).to.equal('abcdef')
-      expect(request.reason).to.equal('exception')
-    })
+      expect(request.eventType).to.equal('adRenderFailed');
+      expect(request.pvid).to.equal(PAGEVIEW_ID);
+      expect(request.bidId).to.equal('abcdef');
+      expect(request.reason).to.equal('exception');
+    });
 
     it('should pick fields according to server configuration', () => {
       ooloAnalytics.enableAnalytics({
@@ -534,7 +532,7 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -548,31 +546,30 @@ describe('oolo Prebid Analytic', () => {
           },
           'bidResponse': {
             'sendRaw': 0,
-            'pickFields': ['adUrl', 'statusMessage']
+            'pickFields': ['adUrl']
           },
           'auctionEnd': {
             'sendRaw': 0,
             'pickFields': ['winningBids']
           },
         }
-      }))
+      }));
 
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
-      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b }) });
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b; }) });
       events.emit(EVENTS.NO_BID, { ...noBid, src: 'client' });
       events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' });
       events.emit(EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] });
-      events.emit(EVENTS.BID_WON, { ...bidWon, statusMessage: 'msg2' });
+      events.emit(EVENTS.BID_WON, { ...bidWon });
 
-      clock.tick(1500)
+      clock.tick(1500);
 
-      const request = JSON.parse(server.requests[3].requestBody)
+      const request = JSON.parse(server.requests[3].requestBody);
 
-      expect(request.adUnits[0].bids[0].transactionId).to.equal('123')
-      expect(request.adUnits[0].bids[0].adUrl).to.equal('...')
-      expect(request.adUnits[0].bids[0].statusMessage).to.equal('msg2')
-      expect(request.adUnits[1].bids[0].src).to.equal('client')
-    })
+      expect(request.adUnits[0].bids[0].transactionId).to.equal('123');
+      expect(request.adUnits[0].bids[0].adUrl).to.equal('...');
+      expect(request.adUnits[1].bids[0].src).to.equal('client');
+    });
 
     it('should omit fields according to server configuration', () => {
       ooloAnalytics.enableAnalytics({
@@ -580,8 +577,8 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -594,26 +591,26 @@ describe('oolo Prebid Analytic', () => {
             'omitFields': ['custom_2', 'custom_4', 'custom_5']
           }
         }
-      }))
+      }));
 
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
-      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b }) });
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b; }) });
       events.emit(EVENTS.NO_BID, { ...noBid, custom_3: true });
       events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, custom_4: true });
       events.emit(EVENTS.AUCTION_END, { ...auctionEnd });
       events.emit(EVENTS.BID_WON, { ...bidWon, custom_5: true });
 
-      clock.tick(1500)
+      clock.tick(1500);
 
-      const request = JSON.parse(server.requests[3].requestBody)
+      const request = JSON.parse(server.requests[3].requestBody);
 
-      expect(request.custom_1).to.equal(undefined)
-      expect(request.custom_6).to.equal(undefined)
-      expect(request.adUnits[0].bids[0].custom_2).to.equal(undefined)
-      expect(request.adUnits[0].bids[0].custom_4).to.equal(undefined)
-      expect(request.adUnits[0].bids[0].custom_5).to.equal(undefined)
-      expect(request.adUnits[0].bids[0].custom_7).to.equal(undefined)
-    })
+      expect(request.custom_1).to.equal(undefined);
+      expect(request.custom_6).to.equal(undefined);
+      expect(request.adUnits[0].bids[0].custom_2).to.equal(undefined);
+      expect(request.adUnits[0].bids[0].custom_4).to.equal(undefined);
+      expect(request.adUnits[0].bids[0].custom_5).to.equal(undefined);
+      expect(request.adUnits[0].bids[0].custom_7).to.equal(undefined);
+    });
 
     it('should omit fields from raw data according to server configuration', () => {
       ooloAnalytics.enableAnalytics({
@@ -621,8 +618,8 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -631,17 +628,17 @@ describe('oolo Prebid Analytic', () => {
             'omitRawFields': ['custom_1']
           },
         }
-      }))
+      }));
 
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
 
-      clock.tick(1500)
+      clock.tick(1500);
 
-      const request = JSON.parse(server.requests[3].requestBody)
+      const request = JSON.parse(server.requests[3].requestBody);
 
-      expect(request.eventType).to.equal('auctionInit')
-      expect(request.custom_1).to.equal(undefined)
-    })
+      expect(request.eventType).to.equal('auctionInit');
+      expect(request.custom_1).to.equal(undefined);
+    });
 
     it('should send raw data to custom endpoint if exists in server configuration', () => {
       ooloAnalytics.enableAnalytics({
@@ -649,8 +646,8 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -659,12 +656,12 @@ describe('oolo Prebid Analytic', () => {
             'endpoint': 'https://pbjs.com'
           },
         }
-      }))
+      }));
 
       events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
 
-      expect(server.requests[3].url).to.equal('https://pbjs.com/')
-    })
+      expect(server.requests[3].url).to.equal('https://pbjs.com/');
+    });
 
     it('should send raw events based on server configuration', () => {
       ooloAnalytics.enableAnalytics({
@@ -672,8 +669,8 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
-      clock.next()
+      });
+      clock.next();
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -684,12 +681,12 @@ describe('oolo Prebid Analytic', () => {
             'sendRaw': 1,
           }
         }
-      }))
+      }));
 
-      events.emit(EVENTS.AUCTION_INIT, auctionInit)
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
       events.emit(EVENTS.BID_REQUESTED, bidRequested);
 
-      const request = JSON.parse(server.requests[3].requestBody)
+      const request = JSON.parse(server.requests[3].requestBody);
 
       expect(request).to.deep.equal({
         eventType: 'bidRequested',
@@ -697,8 +694,8 @@ describe('oolo Prebid Analytic', () => {
         pvid: PAGEVIEW_ID,
         pbModuleVersion: '1.0.0',
         ...bidRequested
-      })
-    })
+      });
+    });
 
     it('should queue events and raw events until server configuration resolves', () => {
       ooloAnalytics.enableAnalytics({
@@ -706,12 +703,12 @@ describe('oolo Prebid Analytic', () => {
         options: {
           pid: 123
         }
-      })
+      });
 
-      simulateAuction()
-      clock.tick(1500)
+      simulateAuction();
+      clock.tick(1500);
 
-      expect(server.requests).to.have.length(3)
+      expect(server.requests).to.have.length(3);
 
       server.requests[0].respond(200, {}, JSON.stringify({
         'events': {
@@ -722,12 +719,12 @@ describe('oolo Prebid Analytic', () => {
             'sendRaw': 1,
           }
         }
-      }))
+      }));
 
-      expect(server.requests).to.have.length(5)
-      expect(JSON.parse(server.requests[3].requestBody).eventType).to.equal('auctionInit')
-      expect(JSON.parse(server.requests[4].requestBody).eventType).to.equal('bidRequested')
-    })
+      expect(server.requests).to.have.length(5);
+      expect(JSON.parse(server.requests[3].requestBody).eventType).to.equal('auctionInit');
+      expect(JSON.parse(server.requests[4].requestBody).eventType).to.equal('bidRequested');
+    });
   });
 
   describe('buildAuctionData', () => {
@@ -756,38 +753,38 @@ describe('oolo Prebid Analytic', () => {
           }
         }
       }
-    }
+    };
 
     it('should turn adUnits and bids objects into arrays', () => {
-      const auctionData = buildAuctionData(auction, [])
+      const auctionData = buildAuctionData(auction, []);
 
-      expect(auctionData.adUnits).to.be.an('array')
-      expect(auctionData.adUnits[0].bids).to.be.an('array')
-    })
+      expect(auctionData.adUnits).to.be.an('array');
+      expect(auctionData.adUnits[0].bids).to.be.an('array');
+    });
 
     it('should remove fields from the auction', () => {
-      const auctionData = buildAuctionData(auction, [])
-      const auctionFields = Object.keys(auctionData)
-      const adUnitFields = Object.keys(auctionData.adUnits[0])
+      const auctionData = buildAuctionData(auction, []);
+      const auctionFields = Object.keys(auctionData);
+      const adUnitFields = Object.keys(auctionData.adUnits[0]);
 
-      expect(auctionFields).not.to.contain('adUnitCodes')
-      expect(auctionFields).not.to.contain('auctionStatus')
-      expect(auctionFields).not.to.contain('bidderRequests')
-      expect(auctionFields).not.to.contain('bidsReceived')
-      expect(auctionFields).not.to.contain('noBids')
-      expect(auctionFields).not.to.contain('winningBids')
-      expect(auctionFields).not.to.contain('timestamp')
-      expect(auctionFields).not.to.contain('config')
+      expect(auctionFields).not.to.contain('adUnitCodes');
+      expect(auctionFields).not.to.contain('auctionStatus');
+      expect(auctionFields).not.to.contain('bidderRequests');
+      expect(auctionFields).not.to.contain('bidsReceived');
+      expect(auctionFields).not.to.contain('noBids');
+      expect(auctionFields).not.to.contain('winningBids');
+      expect(auctionFields).not.to.contain('timestamp');
+      expect(auctionFields).not.to.contain('config');
 
-      expect(adUnitFields).not.to.contain('adUnitCoe')
-      expect(adUnitFields).not.to.contain('code')
-      expect(adUnitFields).not.to.contain('transactionId')
-    })
-  })
+      expect(adUnitFields).not.to.contain('adUnitCoe');
+      expect(adUnitFields).not.to.contain('code');
+      expect(adUnitFields).not.to.contain('transactionId');
+    });
+  });
 
   describe('generatePageViewId', () => {
     it('should generate a 19 digits number', () => {
-      expect(generatePageViewId()).length(19)
-    })
-  })
+      expect(generatePageViewId()).length(19);
+    });
+  });
 });

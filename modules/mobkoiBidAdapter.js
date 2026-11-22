@@ -21,7 +21,7 @@ const PUBLISHER_PARAMS = {
    */
   PARAM_NAME_PREBID_JS_INTEGRATION_ENDPOINT: 'integrationEndpoint',
   PARAM_NAME_PLACEMENT_ID: 'placementId',
-}
+};
 
 export const converter = ortbConverter({
   context: {
@@ -61,7 +61,7 @@ export const spec = {
       !deepAccess(bid, `params.${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID}`)
     ) {
       logError(`The ${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID} field is required in the bid request. ` +
-        'Please follow the setup guideline to set the placement ID field.')
+        'Please follow the setup guideline to set the placement ID field.');
       return false;
     }
 
@@ -230,4 +230,4 @@ export const utils = {
     prebidBidResponse.ortbBidResponse = ortbBidResponse;
     prebidBidResponse.ortbId = ortbBidResponse.id;
   },
-}
+};

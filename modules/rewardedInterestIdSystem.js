@@ -126,7 +126,7 @@ export const rewardedInterestIdSubmodule = {
             if (!getRewardedInterestApi()) {
               apiNotAvailable(cb);
             }
-          })
+          });
         }
       },
     };

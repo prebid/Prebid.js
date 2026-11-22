@@ -46,7 +46,7 @@ export function interpretNativeBid(serverBid) {
     currency: 'USD',
     // native: interpretNativeAd(serverBid.adm)
     native: interpretNativeAd(macroReplace(serverBid.adm, serverBid.price))
-  }
+  };
 }
 
 /**

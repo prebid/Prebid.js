@@ -7,7 +7,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
  */
 
 const SUBMODULE_NAME = 'oneKey';
-const prefixLog = 'OneKey.RTD-module'
+const prefixLog = 'OneKey.RTD-module';
 
 // Pre-init OneKey if it has not load yet.
 window.OneKey = window.OneKey || {};
@@ -36,7 +36,7 @@ const getTransmissionInBidRequest = (reqBidsConfigObj, done, rtdConfig) => {
       .catch((err) => { logError(SUBMODULE_NAME, err.message); })
       .finally(done);
   });
-}
+};
 
 const onGetSeed = (reqBidsConfigObj, rtdConfig, adUnits, transactionIds) => {
   return (seed) => {
@@ -70,7 +70,7 @@ const addTransmissionToOrtb2 = (reqBidsConfigObj, rtdConfig, seed) => {
         }
       }
     }
-  }
+  };
 
   const shareSeedWithAllBidders = !rtdConfig.params || !rtdConfig.params.bidders;
   if (shareSeedWithAllBidders) {

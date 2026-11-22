@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+
 import { getBrowser, getOS } from '../../../libraries/userAgentUtils/index.js';
 import { browserTypes, osTypes } from '../../../libraries/userAgentUtils/userAgentTypes.enums.js';
 
@@ -11,8 +11,6 @@ const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/d
 const DEFAULT_VIDEO_SIZE = { w: 640, h: 360 };
 
 describe('yieldoneBidAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'yieldone',
@@ -361,7 +359,7 @@ describe('yieldoneBidAdapter', function () {
         expect(request[2].data).to.not.have.property('lr_env');
       });
 
-      it('should send LiveRampID if available', function () {
+      it('should not send LiveRampID from a raw bid.userId', function () {
         const bidRequests = [
           {
             params: { placementId: '0' },
@@ -369,7 +367,7 @@ describe('yieldoneBidAdapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request[0].data.lr_env).to.equal('idl_env_sample');
+        expect(request[0].data.lr_env).to.be.undefined;
       });
     });
 
@@ -394,7 +392,7 @@ describe('yieldoneBidAdapter', function () {
         expect(request[2].data).to.not.have.property('imuid');
       });
 
-      it('should send IMID if available', function () {
+      it('should not send IMID from a raw bid.userId', function () {
         const bidRequests = [
           {
             params: { placementId: '0' },
@@ -402,7 +400,7 @@ describe('yieldoneBidAdapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request[0].data.imuid).to.equal('imuid_sample');
+        expect(request[0].data.imuid).to.be.undefined;
       });
     });
 
@@ -430,7 +428,7 @@ describe('yieldoneBidAdapter', function () {
         expect(request[2].data).to.not.have.property('fuuid');
       });
 
-      it('should send DAC ID if available', function () {
+      it('should not send DAC ID from a raw bid.userId', function () {
         const bidRequests = [
           {
             params: { placementId: '0' },
@@ -438,8 +436,8 @@ describe('yieldoneBidAdapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request[0].data.fuuid).to.equal('fuuid_sample');
-        expect(request[0].data.dac_id).to.equal('dacId_sample');
+        expect(request[0].data.fuuid).to.be.undefined;
+        expect(request[0].data.dac_id).to.be.undefined;
       });
     });
 
@@ -464,7 +462,7 @@ describe('yieldoneBidAdapter', function () {
         expect(request[2].data).to.not.have.property('id5Id');
       });
 
-      it('should send ID5 if available', function () {
+      it('should not send ID5 from a raw bid.userId', function () {
         const bidRequests = [
           {
             params: { placementId: '0' },
@@ -472,7 +470,7 @@ describe('yieldoneBidAdapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request[0].data.id5Id).to.equal('id5id_sample');
+        expect(request[0].data.id5Id).to.be.undefined;
       });
     });
 
@@ -497,7 +495,7 @@ describe('yieldoneBidAdapter', function () {
         expect(request[2].data).to.not.have.property('uid2id');
       });
 
-      it('should send UID2.0 if available', function () {
+      it('should not send UID2.0 from a raw bid.userId', function () {
         const bidRequests = [
           {
             params: { placementId: '0' },
@@ -505,7 +503,7 @@ describe('yieldoneBidAdapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request[0].data.uid2id).to.equal('uid2_sample');
+        expect(request[0].data.uid2id).to.be.undefined;
       });
     });
 
@@ -572,7 +570,7 @@ describe('yieldoneBidAdapter', function () {
 
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.not.have.property('instl');
-        })
+        });
       });
 
       it('should send instl if available', function () {
@@ -591,7 +589,7 @@ describe('yieldoneBidAdapter', function () {
         bidRequests.forEach((bidRequest, ind) => {
           expect(request[ind].data).to.have.property('instl');
           expect(request[ind].data.instl).to.equal(1);
-        })
+        });
       });
     });
   });
@@ -624,7 +622,6 @@ describe('yieldoneBidAdapter', function () {
         'cpm': 0.0536616,
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'dealId': 'P1-FIX-7800-DSP-MON',
         'adomain': [
           'www.example.com'
@@ -675,7 +672,6 @@ describe('yieldoneBidAdapter', function () {
         'dealId': 'P1-FIX-7800-DSP-MON',
         'crid': '2494768',
         'currency': 'JPY',
-        'statusMessage': 'Bid available',
         'adm': '<!-- vast -->'
       }
     };
@@ -744,7 +740,6 @@ describe('yieldoneBidAdapter', function () {
           'uid': '2c0b634db95a01',
           'height': 0,
           'crid': '',
-          'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0
         }

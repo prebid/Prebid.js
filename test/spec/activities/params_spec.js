@@ -14,11 +14,11 @@ describe('activityParams', () => {
       [ACTIVITY_PARAM_COMPONENT_TYPE]: 'bidder',
       [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockBidder',
       foo: 'bar'
-    })
+    });
   });
 
   it('fills out adapterCode', () => {
-    adapterManager.registerBidAdapter({ callBids: sinon.stub(), getSpec: sinon.stub().returns({}) }, 'mockBidder')
+    adapterManager.registerBidAdapter({ callBids: sinon.stub(), getSpec: sinon.stub().returns({}) }, 'mockBidder');
     adapterManager.aliasBidAdapter('mockBidder', 'mockAlias');
     expect(activityParams(MODULE_TYPE_BIDDER, 'mockAlias')[ACTIVITY_PARAM_ADAPTER_CODE]).to.equal('mockBidder');
   });

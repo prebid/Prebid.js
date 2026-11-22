@@ -33,7 +33,7 @@ const getMinimumFloor = (() => {
       min = min === null ? candidate : getMin(min, candidate);
     }
     return min;
-  }
+  };
 })();
 
 const PBS_CONVERTER = ortbConverter({
@@ -69,10 +69,16 @@ const PBS_CONVERTER = ortbConverter({
         if (section && !section.publisher?.id) {
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
-      })
+      });
 
       if (!context.transmitTids) {
         deepSetValue(request, 'ext.prebid.createtids', false);
+      }
+
+      const priorityBidders = getPriorityBidders(context.actualBidderRequests, context.requestedBidders);
+      if (priorityBidders.length > 0) {
+        // ext.prebid.as: ad server signals. ap: priority bids are allowed; apb: the bidders allowed to send them
+        deepSetValue(request, 'ext.prebid.as', { ap: true, apb: priorityBidders });
       }
 
       return request;
@@ -94,7 +100,7 @@ const PBS_CONVERTER = ortbConverter({
       Object.assign(context, {
         bidRequest,
         bidderRequest: context.actualBidderRequests.find(req => req.bidderCode === bidRequest.bidder)
-      })
+      });
     }
 
     const bidResponse = buildBidResponse(bid, context);
@@ -148,7 +154,7 @@ const PBS_CONVERTER = ortbConverter({
             orig(floor, req, context);
             yield floor;
           }
-        })())
+        })());
         if (min != null) {
           Object.assign(imp, min);
         }
@@ -167,11 +173,11 @@ const PBS_CONVERTER = ortbConverter({
             return requestImp;
           });
         Object.values(ALL_MEDIATYPES).forEach(mediaType => {
-          setExtFloor(imp[mediaType], getMinimumFloor(imps.map(imp => imp[mediaType]?.ext)))
+          setExtFloor(imp[mediaType], getMinimumFloor(imps.map(imp => imp[mediaType]?.ext)));
         });
         (imp[BANNER]?.format || []).forEach((format, i) => {
-          setExtFloor(format, getMinimumFloor(imps.map(imp => imp[BANNER].format[i]?.ext)))
-        })
+          setExtFloor(format, getMinimumFloor(imps.map(imp => imp[BANNER].format[i]?.ext)));
+        });
       }
     },
     [REQUEST]: {
@@ -252,6 +258,14 @@ const PBS_CONVERTER = ortbConverter({
   },
 });
 
+/**
+ * The bidders in this request whose deal metadata the publisher trusts, i.e. those whose bidder request has `allowPriorityBids`.
+ */
+export function getPriorityBidders(bidderRequests = [], requestedBidders = []) {
+  return requestedBidders.filter(bidder => bidder != null &&
+    bidderRequests.some(req => req.bidderCode === bidder && req.allowPriorityBids === true));
+}
+
 export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   const requestTimestamp = timestamp();
   const impIds = new Set();
@@ -266,11 +280,11 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       if (!bidders.hasOwnProperty(bidder)) {
         bidders[bidder] = redactor(activityParams(MODULE_TYPE_BIDDER, bidder));
       }
-      return bidders[bidder]
-    }
+      return bidders[bidder];
+    };
   })();
 
-  adUnits = adUnits.map((au) => getRedactor().bidRequest(au))
+  adUnits = adUnits.map((au) => getRedactor().bidRequest(au));
 
   adUnits.forEach(adUnit => {
     const actualBidRequests = new Map();
@@ -290,7 +304,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
       i++;
       impId = `${adUnit.code}-${i}`;
     }
-    impIds.add(impId)
+    impIds.add(impId);
     proxyBidRequests.push({
       ...adUnit,
       adUnitCode: adUnit.code,
@@ -300,14 +314,14 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 
   const proxyBidderRequest = {
     ...Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k))),
-  }
+  };
 
   return PBS_CONVERTER.toORTB({
     bidderRequest: proxyBidderRequest,
     bidRequests: proxyBidRequests,
     context: {
       currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
-      ttl: s2sBidRequest.s2sConfig.defaultTtl || DEFAULT_S2S_TTL,
+      ttl: s2sBidRequest.s2sConfig.defaultTtl || s2sBidRequest.s2sConfig.defaultTTL || DEFAULT_S2S_TTL,
       requestTimestamp,
       s2sBidRequest: {
         ...s2sBidRequest,

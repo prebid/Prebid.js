@@ -4,6 +4,7 @@ const neostandard = require('neostandard')
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const chaiFriendly = require('eslint-plugin-chai-friendly');
+const mochaPlugin = require('eslint-plugin-mocha').default;
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
@@ -16,7 +17,7 @@ function jsPattern(name) {
 }
 
 function tsPattern(name) {
-  return [`${name}/**/*.ts`]
+  return [`${name}/**/*.ts`, `${name}/**/*.mts`]
 }
 
 function sourcePattern(name) {
@@ -25,7 +26,6 @@ function sourcePattern(name) {
 
 const allowedImports = {
   modules: [
-    'crypto-js',
     'live-connect' // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
   ],
   src: [
@@ -41,9 +41,24 @@ const allowedImports = {
   // even innocuous imports can become problematic if the source changes,
   // and it's too easy to forget this is a problem for debugging-standalone.
   'modules/debugging': [false],
-  libraries: [],
+  libraries: [
+    // ponyfill for the fetch family, injected by plugins/polyfillFetch.js and only
+    // for build targets that lack AbortController - see libraries/fetchPonyfill
+    'whatwg-fetch'
+  ],
   creative: [],
 }
+
+const restrictedLogFunctions = [
+  {
+    selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
+    message: "Defining a function named 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+  },
+  {
+    selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
+    message: "Assigning a function to 'logResult', 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+  },
+];
 
 function noGlobals(names) {
   return {
@@ -65,13 +80,19 @@ module.exports = [
   {
     ignores: [
       'integrationExamples/**/*',
+      // do not lint worktrees created by claude/gemini
+      '.claude/**',
+      '.gemini/**',
       // do not lint build-related stuff
       '*.js',
       '*.mjs',
       'metadata/**/*',
       'customize/**/*',
+      // inputs for tests that run linter rules themselves, and not all of them are meant to pass
+      'test/build-logic/fixtures/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
+      'web-bundler',
     ],
   },
   jsdoc.configs['flat/recommended'],
@@ -93,6 +114,14 @@ module.exports = [
         tagNamePreference: {
           return: 'return'
         }
+      },
+      'import/resolver': {
+        [path.resolve('./plugins/eslint/resolver')]: true,
+        node: true,
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
       }
     },
     languageOptions: {
@@ -108,24 +137,33 @@ module.exports = [
     rules: {
       'comma-dangle': 'off',
       '@stylistic/comma-dangle': 'off',
-      semi: 'off',
-      '@stylistic/semi': 'off',
+      '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
+      'no-constant-binary-expression': 'error',
+      'no-useless-assignment': 'error',
+      'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
+      'prebid/no-extra-function-args': 'error',
+      'prebid/no-deep-access-import': 'warn',
       'space-before-function-paren': 'off',
       '@stylistic/space-before-function-paren': 'off',
-      'import/extensions': ['error', 'ignorePackages'],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
-          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
-        },
-        {
-          selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
-          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
-        },
-      ],
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'warn',
+      'import/no-extraneous-dependencies': ['error', {
+        // flag imports that are not runtime or peer dependencies;
+        // except for tests, which are allowed devDependencies
+        devDependencies: sourcePattern('test'),
+        peerDependencies: true,
+        optionalDependencies: false,
+        includeTypes: true,
+      }],
+      'prebid/no-implicit-operand-conversion': 'error',
+      'no-restricted-syntax': ['error', ...restrictedLogFunctions],
       'no-restricted-imports': [
         'error', {
           patterns: [
@@ -141,6 +179,9 @@ module.exports = [
       // also see: reality. These are here to stay.
       // we're working on them though :)
 
+      // @augmentationOptional is read by prebid/augmentation-reachable, and by the same check
+      // after declaration emit
+      'jsdoc/check-tag-names': ['warn', {definedTags: ['augmentationOptional']}],
       'jsdoc/check-types': 'off',
       'jsdoc/no-defaults': 'off',
       'jsdoc/newline-after-description': 'off',
@@ -170,6 +211,30 @@ module.exports = [
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
       '@stylistic/multiline-ternary': 'off',
+    }
+  },
+  {
+    files: getSourceFolders().map(dir => `${dir}/**/*.d.ts`),
+    ignores: [
+      'src/types/**/*'
+    ],
+    rules: {
+      'prebid/declaration-filename': 'error'
+    }
+  },
+  {
+    files: getSourceFolders().flatMap(tsPattern),
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/augmentation-reachable': ['error', {
+        // core's entry point as it is before precompilation, when this runs
+        coreEntry: 'src/prebid.public.ts',
+        // an augmentation in test code reaches no consumer either way
+        ignore: ['test'],
+        project: 'tsconfig.json'
+      }]
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
@@ -235,7 +300,13 @@ module.exports = [
     }
   }),
   {
-    files: ['**/*BidAdapter.js'],
+    files: [
+      '**/*BidAdapter.{js,mjs,ts,mts}',
+      '**/*BidAdapter/**/*.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/prebidServerBidAdapter/**/*'
+    ],
     rules: {
       'no-restricted-imports': [
         'error', {
@@ -248,9 +319,27 @@ module.exports = [
     }
   },
   {
+    files: [
+      'modules/**/*BidAdapter.{js,mjs,ts,mts}',
+      'modules/**/*RtdProvider.{js,mjs,ts,mts}',
+      'modules/**/*AnalyticsAdapter.{js,mjs,ts,mts}'
+    ],
+    ignores: [
+      'modules/adagioRtdProvider.js',
+      'modules/contxtfulRtdProvider.js'
+    ],
+    plugins: {
+      prebid
+    },
+    rules: {
+      'prebid/no-synchronous-layout-read': 'error',
+    }
+  },
+  {
     files: sourcePattern('test'),
     plugins: {
-      'chai-friendly': chaiFriendly
+      'chai-friendly': chaiFriendly,
+      'mocha': mochaPlugin
     },
     languageOptions: {
       globals: {
@@ -263,9 +352,21 @@ module.exports = [
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
       'chai-friendly/no-unused-expressions': 'error',
+      // Mocha silently ignores it()/describe()/hooks called while a test or hook is running: their
+      // assertions never run, and the spec still passes (#16043). This rule doesn't report a hook
+      // (e.g. after()) registered inside a test; see AGENTS.md.
+      'mocha/no-nested-tests': 'error',
+      // overrides the source folders' list rather than extending it
+      'no-restricted-syntax': [
+        'error',
+        ...restrictedLogFunctions,
+        ...['Literal[value=/localhost:9876/]', 'TemplateElement[value.raw=/localhost:9876/]'].map(selector => ({
+          selector,
+          message: 'The test page is not always localhost:9876; take it from window.location or getRefererInfo(), or use another URL for fixtures.'
+        }))
+      ],
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
-      'no-unused-vars': 'off',
       'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'
@@ -292,9 +393,9 @@ module.exports = [
   // Override: allow loadExternalScript import in approved files (excluding BidAdapters)
   {
     files: APPROVED_LOAD_EXTERNAL_SCRIPT_PATHS.filter(p => !p.includes('BidAdapter')).map(p => {
-      // If path doesn't end with .js/.ts/.mjs, treat as folder pattern
-      if (!p.match(/\.(js|ts|mjs)$/)) {
-        return `${p}/**/*.{js,ts,mjs}`;
+      // If path doesn't end with .js/.ts/.mjs/.mts, treat as folder pattern
+      if (!p.match(/\.(js|ts|mjs|mts)$/)) {
+        return `${p}/**/*.{js,ts,mjs,mts}`;
       }
       return p;
     }),
@@ -302,6 +403,8 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
+          // Approved files intentionally clear inherited no-restricted-imports patterns.
+          // The BidAdapter restriction above is the authoritative block for events.js/adloader.js.
           patterns: []
         }
       ],

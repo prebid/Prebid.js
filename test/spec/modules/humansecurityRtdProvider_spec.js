@@ -10,7 +10,9 @@ const {
   SUBMODULE_NAME,
   SCRIPT_URL,
   main,
-  load
+  load,
+  onImplLoaded,
+  getBidRequestData
 } = __TEST__;
 
 describe('humansecurity RTD module', function () {
@@ -94,6 +96,87 @@ describe('humansecurity RTD module', function () {
 
       const args = loadExternalScriptStub.getCall(0).args;
       expect(args[0]).to.include(`${SCRIPT_URL}?r=example.com&c=customer123`);
+    });
+  });
+
+  describe('Auctions started before the implementation script loads', function () {
+    let sandbox2;
+    let impl;
+
+    beforeEach(function () {
+      sandbox2 = sinon.createSandbox();
+      impl = { connect: sandbox2.spy(), getBidRequestData: sandbox2.spy() };
+    });
+    afterEach(function () {
+      sandbox2.restore();
+    });
+
+    const publishImpl = () => sandbox2.stub(stubWindow, sonarStubId).value(impl);
+
+    it('should hold on to the auction instead of releasing it unenriched', function () {
+      load({});
+
+      const callback = sandbox2.spy();
+      getBidRequestData({ adUnits: [] }, callback, {}, {});
+
+      expect(callback.called).to.equal(false);
+    });
+
+    it('should hand the auction to the implementation once it loads', function () {
+      load({});
+
+      const reqBidsConfigObj = { adUnits: [] };
+      const callback = sandbox2.spy();
+      const config = { params: {} };
+      const userConsent = { gdpr: null };
+      getBidRequestData(reqBidsConfigObj, callback, config, userConsent);
+
+      publishImpl();
+      onImplLoaded({});
+
+      expect(impl.getBidRequestData.calledOnce).to.equal(true);
+      const args = impl.getBidRequestData.getCall(0).args;
+      expect(args[0]).to.equal(reqBidsConfigObj);
+      expect(args[1]).to.equal(callback);
+      expect(args[2]).to.equal(config);
+      expect(args[3]).to.equal(userConsent);
+      // The implementation owns the callback from here on
+      expect(callback.called).to.equal(false);
+    });
+
+    it('should release the auction if the script loads without publishing its API', function () {
+      load({});
+
+      const callback = sandbox2.spy();
+      getBidRequestData({ adUnits: [] }, callback, {}, {});
+      expect(callback.called).to.equal(false);
+
+      onImplLoaded({});
+
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should release the auction if the module is initialized again', function () {
+      load({});
+
+      const callback = sandbox2.spy();
+      getBidRequestData({ adUnits: [] }, callback, {}, {});
+      expect(callback.called).to.equal(false);
+
+      load({});
+
+      expect(callback.calledOnce).to.equal(true);
+    });
+
+    it('should go straight to the implementation once it is available', function () {
+      publishImpl();
+      load({});
+      onImplLoaded({});
+
+      const callback = sandbox2.spy();
+      getBidRequestData({ adUnits: [] }, callback, {}, {});
+
+      expect(impl.getBidRequestData.calledOnce).to.equal(true);
     });
   });
 

@@ -23,7 +23,8 @@ var adUnits = [{
     bidder: 'pubstack',
     params: {
       siteId: 'your-site-id',
-      adUnitName: 'adunit-1'
+      adUnitName: 'adunit-1',
+      stackId: 'your-stack-id' // optional
     }
   }]
 }];

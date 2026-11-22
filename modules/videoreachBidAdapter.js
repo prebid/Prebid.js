@@ -22,7 +22,7 @@ export const spec = {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: getBidIdParameter('auctionId', bid),
           transactionId: bid.ortb2Imp?.ext?.tid,
-        }
+        };
       })
     };
 

@@ -69,8 +69,8 @@ describe('mergeKeywords', () => {
   }).forEach(([t, { input, output }]) => {
     it(`can merge ${t}`, () => {
       expect(mergeKeywords(...input)).to.have.members(output);
-    })
-  })
+    });
+  });
 });
 
 describe('getAllOrtbKeywodrs', () => {
@@ -86,7 +86,7 @@ describe('getAllOrtbKeywodrs', () => {
     user: {
       keywords: 'four'
     }
-  }
+  };
 
   it('can extract keywords from ortb', () => {
     expect(getAllOrtbKeywords(SAMPLE_ORTB)).to.have.members([
@@ -97,6 +97,6 @@ describe('getAllOrtbKeywodrs', () => {
   it('merges with extra comma-separated keywords', () => {
     expect(getAllOrtbKeywords(SAMPLE_ORTB, 'two,five')).to.have.members([
       'one', 'two', 'three', 'four', 'five'
-    ])
-  })
-})
+    ]);
+  });
+});

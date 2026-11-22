@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
-  deepAccess,
   mergeDeep,
   isFn,
   isStr,
@@ -32,7 +31,7 @@ const converter = ortbConverter({
     const { width, height } = getSize(mediaType, bidRequest);
     const floor = getFloor(bidRequest, { width, height }, mediaType);
 
-    imp.tagid = deepAccess(bidRequest, 'params.AV_CHANNELID');
+    imp.tagid = bidRequest?.params?.AV_CHANNELID;
 
     if (floor) {
       imp.bidfloor = floor;
@@ -88,11 +87,11 @@ const converter = ortbConverter({
     mergeDeep(prebidBid, { meta: { advertiserDomains: bid.adomain || [] } });
 
     if (bid.ext?.aniview) {
-      prebidBid.meta.aniview = bid.ext.aniview
+      prebidBid.meta.aniview = bid.ext.aniview;
 
       if (prebidBid.meta.aniview.tag) {
         try {
-          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag)
+          prebidBid.meta.aniview.tag = JSON.parse(bid.ext.aniview.tag);
         } catch {
           // Ignore the error
         }
@@ -182,7 +181,7 @@ export const spec = {
               prebidBid.vastUrl = replaceMacros(bid.nurl, replacements);
             } else {
               // We do not want to use the vastUrl if we have the vastXml
-              delete prebidBid.vastUrl
+              delete prebidBid.vastUrl;
             }
           }
         } else {

@@ -13,6 +13,8 @@ describe('Livewrapped adapter tests', function () {
 
   beforeEach(function () {
     sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'isFirefoxBrowser').callsFake(() => false);
+    sandbox.stub(utils, 'isChromeIOSBrowser').callsFake(() => false);
 
     window.livewrapped = undefined;
 
@@ -782,16 +784,10 @@ describe('Livewrapped adapter tests', function () {
     it('should pass coppa parameter', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-
-      const origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'coppa') {
-          return true;
-        }
-        return origGetConfig.apply(config, arguments);
+      const result = spec.buildRequests(bidderRequest.bids, {
+        ...bidderRequest,
+        ortb2: { regs: { coppa: 1 } }
       });
-
-      const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const data = JSON.parse(result.data);
 
       expect(result.url).to.equal('https://lwadm.com/ad');
@@ -807,6 +803,7 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         coppa: true,
+        rtbData: { regs: { coppa: 1 } },
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -889,6 +886,26 @@ describe('Livewrapped adapter tests', function () {
       };
 
       expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should pass no cookie support Firefox', function() {
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      utils.isFirefoxBrowser.callsFake(() => true);
+      const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(data.cookieSupport).to.equal(false);
+    });
+
+    it('should pass no cookie support Chrome on iOS', function() {
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      utils.isChromeIOSBrowser.callsFake(() => true);
+      const result = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(data.cookieSupport).to.equal(false);
     });
 
     it('should use params.url, then bidderRequest.refererInfo.page', function() {
@@ -1063,7 +1080,7 @@ describe('Livewrapped adapter tests', function () {
 
       const testbidRequest = clone(bidderRequest);
       const bids = testbidRequest.bids.map(b => {
-        b.getFloor = function () { return undefined; }
+        b.getFloor = function () { return undefined; };
         return b;
       });
       const result = spec.buildRequests(bids, testbidRequest);
@@ -1103,7 +1120,7 @@ describe('Livewrapped adapter tests', function () {
 
       const testbidRequest = clone(bidderRequest);
       const bids = testbidRequest.bids.map(b => {
-        b.getFloor = function () { return { floor: undefined }; }
+        b.getFloor = function () { return { floor: undefined }; };
         return b;
       });
       const result = spec.buildRequests(bids, testbidRequest);
@@ -1143,7 +1160,7 @@ describe('Livewrapped adapter tests', function () {
 
       const testbidRequest = clone(bidderRequest);
       const bids = testbidRequest.bids.map(b => {
-        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
+        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; };
         return b;
       });
       const result = spec.buildRequests(bids, testbidRequest);
@@ -1184,7 +1201,7 @@ describe('Livewrapped adapter tests', function () {
       setCurrencyConfig({ adServerCurrency: 'EUR' });
       const testbidRequest = clone(bidderRequest);
       const bids = testbidRequest.bids.map(b => {
-        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
+        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; };
         return b;
       });
 
@@ -1192,8 +1209,8 @@ describe('Livewrapped adapter tests', function () {
         const result = spec.buildRequests(bids, res);
         const data = JSON.parse(result.data);
         expect(result.url).to.equal('https://lwadm.com/ad');
-        expect(data.adRequests[0].flr).to.eql(10)
-        expect(data.flrCur).to.eql('EUR')
+        expect(data.adRequests[0].flr).to.eql(10);
+        expect(data.flrCur).to.eql('EUR');
         setCurrencyConfig({});
       });
     });
@@ -1204,7 +1221,7 @@ describe('Livewrapped adapter tests', function () {
 
       const testbidRequest = clone(bidderRequest);
       const bids = testbidRequest.bids.map(b => {
-        b.getFloor = function () { return { floor: 10, currency: 'USD' }; }
+        b.getFloor = function () { return { floor: 10, currency: 'USD' }; };
         return b;
       });
       const result = spec.buildRequests(bids, testbidRequest);
@@ -1292,7 +1309,7 @@ describe('Livewrapped adapter tests', function () {
 
     const result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     const data = JSON.parse(result.data);
-    var expected = { user: { ext: { prop: 'value', eids: testbidRequest.bids[0].userIdAsEids } } }
+    var expected = { user: { ext: { prop: 'value', eids: testbidRequest.bids[0].userIdAsEids } } };
 
     expect(data.rtbData).to.deep.equal(expected);
     expect(ortb2).to.deep.equal({ user: { ext: { prop: 'value' } } });
@@ -1363,7 +1380,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should forward dealId', function() {
       const lwResponse = {
@@ -1402,7 +1419,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should forward bidderCode', function() {
       const lwResponse = {
@@ -1442,7 +1459,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should handle single native success response', function() {
       const lwResponse = {
@@ -1483,7 +1500,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should handle single video success response', function() {
       const lwResponse = {
@@ -1524,7 +1541,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should handle multiple success response', function() {
       const lwResponse = {
@@ -1586,7 +1603,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should return meta-data', function() {
       const lwResponse = {
@@ -1624,7 +1641,7 @@ describe('Livewrapped adapter tests', function () {
       const bids = spec.interpretResponse({ body: lwResponse });
 
       expect(bids).to.deep.equal(expectedResponse);
-    })
+    });
 
     it('should send debug-data to external debugger', function() {
       const lwResponse = {
@@ -1657,7 +1674,7 @@ describe('Livewrapped adapter tests', function () {
       spec.interpretResponse({ body: lwResponse });
 
       expect(debugData).to.equal(lwResponse.dbg);
-    })
+    });
   });
 
   describe('user sync', function () {
@@ -1682,7 +1699,7 @@ describe('Livewrapped adapter tests', function () {
 
       const expectedResponse = [];
 
-      expect(syncs).to.deep.equal(expectedResponse)
+      expect(syncs).to.deep.equal(expectedResponse);
     });
 
     it('should return empty if no user sync', function() {
@@ -1693,7 +1710,7 @@ describe('Livewrapped adapter tests', function () {
 
       const expectedResponse = [];
 
-      expect(syncs).to.deep.equal(expectedResponse)
+      expect(syncs).to.deep.equal(expectedResponse);
     });
 
     it('should returns pixel and iframe user sync', function() {
@@ -1704,7 +1721,7 @@ describe('Livewrapped adapter tests', function () {
 
       const expectedResponse = [{ type: 'image', url: 'https://pixelsync' }, { type: 'iframe', url: 'https://iframesync' }];
 
-      expect(syncs).to.deep.equal(expectedResponse)
+      expect(syncs).to.deep.equal(expectedResponse);
     });
 
     it('should returns pixel only if iframe not supported user sync', function() {
@@ -1715,7 +1732,7 @@ describe('Livewrapped adapter tests', function () {
 
       const expectedResponse = [{ type: 'image', url: 'https://pixelsync' }];
 
-      expect(syncs).to.deep.equal(expectedResponse)
+      expect(syncs).to.deep.equal(expectedResponse);
     });
 
     it('should returns iframe only if pixel not supported user sync', function() {
@@ -1726,7 +1743,7 @@ describe('Livewrapped adapter tests', function () {
 
       const expectedResponse = [{ type: 'iframe', url: 'https://iframesync' }];
 
-      expect(syncs).to.deep.equal(expectedResponse)
+      expect(syncs).to.deep.equal(expectedResponse);
     });
   });
 });

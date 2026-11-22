@@ -52,7 +52,7 @@ export type StorageManager = {
   getCookie: AcceptsCallback<(name: string) => string>;
   cookiesAreEnabled: AcceptsCallback<() => boolean>;
   findSimilarCookies: AcceptsCallback<(contains: string) => string[]>
-}
+};
 
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
@@ -112,11 +112,11 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
       if (result && result.valid) {
         const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
-        const isNone = (sameSite?.toLowerCase() === 'none')
+        const isNone = (sameSite?.toLowerCase() === 'none');
         const secure = (isNone) ? '; Secure' : '';
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
-    }
+    };
     return schedule(cb, STORAGE_TYPE_COOKIES, key, true, done);
   };
 
@@ -132,7 +132,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
         return m ? decodeURIComponent(m[2]) : null;
       }
       return null;
-    }
+    };
     return schedule(cb, STORAGE_TYPE_COOKIES, name, false, done);
   };
 
@@ -146,9 +146,9 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
         return checkCookieSupport() && canSetCookie();
       }
       return false;
-    }
+    };
     return schedule(cb, STORAGE_TYPE_COOKIES, null, false, done);
-  }
+  };
 
   function storageMethods(name) {
     const capName = name.charAt(0).toUpperCase() + name.substring(1);
@@ -164,7 +164,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
           }
         }
         return false;
-      }
+      };
       return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, false, done);
     } as any;
 
@@ -184,7 +184,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
             }
           }
           return false;
-        }
+        };
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, false, done);
       },
       [`setDataIn${capName}`](key, value, done) {
@@ -192,7 +192,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
           if (result && result.valid && hasStorage()) {
             backend().setItem(key, value);
           }
-        }
+        };
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, true, done);
       },
       [`getDataFrom${capName}`](key, done) {
@@ -201,7 +201,7 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
             return backend().getItem(key);
           }
           return null;
-        }
+        };
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, false, done);
       },
       [`removeDataFrom${capName}`](key, done) {
@@ -209,10 +209,10 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
           if (result && result.valid && hasStorage()) {
             backend().removeItem(key);
           }
-        }
+        };
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, true, done);
       }
-    }
+    };
   }
 
   /**
@@ -240,10 +240,10 @@ export function newStorageManager({ moduleName, moduleType, advertiseKeys = true
         }
         return all;
       }
-    }
+    };
 
     return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, false, done);
-  }
+  };
 
   return {
     setCookie,
@@ -268,14 +268,14 @@ export function getStorageManager({ moduleType, moduleName, bidderCode }: {
   bidderCode?: BidderCode;
 } = {}) {
   function err() {
-    throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`)
+    throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`);
   }
   if (bidderCode) {
-    if ((moduleType && moduleType !== MODULE_TYPE_BIDDER) || moduleName) err()
+    if ((moduleType && moduleType !== MODULE_TYPE_BIDDER) || moduleName) err();
     moduleType = MODULE_TYPE_BIDDER;
     moduleName = bidderCode;
   } else if (!moduleName || !moduleType) {
-    err()
+    err();
   }
   return newStorageManager({ moduleType, moduleName });
 }
@@ -319,14 +319,14 @@ export const canSetCookie = (() => {
       return false;
     }
   });
-})()
+})();
 
 /**
  * Block all access to storage when deviceAccess = false
  */
 export function deviceAccessRule() {
   if (!hasDeviceAccess()) {
-    return { allow: false }
+    return { allow: false };
   }
 }
 registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAccessRule);
@@ -345,7 +345,7 @@ export function storageAllowedRule(params, bs = bidderSettings) {
   if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
   let allow = bs.get(params[ACTIVITY_PARAM_ADAPTER_CODE], 'storageAllowed');
   if (!allow || allow === true) {
-    allow = !!allow
+    allow = !!allow;
   } else {
     const storageType = params[ACTIVITY_PARAM_STORAGE_TYPE];
     allow = Array.isArray(allow) ? allow.some((e) => e === storageType) : allow === storageType;
@@ -371,12 +371,12 @@ type CookieStorageDisclosure = {
    * Indicates the vendor is refreshing a cookie.
    */
   cookieRefresh: boolean;
-}
+};
 type HTML5StorageDisclosure = {
   type: 'web'
   maxAgeSeconds?: null;
   cookieRefresh?: null;
-}
+};
 
 /**
  * First party storage use disclosure. Follows the same format as
@@ -394,7 +394,7 @@ export type StorageDisclosure = (CookieStorageDisclosure | HTML5StorageDisclosur
    * The purpose ID or purpose IDs from the Global Vendor List (GVL) for which the storage is used.
    */
   purposes: number[];
-}
+};
 
 /**
  * Disclose first party storage use.

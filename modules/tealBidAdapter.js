@@ -1,8 +1,8 @@
 import { deepSetValue, deepAccess, triggerPixel, deepClone, isEmpty, logError, shuffle } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js'
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 const BIDDER_CODE = 'teal';
 const GVLID = 1378;
 const DEFAULT_ENDPOINT = 'https://a.bids.ws/openrtb2/auction';
@@ -86,7 +86,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -111,6 +111,8 @@ export const spec = {
       gdpr: gdprApplies ? 1 : 0,
       gdpr_consent: consentString,
       us_privacy: uspConsent,
+      gpp: gppConsent?.gppString,
+      gpp_sid: gppConsent?.gppString ? gppConsent.applicableSections?.toString() : undefined,
       bidders: bidders.join(','),
       coop_sync: 0
     };
@@ -141,5 +143,5 @@ export const spec = {
     }
     logError(`${BIDDER_CODE} bidder error`, error);
   }
-}
+};
 registerBidder(spec);

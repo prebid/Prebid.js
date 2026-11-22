@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/pxyzBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
 
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const GDPR_CONSENT = 'XYZ-CONSENT';
@@ -140,7 +139,7 @@ describe('pxyzBidAdapter', function () {
         });
       });
     });
-  })
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -215,10 +214,20 @@ describe('pxyzBidAdapter', function () {
     it('should return one image type user sync pixel', function () {
       const result = spec.getUserSyncs();
       expect(result.length).to.equal(2);
-      expect(result[0].type).to.equal('image')
+      expect(result[0].type).to.equal('image');
       expect(result[0].url).to.equal(syncImageUrl);
-      expect(result[1].type).to.equal('iframe')
+      expect(result[1].type).to.equal('iframe');
       expect(result[1].url).to.equal(syncIframeUrl);
     });
-  })
+  });
+});
+
+describe('pxyzBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(490);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'playgroundxyz')).to.have.property('gvlid', 490);
+  });
 });

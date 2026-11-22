@@ -119,6 +119,64 @@ describe('bidViewabilityPixels library', function () {
       expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.include('script async src="https://viewable-js.com"');
     });
 
+    it('should HTML-escape JS tracker URLs so they cannot break out of the script src attribute', function () {
+      const maliciousUrl = 'https://tracker.invalid/"></script><script>alert(document.domain)</script>';
+      const bid = {
+        eventtrackers: [
+          { event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url: maliciousUrl }
+        ]
+      };
+      fireViewabilityPixels(bid);
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+      const markup = insertHtmlIntoIframeSpy.getCall(0).args[0];
+      expect(markup).to.include('&quot;');
+      expect(markup).to.not.include('"></script><script>');
+    });
+
+    function jsBid(...urls) {
+      return {
+        eventtrackers: urls.map(url => ({ event: EVENT_TYPE_VIEWABLE, method: TRACKER_METHOD_JS, url }))
+      };
+    }
+
+    ['https://tracker.example/pixel', 'HTTPS://tracker.example/pixel'].forEach(url => {
+      it(`should accept absolute https JS tracker URL ${url} unchanged`, function () {
+        fireViewabilityPixels(jsBid(url));
+        expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+        expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.equal(`<script async src="${url}"></script>`);
+      });
+    });
+
+    [
+      'http://tracker.example/pixel',
+      'javascript:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      '',
+      '   ',
+      undefined,
+      null,
+      '/pixel',
+      'pixel',
+      '//tracker.example/pixel',
+      'http://',
+      'https://',
+      'http://[bad'
+    ].forEach(url => {
+      it(`should not fire JS tracker with invalid URL ${JSON.stringify(url)}`, function () {
+        fireViewabilityPixels(jsBid(url));
+        expect(insertHtmlIntoIframeSpy.callCount).to.equal(0);
+        expect(triggerPixelSpy.callCount).to.equal(0);
+      });
+    });
+
+    it('should still fire valid JS trackers when others in the list are invalid', function () {
+      fireViewabilityPixels(jsBid('https://a.example/x', '/relative', undefined, 'javascript:alert(1)', 'https://b.example/y'));
+      expect(insertHtmlIntoIframeSpy.callCount).to.equal(1);
+      expect(insertHtmlIntoIframeSpy.getCall(0).args[0]).to.equal(
+        '<script async src="https://a.example/x"></script>\n<script async src="https://b.example/y"></script>'
+      );
+    });
+
     it('should fire both img (triggerPixel) and js (insertHtmlIntoIframe) viewable trackers', function () {
       const bid = {
         eventtrackers: [
@@ -146,12 +204,11 @@ describe('bidViewabilityPixels library', function () {
     });
 
     describe('when bid has native response with eventtrackers (viewable)', function () {
-      let indexStub;
       let getMediaTypesStub;
 
       beforeEach(function () {
         getMediaTypesStub = sinon.stub();
-        indexStub = sandbox.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
+        sandbox.stub(auctionManager, 'index').get(() => ({ getMediaTypes: getMediaTypesStub }));
       });
 
       it('should fire viewable trackers from bid.native.ortb.eventtrackers in addition to bid.eventtrackers', function () {

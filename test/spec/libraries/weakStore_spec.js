@@ -28,5 +28,5 @@ describe('weakStore', () => {
   it('ignores init value if already initialized', () => {
     store('id', { initial: 'value' });
     expect(store('id', { second: 'value' })).to.eql({ initial: 'value' });
-  })
+  });
 });

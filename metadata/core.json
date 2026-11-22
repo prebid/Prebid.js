@@ -43,12 +43,6 @@
     },
     {
       "componentType": "prebid",
-      "componentName": "categoryTranslation",
-      "moduleName": "categoryTranslation",
-      "disclosureURL": "local://prebid/categoryTranslation.json"
-    },
-    {
-      "componentType": "prebid",
       "componentName": "userId",
       "moduleName": "userId",
       "disclosureURL": "local://prebid/userId-optout.json"

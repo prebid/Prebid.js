@@ -1,15 +1,11 @@
 import { expect } from 'chai';
-import { spec, storage } from 'modules/mantisBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter';
+import { spec, storage, sfPostMessage, iframePostMessage } from 'modules/mantisBidAdapter.js';
 
 describe('MantisAdapter', function () {
-  const adapter = newBidder(spec);
   const sandbox = sinon.createSandbox();
-  let clock;
 
   beforeEach(function () {
-    clock = sandbox.useFakeTimers();
+    sandbox.useFakeTimers();
   });
 
   afterEach(function () {

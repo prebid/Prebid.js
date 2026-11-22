@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {
   deepAccess,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -18,6 +19,10 @@ import { percentInView } from '../libraries/percentInView/percentInView.js';
 import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
 import { isIframe } from '../libraries/omsUtils/index.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
+
+/**
+ * @typedef {import('./33acrossBidAdapter.d.ts').ThirtyThreeAcrossBidParams} ThirtyThreeAcrossBidParams
+ */
 
 // **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
@@ -228,7 +233,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     referer: bidderRequest.refererInfo?.ref
-  }
+  };
 }
 
 function _buildRequestGroups(ttxSettings, bidRequests) {
@@ -347,7 +352,7 @@ function _getSize(size) {
   return {
     w: parseInt(size[0], 10),
     h: parseInt(size[1], 10)
-  }
+  };
 }
 
 // BUILD REQUESTS: PRODUCT INFERENCE
@@ -391,7 +396,7 @@ function _buildBannerORTB(bidRequest) {
               bidfloors: [bidfloors]
             }
           }
-        }
+        };
       }
 
       return Object.assign({}, size, formatExt);
@@ -557,7 +562,7 @@ function _createBidResponse(bid, cur) {
     mediaType: deepAccess(bid, 'ext.ttx.mediaType', BANNER),
     currency: cur,
     netRevenue: true
-  }
+  };
 
   if (isADomainPresent) {
     bidResponse.meta = {
@@ -633,7 +638,7 @@ function getTopMostAccessibleWindow() {
 
 function getViewportDimensions() {
   const topWin = getTopMostAccessibleWindow();
-  const documentElement = topWin.document.documentElement;
+  const documentElement = getWinDimensions(topWin).document.documentElement;
 
   return {
     w: documentElement.clientWidth,

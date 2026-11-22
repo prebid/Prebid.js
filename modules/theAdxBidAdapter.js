@@ -299,7 +299,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
-    logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
+    logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     const syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -330,7 +330,7 @@ export const spec = {
     return syncs;
   },
 
-}
+};
 
 const buildSiteComponent = (bidRequest, bidderRequest) => {
   const loc = parseUrl(bidderRequest.refererInfo.page || '', {
@@ -356,7 +356,7 @@ const buildSiteComponent = (bidRequest, bidderRequest) => {
   }
 
   return site;
-}
+};
 
 function isMobile() {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
@@ -388,7 +388,7 @@ const buildDeviceComponent = (bidRequest, bidderRequest) => {
 
 const determineOptimalRequestId = (bidRequest, bidderRequest) => {
   return bidRequest.bidId;
-}
+};
 
 const extractValidSize = (bidRequest, bidderRequest) => {
   let width = null;
@@ -429,8 +429,8 @@ const generateVideoComponent = (bidRequest, bidderRequest) => {
   return {
     w: impSize.w,
     h: impSize.h
-  }
-}
+  };
+};
 
 const generateBannerComponent = (bidRequest, bidderRequest) => {
   const impSize = extractValidSize(bidRequest);
@@ -438,8 +438,8 @@ const generateBannerComponent = (bidRequest, bidderRequest) => {
   return {
     w: impSize.w,
     h: impSize.h
-  }
-}
+  };
+};
 
 const generateNativeComponent = (bidRequest, bidderRequest) => {
   const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
@@ -463,8 +463,8 @@ const generateNativeComponent = (bidRequest, bidderRequest) => {
     request: {
       assets
     }
-  }
-}
+  };
+};
 
 const generateImpBody = (bidRequest, bidderRequest) => {
   const mediaTypes = bidRequest.mediaTypes;
@@ -504,7 +504,7 @@ const generateImpBody = (bidRequest, bidderRequest) => {
   }
 
   return result;
-}
+};
 const getRegionEndPoint = (bidRequest) => {
   if (bidRequest && bidRequest.params && bidRequest.params.region) {
     if (bidRequest.params.region.toLowerCase() === 'tr') {
@@ -523,39 +523,7 @@ const generatePayload = (bidRequest, bidderRequest) => {
     device: buildDeviceComponent(bidRequest, bidderRequest),
     imp: [generateImpBody(bidRequest, bidderRequest)],
   };
-  // return payload;
-  const eids = getEids(bidRequest);
-  if (Object.keys(eids).length > 0) {
-    payload.ext = eids;
-  }
   return JSON.stringify(payload);
-};
-
-function getEids(bidRequest) {
-  const eids = {}
-
-  const uId2 = deepAccess(bidRequest, 'userId.uid2.id');
-  if (uId2) {
-    eids['uid2'] = uId2;
-  }
-
-  const id5 = deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    eids['id5id'] = id5;
-    const id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
-    if (id5Linktype) {
-      eids['id5_linktype'] = id5Linktype;
-    }
-  }
-  const netId = deepAccess(bidRequest, 'userId.netId');
-  if (netId) {
-    eids['netid'] = netId;
-  }
-  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
-  if (sharedId) {
-    eids['sharedid'] = sharedId;
-  }
-  return eids;
 };
 
 registerBidder(spec);

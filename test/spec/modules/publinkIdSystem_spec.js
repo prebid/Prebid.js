@@ -1,5 +1,5 @@
 import { publinkIdSubmodule } from 'modules/publinkIdSystem.js';
-import { getCoreStorageManager, getStorageManager } from '../../../src/storageManager.js';
+import { getCoreStorageManager } from '../../../src/storageManager.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
 import { parseUrl } from '../../../src/utils.js';
@@ -64,7 +64,7 @@ describe('PublinkIdSystem', () => {
   });
 
   describe('getId', () => {
-    const serverResponse = { publink: 'ec0xHT3yfAOnykP64Qf0ORSi7LjNT1wju04ZSCsoPBekOJdBwK-0Zl_lXKDNnzhauC4iszBc-PvA1Be6IMlh1QocA' };
+    const serverResponse = { publink: 'publink-test-token' };
     it('no config', () => {
       const result = publinkIdSubmodule.getId();
       expect(result).to.exist;

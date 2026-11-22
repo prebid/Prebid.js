@@ -1,11 +1,12 @@
-import { mergeDeep, deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
+import { deepEqual, deepAccess, deepSetValue, deepClone } from '../../src/utils.js';
 import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
+import { mergeBidderOrtb2 } from '../../src/fpd/merge.js';
 
 /**
  * Perform a partial pre-merge of bidder config for PBS.
  *
  * Prebid.js and Prebid Server use different strategies for merging global and bidder-specific config; JS attemps to
- * merge arrays (concatenating them, with some deduping, cfr. mergeDeep), while PBS only merges objects -
+ * merge arrays (concatenating them, with some deduping, cfr. mergeBidderOrtb2), while PBS only merges objects -
  * a bidder-specific array will replace a global array.
  *
  * This returns bidder config (from `bidder`) where arrays are replaced with what you get from merging them with `global`,
@@ -14,9 +15,9 @@ import { ORTB_EIDS_PATHS } from '../../src/activities/redactor.js';
 export function getPBSBidderConfig({ global, bidder }) {
   return Object.fromEntries(
     Object.entries(bidder).map(([bidderCode, bidderConfig]) => {
-      return [bidderCode, replaceArrays(bidderConfig, mergeDeep({}, global, bidderConfig))]
+      return [bidderCode, replaceArrays(bidderConfig, mergeBidderOrtb2(global, bidderConfig))];
     })
-  )
+  );
 }
 
 function replaceArrays(config, mergedConfig) {
@@ -32,7 +33,7 @@ function replaceArrays(config, mergedConfig) {
       }
       return [key, value];
     })
-  )
+  );
 }
 
 /**
@@ -47,12 +48,12 @@ function replaceArrays(config, mergedConfig) {
 export function extractEids({ global, bidder }) {
   const entries = [];
   const bySource = {};
-  const conflicts = new Set()
+  const conflicts = new Set();
 
   function getEntry(eid) {
     let entry = entries.find((candidate) => deepEqual(candidate.eid, eid));
     if (entry == null) {
-      entry = { eid, bidders: new Set() }
+      entry = { eid, bidders: new Set() };
       entries.push(entry);
     }
     if (bySource[eid.source] == null) {
@@ -68,7 +69,7 @@ export function extractEids({ global, bidder }) {
     (deepAccess(global, path) || []).forEach(eid => {
       getEntry(eid).bidders = false;
     });
-  })
+  });
   Object.entries(bidder).forEach(([bidderCode, bidderConfig]) => {
     ORTB_EIDS_PATHS.forEach(path => {
       (deepAccess(bidderConfig, path) || []).forEach(eid => {
@@ -76,9 +77,9 @@ export function extractEids({ global, bidder }) {
         if (entry.bidders !== false) {
           entry.bidders.add(bidderCode);
         }
-      })
-    })
-  })
+      });
+    });
+  });
   return { eids: entries.map(({ eid, bidders }) => ({ eid, bidders: bidders && Array.from(bidders) })), conflicts };
 }
 
@@ -95,7 +96,7 @@ export function extractEids({ global, bidder }) {
  *  - `bidder` is a map from bidder code to EID objects that are specific to that bidder, and cannot be restricted through `permissions`
  *  - `permissions` is a list of EID permissions as expected by PBS.
  */
-export function consolidateEids({ eids, conflicts = new Set() }) {
+export function consolidateEids({ eids, conflicts = new Set() }, requestedBidders) {
   const globalEntries = [];
   const bidderEntries = [];
   const byBidder = {};
@@ -104,25 +105,31 @@ export function consolidateEids({ eids, conflicts = new Set() }) {
   });
   bidderEntries.forEach(({ eid, bidders }) => {
     if (!conflicts.has(eid.source)) {
-      globalEntries.push({ eid, bidders })
+      globalEntries.push({ eid, bidders });
     } else {
       bidders.forEach(bidderCode => {
-        (byBidder[bidderCode] = byBidder[bidderCode] || []).push(eid)
-      })
+        (byBidder[bidderCode] = byBidder[bidderCode] || []).push(eid);
+      });
     }
   });
+
+  const permissions = Object.fromEntries(
+    globalEntries.filter(({ bidders }) => bidders !== false)
+      .map(({ eid, bidders }) => ([eid.source, {
+        source: eid.source,
+        bidders: bidders.filter(bidder => !requestedBidders?.length || requestedBidders.includes(bidder))
+      }]))
+  );
+
   return {
-    global: globalEntries.map(({ eid }) => eid),
-    permissions: globalEntries.filter(({ bidders }) => bidders !== false).map(({ eid, bidders }) => ({
-      source: eid.source,
-      bidders
-    })),
+    global: globalEntries.map(({ eid }) => eid).filter(eid => permissions[eid.source] == null || permissions[eid.source].bidders.length > 0),
+    permissions: Object.values(permissions).filter(permission => permission.bidders.length > 0),
     bidder: byBidder
-  }
+  };
 }
 
 function replaceEids({ global, bidder }, requestedBidders) {
-  const consolidated = consolidateEids(extractEids({ global, bidder }));
+  const consolidated = consolidateEids(extractEids({ global, bidder }), requestedBidders);
   global = deepClone(global);
   bidder = deepClone(bidder);
   function removeEids(target) {
@@ -134,11 +141,6 @@ function replaceEids({ global, bidder }, requestedBidders) {
   if (consolidated.global.length) {
     deepSetValue(global, 'user.ext.eids', consolidated.global);
   }
-  if (requestedBidders?.length) {
-    consolidated.permissions.forEach((permission) => {
-      permission.bidders = permission.bidders.filter(bidder => requestedBidders.includes(bidder));
-    });
-  }
   if (consolidated.permissions.length) {
     deepSetValue(global, 'ext.prebid.data.eidpermissions', consolidated.permissions);
   }
@@ -146,8 +148,8 @@ function replaceEids({ global, bidder }, requestedBidders) {
     if (bidderEids.length) {
       deepSetValue(bidder[bidderCode], 'user.ext.eids', bidderEids);
     }
-  })
-  return { global, bidder }
+  });
+  return { global, bidder };
 }
 
 export function premergeFpd(ortb2Fragments, requestedBidders) {

@@ -4,10 +4,12 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
+const GVLID = 912;
+export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -22,21 +24,21 @@ export const spec = {
         zoneToken: bidRequest.params.zoneToken,
         pos: bidRequest.params.pos,
         sizes: prepareSizes(bidRequest.sizes)
-      })
-    })
+      });
+    });
 
     const payload = {
       requestId: bidderRequest.bidderRequestId,
       bids,
       referer: bidderRequest.refererInfo.page,
       schain: validBidRequests[0]?.ortb2?.source?.ext?.schain
-    }
+    };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
         consentString: bidderRequest.gdprConsent.consentString
-      }
+      };
     }
 
     const options = {
@@ -44,7 +46,7 @@ export const spec = {
       customHeaders: {
         'Rtb-Direct': true
       }
-    }
+    };
 
     return {
       method: 'POST',
@@ -79,7 +81,7 @@ export const spec = {
       bid.meta.advertiserDomains = bid.adomain || [];
 
       bids.push(bid);
-    })
+    });
 
     return bids;
   },
@@ -93,7 +95,7 @@ export const spec = {
     }
     return false;
   }
-}
+};
 
 function prepareSizes(sizes) {
   return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));

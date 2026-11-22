@@ -91,7 +91,7 @@ const getAdTypes = (creativeType) => {
     return DTX_TYPES;
   }
   return AD_TYPES;
-}
+};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -139,7 +139,7 @@ export const spec = {
           width: bid.mediaTypes.banner.sizes[index][1],
           creativeType: validateCreativeType(bid.params.creativeType),
         }
-      }
+      };
     });
     return {
       method: 'POST',
@@ -151,7 +151,7 @@ export const spec = {
           key: userKey,
         },
       },
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -182,7 +182,7 @@ export const spec = {
           netRevenue: true,
           ttl: DEFAULT_TTL,
           ad: decision.prebid?.creative,
-        }
+        };
       });
     }
     return [];
@@ -196,5 +196,5 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses) => [],
-}
+};
 registerBidder(spec);

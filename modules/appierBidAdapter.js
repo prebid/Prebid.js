@@ -47,7 +47,7 @@ export const spec = {
       return [];
     }
     const server = this.getApiServer();
-    const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
+    const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`;
     const payload = {
       'bids': bidRequests,
       // TODO: please do not pass internal data structures over to the network

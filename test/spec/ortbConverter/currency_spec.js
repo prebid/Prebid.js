@@ -36,5 +36,5 @@ describe('pbjs -> ortb currency', () => {
     const req = {};
     setOrtbCurrency(req, {}, { currency: 'JPY' });
     expect(req.cur).to.eql(['JPY']);
-  })
+  });
 });

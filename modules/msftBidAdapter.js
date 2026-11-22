@@ -96,7 +96,7 @@ const storage = getStorageManager({
  * keywords -> getConfig('appnexusAuctionKeywords') (read now from ortb.site/user) -> site/user DONE
  * gdpr_consent -> set in adapter from bidderRequest.gdprConsent -> regs.ext.gdpr and user.ext.consent DONE
  * privacy -> set in adapter from bidderRequest.uspConsent -> regs.ext.privacy DONE
- * eids -> set in adapter from bidRequest.userId -> user.ext.eids DONE
+ * eids -> read from ortb2.user.ext.eids -> user.ext.eids DONE
  * dsa -> set in adapter from ortb.regs.ext.dsa -> regs.ext.dsa DONE
  * coppa -> getConfig('coppa') -> regs.coppa DONE
  * require_asset_url -> mediaTypes.video.context === 'instream' -> imp.ext.appnexus.require_asset_url DONE
@@ -145,11 +145,6 @@ const converter = ortbConverter({
     if (FEATURES.VIDEO && imp?.video) {
       if (deepAccess(bidRequest, 'mediaTypes.video.context') === 'instream') {
         extANData.require_asset_url = true;
-      }
-
-      if (imp.video.plcmt) {
-        imp.video.placement = imp.video.plcmt;
-        delete imp.video.plcmt;
       }
     }
 
@@ -208,6 +203,18 @@ const converter = ortbConverter({
           eid.rti_partner = 'UID2';
         }
       });
+    }
+
+    if (bidderRequest?.gdprConsent?.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      const ac = bidderRequest.gdprConsent.addtlConsent;
+      const segments = ac.split('~');
+      const consentedSegment = segments[1] || '';
+      // ACv1 uses: version~vendorIds; ACv2 uses: version~consentedVendorIds~dv.disclosedVendorIds
+      // Only the consented-vendor segment should be populated into user.ext.addtl_consent.
+      const addtlConsent = consentedSegment.split('.').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (addtlConsent.length > 0) {
+        deepSetValue(request, 'user.ext.addtl_consent', addtlConsent);
+      }
     }
 
     const extANData = {
@@ -320,7 +327,11 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [], // TODO fill in after full transition or as seperately requested
+  aliases: [
+    { code: 'oftmedia', gvlid: 32 },
+    { code: 'msftstaila', gvlid: 32 },
+    { code: 'projectagora', gvlid: 1032 }
+  ], // TODO fill in after full transition or as separately requested
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   isBidRequestValid: (bid) => {

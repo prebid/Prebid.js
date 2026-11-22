@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as winDimensions from 'src/utils/winDimensions.js';
 import {
   getImp,
   setImpPos,
@@ -13,6 +14,11 @@ import {
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
+  it('declares its Google Additional Consent provider ID instead of the deleted GVL ID', () => {
+    expect(spec.acpId).to.equal(21731);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
   describe('function getImp', () => {
     const dataTests = [
       {
@@ -902,7 +908,7 @@ describe('nextMillenniumBidAdapterTests', () => {
   }
 
   describe('check parameters group_id or placement_id', function() {
-    let numberTest = 0
+    let numberTest = 0;
     for (const test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
         const request = spec.buildRequests([test]);
@@ -958,7 +964,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           const nextMilImp = bidRequest.ext.next_mil_imps[i];
           expect(nextMilImp.impId).to.deep.equal(expectedNextMilImps[i].impId);
           expect(nextMilImp.nextMillennium.refresh_count).to.deep.equal(expectedNextMilImps[i].nextMillennium.refresh_count + j);
-        })
+        });
       };
     };
   });
@@ -1336,7 +1342,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           it(expected[i].title, () => {
             expect(bids).to.have.lengthOf(expected.length);
 
-            const bid = bids[i]
+            const bid = bids[i];
             expect(bid.creativeId).to.equal(expected[i].creativeId);
             expect(bid.requestId).to.equal(expected[i].requestId);
             expect(bid.ad).to.equal(expected[i].ad);
@@ -1392,5 +1398,14 @@ describe('nextMillenniumBidAdapterTests', () => {
         expect(extNextMilImp.nextMillennium.allowedAds).to.deep.equal(expected.allowedAds);
       });
     };
+
+    it('reports the scroll offset from getWinDimensions', () => {
+      const stub = sinon.stub(winDimensions, 'getWinDimensions').returns({ scrollY: 1234 });
+      try {
+        expect(getExtNextMilImp('1', { params: {} }).nextMillennium.scrollTop).to.equal(1234);
+      } finally {
+        stub.restore();
+      }
+    });
   });
 });

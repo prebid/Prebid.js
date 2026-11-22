@@ -7,7 +7,7 @@ import {
   mnetGlobals, POST_ENDPOINT,
   PREBID_VERSION
 } from './constants.js';
-import { ajax, sendBeacon } from '../../src/ajax.js';
+import { noCredsAjax as ajax, sendBeacon } from '../../src/ajax.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 

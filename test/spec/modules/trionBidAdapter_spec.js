@@ -1,13 +1,9 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils.js';
+import 'src/utils.js';
 import { spec, acceptPostMessage, getStorageData, setStorageData } from 'modules/trionBidAdapter.js';
-import { deepClone } from 'src/utils.js';
+
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-const CONSTANTS = require('src/constants.js');
-const adloader = require('src/adloader');
-
-const PLACEMENT_CODE = 'ad-tag';
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 
 const TRION_BID = {
@@ -64,12 +60,10 @@ const getPublisherUrl = function () {
     }
   } catch (e) {
   }
-  return url
+  return url;
 };
 
 describe('Trion adapter tests', function () {
-  let adapter;
-
   beforeEach(function () {
     // adapter = trionAdapter.createNew();
     getGlobal().bidderSettings = {

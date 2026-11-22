@@ -6,17 +6,13 @@
 import { getAllAssetsMessage, getAssetMessage } from './native.js';
 import { BID_STATUS, MESSAGES } from './constants.js';
 import { isApnGetTagDefined, isGptPubadsDefined, logError, logWarn } from './utils.js';
-import {
-  deferRendering,
-  handleCreativeEvent,
-  handleNativeMessage,
-  handleRender,
-  markWinner
-} from './adRendering.js';
+import { deferRendering, getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinner } from './adRendering.js';
 import { getCreativeRendererSource, PUC_MIN_VERSION } from './creativeRenderers.js';
 import { PbPromise } from './utils/promise.js';
 import { getAdUnitElement } from './utils/adUnits.js';
 import { auctionManager } from './auctionManager.js';
+import { findSlotElementIdByAdId, getSlotTargeting, getSlotTargetingKeys } from './utils/gptTargeting.js';
+import { hook } from './hook.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -58,22 +54,53 @@ export function getReplier(ev) {
 function ensureAdId(adId, reply) {
   return function (data, ...args) {
     return reply(Object.assign({}, data, { adId }), ...args);
-  }
+  };
 }
 
-export function receiveMessage(ev, cb) {
-  var key = ev.message ? 'message' : 'data';
-  var data = {};
+export function parseMessage(ev) {
+  const key = ev.message ? 'message' : 'data';
+  let data;
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {
     return;
   }
-
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, auctionManager.findBidByAdId(data.adId));
-    cb && cb();
+    return data;
   }
+}
+
+export const getBidForMessage = (() => {
+  const bids = new WeakMap();
+  return (message) => {
+    if (message == null || typeof message !== 'object') return;
+    if (bids.get(message)?.adId !== message.adId) {
+      const bid = auctionManager.findBidByAdId(message.adId);
+      bid == null ? bids.delete(message) : bids.set(message, bid);
+    }
+    return bids.get(message);
+  };
+})();
+
+export const isMessageAllowed = hook('sync', (event, data) => true);
+
+export function processMessage(data, bid, replier) {
+  HANDLER_MAP.hasOwnProperty(data.message) && HANDLER_MAP[data.message](ensureAdId(data.adId, replier), data, bid);
+}
+
+export function receiveMessage(ev, cb) {
+  const data = parseMessage(ev);
+  if (data && isMessageAllowed(ev, data)) {
+    getBidToRender(getBidForMessage(data), isRenderRequest(data), (bid) => {
+      processMessage(data, bid, getReplier(ev));
+      cb && cb();
+    });
+  }
+}
+
+export function isRenderRequest(data) {
+  // legacy native templates do not send a render request; they start by asking for assets
+  return data.message === REQUEST || (data.message === NATIVE && ['assetRequest', 'allAssetRequest'].includes(data.action));
 }
 
 function getResizer(adId, bidResponse) {
@@ -82,8 +109,9 @@ function getResizer(adId, bidResponse) {
   // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
   return function (width, height) {
     resizeRemoteCreative({ ...bidResponse, width, height, adId });
-  }
+  };
 }
+
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
     renderFn(adData) {
@@ -157,13 +185,13 @@ export function resizeAnchor(ins, width, height) {
             ins.style[dimension] = getDimension(newValue);
             done = true;
           }
-        })
+        });
       if (done || (tryCounter-- === 0)) {
         clearInterval(resizer);
-        done ? resolve() : reject(new Error('Could not resize anchor'))
+        done ? resolve() : reject(new Error('Could not resize anchor'));
       }
-    }, 50)
-  })
+    }, 50);
+  });
 }
 
 export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, height }) {
@@ -174,7 +202,7 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
   function resize(element) {
     if (element) {
       const elementStyle = element.style;
-      elementStyle.width = getDimension(width)
+      elementStyle.width = getDimension(width);
       elementStyle.height = getDimension(height);
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
@@ -209,9 +237,13 @@ export function resizeRemoteCreative({ instl, element, adId, adUnitCode, width, 
   }
 
   function getDfpElementId(adId) {
+    const dfpId = findSlotElementIdByAdId(adId);
+    if (dfpId) {
+      return dfpId;
+    }
     const slot = window.googletag.pubads().getSlots().find(slot => {
-      return slot.getTargetingKeys().find(key => {
-        return slot.getTargeting(key).includes(adId);
+      return getSlotTargetingKeys(slot).find(key => {
+        return getSlotTargeting(slot, key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;

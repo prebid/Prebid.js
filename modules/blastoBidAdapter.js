@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'blasto';
+const GVLID = 1381;
 const SOURCE_ID_MACRO = '[sourceid]';
 const ACCOUNT_ID_MACRO = '[accountid]';
 const HOST_MACRO = '[host]';
@@ -25,7 +26,7 @@ const converter = ortbConverter({
         sourceId: bidRequest.params.sourceId,
         host: bidRequest.params.host || DEFAULT_HOST,
       }
-    }
+    };
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -44,6 +45,7 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {

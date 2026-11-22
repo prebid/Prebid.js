@@ -5,6 +5,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { deepAccess, safeJSONParse } from '../src/utils.js';
 
 const BIDDER_CODE = 'das';
+const GVLID = 1021;
 const GDE_SCRIPT_URL = 'https://ocdn.eu/adp/static/embedgde/latest/bundle.min.js';
 const GDE_PARAM_PREFIX = 'gde_';
 const REQUIRED_GDE_PARAMS = [
@@ -53,7 +54,7 @@ function parseNativeResponse(ad) {
     nativeResponse.privacyLink = dsaurl;
   }
 
-  return nativeResponse
+  return nativeResponse;
 }
 
 function getGdeScriptUrl(adDataFields) {
@@ -184,7 +185,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     if (bid.params.slotSequence) {
       imp.ext = {
         pos: String(bid.params.slotSequence)
-      }
+      };
     }
 
     if (bid.mediaTypes?.banner) {
@@ -256,14 +257,14 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
       ext: {
         dsa: customParams.dsainfo,
       },
-    }
+    };
   }
 
   return request;
 }
 
 function prepareNativeMarkup(bid) {
-  const parsedNativeMarkup = safeJSONParse(bid.adm)
+  const parsedNativeMarkup = safeJSONParse(bid.adm);
   const ad = {
     data: parsedNativeMarkup || {},
     ems_link: bid.ext?.ems_link || '',
@@ -315,7 +316,8 @@ function interpretResponse(serverResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['ringieraxelspringer'],
+  gvlid: GVLID,
+  aliases: [{ code: 'ringieraxelspringer', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {

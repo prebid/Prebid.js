@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError, logInfo } from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -40,7 +40,7 @@ export const admixerIdSubmodule = {
    * @returns {{admixerId:string}}
    */
   decode(value) {
-    return { 'admixerId': value }
+    return { 'admixerId': value };
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument

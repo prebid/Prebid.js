@@ -5,7 +5,7 @@ const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
   widgetUrl: 'https://trmads.eu/get',
   method: 'POST'
-}
+};
 
 const BIDDER_CODE = 'smartico';
 
@@ -16,24 +16,24 @@ export const spec = {
     return !!(bid && bid.params && bid.params.token && bid.params.placementId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var i
-    var j
-    var bid
-    var bidParam
-    var bidParams = []
-    var sizes
-    var frameWidth = Math.round(window.screen.width)
-    var frameHeight = Math.round(window.screen.height)
+    var i;
+    var j;
+    var bid;
+    var bidParam;
+    var bidParams = [];
+    var sizes;
+    var frameWidth = Math.round(window.screen.width);
+    var frameHeight = Math.round(window.screen.height);
     for (i = 0; i < validBidRequests.length; i++) {
-      bid = validBidRequests[i]
+      bid = validBidRequests[i];
       if (bid.sizes) {
-        sizes = bid.sizes
+        sizes = bid.sizes;
       } else if (typeof (BANNER) !== 'undefined' && bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-        sizes = bid.mediaTypes[BANNER].sizes
+        sizes = bid.mediaTypes[BANNER].sizes;
       } else if (frameWidth && frameHeight) {
-        sizes = [[frameWidth, frameHeight]]
+        sizes = [[frameWidth, frameHeight]];
       } else {
-        sizes = []
+        sizes = [];
       }
       for (j = 0; j < sizes.length; j++) {
         bidParam = {
@@ -41,23 +41,23 @@ export const spec = {
           bidId: bid.bidId,
           'banner-format-width': sizes[j][0],
           'banner-format-height': sizes[j][1]
-        }
+        };
         if (bid.params.bannerFormat) {
-          bidParam['banner-format'] = bid.params.bannerFormat
+          bidParam['banner-format'] = bid.params.bannerFormat;
         }
         if (bid.params.language) {
-          bidParam.language = bid.params.language
+          bidParam.language = bid.params.language;
         }
         if (bid.params.region) {
-          bidParam.region = bid.params.region
+          bidParam.region = bid.params.region;
         }
         if (bid.params.regions && (bid.params.regions instanceof String || (bid.params.regions instanceof Array && bid.params.regions.length))) {
-          bidParam.regions = bid.params.regions
+          bidParam.regions = bid.params.regions;
           if (bidParam.regions instanceof Array) {
-            bidParam.regions = bidParam.regions.join(',')
+            bidParam.regions = bidParam.regions.join(',');
           }
         }
-        bidParams.push(bidParam)
+        bidParams.push(bidParam);
       }
     }
 
@@ -67,35 +67,35 @@ export const spec = {
       bids: validBidRequests,
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       data: { bidParams: bidParams, auctionId: bidderRequest.auctionId }
-    }
+    };
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    var i
-    var bid
-    var bidObject
-    var url
-    var html
-    var ad
-    var ads
-    var token
-    var language
-    var scriptId
-    var bidResponses = []
-    ads = serverResponse.body
+    var i;
+    var bid;
+    var bidObject;
+    var url;
+    var html;
+    var ad;
+    var ads;
+    var token;
+    var language;
+    var scriptId;
+    var bidResponses = [];
+    ads = serverResponse.body;
     for (i = 0; i < ads.length; i++) {
-      ad = ads[i]
-      bid = ((bidRequest.bids) || []).find(bid => bid.bidId === ad.bidId)
+      ad = ads[i];
+      bid = ((bidRequest.bids) || []).find(bid => bid.bidId === ad.bidId);
       if (bid) {
-        token = bid.params.token || ''
+        token = bid.params.token || '';
 
-        language = bid.params.language || SMARTICO_CONFIG.language || ''
+        language = bid.params.language || SMARTICO_CONFIG.language || '';
 
-        scriptId = encodeURIComponent('smartico-widget-' + bid.params.placementId + '-' + i)
+        scriptId = encodeURIComponent('smartico-widget-' + bid.params.placementId + '-' + i);
 
-        url = SMARTICO_CONFIG.widgetUrl + '?token=' + encodeURIComponent(token) + '&auction-id=' + encodeURIComponent(bid.auctionId) + '&from-auction-buffer=1&own_session=1&ad=' + encodeURIComponent(ad.id) + '&scriptid=' + scriptId + (ad.bannerFormatAlias ? '&banner-format=' + encodeURIComponent(ad.bannerFormatAlias) : '') + (language ? '&language=' + encodeURIComponent(language) : '')
+        url = SMARTICO_CONFIG.widgetUrl + '?token=' + encodeURIComponent(token) + '&auction-id=' + encodeURIComponent(bid.auctionId) + '&from-auction-buffer=1&own_session=1&ad=' + encodeURIComponent(ad.id) + '&scriptid=' + scriptId + (ad.bannerFormatAlias ? '&banner-format=' + encodeURIComponent(ad.bannerFormatAlias) : '') + (language ? '&language=' + encodeURIComponent(language) : '');
 
-        html = '<script id="' + scriptId + '" async defer type="text/javascript" src="' + url + '"></script>'
+        html = '<script id="' + scriptId + '" async defer type="text/javascript" src="' + url + '"></script>';
 
         bidObject = {
           requestId: bid.bidId,
@@ -111,11 +111,11 @@ export const spec = {
             advertiserDomains: ad.domains,
             advertiserName: ad.title
           }
-        }
+        };
         bidResponses.push(bidObject);
       }
     }
     return bidResponses;
   }
-}
-registerBidder(spec)
+};
+registerBidder(spec);

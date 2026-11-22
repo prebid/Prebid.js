@@ -1,10 +1,11 @@
 import { deepAccess, deepSetValue, logInfo } from '../../src/utils.js';
 import { Renderer } from '../../src/Renderer.js';
 import { INSTREAM, OUTSTREAM } from '../../src/video.js';
-import { BANNER, MediaType, NATIVE, VIDEO } from '../../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
 import { BidResponse, VideoBidResponse } from '../../src/bidfactory.js';
-import { BidRequest, ORTBImp, ORTBResponse } from '../../src/prebid.public.js';
-import { AdapterResponse, ServerResponse } from '../../src/adapters/bidderFactory.js';
+import { BidRequest, ORTBImp } from '../../src/prebid.public.js';
+import { addEventTrackers } from '../pbsExtensions/processors/eventTrackers.js';
+import { ORTB_MTYPES } from '../ortbConverter/processors/mediaType.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -51,7 +52,7 @@ export type CreateRenderPayload = {
   adUnitCode: string,
   width: number,
   height: number
-}
+};
 
 export const createRenderer = (
   { requestId, vastXml, adUnitCode, width, height }: CreateRenderPayload
@@ -82,68 +83,56 @@ export const enrichImp = (imp:ORTBImp, bidRequest:BidRequest<string>): ORTBImp =
     deepSetValue(imp, 'video.ext.context', videoContext);
   }
   return imp;
+};
+
+export function mediaTypeOverride(orig: (bidResponse: any, bid: any, context: any) => void, bidResponse: any, bid: any, context: any): void {
+  if (bidResponse.mediaType || ORTB_MTYPES.hasOwnProperty(bid.mtype)) {
+    orig(bidResponse, bid, context);
+    return;
+  }
+  const prebidType = deepAccess(bid, 'ext.prebid.type');
+  if ([BANNER, VIDEO, NATIVE].includes(prebidType)) {
+    bidResponse.mediaType = prebidType;
+    return;
+  }
+  const legacyType = deepAccess(bid, 'ext.mediaType');
+  if (legacyType === INSTREAM || legacyType === OUTSTREAM) {
+    bidResponse.mediaType = VIDEO;
+    return;
+  }
+  if ([BANNER, NATIVE].includes(legacyType)) {
+    bidResponse.mediaType = legacyType;
+    return;
+  }
+  orig(bidResponse, bid, context);
 }
 
-export function createResponse(bid:any, ortbResponse:any): BidResponse {
-  let mediaType: MediaType = BANNER;
-  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) mediaType = VIDEO;
-  if (bid.ext.mediaType === NATIVE) mediaType = NATIVE;
-  const response:any = {
-    requestId: bid.impid,
-    cpm: bid.price,
-    width: bid.w,
-    height: bid.h,
-    creativeId: bid.crid,
-    currency: ortbResponse.cur,
-    netRevenue: true,
-    ttl: 120,
-    mediaType,
-    meta: {
-      advertiserDomains: bid.adomain,
-      demandSource: bid.ext.ssp,
-    },
-  };
-  if (bid.dealid) response.dealid = bid.dealid;
+export function videoResponseOverride(orig: (bidResponse: any, bid: any, context: any) => void, bidResponse: any, bid: any, context: any): void {
+  orig(bidResponse, bid, context);
+  if (bidResponse.mediaType !== VIDEO) return;
+  if (deepAccess(context, 'bidRequest.mediaTypes.video.context') !== OUTSTREAM) return;
 
-  if (bid.ext.mediaType === BANNER) response.ad = bid.adm;
-  if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType as string)) response.vastXml = bid.adm;
-  if (bid.ext.mediaType === OUTSTREAM && (bid.ext.adUnitCode)) {
-    const renderer = createRenderer({
-      requestId: response.requestId,
-      vastXml: response.vastXml,
-      adUnitCode: bid.ext.adUnitCode,
-      width: response.width,
-      height: response.height
-    });
-    if (renderer) {
-      response.renderer = renderer;
-      response.adUnitCode = bid.ext.adUnitCode;
-    } else {
-      logInfo('Could not create renderer for outstream bid');
-    }
-  };
-
-  if (bid.ext.mediaType === NATIVE) {
-    try {
-      response.native = { ortb: JSON.parse(bid.adm) }
-    } catch (e) {}
+  const adUnitCode = context.bidRequest.adUnitCode;
+  const renderer = createRenderer({
+    requestId: bidResponse.requestId,
+    vastXml: bidResponse.vastXml,
+    adUnitCode,
+    width: bidResponse.width,
+    height: bidResponse.height,
+  });
+  if (renderer) {
+    bidResponse.renderer = renderer;
+    bidResponse.adUnitCode = adUnitCode;
+  } else {
+    logInfo('Could not create renderer for outstream bid');
   }
-  return response as BidResponse;
 }
 
-export const interpretResponse = (serverResponse: ServerResponse): AdapterResponse => {
-  if (!serverResponse.body) return [];
-  const respBody = serverResponse.body as ORTBResponse;
-  if (!respBody.seatbid || respBody.seatbid.length === 0) return [];
-
-  const responses: BidResponse[] = [];
-  for (let i = 0; i < respBody.seatbid.length; i++) {
-    const seatbid = respBody.seatbid[i];
-    for (let j = 0; j < seatbid.bid.length; j++) {
-      const bid = seatbid.bid[j];
-      const response:BidResponse = createResponse(bid, respBody);
-      responses.push(response);
-    }
+export function enrichBidResponse(bidResponse: any, bid: any): BidResponse {
+  if (bid.ext?.ssp) {
+    bidResponse.meta = bidResponse.meta || {};
+    bidResponse.meta.demandSource = bid.ext.ssp;
   }
-  return responses;
+  addEventTrackers(bidResponse, bid);
+  return bidResponse as BidResponse;
 }

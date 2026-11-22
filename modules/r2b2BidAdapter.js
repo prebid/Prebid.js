@@ -1,5 +1,5 @@
 import { logWarn, logError, triggerPixel, deepSetValue, getParameterByName } from '../src/utils.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -30,19 +30,19 @@ const R2B2_TEST_UNIT = 'selfpromo';
 export const internal = {
   placementsToSync: [],
   mappedParams: {}
-}
+};
 
 const r2b2Error = function(message, params) {
-  logError(message, params, BIDDER_CODE)
-}
+  logError(message, params, BIDDER_CODE);
+};
 
 function getIdParamsFromPID(pid) {
   // selfpromo test creative
   if (pid === R2B2_TEST_UNIT) {
-    return { d: 'test', g: 'test', p: 'selfpromo', m: 0, selfpromo: 1 }
+    return { d: 'test', g: 'test', p: 'selfpromo', m: 0, selfpromo: 1 };
   }
   if (!isNaN(pid)) {
-    return { pid: Number(pid) }
+    return { pid: Number(pid) };
   }
   if (typeof pid === 'string') {
     const params = pid.split('/');
@@ -51,10 +51,10 @@ function getIdParamsFromPID(pid) {
       return paramNames.reduce((p, paramName, index) => {
         let param = params[index];
         if (paramName === 'm') {
-          param = ['desktop', 'classic', '0'].includes(param) ? 0 : Number(!!param)
+          param = ['desktop', 'classic', '0'].includes(param) ? 0 : Number(!!param);
         }
         p[paramName] = param;
-        return p
+        return p;
       }, {});
     }
   }
@@ -73,7 +73,7 @@ function getIdsFromBids(bids) {
     if (id) {
       ids.push(id);
     }
-    return ids
+    return ids;
   }, []);
 }
 
@@ -82,7 +82,7 @@ function triggerEvent(eventUrl, ids) {
   const timeStamp = new Date().getTime();
   const symbol = (eventUrl.indexOf('?') === -1 ? '?' : '&');
   const url = eventUrl + symbol + `p=${btoa(JSON.stringify(ids))}&cb=${timeStamp}`;
-  triggerPixel(url)
+  triggerPixel(url);
 }
 
 const converter = ortbConverter({
@@ -117,7 +117,7 @@ function setUpRenderer(adUnitCode, bid) {
       renderDoc = renderDocument;
       return sourceDocument;
     }
-  }
+  };
   const renderer = Renderer.install({
     url: RENDERER_URL,
     config: config,
@@ -133,12 +133,12 @@ function setUpRenderer(adUnitCode, bid) {
     main.HB.Render = main.HB.Render || {};
     main.HB.Render.queue = main.HB.Render.queue || [];
     main.HB.Render.queue.push(() => {
-      const id = pickIdFromParams(internal.mappedParams[bid.requestId])
-      main.HB.Renderer.render(id, bid, null, doc)
-    })
-  })
+      const id = pickIdFromParams(internal.mappedParams[bid.requestId]);
+      main.HB.Renderer.render(id, bid, null, doc);
+    });
+  });
 
-  return renderer
+  return renderer;
 }
 
 function getExtMediaType(bidMediaType, responseBid) {
@@ -204,14 +204,14 @@ export const spec = {
   isBidRequestValid: function(bid) {
     if (!bid.params || !bid.params.pid) {
       logWarn('Bad params, "pid" required.');
-      return false
+      return false;
     }
     const id = getIdParamsFromPID(bid.params.pid);
     if (!id || !(id.pid || (id.d && id.g && id.p))) {
       logWarn('Bad params, "pid" has to be either a number or a correctly assembled string.');
-      return false
+      return false;
     }
-    return true
+    return true;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const data = converter.toORTB({
@@ -223,7 +223,7 @@ export const spec = {
       url: URL_BID,
       data,
       bids: bidderRequest.bids
-    }]
+    }];
   },
 
   interpretResponse: function(serverResponse, request) {
@@ -248,7 +248,7 @@ export const spec = {
           }
           prebidResponses.push(createPrebidResponseBid(requestCurrentImp, responseBid, response, request.bids));
         }
-      })
+      });
     } catch (e) {
       r2b2Error('Error while interpreting response:', { msg: e.message });
     }
@@ -267,43 +267,43 @@ export const spec = {
       plString = btoa(JSON.stringify(internal.placementsToSync || []));
     } catch (e) {
       logWarn('User sync failed: ' + e.message);
-      return syncs
+      return syncs;
     }
 
     let url = URL_SYNC + `?p=${plString}`;
 
     if (gdprConsent) {
-      url += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`
+      url += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
     }
 
     if (uspConsent) {
-      url += `&us_privacy=${uspConsent}`
+      url += `&us_privacy=${uspConsent}`;
     }
 
     syncs.push({
       type: 'iframe',
       url: url
-    })
+    });
     return syncs;
   },
   onBidWon: function(bid) {
     const url = bid.ext?.events?.onBidWon;
     if (url) {
-      triggerEvent(url)
+      triggerEvent(url);
     }
   },
   onSetTargeting: function(bid) {
     const url = bid.ext?.events?.onSetTargeting;
     if (url) {
-      triggerEvent(url)
+      triggerEvent(url);
     }
   },
   onTimeout: function(bids) {
-    triggerEvent(URL_EVENT_ON_TIMEOUT, getIdsFromBids(bids))
+    triggerEvent(URL_EVENT_ON_TIMEOUT, getIdsFromBids(bids));
   },
   onBidderError: function(params) {
     const { bidderRequest } = params;
-    triggerEvent(URL_EVENT_ON_BIDDER_ERROR, getIdsFromBids(bidderRequest.bids))
+    triggerEvent(URL_EVENT_ON_BIDDER_ERROR, getIdsFromBids(bidderRequest.bids));
   }
-}
+};
 registerBidder(spec);

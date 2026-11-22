@@ -29,13 +29,6 @@ export const SYNC_IMAGE_ENDPOINT = 'https://sync.bfmio.com/syncb';
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'plcmt', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
-export const SUPPORTED_USER_IDS = [
-  { key: 'tdid', source: 'adserver.org', rtiPartner: 'TDID', queryParam: 'tdid' },
-  { key: 'idl_env', source: 'liveramp.com', rtiPartner: 'idl', queryParam: 'idl' },
-  { key: 'uid2.id', source: 'uidapi.com', rtiPartner: 'UID2', queryParam: 'uid2' },
-  { key: 'hadronId', source: 'audigent.com', atype: 1, queryParam: 'hadronid' }
-];
-
 let appId = '';
 
 export const spec = {
@@ -243,33 +236,6 @@ function isBannerBidValid(bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
 }
 
-function getEids(bid) {
-  return SUPPORTED_USER_IDS
-    .map(getUserId(bid))
-    .filter(x => x);
-}
-
-function getUserId(bid) {
-  return ({ key, source, rtiPartner, atype }) => {
-    const id = deepAccess(bid, `userId.${key}`);
-    return id ? formatEid(id, source, rtiPartner, atype) : null;
-  };
-}
-
-function formatEid(id, source, rtiPartner, atype) {
-  const uid = { id };
-  if (rtiPartner) {
-    uid.ext = { rtiPartner };
-  }
-  if (atype) {
-    uid.atype = atype;
-  }
-  return {
-    source,
-    uids: [uid]
-  };
-}
-
 function createVideoRequestData(bid, bidderRequest) {
   const sizes = getVideoSizes(bid);
   const firstSize = getFirstSize(sizes);
@@ -278,7 +244,6 @@ function createVideoRequestData(bid, bidderRequest) {
   const bidfloor = getVideoBidFloor(bid);
   const tagid = getVideoBidParam(bid, 'tagid');
   const topLocation = getTopWindowLocation(bidderRequest);
-  const eids = getEids(bid);
   const ortb2 = deepClone(bidderRequest.ortb2);
   const payload = {
     isPrebid: true,
@@ -334,10 +299,6 @@ function createVideoRequestData(bid, bidderRequest) {
   const schain = bid?.ortb2?.source?.ext?.schain;
   if (schain) {
     deepSetValue(payload, 'source.ext.schain', schain);
-  }
-
-  if (eids.length > 0) {
-    deepSetValue(payload, 'user.ext.eids', eids);
   }
 
   const connection = getConnectionInfo();
@@ -397,13 +358,6 @@ function createBannerRequestData(bids, bidderRequest) {
   if (schain) {
     payload.schain = schain;
   }
-
-  SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
-    const id = deepAccess(bids, `0.userId.${key}`)
-    if (id) {
-      payload[queryParam] = id;
-    }
-  });
 
   return payload;
 }

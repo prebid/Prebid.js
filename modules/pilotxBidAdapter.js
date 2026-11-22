@@ -8,7 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'pilotx';
-const ENDPOINT_URL = '//adn.pilotx.tv/hb'
+const ENDPOINT_URL = '//adn.pilotx.tv/hb';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
@@ -20,25 +20,25 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const sizesCheck = !!bid.sizes
-    const paramSizesCheck = !!bid.params.sizes
-    var sizeConfirmed = false
+    const sizesCheck = !!bid.sizes;
+    const paramSizesCheck = !!bid.params.sizes;
+    var sizeConfirmed = false;
     if (sizesCheck) {
       if (bid.sizes.length < 1) {
-        return false
+        return false;
       } else {
-        sizeConfirmed = true
+        sizeConfirmed = true;
       }
     }
     if (paramSizesCheck) {
       if (bid.params.sizes.length < 1 && !sizeConfirmed) {
-        return false
+        return false;
       } else {
-        sizeConfirmed = true
+        sizeConfirmed = true;
       }
     }
     if (!sizeConfirmed) {
-      return false
+      return false;
     }
     return !!(bid.params.placementId);
   },
@@ -53,36 +53,46 @@ export const spec = {
     const payloadItems = {};
     validBidRequests.forEach(bidRequest => {
       const sizes = [];
-      const placementId = this.setPlacementID(bidRequest.params.placementId)
-      payloadItems[placementId] = {}
+      const placementId = this.setPlacementID(bidRequest.params.placementId);
+      payloadItems[placementId] = {};
       if (bidRequest.sizes.length > 0) {
         if (Array.isArray(bidRequest.sizes[0])) {
           for (let i = 0; i < bidRequest.sizes.length; i++) {
-            sizes[i] = [(bidRequest.sizes[i])[0], (bidRequest.sizes[i])[1]]
+            sizes[i] = [(bidRequest.sizes[i])[0], (bidRequest.sizes[i])[1]];
           }
         } else {
-          sizes[0] = [bidRequest.sizes[0], bidRequest.sizes[1]]
+          sizes[0] = [bidRequest.sizes[0], bidRequest.sizes[1]];
         }
-        payloadItems[placementId]['sizes'] = sizes
+        payloadItems[placementId]['sizes'] = sizes;
       }
       if (bidRequest.mediaTypes != null) {
         for (const i in bidRequest.mediaTypes) {
           payloadItems[placementId][i] = {
             ...bidRequest.mediaTypes[i]
-          }
+          };
         }
       }
-      let consentTemp = ''
-      let consentRequiredTemp = false
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        consentTemp = bidderRequest.gdprConsent.consentString
+      let consentTemp = '';
+      let consentRequiredTemp = false;
+      if (bidderRequest?.gdprConsent) {
+        consentTemp = bidderRequest.gdprConsent.consentString;
         // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
-        consentRequiredTemp = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        consentRequiredTemp = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
       }
-
-      payloadItems[placementId]['gdprConsentString'] = consentTemp
-      payloadItems[placementId]['gdprConsentRequired'] = consentRequiredTemp
-      payloadItems[placementId]['bidId'] = bidRequest.bidId
+      let gppString = '';
+      let applicablesections = [];
+      if (bidderRequest?.gppConsent) {
+        gppString = bidderRequest.gppConsent.gppString;
+        applicablesections = bidderRequest.gppConsent.applicableSections;
+      }
+      payloadItems[placementId]['gdprConsentString'] = consentTemp;
+      payloadItems[placementId]['gdprConsentRequired'] = consentRequiredTemp;
+      payloadItems[placementId]['bidId'] = bidRequest.bidId;
+      payloadItems[placementId]['gppString'] = gppString;
+      payloadItems[placementId]['gppApplicableSections'] = applicablesections;
+      if (bidderRequest?.uspConsent) {
+        payloadItems[placementId]['uspConsent'] = bidderRequest.uspConsent;
+      }
     });
     const payload = payloadItems;
     const payloadString = JSON.stringify(payload);
@@ -145,9 +155,9 @@ export const spec = {
    */
   setPlacementID: function (placementId) {
     if (Array.isArray(placementId)) {
-      return placementId.join('#')
+      return placementId.join('#');
     }
-    return placementId
+    return placementId;
   },
-}
+};
 registerBidder(spec);

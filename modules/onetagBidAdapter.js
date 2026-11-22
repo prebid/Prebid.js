@@ -5,19 +5,21 @@ import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
-import { toOrtbNativeRequest } from '../src/native.js';
 import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.js';
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {BidRequest & { timeout: number }} TimedOutBid A bid request that exceeded the auction timeout.
  */
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
+const TIMEOUT_ENDPOINT = 'https://onetag-sys.com/ptimeout';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 const NATIVE_SUFFIX = 'Ad';
@@ -56,9 +58,8 @@ export function isValid(type, bid) {
   } else if (type === NATIVE) {
     if (typeof bid.mediaTypes.native !== 'object' || bid.mediaTypes.native === null) return false;
     if (!isNativeOrtbVersion(bid)) {
-      if (bid.nativeParams === undefined) return false;
-      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
-      return ortbConversion && ortbConversion.assets && Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 && ortbConversion.assets.every(asset => isValidAsset(asset));
+      const assets = bid.nativeOrtbRequest?.assets;
+      return Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset));
     }
 
     let isValidAssets = false;
@@ -84,11 +85,11 @@ export function isValid(type, bid) {
 }
 
 const isValidEventTracker = function (et) {
-  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
+  if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || et.methods.length <= 0) {
     return false;
   }
   return true;
-}
+};
 
 const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
@@ -98,7 +99,7 @@ const isValidAsset = function (asset) {
   if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) return false;
   if (asset.video && (!asset.video.mimes || !asset.video.minduration || !asset.video.maxduration || !asset.video.protocols)) return false;
   return true;
-}
+};
 
 /**
  * Make a server request from the list of BidRequests.
@@ -123,13 +124,19 @@ function buildRequests(validBidRequests, bidderRequest) {
     payload.gppConsent = {
       consentString: bidderRequest.gppConsent.gppString,
       applicableSections: bidderRequest.gppConsent.applicableSections
-    }
+    };
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
   if (bidderRequest && bidderRequest.ortb2) {
     payload.ortb2 = bidderRequest.ortb2;
+  }
+  const tmax = parseInt(bidderRequest && bidderRequest.timeout, 10);
+  if (!isNaN(tmax)) {
+    // Mirror core's ORTB converter: the auction timeout wins over any publisher-set
+    // `ortb2.tmax`. Shallow-copy first, `bidderRequest.ortb2` is shared with every bid.
+    payload.ortb2 = { ...payload.ortb2, tmax };
   }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
@@ -151,7 +158,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     method: 'POST',
     url: ENDPOINT,
     data: JSON.stringify(payload)
-  }
+  };
 }
 
 function interpretResponse(serverResponse, bidderRequest) {
@@ -171,13 +178,17 @@ function interpretResponse(serverResponse, bidderRequest) {
       width: bid.width,
       height: bid.height,
       creativeId: bid.creativeId,
-      dealId: bid.dealId == null ? bid.dealId : '',
+      dealId: bid.dealId != null ? bid.dealId : undefined,
       currency: bid.currency,
       netRevenue: bid.netRevenue || false,
       mediaType: (bid.mediaType === NATIVE + NATIVE_SUFFIX) ? NATIVE : bid.mediaType,
       meta: {
         mediaType: bid.mediaType,
-        advertiserDomains: bid.adomain
+        advertiserDomains: bid.adomain,
+        primaryCatId: bid.primaryCatId,
+        secondaryCatIds: bid.secondaryCatIds,
+        attr: bid.attr,
+        cattax: bid.cattax
       },
       ttl: bid.ttl || 300
     };
@@ -239,12 +250,10 @@ function createRenderer(bid, rendererOptions = {}) {
 
 function getFrameNesting() {
   let topmostFrame = window;
-  let parent = window.parent;
   try {
     while (topmostFrame !== topmostFrame.parent) {
-      parent = topmostFrame.parent;
       // eslint-disable-next-line no-unused-expressions
-      parent.location.href;
+      topmostFrame.parent.location.href;
       topmostFrame = topmostFrame.parent;
     }
   } catch (e) { }
@@ -286,12 +295,12 @@ function getPageInfo(bidderRequest) {
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
-    docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
+    docHeight: topmostFrame.document.body ? getWinDimensions(topmostFrame).document.body.scrollHeight : null,
     hLength: history.length,
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.6'
+      adapter: '1.1.9'
     }
   };
 }
@@ -301,7 +310,7 @@ function requestsToBids(bidRequests) {
     const videoObj = {};
     setGeneralInfo.call(videoObj, bidRequest);
     // Pass parameters
-    // Context: instream - outstream - adpod
+    // Context: instream - outstream
     videoObj['context'] = bidRequest.mediaTypes.video.context;
     // Sizes
     videoObj['playerSize'] = parseVideoSize(bidRequest);
@@ -327,10 +336,9 @@ function requestsToBids(bidRequests) {
     nativeObj['type'] = NATIVE + NATIVE_SUFFIX;
     nativeObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
     if (!isNativeOrtbVersion(bidRequest)) {
-      const ortbConversion = toOrtbNativeRequest(bidRequest.nativeParams);
       nativeObj['mediaTypeInfo'] = {};
       nativeObj['mediaTypeInfo'].adTemplate = bidRequest.nativeParams.adTemplate;
-      nativeObj['mediaTypeInfo'].ortb = ortbConversion;
+      nativeObj['mediaTypeInfo'].ortb = bidRequest.nativeOrtbRequest;
     }
     nativeObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, nativeObj['sizes']);
     return nativeObj;
@@ -404,7 +412,7 @@ function getTiming() {
 function parseVideoSize(bid) {
   const playerSize = bid.mediaTypes.video.playerSize;
   if (typeof playerSize !== 'undefined' && Array.isArray(playerSize) && playerSize.length > 0) {
-    return getSizes(playerSize)
+    return getSizes(playerSize);
   }
   return [];
 }
@@ -412,7 +420,7 @@ function parseVideoSize(bid) {
 function parseSizes(bid) {
   const ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
-    return getSizes(bid.mediaTypes.banner.sizes)
+    return getSizes(bid.mediaTypes.banner.sizes);
   }
   const isVideoBidRequest = hasTypeVideo(bid);
   if (!isVideoBidRequest && bid.sizes && Array.isArray(bid.sizes)) {
@@ -425,7 +433,7 @@ function getSizes(sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
-    ret.push({ width: size[0], height: size[1] })
+    ret.push({ width: size[0], height: size[1] });
   }
   return ret;
 }
@@ -499,6 +507,33 @@ export function isSchainValid(schain) {
   return isValid;
 }
 
+/**
+ * Notifies the OneTag server that one or more of our bids timed out.
+ * @param {Array<TimedOutBid>} timeoutData One entry per timed-out bid.
+ */
+function onTimeout(timeoutData) {
+  if (!Array.isArray(timeoutData) || timeoutData.length === 0) {
+    return;
+  }
+  const onetagTimeouts = timeoutData.filter(bid => bid && bid.bidder === BIDDER_CODE);
+  if (onetagTimeouts.length === 0) {
+    return;
+  }
+  dep.ajax(TIMEOUT_ENDPOINT, null, JSON.stringify(onetagTimeouts), {
+    method: 'POST',
+    contentType: 'text/plain',
+    keepalive: true,
+    withCredentials: false
+  });
+}
+
+// Container for the external dependencies used internally by the adapter.
+// Kept separate from `spec` (the interface exposed to Prebid) so these
+// dependencies can be stubbed in unit tests through a mutable reference.
+export const dep = {
+  ajax
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -506,8 +541,8 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs
-
+  getUserSyncs: getUserSyncs,
+  onTimeout: onTimeout
 };
 
 registerBidder(spec);

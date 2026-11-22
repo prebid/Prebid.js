@@ -6,4 +6,4 @@ describe('pbjs -> ortb addtlConsent', () => {
     setOrtbAdditionalConsent(req, { gdprConsent: { addtlConsent: 'tl' } });
     expect(req.user.ext.ConsentedProvidersSettings.consented_providers).to.eql('tl');
   });
-})
+});

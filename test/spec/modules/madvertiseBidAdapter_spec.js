@@ -119,7 +119,7 @@ describe('madvertise adapater', () => {
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).to.contain(`&gdpr=1`);
       expect(req[0].url).to.contain(`&consent[0][format]=iab`);
-      expect(req[0].url).to.contain(`&consent[0][value]=CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA`)
+      expect(req[0].url).to.contain(`&consent[0][value]=CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA`);
     });
 
     it('minimum request without gdpr consent', () => {
@@ -135,7 +135,7 @@ describe('madvertise adapater', () => {
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).not.to.contain(`&gdpr=1`);
       expect(req[0].url).not.to.contain(`&consent[0][format]=`);
-      expect(req[0].url).not.to.contain(`&consent[0][value]=`)
+      expect(req[0].url).not.to.contain(`&consent[0][value]=`);
     });
   });
 
