@@ -1,11 +1,12 @@
-import { deepSetValue, isStr, logWarn, replaceAuctionPrice } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { deepSetValue, formatQS, isStr, logWarn, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
+import { addEventTrackers } from '../libraries/pbsExtensions/processors/eventTrackers.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 
 /**
  * @typedef {import('./luponmediaBidAdapter.d.ts').LuponmediaBidderParams} LuponmediaBidderParams
@@ -82,8 +83,12 @@ export const converter = ortbConverter({
     }
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === VIDEO) {
-      // The VAST is in adm; nurl is a win notice, not a VAST URL.
+      // The VAST is in adm; nurl is a win notice, not a VAST URL. Its trackers and media URLs get the
+      // price in their ${AUCTION_PRICE} macro: the renderer plays the VAST as it is.
       delete bidResponse.vastUrl;
+      if (isStr(bidResponse.vastXml)) {
+        bidResponse.vastXml = replaceAuctionPrice(bidResponse.vastXml, bid.price);
+      }
       if (!hasOwnRenderer(context.bidRequest)) {
         bidResponse.renderer = outstreamRenderer(bidResponse);
       }
@@ -98,13 +103,19 @@ export const converter = ortbConverter({
         bidResponse.meta.billingAccount = bid.ext.imanego.account;
       }
     }
-    // The video and native nurl is not markup (video VAST is in adm, native assets too), so it serves
-    // as the win notice when there is no win event.
+    // Win and billing notices are event trackers, which core fires once: the win event (or, for video
+    // and native, whose nurl is not markup, the nurl) when the bid wins, the partner's burl when the ad
+    // is billable. Core sends tracker URLs as they are, so the price goes into their ${AUCTION_PRICE}
+    // macro here, also in the partner's own trackers (ext.eventtrackers): a notice it repeats there is
+    // then recognized by addEventTrackers and sent once.
+    const withPrice = (url) => (isStr(url) ? replaceAuctionPrice(url, bid.price) : undefined);
     const nurlIsNotice = bidResponse.mediaType === VIDEO || bidResponse.mediaType === NATIVE;
-    const winUrl = bid.ext?.prebid?.events?.win ?? (nurlIsNotice ? bid.nurl : undefined);
-    if (isStr(winUrl)) {
-      bidResponse.winUrl = winUrl;
-    }
+    bidResponse.eventtrackers = (bidResponse.eventtrackers ?? []).map((tracker) =>
+      isStr(tracker?.url) ? { ...tracker, url: withPrice(tracker.url) } : tracker);
+    addEventTrackers(bidResponse, {
+      burl: withPrice(bid.burl),
+      ext: { prebid: { events: { win: withPrice(bid.ext?.prebid?.events?.win ?? (nurlIsNotice ? bid.nurl : undefined)) } } },
+    });
     return bidResponse;
   },
 });
@@ -164,24 +175,13 @@ export const spec = {
     }
     hasSynced = true;
 
-    const params = [];
-    const add = (key, value) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.push(`${key}=${encodeURIComponent(value)}`);
+    const params = getUserSyncParams(gdprConsent, uspConsent, gppConsent);
+    Object.keys(params).forEach((key) => {
+      if (params[key] === undefined || params[key] === '') {
+        delete params[key];
       }
-    };
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        add('gdpr', gdprConsent.gdprApplies ? 1 : 0);
-      }
-      add('gdpr_consent', gdprConsent.consentString);
-    }
-    add('us_privacy', uspConsent);
-    if (gppConsent) {
-      add('gpp', gppConsent.gppString);
-      add('gpp_sid', (gppConsent.applicableSections || []).join(','));
-    }
-    const query = params.join('&');
+    });
+    const query = formatQS(params);
 
     const devSync = config.getConfig('luponmedia.devSyncEndpoint');
     const host = isStr(devSync) && LOCAL_ENDPOINT.test(devSync) ? devSync : SYNC_HOST;
@@ -196,27 +196,7 @@ export const spec = {
     }
     return syncs;
   },
-
-  onBidWon(bid) {
-    if (isStr(bid?.winUrl)) {
-      notify(bid.winUrl, bid);
-    }
-  },
-  // The partner's billing notice (bid.burl), when the ad is billable (rendered, or as the ad unit's
-  // deferred billing says). The impression event of our server is already in the creative, so it is
-  // not sent from here.
-  onBidBillable(bid) {
-    if (isStr(bid?.burl)) {
-      notify(bid.burl, bid);
-    }
-  },
 };
-
-// notify requests a win or billing notice with the clearing price in its ${AUCTION_PRICE} macro;
-// keepalive so it survives the page being left.
-function notify(url, bid) {
-  ajax(replaceAuctionPrice(url, bid.originalCpm ?? bid.cpm), null, undefined, { method: 'GET', keepalive: true });
-}
 
 // User sync runs once per page.
 let hasSynced = false;

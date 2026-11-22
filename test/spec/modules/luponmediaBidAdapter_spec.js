@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { resetUserSync, spec } from 'modules/luponmediaBidAdapter.js';
 import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
 
 describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
   function bidRequest(params, extra = {}) {
@@ -111,7 +110,7 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
   });
 
   describe('interpretResponse', function () {
-    it('returns bids as luponmedia with the seat in meta and the win url', function () {
+    it('returns bids as luponmedia with the seat in meta and the win event as tracker', function () {
       const bids = [bidRequest({ key: 'acme' })];
       const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
       const impId = req.data.imp[0].id;
@@ -143,7 +142,42 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].bidderCode).to.equal(undefined); // core assigns the adapter code (luponmedia)
       expect(result[0].meta.seat).to.equal('adf');
-      expect(result[0].winUrl).to.equal('https://api.imanego.com/event?t=win&b=b1');
+      expect(result[0].eventtrackers).to.deep.equal([{ method: 1, event: 500, url: 'https://api.imanego.com/event?t=win&b=b1' }]);
+    });
+
+    function respondOne(extra) {
+      const bids = [bidRequest({ key: 'acme' })];
+      const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+      const [bid] = spec.interpretResponse({
+        body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'adf', bid: [{ id: 'b1', impid: req.data.imp[0].id, price: 1.25, adm: '<div></div>', crid: 'c', w: 300, h: 250, mtype: 1, ...extra }] }] },
+      }, req);
+      return bid;
+    }
+
+    it('sends the burl as billing tracker and the win event as win tracker, with the price', function () {
+      const bid = respondOne({
+        burl: 'https://partner/bill?p=${AUCTION_PRICE}',
+        ext: { prebid: { events: { win: 'https://partner/win?p=${AUCTION_PRICE}' } } },
+      });
+      expect(bid.eventtrackers).to.deep.equal([
+        { method: 1, event: 1, url: 'https://partner/bill?p=1.25' },
+        { method: 1, event: 500, url: 'https://partner/win?p=1.25' },
+      ]);
+    });
+
+    it('sends a notice the partner repeats in ext.eventtrackers once', function () {
+      const bid = respondOne({
+        burl: 'https://partner/bill?p=${AUCTION_PRICE}',
+        ext: { eventtrackers: [{ method: 1, event: 1, url: 'https://partner/bill?p=${AUCTION_PRICE}' }, { method: 1, event: 1, url: 'https://other/imp' }] },
+      });
+      expect(bid.eventtrackers).to.deep.equal([
+        { method: 1, event: 1, url: 'https://partner/bill?p=1.25' },
+        { method: 1, event: 1, url: 'https://other/imp' },
+      ]);
+    });
+
+    it('adds no trackers without notices', function () {
+      expect(respondOne({}).eventtrackers).to.deep.equal([]);
     });
 
     it('marks bids on the publisher\'s own account in meta.billing', function () {
@@ -271,7 +305,15 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         expect(result[0].vastUrl).to.equal(undefined);
         expect(result[0].playerWidth).to.equal(640);
         expect(result[0].renderer.url).to.equal('https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js');
-        expect(result[0].winUrl).to.equal('https://partner/win'); // no win event: nurl is the win notice
+        expect(result[0].eventtrackers).to.deep.equal([{ method: 1, event: 500, url: 'https://partner/win' }]); // no win event: nurl is the win notice
+      });
+
+      it('puts the price into the ${AUCTION_PRICE} macro of the VAST', function () {
+        const bids = [bidRequest({ key: 'acme.outstream' }, { mediaTypes: outstream })];
+        const [req] = spec.buildRequests(bids, { ...bidderRequest, bids });
+        const adm = '<VAST version="3.0"><Impression>https://partner/imp?p=${AUCTION_PRICE}</Impression></VAST>';
+        const [bid] = respond(req, [{ id: 'v1', impid: req.data.imp[0].id, price: 3, adm, crid: 'c', mtype: 2 }]);
+        expect(bid.vastXml).to.equal('<VAST version="3.0"><Impression>https://partner/imp?p=3</Impression></VAST>');
       });
 
       it('plays the VAST in the ad unit div with the outstream player', function () {
@@ -360,7 +402,7 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
         const [bid] = spec.interpretResponse({
           body: { id: 'auction-1', cur: 'USD', seatbid: [{ seat: 'adf', bid: [{ id: 'n1', impid: req.data.imp[0].id, price: 1, adm, nurl: 'https://partner/win', crid: 'c', mtype: 4 }] }] },
         }, req);
-        expect(bid.winUrl).to.equal('https://partner/win');
+        expect(bid.eventtrackers).to.deep.equal([{ method: 1, event: 500, url: 'https://partner/win' }]);
       });
 
       it('strips prototype keys from the native response', function () {
@@ -405,7 +447,7 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
       );
       expect(syncs).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.imanego.com/sync?gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C6',
+        url: 'https://sync.imanego.com/sync?gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2,6',
       }]);
       expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.deep.equal([]);
     });
@@ -430,42 +472,6 @@ describe('luponmediaBidAdapter (LuponMedia S2S)', function () {
     it('allows a localhost sync endpoint for development only', function () {
       config.setConfig({ luponmedia: { devSyncEndpoint: 'http://localhost:8001' } });
       expect(spec.getUserSyncs({ iframeEnabled: true }, [])[0].url).to.equal('http://localhost:8001/sync');
-    });
-  });
-
-  describe('onBidWon', function () {
-    // ajax cannot be stubbed on the module namespace; the global request mock records the call.
-    it('fires the win event as a keepalive GET', function () {
-      const url = 'https://api.imanego.com/event?t=win&b=b1';
-      spec.onBidWon({ winUrl: url });
-      const wins = server.requests.filter((req) => req.url === url);
-      expect(wins).to.have.length(1);
-      expect(wins[0].method).to.equal('GET');
-      expect(wins[0].fetch.request.keepalive).to.equal(true);
-    });
-
-    it('does nothing without a win url', function () {
-      spec.onBidWon({});
-      expect(server.requests.length).to.equal(0);
-    });
-
-    it('puts the clearing price into the ${AUCTION_PRICE} macro', function () {
-      spec.onBidWon({ winUrl: 'https://partner/win?p=${AUCTION_PRICE}', originalCpm: 1.25, cpm: 1 });
-      expect(server.requests.map((req) => req.url)).to.deep.equal(['https://partner/win?p=1.25']);
-    });
-  });
-
-  describe('onBidBillable', function () {
-    it('fires the partner\'s burl with the price, as a keepalive GET', function () {
-      spec.onBidBillable({ burl: 'https://partner/bill?p=${AUCTION_PRICE}', cpm: 0.8 });
-      expect(server.requests).to.have.length(1);
-      expect(server.requests[0].url).to.equal('https://partner/bill?p=0.8');
-      expect(server.requests[0].fetch.request.keepalive).to.equal(true);
-    });
-
-    it('does nothing without a burl', function () {
-      spec.onBidBillable({ winUrl: 'https://api.imanego.com/event?t=win' });
-      expect(server.requests.length).to.equal(0);
     });
   });
 });
