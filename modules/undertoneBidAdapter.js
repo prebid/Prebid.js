@@ -82,6 +82,10 @@ export const spec = {
     if (schain) {
       commons.schain = schain;
     }
+    const eids = bidderRequest.ortb2?.user?.ext?.eids;
+    if (eids?.length) {
+      commons.uids = eids;
+    }
     const payload = {
       'x-ut-hb-params': [],
       'commons': commons
