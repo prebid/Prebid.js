@@ -82,8 +82,9 @@ export const spec = {
     if (schain) {
       commons.schain = schain;
     }
-    const eids = bidderRequest.ortb2?.user?.ext?.eids;
-    if (eids?.length) {
+    const user = bidderRequest.ortb2?.user;
+    const eids = [...(user?.ext?.eids ?? []), ...(user?.eids ?? [])];
+    if (eids.length) {
       commons.uids = eids;
     }
     const payload = {

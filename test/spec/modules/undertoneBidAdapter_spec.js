@@ -492,8 +492,21 @@ describe('Undertone Adapter', () => {
       const bidCommons = JSON.parse(request.data)['commons'];
       expect(bidCommons.uids).to.deep.equal(eids);
     });
+    it('should send ortb 2.6 user.eids as uids', function () {
+      const eids = [{ source: '51d.es', uids: [{ id: '51d-1', atype: 1 }] }];
+      const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2: { user: { eids } } });
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons.uids).to.deep.equal(eids);
+    });
+    it('should send eids from both user.ext.eids and user.eids, ext first', function () {
+      const extEids = [{ source: 'pubcid.org', uids: [{ id: 'pubcid-1', atype: 1 }] }];
+      const eids = [{ source: '51d.es', uids: [{ id: '51d-1', atype: 1 }] }];
+      const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2: { user: { eids, ext: { eids: extEids } } } });
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons.uids).to.deep.equal([...extEids, ...eids]);
+    });
     it('should not send uids when there are no eids', function () {
-      [undefined, { user: { ext: { eids: [] } } }].forEach(ortb2 => {
+      [undefined, { user: { ext: { eids: [] } } }, { user: { eids: [] } }].forEach(ortb2 => {
         const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2 });
         const bidCommons = JSON.parse(request.data)['commons'];
         expect(bidCommons).to.not.have.property('uids');
