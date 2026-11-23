@@ -821,6 +821,79 @@ describe('Epom Ad Server adapter', function () {
     });
   });
 
+  describe('priority bids', function () {
+    async function buildWith(extra) {
+      const bids = [bannerBid()];
+      const bidderRequest = await addFPDToBidderRequest({ ...bidderRequestFor(bids), ...extra });
+      return spec.buildRequests(bids, bidderRequest)[0];
+    }
+
+    it('signals only this bidder when core grants priority trust', async function () {
+      const ortb2 = { ext: { prebid: { custom: 'kept', as: { ap: true, apb: ['another'] } } } };
+      const request = await buildWith({ ortb2, allowPriorityBids: true });
+      expect(request.data.ext.prebid).to.deep.equal({ custom: 'kept', as: { ap: true, apb: ['epom_as'] } });
+    });
+
+    it('signals the alias the publisher trusted', async function () {
+      const request = await buildWith({ bidderCode: 'epom_dailynews', allowPriorityBids: true });
+      expect(request.data.ext.prebid.as).to.deep.equal({ ap: true, apb: ['epom_dailynews'] });
+    });
+
+    [undefined, false, 'true', 1, null].forEach((allowPriorityBids) => {
+      it(`does not let first-party data grant trust when core says ${allowPriorityBids}`, async function () {
+        const ortb2 = { ext: { prebid: { custom: 'kept', as: { ap: true, apb: ['epom_as'] } } } };
+        const request = await buildWith({ ortb2, allowPriorityBids });
+        expect(request.data.ext.prebid).to.deep.equal({ custom: 'kept' });
+      });
+    });
+
+    it('adds no extension to an ordinary request', async function () {
+      const request = await buildWith({});
+      expect(request.data.ext?.prebid?.as).to.equal(undefined);
+    });
+
+    it('reads the campaign tier into meta.deal', async function () {
+      const request = await buildWith({ allowPriorityBids: true });
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{
+            bid: [{
+              id: 's1',
+              impid: 'bid-1',
+              price: 2,
+              adm: '<div>ad</div>',
+              crid: 'c1',
+              w: 300,
+              h: 250,
+              mtype: 1,
+              dealid: 'epom-direct',
+              ext: { prebid: { deal: { type: 1, priority: 4 } } },
+            }],
+          }],
+        },
+      };
+      const [bid] = spec.interpretResponse(response, request);
+      expect(bid.dealId).to.equal('epom-direct');
+      expect(bid.meta.deal).to.deep.equal({ type: 1, priority: 4 });
+      expect(bid.cpm).to.equal(2);
+    });
+
+    it('carries no deal metadata on a bid without a deal id', async function () {
+      const request = await buildWith({ allowPriorityBids: true });
+      const response = {
+        body: {
+          id: request.data.id,
+          cur: 'USD',
+          seatbid: [{ bid: [{ id: 's1', impid: 'bid-1', price: 2, adm: '<div>ad</div>', crid: 'c1', w: 300, h: 250, mtype: 1 }] }],
+        },
+      };
+      const [bid] = spec.interpretResponse(response, request);
+      expect(bid.meta?.deal).to.equal(undefined);
+    });
+  });
+
   describe('getUserSyncs', function () {
     it('registers no user syncs', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [])).to.deep.equal([]);
