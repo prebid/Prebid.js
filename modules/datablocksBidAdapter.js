@@ -13,10 +13,13 @@ import { coppaDataHandler } from '../src/consentHandler.js';
 
 export const storage = getStorageManager({ bidderCode: 'datablocks' });
 
+const ACP_ID = 3172; // Google Additional Consent provider ID
+
 // DEFINE THE PREBID BIDDER SPEC
 export const spec = {
   supportedMediaTypes: [BANNER, NATIVE],
   code: 'datablocks',
+  acpId: ACP_ID,
 
   // DATABLOCKS SCOPED OBJECT
   db_obj: { metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0 },

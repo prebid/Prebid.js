@@ -17,7 +17,7 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook, ignoreCallbackArg } from './hook.js';
-import { AUDIO, VIDEO } from './mediaTypes.js';
+import { AUDIO, MediaType, VIDEO } from './mediaTypes.js';
 import { auctionManager } from './auctionManager.js';
 import { bidderSettings } from './bidderSettings.js';
 import * as events from './events.js';
@@ -32,14 +32,14 @@ import { getEffectiveMinBidCacheTTL } from './bidTTL.js';
 import type { Bid, BidResponse } from "./bidfactory.ts";
 import type { AdUnitCode, BidderCode, Identifier, ORTBFragments } from './types/common.d.ts';
 import type { TargetingMap } from "./targeting.ts";
-import type { AdUnit, AdUnitDefinition, SafeRendererConfig } from "./adUnits.ts";
-import type { MediaType } from "./mediaTypes.ts";
+import type { AdUnit, AdUnitDefinition } from "./adUnits.ts";
 import type { VideoContext } from "./video.ts";
 import { isActivityAllowed } from './activities/rules.js';
 import { ACTIVITY_ADD_BID_RESPONSE } from './activities/activities.js';
 import { MODULE_TYPE_BIDDER } from './activities/modules.ts';
 import { wrapInBids } from "./utils/wrapsInBids.ts";
 import { adjustDesirability, getPriority, isCpmEligible, isHouseBid } from './utils/desirability.ts';
+import { getRendererDef, isRendererAllowed, type RendererType } from "./utils/renderers.ts";
 
 const { syncUsers } = userSync;
 
@@ -140,6 +140,24 @@ export interface AuctionOptionsConfig {
    * When true, prevent bids from being rendered if TTL is reached. Default is false.
    */
   suppressExpiredRender?: boolean;
+  /**
+   * Called when a bid that is about to be rendered has expired; it may return (a promise to) another bid to render
+   * in its place, for example from a fresh auction. This is useful for slots that cannot be refreshed in the ad server,
+   * such as interstitials. If it returns nothing, an expired bid, a bid that already won or was rendered, a bid
+   * with `deferRendering`, or a bid for a different ad unit or of a different media type, the expired bid is handled as usual
+   * (see `suppressExpiredRender`).
+   *
+   * It is called at most once for each expired bid. From then on, everything the creative sends under the expired bid's
+   * ad ID (native asset requests and trackers, resize requests, render events), as well as `triggerBilling`, applies to the replacement.
+   *
+   * The returned bid should not be used anywhere else: if two expired bids are being rendered at the same time,
+   * returning the same bid for both may render it twice.
+   *
+   * Note that the ad server's targeting cannot be updated at this point, so it will still reflect the expired bid.
+   * Returning a promise delays rendering until it resolves; with `legacyRender`, which writes the creative using
+   * `document.write`, return the replacement synchronously instead.
+   */
+  replaceExpiredBid?: (expiredBid: Bid) => Bid | null | undefined | PromiseLike<Bid | null | undefined>;
 
   /**
    * If true, use legacy rendering logic.
@@ -286,16 +304,17 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
     } else {
+      _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
       events.emit(EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
-      _timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        _timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids);
         if (_timedOutRequests.length) {
           events.emit(EVENTS.BID_TIMEOUT, _timedOutRequests);
         }
+      } else {
+        _timedOutRequests = [];
       }
 
       _auctionStatus = AUCTION_COMPLETED;
@@ -357,6 +376,8 @@ export function newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, 
 
     if (bidRequests.length < 1) {
       logWarn('No valid bid requests returned for auction');
+      // No adapter dispatch will run to resolve this for an empty auction.
+      requestsDone.resolve();
       auctionDone();
     } else {
       addBidderRequests.call({
@@ -570,17 +591,17 @@ export function auctionCallbacks(auctionDone, auctionInstance, { index = auction
 
   function handleBidResponse(adUnitCode: string, bid: Partial<Bid>, handler) {
     bidResponseMap[bid.requestId] = true;
-    addCommonResponseProperties(bid, adUnitCode);
+    addCommonResponseProperties(bid, adUnitCode, { index });
     outstandingBidsAdded++;
     return handler(afterBidAdded);
   }
 
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
-      const bidResponse = getPreparedBidForAuction(bid);
+      const bidResponse = getPreparedBidForAuction(bid, { index });
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if ((FEATURES.VIDEO && bidResponse.mediaType === VIDEO) || (FEATURES.AUDIO && bidResponse.mediaType === AUDIO)) {
-        tryAddVideoAudioBid(auctionInstance, bidResponse, done);
+        tryAddVideoAudioBid(auctionInstance, bidResponse, done, { index });
       } else {
         if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
@@ -782,6 +803,18 @@ function addCommonResponseProperties(bidResponse: Partial<Bid>, adUnitCode: stri
   }
 }
 
+function installRenderer<T extends RendererType>(type: T, bid: Partial<Bid>, adUnit: AdUnit, getPubRenderer: () => Bid[T]) {
+  // bids can get here outside of their bidder's context (e.g. after the currency module defers them)
+  if (isRendererAllowed(type, bid.bidderCode, bid.mediaType, adUnit, bid)) {
+    const pubRenderer = getPubRenderer();
+    if (pubRenderer) {
+      bid[type] = pubRenderer;
+    }
+  } else {
+    bid[type] = null;
+  }
+}
+
 /**
  * Add additional bid response properties that are universal for all _accepted_ bids.
  */
@@ -804,30 +837,20 @@ export function getPreparedBidForAuction(bid: Partial<Bid>, { index = auctionMan
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  const mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
-  const mediaTypeSafeRenderer = bidMediaType && bidMediaType.safeRenderer;
-
-  const renderer = [mediaTypeRenderer, bidRequest?.renderer, adUnit?.renderer]
-    .find(candidate => candidate?.render && !(candidate.backupOnly === true && bid.renderer));
-
-  const safeRenderer: SafeRendererConfig | undefined = [mediaTypeSafeRenderer, bidRequest?.safeRenderer, adUnit?.safeRenderer]
-    .find(candidate => candidate?.url && !(candidate.backupOnly === true && bid.safeRenderer));
-
-  if (safeRenderer != null) {
-    bid.safeRenderer = safeRenderer;
-  }
-
-  const allowTopWindowRenderers = config.getConfig('allowTopWindowRenderers') ?? true;
-
-  if (allowTopWindowRenderers) {
-    if (renderer) {
-      // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
-      bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options, renderNow: renderer.url == null, requiresVastUrl: renderer.requiresVastUrl });// rename options to config, to make it consistent?
-      bid.renderer.setRender(renderer.render);
+  installRenderer('safeRenderer', bid, adUnit, () => getRendererDef('safeRenderer', bid.safeRenderer == null, bidRequest, bidMediaType, adUnit));
+  installRenderer('renderer', bid, adUnit, () => {
+    const renderDef = getRendererDef('renderer', bid.renderer == null, bidRequest, bidMediaType, adUnit);
+    if (renderDef) {
+      const renderer = Renderer.install({
+        url: renderDef.url,
+        config: (renderDef as any).options,
+        renderNow: renderDef.url == null,
+        requiresVastUrl: renderDef.requiresVastUrl
+      });
+      renderer.setRender(renderDef.render);
+      return renderer;
     }
-  } else {
-    bid.renderer = null;
-  }
+  });
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, mediaTypes, config.getConfig('mediaTypePriceGranularity'));
@@ -1119,6 +1142,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
         value = value(custBidObj, bidReq);
       } catch (e) {
         logError('bidmanager', 'ERROR', e);
+        return;
       }
     }
 

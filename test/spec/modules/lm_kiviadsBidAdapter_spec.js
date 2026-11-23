@@ -86,7 +86,7 @@ describe('lm_kiviadsBidAdapter', () => {
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT + '/bid');
-      expect(request.options).to.have.property('contentType').and.to.equal('application/json');
+      expect(request.options?.contentType).to.be.undefined;
       expect(request).to.have.property('data');
     });
 

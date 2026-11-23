@@ -86,3 +86,10 @@ describe('otmBidAdapter', function () {
     expect(bid.ad).to.equal('<html><body>test html</body></html>');
   });
 });
+
+describe('otmBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3099);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

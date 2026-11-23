@@ -4,12 +4,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adriver';
+const ACP_ID = 46; // Google Additional Consent provider ID
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -97,7 +99,7 @@ export const spec = {
       });
     });
 
-    const adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
+    const adrcidCookie = storage.getDataFromLocalStorage('adrcid');
     if (adrcidCookie) {
       payload.user.buyerid = adrcidCookie;
     }

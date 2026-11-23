@@ -1209,3 +1209,13 @@ describe('getEffectiveConnectionType', () => {
     expect(result).to.equal('unsupported');
   });
 });
+
+describe('bliinkBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(658);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'bk')).to.have.property('gvlid', 658);
+  });
+});

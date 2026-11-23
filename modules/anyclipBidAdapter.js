@@ -8,6 +8,7 @@ import {
 import { getBidIdParameter, isArray, logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'anyclip';
+const GVLID = 1400;
 const ENDPOINT = 'https://prebid.anyclip.com';
 
 function isBidRequestValid(bid) {
@@ -31,7 +32,8 @@ function isBidRequestValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['anyclip'],
+  gvlid: GVLID,
+  aliases: [{ code: 'anyclip', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) => {

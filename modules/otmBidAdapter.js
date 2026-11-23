@@ -13,12 +13,14 @@ import {
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'otm';
+const ACP_ID = 3099; // Google Additional Consent provider ID
 const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';
 const DEFAULT_CURRENCY = 'RUB';
 
 export const spec = {
 
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   url: OTM_BID_URL,
   supportedMediaTypes: [BANNER],
 

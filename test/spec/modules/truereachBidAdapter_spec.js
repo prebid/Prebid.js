@@ -109,3 +109,10 @@ describe('truereachBidAdapterTests', function () {
     });
   });
 });
+
+describe('truereachBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3196);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

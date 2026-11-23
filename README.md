@@ -81,6 +81,52 @@ Prebid's type definitions require TypeScript 5.7 or later, and the following `ts
 Installing `@types/google-publisher-tag` improves type checking where Prebid's types refer to GPT ad
 slots, such as the argument to `customGptSlotMatching`.
 
+### Type checking bidder and provider parameters
+
+Bid adapters, user ID modules and RTD modules that declare their parameter types have them checked when you name
+them. When you pass configuration to `setConfig`, `mergeConfig`, `setBidderConfig`, `mergeBidderConfig`,
+`addAdUnits` or `requestBids` directly, Prebid's types infer the names from the call:
+
+```typescript
+pbjs.setConfig({
+  userSync: {
+    // error: `create` must be a boolean
+    userIds: [{name: 'sharedId', params: {create: 'yes'}}]
+  }
+});
+pbjs.addAdUnits({
+  code: 'slot',
+  // error: `placementId` must be a number or a string
+  bids: [{bidder: 'appnexus', params: {placementId: true}}]
+});
+```
+
+Names that don't declare types (custom bidders, aliases, providers without typed parameters) accept any parameters.
+
+If you build configuration or ad units in a variable first, TypeScript widens their names to `string` before Prebid
+sees them, and their parameters are not checked. To keep the checks, name the providers or bidders in the variable's
+type, with `satisfies` or a type annotation:
+
+```typescript
+import type {AdUnitDefinition, Config} from 'prebid.js/types.d.ts';
+
+const config = {
+  userSync: {userIds: [{name: 'sharedId', params: {create: true}}]},
+  realTimeData: {dataProviders: [{name: 'geolocation'}]}
+} satisfies Partial<Config<'sharedId' | 'geolocation'>>;
+
+const adUnits = [
+  {code: 'slot', bids: [{bidder: 'appnexus', params: {placementId: 123}}]}
+] satisfies AdUnitDefinition<'appnexus'>[];
+
+pbjs.setConfig(config);
+pbjs.addAdUnits(adUnits);
+```
+
+A name that isn't listed in the type is rejected, so list custom ones too (`Config<'sharedId' | 'myCustomId'>`).
+Without names (`satisfies Partial<Config>`, `AdUnitDefinition[]`), parameters are not checked. `as const` doesn't
+work, because Prebid's types expect mutable arrays.
+
 <a id="customize-options"></a>
 
 ### Customize build options

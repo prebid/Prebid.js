@@ -249,7 +249,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       ext: {}
     },
     user: {
-      buyeruid: getUserId(bidRequest)
+      buyeruid: getUserId()
     }
   };
   fulfillInventoryInfo(payload, bidRequest, bidderRequest);
@@ -675,29 +675,11 @@ function mapNativeImage(image, type) {
 }
 
 /**
- * Get user id from bid request. if no user id module used, return a new uuid.
+ * Get user id for the request. Prebid 10+ does not set `bidRequest.userId`, so this is always a new uuid.
  *
- * @param {BidRequest} bidRequest
  * @returns {String} userId
  */
-function getUserId(bidRequest) {
-  const operaId = deepAccess(bidRequest, 'userId.operaId');
-  if (operaId) {
-    return operaId;
-  }
-
-  const sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
-  if (sharedId) {
-    return sharedId;
-  }
-
-  for (const idModule of ['pubcid', 'tdid']) {
-    const userId = deepAccess(bidRequest, `userId.${idModule}`);
-    if (userId) {
-      return userId;
-    }
-  }
-
+function getUserId() {
   return generateUUID();
 }
 
