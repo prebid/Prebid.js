@@ -144,6 +144,7 @@ const MARKUP_SIGNALS: [string, RegExp][] = [
 let current: ResolvedConfig | null = null;
 const reported = new WeakMap<object, Set<UnauthorizedVideoStage>>();
 const observed = new WeakSet<object>();
+const activeWatches = new Set<() => void>();
 let getBattrLists: (bid: Bid) => number[][] = () => [];
 
 function rate(value, defaultValue) {
@@ -183,6 +184,8 @@ export function configureUnauthorizedVideo(cfg: UnauthorizedVideoConfig | undefi
     events.on(EVENTS.AD_RENDER_SUCCEEDED, onRenderSucceeded);
   } else if (!observing && wasObserving) {
     events.off(EVENTS.AD_RENDER_SUCCEEDED, onRenderSucceeded);
+    activeWatches.forEach(stop => stop());
+    activeWatches.clear();
   }
 }
 
@@ -243,8 +246,10 @@ export function checkBidResponse(adUnitCode: string, bid: Bid, battrLists: numbe
   if (reason == null || !sampled(current.sampleRate)) return false;
   const signals = scanMarkup(bid.ad, current.patterns);
   if (signals.length === 0) return false;
+  // a listener may change the config
+  const { reject } = current;
   report(bid, adUnitCode, 'bidResponse', reason, signals);
-  return current.reject;
+  return reject;
 }
 
 function frameDocument(frame: HTMLIFrameElement): Document | null {
@@ -259,7 +264,7 @@ function frameDocument(frame: HTMLIFrameElement): Document | null {
  * Watch `doc`, and the same-origin frames inside it, for a `<video>` element for `duration` ms.
  * Calls `onVideo` at most once; all observers and listeners are removed on detection or timeout.
  */
-export function watchForVideo(doc: Document, duration: number, onVideo: () => void) {
+export function watchForVideo(doc: Document, duration: number, onVideo: () => void, onDone?: () => void) {
   const cleanups: (() => void)[] = [];
   const watchedDocs = new WeakSet<Document>();
   let done = false;
@@ -268,6 +273,7 @@ export function watchForVideo(doc: Document, duration: number, onVideo: () => vo
     if (done) return;
     done = true;
     cleanups.forEach(fn => fn());
+    onDone?.();
     if (found) onVideo();
   }
 
@@ -337,9 +343,18 @@ function onRenderSucceeded({ doc, bid }: { doc: Document | null; bid: Bid }) {
   if (reason == null || !sampled(cfg.observeSampleRate)) return;
   observed.add(bid);
   // attach after the event, off the rendering path
-  setTimeout(() => {
-    watchForVideo(doc, cfg.observeDuration, () => {
+  const timer = setTimeout(() => {
+    activeWatches.delete(cancelPending);
+    let finished = false;
+    let stop: (() => void) | undefined;
+    stop = watchForVideo(doc, cfg.observeDuration, () => {
       report(bid, bid.adUnitCode, 'render', reason, ['videoElement']);
+    }, () => {
+      finished = true;
+      if (stop) activeWatches.delete(stop);
     });
+    if (!finished) activeWatches.add(stop);
   }, 0);
+  const cancelPending = () => clearTimeout(timer);
+  activeWatches.add(cancelPending);
 }

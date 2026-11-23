@@ -707,6 +707,14 @@ describe('bidResponseFilter', () => {
         sinon.assert.notCalled(next);
       });
 
+      it('keeps its decision when a listener changes the config', () => {
+        setFilterConfig({ enabled: true, reject: true });
+        onUnauthorized.callsFake(() => setFilterConfig({ enabled: false }));
+        runHook(makeBid());
+        sinon.assert.calledWith(reject, BID_UNAUTHORIZED_VIDEO_REJECTION_REASON);
+        sinon.assert.notCalled(next);
+      });
+
       it('does not reject display markup when reject is true', () => {
         setFilterConfig({ enabled: true, reject: true });
         runHook(makeBid({ ad: '<div class="video-promo"><img src="https://cdn.example/video.jpg" alt="video"></div>' }));
@@ -1022,6 +1030,27 @@ describe('bidResponseFilter', () => {
         const doc = makeFrame().contentDocument;
         addVideo(doc);
         emitRender(doc, makeBid());
+        await delay(20);
+        sinon.assert.notCalled(onUnauthorized);
+      });
+
+      it('cancels a pending check when observation is turned off', async () => {
+        setFilterConfig({ enabled: true, observe: { sampleRate: 1 } });
+        const doc = makeFrame().contentDocument;
+        addVideo(doc);
+        emitRender(doc, makeBid());
+        setFilterConfig({ enabled: true });
+        await delay(20);
+        sinon.assert.notCalled(onUnauthorized);
+      });
+
+      it('stops active observers when the module is reset', async () => {
+        setFilterConfig({ enabled: true, observe: { sampleRate: 1 } });
+        const doc = makeFrame().contentDocument;
+        emitRender(doc, makeBid());
+        await delay(20);
+        reset();
+        addVideo(doc);
         await delay(20);
         sinon.assert.notCalled(onUnauthorized);
       });

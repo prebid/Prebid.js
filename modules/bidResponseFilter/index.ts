@@ -3,6 +3,7 @@ import { config } from '../../src/config.js';
 import { getHook } from '../../src/hook.js';
 import {
   BID_UNAUTHORIZED_VIDEO_REJECTION_REASON,
+  type BidResponseFilterConfig,
   checkBidResponse,
   configureUnauthorizedVideo,
   resetUnauthorizedVideo
@@ -14,8 +15,13 @@ export const BID_ADV_DOMAINS_REJECTION_REASON = 'Adv domain is not allowed';
 export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
 export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
 export { BID_UNAUTHORIZED_VIDEO_REJECTION_REASON };
+export type {
+  BidResponseFilterConfig,
+  UnauthorizedVideoConfig,
+  UnauthorizedVideoData
+} from './unauthorizedVideo.js';
 
-let moduleConfig;
+let moduleConfig: BidResponseFilterConfig;
 let enabled = false;
 
 function isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest) {
