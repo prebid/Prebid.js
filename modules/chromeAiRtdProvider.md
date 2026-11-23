@@ -6,18 +6,18 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that adds 
 
 - detect the page language with the [Language Detector API](https://developer.chrome.com/docs/ai/language-detection), written to `site.content.language`;
 - extract keywords with the [Prompt API](https://github.com/webmachinelearning/prompt-api) (`LanguageModel`), written to `site.content.keywords`;
-- classify the page into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Prompt API, written to `site.pagecat`. With Content Taxonomy 2.2, the categories also reach Google Ad Manager as Publisher Provided Signals (`IAB_CONTENT_2_2`) through the `gptPreAuction` module, with no extra setup beyond GPT targeting;
-- answer publisher-defined questions about the page with the [Decisions API](https://github.com/explainers-by-googlers/decisions-api) (`DecisionModel`), falling back to the Prompt API, written to `site.content.data`.
+- classify article pages into tier 1 categories of IAB Content Taxonomy 2.2 or Content Category Taxonomy 1.0 with the Decisions API or the Prompt API, written to `site.pagecat`. With Content Taxonomy 2.2, the categories also reach Google Ad Manager as Publisher Provided Signals (`IAB_CONTENT_2_2`) through the `gptPreAuction` module, with no extra setup beyond GPT targeting;
+- answer publisher-defined questions about the page with the [Decisions API](https://github.com/explainers-by-googlers/decisions-api) (`DecisionModel`) or the Prompt API, written to `site.content.data`.
 
 ## API availability
 
 | API | Used for | Status |
 |-----|----------|--------|
 | Language Detector | `languageDetector` | Chrome 138+ stable |
-| Prompt API (`LanguageModel`) | `keywords`, `categories`, `decisions` fallback | Chrome 148+ stable on the web |
-| Decisions (`DecisionModel`) | `decisions` | Experimental explainer; its dev trial prototype is behind a flag |
+| Prompt API (`LanguageModel`) | `keywords`, `categories`, `decisions` | Chrome 148+ stable on the web |
+| Decisions (`DecisionModel`) | `categories`, `decisions` | Experimental explainer; its dev trial prototype is behind a flag |
 
-Every API is feature detected: when one is missing or `unavailable`, the module uses the next one in line or skips that feature. Other browsers get no data from this module.
+Every API is feature detected: when one is missing or `unavailable`, the module uses another one or skips that feature. See [Model selection](#model-selection) for how it picks between the Decisions API and the Prompt API. Other browsers get no data from this module.
 
 Only language detection is on by default. Every other feature, and every fallback that can download a model, is opt-in.
 
@@ -59,8 +59,7 @@ pbjs.setConfig({
         },
         categories: {
           enabled: true,
-          minScore: 0.5,
-          maxCategories: 3,
+          maxCategories: 1,
           taxonomy: 6
         },
         decisions: {
@@ -99,28 +98,53 @@ pbjs.setConfig({
 | `keywords.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
 | `keywords.ortb2Path` | String | Where to write the keywords: a comma-separated string, or an array when the path ends in `kwarray` | `'site.content.keywords'` |
 | `keywords.cacheInLocalStorage` | Boolean | Cache the keywords in localStorage | `true` |
-| `categories.enabled` | Boolean | Classify the page into IAB tier 1 categories with the Prompt API | `false` |
+| `categories.enabled` | Boolean | Classify the page into IAB tier 1 categories | `false` |
 | `categories.taxonomy` | Number | AdCOM `cattax` of the categories: `6` (Content Taxonomy 2.2) or `1` (Content Category Taxonomy 1.0) | `6` |
-| `categories.minScore` | Number | Minimum confidence the model gives a category (0 - 1) | `0.5` |
-| `categories.maxCategories` | Number | Maximum number of categories | `3` |
+| `categories.articlesOnly` | Boolean | Only classify pages with a JSON-LD `Article`, `NewsArticle` or `BlogPosting`, see [Categories](#categories-categories) | `true` |
+| `categories.maxCategories` | Number | Maximum number of categories | `1` |
 | `categories.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
 | `categories.gamPps` | Boolean | With taxonomy 6, also send the categories to Google Ad Manager as Publisher Provided Signals, see [Google Ad Manager](#google-ad-manager-publisher-provided-signals) | `true` |
 | `categories.cacheInLocalStorage` | Boolean | Cache the categories in localStorage | `true` |
 | `decisions.enabled` | Boolean | Answer `decisions.questions` about the page | `false` |
 | `decisions.questions` | Array | Questions in the Decisions API schema shape, see below | `[]` |
 | `decisions.minConfidence` | Number | Drop Decisions API answers with a lower confidence (0 - 1) | `0` |
-| `decisions.promptFallback` | Boolean | Use the Prompt API when the Decisions API is unavailable | `true` |
+| `decisions.promptFallback` | Boolean | Also allow the Prompt API, see [Model selection](#model-selection) | `true` |
 | `decisions.cacheInLocalStorage` | Boolean | Cache the answers in localStorage | `true` |
 
 ## How It Works
 
-On `init`, each enabled feature first looks for a result cached in localStorage for the current page URL. Otherwise it reads the page text (truncated to 1000 characters to stay within the APIs' input quotas), checks which API is available and runs it. The auction never waits for this: `getBidRequestData` adds whatever results are ready, and results that arrive later are used by later auctions and page views.
+On `init`, each enabled feature first looks for a result cached in localStorage for the current page URL. Otherwise it waits for `DOMContentLoaded` if the page is still loading, checks which API is available, reads the page text and runs the API. The auction never waits for this: `getBidRequestData` adds whatever results are ready, and results that arrive later are used by later auctions and page views.
 
 Values the publisher already set in the auction's first party data are never overwritten.
+
+### Page text
+
+Keywords, categories and publisher questions get the same short text, read synchronously from the DOM, one labelled line each, skipping empty ones:
+
+- `Title`: `document.title`;
+- `Description`: the `description` meta tag;
+- `Section and tags`: `article:section`, JSON-LD `articleSection` and `BreadcrumbList` names, `article:tag` and the `keywords` meta tag;
+- `URL path`: the URL path segments made only of words, such as `electric-cars`;
+- `Content`: the first 500 characters of the main content.
+
+The main content is the JSON-LD `articleBody` if there is one, else the text of the first `article`, `main` or `[role=main]` element with at least 200 characters, else the body. Script, style, `noscript`, `template`, SVG and iframe contents and elements marked `hidden` or `aria-hidden="true"` are left out. Language detection gets the first 1000 characters of the main content, without the other lines.
 
 ### Model downloads and user activation
 
 Chrome only downloads a model when the page has transient user activation. When the API a feature would use reports `downloadable` or `downloading` and the user hasn't interacted with the page, the feature waits for the next click, key press or tap and tries again. Language detection keeps its original behaviour and doesn't wait.
+
+### Model selection
+
+Categories and publisher questions can use either the Decisions API (`DecisionModel`, a model of about 163 MB) or the Prompt API (`LanguageModel`, Gemini Nano, about 3.5 GB). The models are shared across sites, so the module checks the availability of both and picks:
+
+1. the one that is already `available`, preferring the Decisions API if both are;
+2. otherwise the one that is already `downloading`;
+3. otherwise the Decisions API if it is `downloadable`, so the smaller download is started;
+4. otherwise the Prompt API, if it is `downloadable`.
+
+For publisher questions, the Prompt API is only considered while `decisions.promptFallback` is on. Keywords only use the Prompt API.
+
+The Decisions API and the Prompt API classified categories about equally well in testing. Publisher questions haven't been compared on the two APIs.
 
 ### Language (`languageDetector`)
 
@@ -134,7 +158,14 @@ The module no longer uses the Summarizer API: it runs on the same on-device mode
 
 ### Categories (`categories`)
 
-The Prompt API classifies the page into tier 1 categories of the configured taxonomy, each with a confidence. A JSON schema `responseConstraint` limits its answers to the bundled IDs, and the module drops any other ID. It keeps the IDs with a confidence of at least `minScore`, highest first, up to `maxCategories`, and writes them to `site.pagecat`. It sets `site.cattax` to the taxonomy only when the auction has no `site.cattax`.
+The model picks tier 1 category names of the configured taxonomy, and the module maps them to their IDs, drops any name that isn't in the list, keeps at most `maxCategories` and writes them to `site.pagecat`. It sets `site.cattax` to the taxonomy only when the auction has no `site.cattax`.
+
+- With the Prompt API, a JSON schema `responseConstraint` limits the answer to the category names, most relevant first.
+- With the Decisions API, the names are asked as one choice question. A question can have at most 26 options, so Content Taxonomy 2.2's 29 names are split into two questions, and the most probable answers across both are kept.
+
+The model is given category names rather than IDs, which it mostly picked from the top of the list regardless of the page. It isn't asked for confidence scores either: they were high for wrong categories too, so `categories.minScore` is no longer supported and is ignored with a warning. Extra categories were often unrelated to the page, so `maxCategories` defaults to 1; set it to 2 or more for pages that often have more than one topic.
+
+With `articlesOnly` (the default), categories are only detected on pages with a JSON-LD node of type `Article`, `NewsArticle` or `BlogPosting`, at the top level, in an array or in `@graph`. Home, section, search and tag pages rarely have one, and their text describes many articles. `og:type` isn't used, because many themes set `og:type=article` on every page. Set `articlesOnly: false` to classify every page.
 
 The bundled tier 1 lists come from the IAB Tech Lab taxonomy files:
 
@@ -180,15 +211,15 @@ Categories are not written when the auction already has `site.pagecat`, or when 
 
 `keywords.prompt` and `categories.prompt` replace the module's default instruction. The module still adds the rest:
 
-- for categories, the tier 1 category list (`ID: name` lines) and then the page text;
+- for categories, the tier 1 category names (one per line) and then the page text. With the Decisions API, the prompt is the choice question asked over the names;
 - for keywords, the page text.
 
-The Prompt API's `responseConstraint` still applies, so a custom prompt can't produce IDs outside the taxonomy list, more than `maxCategories` or `maxKeywords` results, or another response shape. A prompt that isn't a non-empty string is ignored with a warning, and the default is used. Changing the prompt refreshes cached results.
+The Prompt API's `responseConstraint` still applies, so a custom prompt can't produce categories outside the taxonomy list, more than `maxCategories` or `maxKeywords` results, or another response shape. A prompt that isn't a non-empty string is ignored with a warning, and the default is used. Changing the prompt refreshes cached results.
 
 ```javascript
 categories: {
   enabled: true,
-  prompt: 'Pick the categories that best describe the main subject of this recipe site page, ignoring navigation and ads.'
+  prompt: 'Pick the category that best describes the main subject of this recipe site page.'
 }
 ```
 
@@ -203,7 +234,7 @@ categories: {
 | `prompt` | The question |
 | `options` | `[{ label, description }]`. Required for `choice`; optional for `score`, where it defaults to `'1'` - `'5'`. `boolean` answers are `'true'` or `'false'` |
 
-The Decisions API answers all questions in one pass. Answers with a confidence below `minConfidence` are dropped. When `DecisionModel` is unavailable, the Prompt API answers instead, constrained by a JSON schema built from the same questions so that each answer is one of the question's labels; it gives no confidence, so `minConfidence` doesn't apply.
+The Decisions API answers all questions in one pass. Answers with a confidence below `minConfidence` are dropped. When the Prompt API is picked instead (see [Model selection](#model-selection)), it answers constrained by a JSON schema built from the same questions so that each answer is one of the question's labels; it gives no confidence, so `minConfidence` doesn't apply.
 
 The answers are added to `site.content.data` as one entry, without `ext.segtax`, separate from the categories entry:
 
@@ -224,7 +255,7 @@ No entry is added when `site.content.data` already has a `chromeAi` entry withou
 
 All results are stored in localStorage under the `chromeAi_detected_data` key, as an object keyed by page URL, when storage is allowed for the module by the activity controls (for example, the `storage` activity and TCF consent).
 
-Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords` and `prompt`; `taxonomy`, `minScore`, `maxCategories` and `prompt`; the questions and `minConfidence`), and detected again when those settings change.
+Keywords, categories and answers are stored with a hash of the settings that shape them (`maxKeywords` and `prompt`; `taxonomy`, `maxCategories`, `articlesOnly` and `prompt`; the questions and `minConfidence`) and of a version of the module's model input, and detected again when those change.
 
 ## Requirements
 
@@ -233,5 +264,5 @@ Keywords, categories and answers are stored with a hash of the settings that sha
 
 ## Limitations
 
-- Results depend on the on-device models and the first 1000 characters of the page text.
+- Results depend on the on-device models and on the page text described in [Page text](#page-text).
 - Categories are tier 1 only.

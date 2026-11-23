@@ -46,19 +46,24 @@ export type ChromeAiCategoryTaxonomy = 1 | 6;
 
 export interface ChromeAiCategoriesParams {
   /**
-   * Classifies the page into tier 1 categories of `taxonomy` with the Prompt API, written to `site.pagecat`.
+   * Classifies the page into tier 1 categories of `taxonomy`, written to `site.pagecat`. Uses the Decisions API or
+   * the Prompt API, whichever model is already on the device, preferring the Decisions API's smaller download.
    * Defaults to `false`.
    */
   enabled?: boolean;
   /** Defaults to `6`. */
   taxonomy?: ChromeAiCategoryTaxonomy;
-  /** Minimum confidence (0 - 1) the model gives a category. Defaults to `0.5`. */
-  minScore?: number;
-  /** Defaults to `3`. */
+  /** Defaults to `1`. */
   maxCategories?: number;
   /**
-   * Replaces the default instruction. The module still appends the tier 1 category list and the page text, and the response is still
-   * constrained by its JSON schema. Must be a non-empty string.
+   * Only classifies pages with a JSON-LD node of type `Article`, `NewsArticle` or `BlogPosting`, which home, section,
+   * search and tag pages usually lack. Defaults to `true`.
+   */
+  articlesOnly?: boolean;
+  /**
+   * Replaces the default instruction. With the Prompt API, the module still appends the tier 1 category names and the
+   * page text, and the response is still constrained by its JSON schema; with the Decisions API, it is the question
+   * asked over the category names. Must be a non-empty string.
    */
   prompt?: string;
   /**
@@ -96,7 +101,10 @@ export interface ChromeAiDecisionsParams {
   questions?: ChromeAiDecisionQuestion[];
   /** Answers with a lower Decisions API confidence (0 - 1) are dropped. Defaults to `0`. */
   minConfidence?: number;
-  /** Falls back to the Prompt API when the Decisions API is unavailable. Defaults to `true`. */
+  /**
+   * Also allows the Prompt API, used when its model is already on the device and the Decisions API's isn't, or when
+   * the Decisions API can't be used. Defaults to `true`.
+   */
   promptFallback?: boolean;
   /** Defaults to `true`. */
   cacheInLocalStorage?: boolean;

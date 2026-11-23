@@ -17,6 +17,13 @@ export const CONSTANTS = Object.freeze({
   MIN_TEXT_LENGTH: 20,
   ACTIVATION_EVENTS: ['click', 'keydown', 'mousedown', 'touchend', 'pointerdown', 'pointerup'],
   MAX_TEXT_LENGTH: 1000, // Limit to prevent QuotaExceededError with Chrome AI APIs
+  MAIN_CONTENT_LENGTH: 500,
+  MIN_MAIN_CONTENT_LENGTH: 200,
+  MAX_FIELD_LENGTH: 200,
+  // Bump when the model input or the result format changes, so older cached results are detected again.
+  CACHE_VERSION: 2,
+  ARTICLE_TYPES: ['Article', 'NewsArticle', 'BlogPosting'],
+  MAX_DECISION_OPTIONS: 26, // DecisionModel limit per choice question
   DECISION_TYPES: ['boolean', 'choice', 'score'],
   CATTAX_IAB_CONTENT_2_2: 6,
   DEFAULT_CONFIG: {
@@ -33,8 +40,8 @@ export const CONSTANTS = Object.freeze({
     },
     categories: {
       enabled: false,
-      minScore: 0.5,
-      maxCategories: 3,
+      maxCategories: 1,
+      articlesOnly: true,
       gamPps: true,
       taxonomy: 6,
       cacheInLocalStorage: true
@@ -50,8 +57,8 @@ export const CONSTANTS = Object.freeze({
 });
 
 /**
- * Tier 1 of each supported IAB content taxonomy (ID to name), keyed by AdCOM `cattax`. The model may only answer with
- * these IDs; the full taxonomies are too large to bundle.
+ * Tier 1 of each supported IAB content taxonomy (ID to name), keyed by AdCOM `cattax`. The model picks from these names,
+ * which are mapped back to their IDs; the full taxonomies are too large to bundle. Names must stay unique.
  * - 1, Content Category Taxonomy 1.0: IAB1 - IAB23. IAB24 Uncategorized, IAB25 Non-Standard Content and
  *   IAB26 Illegal Content are left out because they aren't page topics.
  * - 6, Content Taxonomy 2.2: only tier 1 rows with a numeric ID from 1 to 680 inclusive, nothing past 680. The file's
@@ -199,23 +206,32 @@ const deferUntilUserActivation = (feature, retry) => {
   CONSTANTS.ACTIVATION_EVENTS.forEach(evt => window.addEventListener(evt, onUserActivation, { once: true }));
 };
 
+// Models already on the device first, then one that is already downloading, so no new download starts if avoidable.
+const AVAILABILITY_RANK = ['available', 'downloading', 'downloadable'];
+
 /**
- * Picks the first API in `candidates` (in order of preference) that isn't unavailable.
+ * Checks every API in `candidates` (in order of preference) and picks the one whose model is furthest along:
+ * `available`, then `downloading`, then `downloadable`; ties go to the earlier candidate.
  * Model downloads need user activation, so when the chosen API isn't downloaded yet and the user is inactive,
  * `retry` runs on the next user activation and DEFERRED is returned.
  */
 export const selectApi = async (feature, candidates, retry) => {
-  for (const candidate of candidates) {
-    const availability = await getApiAvailability(candidate.name, candidate.options);
-    if (availability === 'unavailable') continue;
-    if (availability !== 'available' && !isUserActive()) {
-      deferUntilUserActivation(feature, retry);
-      return DEFERRED;
-    }
-    return candidate;
+  const availabilities = await Promise.all(candidates.map(c => getApiAvailability(c.name, c.options)));
+  let best = -1;
+  availabilities.forEach((availability, i) => {
+    const rank = AVAILABILITY_RANK.indexOf(availability);
+    if (rank !== -1 && (best === -1 || rank < AVAILABILITY_RANK.indexOf(availabilities[best]))) best = i;
+  });
+  if (best === -1) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} ${feature}: none of ${candidates.map(c => c.name).join(', ')} is available.`);
+    return null;
   }
-  logMessage(`${CONSTANTS.LOG_PRE_FIX} ${feature}: none of ${candidates.map(c => c.name).join(', ')} is available.`);
-  return null;
+  if (availabilities[best] !== 'available' && !isUserActive()) {
+    deferUntilUserActivation(feature, retry);
+    return DEFERRED;
+  }
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} ${feature}: using ${candidates[best].name} (${availabilities[best]}).`);
+  return candidates[best];
 };
 
 const promptForJson = async (prompt, responseConstraint) => {
@@ -239,19 +255,133 @@ const mergeModuleConfig = (config) => {
 
 export const getCurrentUrl = () => window.location.href;
 
-export const getPageText = () => {
-  const text = document.body.textContent;
-  if (!text || text.length < CONSTANTS.MIN_TEXT_LENGTH) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text?.length || 0}) for processing.`);
-    return null;
+// --- Page text ---
+const normalizeSpace = (text) => (isStr(text) ? text.replace(/\s+/g, ' ').trim() : '');
+
+const getMetaContents = (selector) => Array.from(document.querySelectorAll(selector))
+  .map(meta => normalizeSpace(meta.getAttribute('content')))
+  .filter(Boolean);
+
+const toArray = (value) => (isArray(value) ? value : value == null ? [] : [value]);
+
+/** JSON-LD nodes of the page: top level objects, array items and `@graph` members. */
+export const getJsonLdNodes = () => {
+  const nodes = [];
+  document.querySelectorAll('script[type="application/ld+json"]').forEach(script => {
+    let data;
+    try {
+      data = JSON.parse(script.textContent);
+    } catch (e) {
+      return;
+    }
+    toArray(data).forEach(node => {
+      if (!isPlainObject(node)) return;
+      nodes.push(node);
+      toArray(node['@graph']).forEach(member => isPlainObject(member) && nodes.push(member));
+    });
+  });
+  return nodes;
+};
+
+const hasType = (node, types) => toArray(node['@type']).some(type => types.includes(type));
+
+export const isArticlePage = () => getJsonLdNodes().some(node => hasType(node, CONSTANTS.ARTICLE_TYPES));
+
+const NON_TEXT_ELEMENTS = 'script, style, noscript, template, svg, iframe, [hidden], [aria-hidden="true"]';
+
+/**
+ * Up to `maxLength` characters of the text under `root`, leaving out script and style contents and hidden subtrees.
+ * Unlike `innerText`, this needs no layout.
+ */
+export const getVisibleText = (root, maxLength) => {
+  if (!root) return '';
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => (node.nodeType === Node.ELEMENT_NODE && node.matches(NON_TEXT_ELEMENTS)
+      ? NodeFilter.FILTER_REJECT
+      : NodeFilter.FILTER_ACCEPT)
+  });
+  let text = '';
+  while (text.length <= maxLength && walker.nextNode()) {
+    const value = walker.currentNode.nodeType === Node.TEXT_NODE && normalizeSpace(walker.currentNode.nodeValue);
+    if (value) text += (text ? ' ' : '') + value;
   }
-  // Limit text length to prevent QuotaExceededError with Chrome AI APIs
-  if (text.length > CONSTANTS.MAX_TEXT_LENGTH) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Truncating text from ${text.length} to ${CONSTANTS.MAX_TEXT_LENGTH} chars.`);
-    return text.substring(0, CONSTANTS.MAX_TEXT_LENGTH);
+  return text.substring(0, maxLength);
+};
+
+/**
+ * Up to `maxLength` characters of the page's main content: JSON-LD `articleBody`, else the first `article`, `main`
+ * or `[role=main]` element with enough text, else the body.
+ */
+export const getMainContent = (maxLength, nodes = getJsonLdNodes()) => {
+  const articleBody = nodes.map(node => normalizeSpace(node.articleBody)).find(Boolean);
+  if (articleBody) return articleBody.substring(0, maxLength);
+  const element = Array.from(document.querySelectorAll('article, main, [role="main"]'))
+    .find(el => getVisibleText(el, CONSTANTS.MIN_MAIN_CONTENT_LENGTH).length >= CONSTANTS.MIN_MAIN_CONTENT_LENGTH);
+  return getVisibleText(element || document.body, maxLength);
+};
+
+/** Publisher section and tags: `article:section`, JSON-LD `articleSection` and breadcrumbs, `article:tag`, keywords. */
+const getSectionAndTags = (nodes) => {
+  const breadcrumbs = nodes.filter(node => hasType(node, ['BreadcrumbList']))
+    .flatMap(node => toArray(node.itemListElement).map(item => item?.name ?? item?.item?.name));
+  const values = [
+    ...getMetaContents('meta[property="article:section"]'),
+    ...nodes.flatMap(node => toArray(node.articleSection)),
+    ...breadcrumbs,
+    ...getMetaContents('meta[property="article:tag"]'),
+    ...getMetaContents('meta[name="keywords"]')
+  ].map(normalizeSpace).filter(Boolean);
+  return [...new Set(values)].join(', ');
+};
+
+const WORD_SEGMENT = new RegExp('^\\p{L}+(?:[-_+ ]\\p{L}+)*$', 'u');
+
+/** URL path segments made only of words, such as `electric-cars`. */
+const getPathWords = () => window.location.pathname.split('/').map(segment => {
+  try {
+    segment = decodeURIComponent(segment);
+  } catch (e) {
+    return '';
+  }
+  segment = segment.replace(/\.[a-z0-9]+$/i, '');
+  return WORD_SEGMENT.test(segment) ? segment.replace(/[-_+]/g, ' ') : '';
+}).filter(Boolean).join(' / ');
+
+/**
+ * Text for the Prompt and Decisions APIs: title, meta description, publisher section and tags, the URL path's words
+ * and the start of the main content. Everything is read synchronously from the DOM.
+ */
+export const getPageText = () => {
+  const nodes = getJsonLdNodes();
+  const field = (value) => normalizeSpace(value).substring(0, CONSTANTS.MAX_FIELD_LENGTH);
+  const lines = [
+    ['Title', field(document.title)],
+    ['Description', field(getMetaContents('meta[name="description"]')[0])],
+    ['Section and tags', field(getSectionAndTags(nodes))],
+    ['URL path', field(getPathWords())],
+    ['Content', getMainContent(CONSTANTS.MAIN_CONTENT_LENGTH, nodes)]
+  ].filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`);
+  const text = lines.join('\n');
+  if (text.length < CONSTANTS.MIN_TEXT_LENGTH) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text.length}) for processing.`);
+    return null;
   }
   return text;
 };
+
+/** Up to MAX_TEXT_LENGTH characters of the main content, for language detection. */
+export const getLanguageText = () => {
+  const text = getMainContent(CONSTANTS.MAX_TEXT_LENGTH);
+  if (text.length < CONSTANTS.MIN_TEXT_LENGTH) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text.length}) for processing.`);
+    return null;
+  }
+  return text;
+};
+
+const whenDomReady = () => (document.readyState === 'loading'
+  ? new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
+  : Promise.resolve());
 
 // --- Chrome AI LocalStorage Helper Functions ---
 export const _getChromeAiDataFromLocalStorage = (url) => {
@@ -367,7 +497,7 @@ const initLanguageDetector = async () => {
     return true;
   }
 
-  const pageText = getPageText();
+  const pageText = getLanguageText();
   if (!pageText) return false;
 
   const detectionResult = await detectLanguage(pageText);
@@ -381,14 +511,14 @@ const initLanguageDetector = async () => {
 const isNonEmptyArray = (value) => isArray(value) && value.length > 0;
 
 /**
- * Fills `detected[key]` (a non-empty array) from the localStorage cache for this URL, or else by running `detect`
- * on the page text. `detect` returns DEFERRED when it will call the retry it is given once the user activates the page.
+ * Fills `detected[key]` (a non-empty array) from the localStorage cache for this URL, or else by running `detect`.
+ * `detect` returns DEFERRED when it will call the retry it is given once the user activates the page.
  * The cache entry is `{ settings: <hash of cacheSettings>, value }`, reused only while the settings that shape the
- * result are unchanged.
+ * result are unchanged. Detection waits for DOMContentLoaded, and is skipped when `shouldRun` returns false.
  */
-const initFeature = async (key, config, detect, cacheSettings) => {
+const initFeature = async (key, config, detect, cacheSettings, shouldRun) => {
   const useCache = config.cacheInLocalStorage !== false;
-  const settingsHash = cyrb53Hash(JSON.stringify(cacheSettings));
+  const settingsHash = cyrb53Hash(JSON.stringify([CONSTANTS.CACHE_VERSION, ...cacheSettings]));
   if (useCache) {
     const entry = _getChromeAiDataFromLocalStorage()?.[key];
     const cached = entry?.settings === settingsHash ? entry.value : null;
@@ -398,10 +528,10 @@ const initFeature = async (key, config, detect, cacheSettings) => {
       return true;
     }
   }
-  const pageText = getPageText();
-  if (!pageText) return false;
   try {
-    const value = await detect(pageText, config, () => initFeature(key, config, detect, cacheSettings));
+    await whenDomReady();
+    if (shouldRun && !shouldRun()) return false;
+    const value = await detect(config, () => initFeature(key, config, detect, cacheSettings, shouldRun));
     if (value === DEFERRED || !isNonEmptyArray(value)) {
       if (value !== DEFERRED) logMessage(`${CONSTANTS.LOG_PRE_FIX} No '${key}' detected.`);
       return false;
@@ -416,6 +546,8 @@ const initFeature = async (key, config, detect, cacheSettings) => {
   }
 };
 
+const LANGUAGE_MODEL = Object.freeze({ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS });
+
 // --- Keywords (Prompt API) ---
 const getKeywordsSchema = (maxKeywords) => ({
   type: 'object',
@@ -426,70 +558,107 @@ const getKeywordsSchema = (maxKeywords) => ({
   additionalProperties: false
 });
 
-export const extractKeywords = async (text, config, retry) => {
-  const api = await selectApi('Keywords', [{ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS }], retry);
+export const extractKeywords = async (config, retry) => {
+  const api = await selectApi('Keywords', [LANGUAGE_MODEL], retry);
   if (!api || api === DEFERRED) return api;
+  const text = getPageText();
+  if (!text) return null;
   const maxKeywords = config.maxKeywords;
   const response = await promptForJson(
-    (config.prompt ?? `List up to ${maxKeywords} short keywords that describe the topic of this web page text.`) +
-      `\n\nPage text:\n${text}`,
+    (config.prompt ?? `List up to ${maxKeywords} short keywords that describe the topic of this web page.`) +
+      `\n\nPage:\n${text}`,
     getKeywordsSchema(maxKeywords)
   );
   const keywords = (response?.keywords || []).filter(isStr).map(kw => kw.trim()).filter(Boolean);
   return [...new Set(keywords)].slice(0, maxKeywords);
 };
 
-// --- Categories (Prompt API) ---
+// --- Categories (Decisions API or Prompt API) ---
+const getCategoryNames = (taxonomy) => Object.values(TIER_1_CATEGORIES[taxonomy]);
+
 const getCategoriesSchema = (taxonomy, maxCategories) => ({
   type: 'object',
   properties: {
-    categories: {
-      type: 'array',
-      maxItems: maxCategories,
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', enum: Object.keys(TIER_1_CATEGORIES[taxonomy]) },
-          confidence: { type: 'number', minimum: 0, maximum: 1 }
-        },
-        required: ['id', 'confidence'],
-        additionalProperties: false
-      }
-    }
+    categories: { type: 'array', maxItems: maxCategories, items: { type: 'string', enum: getCategoryNames(taxonomy) } }
   },
   required: ['categories'],
   additionalProperties: false
 });
 
+const getCategoriesInstruction = ({ taxonomy, maxCategories, prompt }) => prompt ?? (maxCategories === 1
+  ? `Pick the ${TAXONOMY_NAMES[taxonomy]} category that best describes this web page.`
+  : `Pick up to ${maxCategories} ${TAXONOMY_NAMES[taxonomy]} categories that describe this web page, most relevant first.`);
+
 // A publisher `prompt` replaces only the instruction; the category list and page text are always appended.
-const getCategoriesPrompt = (text, { taxonomy, maxCategories, prompt }) =>
-  (prompt ?? `Classify this web page text into at most ${maxCategories} ${TAXONOMY_NAMES[taxonomy]} categories, ` +
-    `each with your confidence between 0 and 1.`) +
-  `\n\nCategory IDs (ID: name):\n` +
-  Object.entries(TIER_1_CATEGORIES[taxonomy]).map(([id, name]) => `${id}: ${name}`).join('\n') +
-  `\n\nPage text:\n${text}`;
+const getCategoriesPrompt = (text, config) =>
+  getCategoriesInstruction(config) +
+  `\n\nCategories:\n${getCategoryNames(config.taxonomy).join('\n')}` +
+  `\n\nPage:\n${text}`;
 
 /**
- * Keeps the highest-scoring tier 1 IDs of `taxonomy` that reach `minScore`, at most `maxCategories` of them.
- * @param {Array<{id: string, confidence: number}>} classifications
+ * One choice question over the category names. DecisionModel allows at most 26 options per question, so longer
+ * lists are split evenly over as few questions as that allows.
  */
-export const selectCategories = (classifications, { taxonomy, minScore, maxCategories }) => {
-  const allowed = TIER_1_CATEGORIES[taxonomy] || {};
-  const ids = (isArray(classifications) ? classifications : [])
-    .filter(c => isStr(c?.id) && Object.hasOwn(allowed, c.id) && typeof c.confidence === 'number' && c.confidence >= minScore)
-    .sort((a, b) => b.confidence - a.confidence)
-    .map(c => c.id);
+export const getCategoryDecisionSchema = (config) => {
+  const names = getCategoryNames(config.taxonomy);
+  const count = Math.ceil(names.length / CONSTANTS.MAX_DECISION_OPTIONS);
+  const size = Math.ceil(names.length / count);
+  return {
+    questions: Array.from({ length: count }, (_, i) => ({
+      id: `category${i + 1}`,
+      type: 'choice',
+      prompt: getCategoriesInstruction({ ...config, maxCategories: 1 }),
+      options: names.slice(i * size, (i + 1) * size).map(label => ({ label }))
+    }))
+  };
+};
+
+/**
+ * Maps tier 1 category names of `taxonomy` to their IDs, in order, dropping unknown names and duplicates, and keeps
+ * at most `maxCategories`.
+ * @param {string[]} names
+ */
+export const selectCategories = (names, { taxonomy, maxCategories }) => {
+  const idsByName = new Map(Object.entries(TIER_1_CATEGORIES[taxonomy] || {}).map(([id, name]) => [name, id]));
+  const ids = (isArray(names) ? names : []).filter(name => idsByName.has(name)).map(name => idsByName.get(name));
   return [...new Set(ids)].slice(0, maxCategories);
 };
 
-export const classifyPage = async (text, config, retry) => {
-  const api = await selectApi('Categories', [{ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS }], retry);
+/**
+ * Category names from every category question, most probable first. Each question only sees part of the list, so
+ * its winner competes with the other questions' winners on probability.
+ */
+const rankDecidedCategories = (result, questions) => questions
+  .flatMap(question => {
+    const decision = result?.[question.id];
+    if (isPlainObject(decision?.probabilities) && Object.keys(decision.probabilities).length) {
+      return Object.entries(decision.probabilities);
+    }
+    return decision?.label != null ? [[decision.label, decision.confidence]] : [];
+  })
+  .map(([label, probability]) => [String(label), typeof probability === 'number' ? probability : 0])
+  .sort((a, b) => b[1] - a[1])
+  .map(([label]) => label);
+
+export const classifyPage = async (config, retry) => {
+  const schema = getCategoryDecisionSchema(config);
+  const api = await selectApi('Categories', [{ name: 'DecisionModel', options: schema }, LANGUAGE_MODEL], retry);
   if (!api || api === DEFERRED) return api;
-  const classifications = (await promptForJson(
+  const text = getPageText();
+  if (!text) return null;
+  if (api.name === 'DecisionModel') {
+    const model = await createApiInstance('DecisionModel', schema);
+    try {
+      return selectCategories(rankDecidedCategories(await model.decide(text), schema.questions), config);
+    } finally {
+      model.destroy?.();
+    }
+  }
+  const names = (await promptForJson(
     getCategoriesPrompt(text, config),
     getCategoriesSchema(config.taxonomy, config.maxCategories)
   ))?.categories;
-  return selectCategories(classifications, config);
+  return selectCategories(names, config);
 };
 
 // --- Publisher questions (Decisions API, Prompt API fallback) ---
@@ -523,25 +692,27 @@ export const getDecisionsSchema = (questions) => ({
 });
 
 const getDecisionsPrompt = (text, questions) =>
-  `Answer each question about this web page text. For each question ID, answer with exactly one of its listed answers.\n\n` +
+  `Answer each question about this web page. For each question ID, answer with exactly one of its listed answers.\n\n` +
   questions.map(question => {
     const answers = question.options?.some(option => option.description)
       ? question.options.map(option => `"${option.label}"${option.description ? ` (${option.description})` : ''}`)
       : getAnswerLabels(question).map(label => `"${label}"`);
     return `${question.id}: ${question.prompt} Answers: ${answers.join(', ')}`;
   }).join('\n') +
-  `\n\nPage text:\n${text}`;
+  `\n\nPage:\n${text}`;
 
-export const answerQuestions = async (text, config, retry) => {
+export const answerQuestions = async (config, retry) => {
   const questions = getValidQuestions(config.questions);
   if (!questions.length) return null;
   const schema = { questions };
   const candidates = [{ name: 'DecisionModel', options: schema }];
   if (config.promptFallback !== false) {
-    candidates.push({ name: 'LanguageModel', options: LANGUAGE_MODEL_OPTIONS });
+    candidates.push(LANGUAGE_MODEL);
   }
   const api = await selectApi('Decisions', candidates, retry);
   if (!api || api === DEFERRED) return api;
+  const text = getPageText();
+  if (!text) return null;
   let answers;
   if (api.name === 'DecisionModel') {
     const model = await createApiInstance('DecisionModel', schema);
@@ -583,6 +754,10 @@ const init = async (config) => {
     }
     delete moduleConfig.summarizer;
   }
+  if (moduleConfig.categories && moduleConfig.categories.minScore !== undefined) {
+    logWarn(`${CONSTANTS.LOG_PRE_FIX} categories.minScore is no longer supported and is ignored; use categories.maxCategories.`);
+    delete moduleConfig.categories.minScore;
+  }
   ['keywords', 'categories'].forEach(feature => {
     const prompt = moduleConfig[feature]?.prompt;
     if (prompt !== undefined && !(isStr(prompt) && prompt.trim() !== '')) {
@@ -614,10 +789,15 @@ const init = async (config) => {
     moduleConfig.categories.enabled = false;
   }
   if (moduleConfig.categories?.enabled === true) {
-    const { taxonomy, minScore, maxCategories, prompt } = moduleConfig.categories;
+    const { taxonomy, maxCategories, articlesOnly, prompt } = moduleConfig.categories;
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled (taxonomy ${taxonomy}). Initializing...`);
+    const articleCheck = articlesOnly !== false ? () => {
+      const isArticle = isArticlePage();
+      if (!isArticle) logMessage(`${CONSTANTS.LOG_PRE_FIX} No JSON-LD Article, NewsArticle or BlogPosting on the page; skipping categories.`);
+      return isArticle;
+    } : undefined;
     activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage,
-      [taxonomy, minScore, maxCategories, prompt ?? null]));
+      [taxonomy, maxCategories, articlesOnly !== false, prompt ?? null], articleCheck));
   }
 
   if (moduleConfig.decisions?.enabled === true) {

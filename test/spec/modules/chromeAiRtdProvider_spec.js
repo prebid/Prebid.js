@@ -29,6 +29,26 @@ describe('Chrome AI RTD Provider', function () {
   let logMessageStub, logErrorStub; // Removed deepAccessStub, deepSetValueStub
   let mockTopDocument;
   let querySelectorStub;
+  // Nodes added to the page by addToPage, removed after each test
+  let added = [];
+
+  function addToPage(html, parent = document.body) {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    Array.from(container.childNodes).forEach(node => {
+      parent.appendChild(node);
+      added.push(node);
+    });
+    return added[added.length - 1];
+  }
+  const jsonLd = (data) => `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+  const PAGE_TEXT = 'A page about cars and new electric vehicles.';
+  const addArticle = () => addToPage(jsonLd({ '@context': 'https://schema.org', '@type': 'Article', articleBody: PAGE_TEXT }));
+
+  afterEach(function () {
+    added.forEach(node => node.remove());
+    added = [];
+  });
 
   beforeEach(function () {
     // Reset sandbox for each test
@@ -149,66 +169,118 @@ describe('Chrome AI RTD Provider', function () {
     });
   });
 
-  // Test getPageText and text truncation
-  describe('getPageText (text truncation)', function () {
-    // Override document.body.textContent via Object.defineProperty so we can
-    // control the value returned to getPageText() without mutating the actual
-    // DOM (which would break the Karma test-runner UI).
-    function setBodyText(text) {
-      Object.defineProperty(document.body, 'textContent', {
-        get: () => text,
-        configurable: true
-      });
-    }
+  describe('page text', function () {
+    const LONG = 'Electric cars are getting cheaper as battery prices fall and more models reach the market. '.repeat(4);
+    let originalTitle;
+    const contentLine = () => chromeAiRtdProvider.getPageText().split('\n').find(line => line.startsWith('Content: '));
 
-    afterEach(function () {
-      // Remove the instance-level override to restore the inherited getter
-      delete document.body.textContent;
+    beforeEach(function () {
+      originalTitle = document.title;
     });
 
-    it('should return null for text shorter than MIN_TEXT_LENGTH', function () {
-      setBodyText('short');
-      const result = chromeAiRtdProvider.getPageText();
-      expect(result).to.be.null;
+    afterEach(function () {
+      document.title = originalTitle;
+    });
+
+    it('leaves out script, style and hidden text', function () {
+      addToPage(`<main><style>.ad{color:red}</style><script>var tracker = 1;</script><p hidden>Hidden menu</p>` +
+        `<p aria-hidden="true">Icon label</p><noscript>Enable JS</noscript><p>${LONG}</p></main>`);
+      const content = contentLine();
+      expect(content).to.include('Electric cars are getting cheaper');
+      ['color:red', 'tracker', 'Hidden menu', 'Icon label', 'Enable JS'].forEach(text => expect(content).to.not.include(text));
+    });
+
+    it('prefers JSON-LD articleBody', function () {
+      addToPage(jsonLd({ '@context': 'https://schema.org', '@type': 'NewsArticle', articleBody: 'Body from JSON-LD about electric cars.' }));
+      addToPage(`<article>${LONG}</article>`);
+      expect(contentLine()).to.equal('Content: Body from JSON-LD about electric cars.');
+    });
+
+    it('uses the first article, main or [role=main] element with at least 200 characters', function () {
+      addToPage(`<nav>Home News Sports</nav><article>Related: short teaser</article><div role="main">${LONG}</div><main>Other main text</main>`);
+      const content = contentLine();
+      expect(content.startsWith('Content: Electric cars are getting cheaper')).to.be.true;
+      expect(content).to.not.include('short teaser').and.to.not.include('Home News');
+    });
+
+    it('falls back to the body when no element has enough text', function () {
+      addToPage('<nav>Menu</nav><article>A short article about electric cars.</article>');
+      expect(contentLine()).to.include('Menu').and.to.include('A short article about electric cars.');
+    });
+
+    it('keeps the first 500 characters of the main content', function () {
+      addToPage(jsonLd({ '@type': 'Article', articleBody: LONG.repeat(3) }));
+      expect(contentLine()).to.have.length('Content: '.length + chromeAiRtdProvider.CONSTANTS.MAIN_CONTENT_LENGTH);
+    });
+
+    it('adds the title, meta description, publisher section and tags', function () {
+      document.title = 'Cheaper electric cars';
+      addToPage('<meta name="description" content="Battery prices keep falling."><meta property="article:section" content="Autos">' +
+        '<meta property="article:tag" content="EV"><meta property="article:tag" content="Batteries"><meta name="keywords" content="cars, green">', document.head);
+      addToPage(jsonLd({
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'NewsArticle', articleSection: ['Autos', 'Technology'], articleBody: 'Battery prices keep falling, so electric cars get cheaper.' },
+          { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'News' }, { '@type': 'ListItem', position: 2, item: { name: 'Cars' } }] }
+        ]
+      }));
+      const lines = chromeAiRtdProvider.getPageText().split('\n');
+      expect(lines[0]).to.equal('Title: Cheaper electric cars');
+      expect(lines[1]).to.equal('Description: Battery prices keep falling.');
+      expect(lines[2]).to.equal('Section and tags: Autos, Technology, News, Cars, EV, Batteries, cars, green');
+      expect(lines[lines.length - 1]).to.equal('Content: Battery prices keep falling, so electric cars get cheaper.');
+    });
+
+    it('adds the URL path segments that are words', function () {
+      const original = window.location.href;
+      try {
+        window.history.replaceState(window.history.state, '', '/autos/electric-cars_explained/2024/story-123.html');
+        addToPage(jsonLd({ '@type': 'Article', articleBody: 'A page about cars and new electric vehicles.' }));
+        expect(chromeAiRtdProvider.getPageText()).to.include('URL path: autos / electric cars explained\n');
+      } finally {
+        window.history.replaceState(window.history.state, '', original);
+      }
+    });
+
+    it('ignores invalid JSON-LD', function () {
+      addToPage('<script type="application/ld+json">{ not json</script>');
+      addToPage(jsonLd({ '@type': 'Article', articleBody: 'A page about cars and new electric vehicles.' }));
+      expect(contentLine()).to.equal('Content: A page about cars and new electric vehicles.');
+    });
+
+    it('returns null without enough text', function () {
+      document.title = '';
+      expect(chromeAiRtdProvider.getPageText()).to.be.null;
       expect(logMessageStub.calledWith(sinon.match('Not enough text content'))).to.be.true;
     });
 
-    it('should return null for empty text', function () {
-      setBodyText('');
-      const result = chromeAiRtdProvider.getPageText();
-      expect(result).to.be.null;
+    it('gives language detection up to 1000 characters of the main content, without metadata', function () {
+      document.title = 'Cheaper electric cars';
+      addToPage(`<article><script>var x = 1;</script>${LONG.repeat(5)}</article>`);
+      const text = chromeAiRtdProvider.getLanguageText();
+      expect(text).to.have.length(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH);
+      expect(text.startsWith('Electric cars are getting cheaper')).to.be.true;
+      expect(text).to.not.include('Cheaper electric cars').and.to.not.include('var x');
     });
 
-    it('should return full text when length is between MIN and MAX', function () {
-      const text = 'A'.repeat(500);
-      setBodyText(text);
-      const result = chromeAiRtdProvider.getPageText();
-      expect(result).to.equal(text);
-      expect(result).to.have.lengthOf(500);
-    });
+    describe('isArticlePage', function () {
+      it('is false without a JSON-LD Article, NewsArticle or BlogPosting', function () {
+        addToPage('<meta property="og:type" content="article">', document.head);
+        addToPage(jsonLd({ '@type': 'WebPage' }) + jsonLd({ '@type': 'CollectionPage' }));
+        expect(chromeAiRtdProvider.isArticlePage()).to.be.false;
+      });
 
-    it('should return text at exactly MAX_TEXT_LENGTH without truncating', function () {
-      const exactText = 'B'.repeat(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH);
-      setBodyText(exactText);
-      const result = chromeAiRtdProvider.getPageText();
-      expect(result).to.equal(exactText);
-      expect(logMessageStub.calledWith(sinon.match('Truncating'))).to.be.false;
-    });
-
-    it('should truncate text exceeding MAX_TEXT_LENGTH', function () {
-      const longText = 'C'.repeat(2000);
-      setBodyText(longText);
-      const result = chromeAiRtdProvider.getPageText();
-      expect(result).to.have.lengthOf(chromeAiRtdProvider.CONSTANTS.MAX_TEXT_LENGTH);
-      expect(result).to.equal('C'.repeat(1000));
-    });
-
-    it('should log a message when truncating text', function () {
-      setBodyText('D'.repeat(2000));
-      chromeAiRtdProvider.getPageText();
-      expect(logMessageStub.calledWith(
-        sinon.match('Truncating text from 2000 to 1000')
-      )).to.be.true;
+      [
+        ['a top level Article', { '@type': 'Article' }],
+        ['a BlogPosting in a top level array', [{ '@type': 'Organization' }, { '@type': 'BlogPosting' }]],
+        ['a NewsArticle in @graph', { '@graph': [{ '@type': 'WebSite' }, { '@type': 'NewsArticle' }] }],
+        ['an array @type', { '@type': ['NewsArticle', 'Thing'] }]
+      ].forEach(([label, data]) => {
+        it(`is true for ${label}`, function () {
+          addToPage(jsonLd(data));
+          expect(chromeAiRtdProvider.isArticlePage()).to.be.true;
+        });
+      });
     });
   });
 
@@ -236,6 +308,7 @@ describe('Chrome AI RTD Provider', function () {
       // Configure its availability() method to return 'unavailable' for this test
       sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
       self.LanguageDetector.availability.resolves('unavailable');
+      addArticle();
       return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function (result) {
         // The init might still resolve to true if other features (like keywords) initialize successfully.
         // We are checking that the specific error for LanguageDetector being unavailable is logged.
@@ -249,7 +322,7 @@ describe('Chrome AI RTD Provider', function () {
 
       // Ensure getPageText returns valid text for detection
       mockTopDocument.querySelector.withArgs('article').returns(null);
-      mockTopDocument.body.textContent = 'Sufficiently long text for detection.';
+      addArticle();
 
       await chromeAiRtdProvider.chromeAiSubmodule.init({}); // Initialize with default config
 
@@ -260,6 +333,7 @@ describe('Chrome AI RTD Provider', function () {
 
     it('logs model download progress through the create() monitor', async function () {
       self.LanguageModel.availability.resolves('downloadable');
+      addArticle();
       Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true, writable: true });
       await chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: false }, keywords: { enabled: true } } });
       const monitor = self.LanguageModel.create.firstCall.args[0].monitor;
@@ -367,6 +441,7 @@ describe('Chrome AI RTD Provider', function () {
     let onDoneSpy;
 
     beforeEach(async function () {
+      addArticle();
       // Initialize the module with a config that enables both features for these tests
       await chromeAiRtdProvider.chromeAiSubmodule.init({
         params: {
@@ -456,6 +531,7 @@ describe('Chrome AI RTD Provider', function () {
     const NEW_APIS = ['Classifier', 'DecisionModel', 'LanguageModel'];
     let originals;
     let reqBidsConfigObj;
+    let articleScript;
 
     const flush = async () => {
       for (let i = 0; i < 20; i++) await Promise.resolve();
@@ -494,7 +570,7 @@ describe('Chrome AI RTD Provider', function () {
     beforeEach(function () {
       originals = Object.fromEntries(NEW_APIS.map(name => [name, self[name]]));
       NEW_APIS.forEach(name => { self[name] = undefined; });
-      Object.defineProperty(document.body, 'textContent', { get: () => 'A page about cars and new electric vehicles.', configurable: true });
+      articleScript = addArticle();
       setUserActive(false);
       reqBidsConfigObj = { adUnits: [], ortb2Fragments: { global: {} } };
     });
@@ -503,7 +579,6 @@ describe('Chrome AI RTD Provider', function () {
       NEW_APIS.forEach(name => {
         if (originals[name] === undefined) delete self[name]; else self[name] = originals[name];
       });
-      delete document.body.textContent;
       delete navigator.userActivation;
     });
 
@@ -522,39 +597,44 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     describe('categories', function () {
-      const responses = [
-        { id: '483', confidence: 0.82 },
-        { id: '1', confidence: 0.98 },
-        { id: '640', confidence: 0.95 },
-        { id: '42', confidence: 0.3 }
-      ];
       let session;
 
       const promptSession = (categories) => ({
         prompt: sinon.stub().resolves(JSON.stringify({ categories })),
         destroy: sinon.stub()
       });
-      const allowedIds = () => session.prompt.firstCall.args[1].responseConstraint.properties.categories.items.properties.id.enum;
+      const allowedNames = () => session.prompt.firstCall.args[1].responseConstraint.properties.categories.items.enum;
 
       beforeEach(function () {
-        session = promptSession(responses);
+        session = promptSession(['Automotive', 'Television', 'Sports']);
       });
 
-      it('asks the Prompt API for Content Taxonomy 2.2 tier 1 by default and writes cattax 6', async function () {
+      it('asks the Prompt API for the single best Content Taxonomy 2.2 tier 1 name by default and writes its ID with cattax 6', async function () {
         const LanguageModel = mockApi('LanguageModel', session);
-        expect(await init({ categories: { enabled: true, minScore: 0.5, maxCategories: 2, gamPps: false } })).to.be.true;
+        expect(await init({ categories: { enabled: true, gamPps: false } })).to.be.true;
         expect(LanguageModel.availability.firstCall.args[0]).to.deep.equal({ expectedOutputs: [{ type: 'text', languages: ['en'] }] });
         expect(LanguageModel.create.firstCall.args[0].monitor).to.be.a('function');
         const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
-        expect(prompt).to.include('IAB Content Taxonomy 2.2').and.to.include('640: Television');
-        expect(prompt).to.include('A page about cars and new electric vehicles.');
-        expect(responseConstraint.properties.categories.maxItems).to.equal(2);
-        expect(allowedIds()).to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(prompt.startsWith('Pick the IAB Content Taxonomy 2.2 category that best describes this web page.')).to.be.true;
+        expect(prompt).to.include('\nTelevision\n').and.to.not.include('640').and.to.not.include('confidence');
+        expect(prompt).to.include(`Content: ${PAGE_TEXT}`);
+        expect(responseConstraint.properties.categories).to.deep.equal({
+          type: 'array', maxItems: 1, items: { type: 'string', enum: Object.values(chromeAiRtdProvider.TIER_1_CATEGORIES[6]) }
+        });
         expect(session.destroy.called).to.be.true;
-        expect(runAuction().site).to.deep.equal({ pagecat: ['1', '640'], cattax: 6 });
+        expect(runAuction().site).to.deep.equal({ pagecat: ['1'], cattax: 6 });
       });
 
-      it('bundles only the 29 topical Content Taxonomy 2.2 tier 1 IDs, numeric and capped at 680', async function () {
+      it('returns up to maxCategories, most relevant first', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, maxCategories: 2, gamPps: false } });
+        const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
+        expect(prompt.startsWith('Pick up to 2 IAB Content Taxonomy 2.2 categories')).to.be.true;
+        expect(responseConstraint.properties.categories.maxItems).to.equal(2);
+        expect(runAuction().site.pagecat).to.deep.equal(['1', '640']);
+      });
+
+      it('bundles only the 29 topical Content Taxonomy 2.2 tier 1 IDs, numeric and capped at 680, with unique names', function () {
         const ids = Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]);
         expect(ids).to.have.length(29);
         ids.forEach(id => {
@@ -562,27 +642,27 @@ describe('Chrome AI RTD Provider', function () {
           expect(Number(id)).to.be.within(1, 680);
         });
         ['v9i3On', 'MRkz4Q', '1000', '1010', '1022', '1030', '1215', '1219'].forEach(id => expect(ids).to.not.include(id));
-        mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
-        expect(allowedIds().every(id => /^\d+$/.test(id) && Number(id) >= 1 && Number(id) <= 680)).to.be.true;
+        [1, 6].forEach(taxonomy => {
+          const names = Object.values(chromeAiRtdProvider.TIER_1_CATEGORIES[taxonomy]);
+          expect(new Set(names).size).to.equal(names.length);
+        });
       });
 
-      it('uses Content Category Taxonomy 1.0 tier 1 without IAB24 - IAB26 for taxonomy 1', async function () {
-        session = promptSession([{ id: 'IAB2', confidence: 0.9 }, { id: 'IAB24', confidence: 0.9 }]);
+      it('uses Content Category Taxonomy 1.0 tier 1 names without IAB24 - IAB26 for taxonomy 1', async function () {
+        session = promptSession(['Automotive', 'Uncategorized']);
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true, taxonomy: 1 } });
-        expect(session.prompt.firstCall.args[0]).to.include('IAB Content Category Taxonomy 1.0').and.to.include('IAB2: Automotive');
-        expect(allowedIds()).to.deep.equal(Array.from({ length: 23 }, (_, i) => 'IAB' + (i + 1)));
+        await init({ categories: { enabled: true, taxonomy: 1, maxCategories: 2 } });
+        expect(session.prompt.firstCall.args[0]).to.include('IAB Content Category Taxonomy 1.0').and.to.include('\nAutomotive\n');
+        expect(allowedNames()).to.deep.equal(Object.values(chromeAiRtdProvider.TIER_1_CATEGORIES[1]));
+        expect(allowedNames()).to.have.length(23);
         expect(runAuction().site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
       });
 
-      it('drops IDs outside the taxonomy list', async function () {
-        session = promptSession([
-          { id: '1000', confidence: 0.9 }, { id: '681', confidence: 0.9 }, { id: 'v9i3On', confidence: 0.9 }, { id: '1', confidence: 0.6 }
-        ]);
+      it('maps the names back to IDs and drops names outside the taxonomy list', async function () {
+        session = promptSession(['Sensitive Topics', 'Cars', '640', 'Television', 'toString']);
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
-        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+        await init({ categories: { enabled: true, maxCategories: 5 } });
+        expect(runAuction().site.pagecat).to.deep.equal(['640']);
       });
 
       it('never uses the Classifier API', async function () {
@@ -601,9 +681,53 @@ describe('Chrome AI RTD Provider', function () {
         expect(runAuction().site).to.be.undefined;
       });
 
-      it('caches the categories with a hash of the settings', async function () {
+      it('warns about minScore and ignores it', async function () {
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
+        const logWarnStub = sandbox.stub(utils, 'logWarn');
+        expect(await init({ categories: { enabled: true, minScore: 0.9, gamPps: false } })).to.be.true;
+        expect(logWarnStub.calledWith(sinon.match('categories.minScore is no longer supported'))).to.be.true;
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
+      });
+
+      describe('articlesOnly', function () {
+        it('skips pages without a JSON-LD Article, NewsArticle or BlogPosting by default', async function () {
+          articleScript.remove();
+          addToPage(jsonLd({ '@type': 'CollectionPage' }) + '<main>' + PAGE_TEXT.repeat(6) + '</main>');
+          addToPage('<meta property="og:type" content="article">', document.head);
+          const LanguageModel = mockApi('LanguageModel', session);
+          expect(await init({ categories: { enabled: true } })).to.be.false;
+          expect(LanguageModel.availability.called).to.be.false;
+          expect(runAuction().site).to.be.undefined;
+        });
+
+        it('finds a NewsArticle in @graph with an array @type', async function () {
+          articleScript.remove();
+          addToPage(jsonLd({ '@graph': [{ '@type': 'WebPage' }, { '@type': ['NewsArticle', 'Thing'], articleBody: PAGE_TEXT }] }));
+          mockApi('LanguageModel', session);
+          expect(await init({ categories: { enabled: true } })).to.be.true;
+          expect(runAuction().site.content.data[0].segment).to.deep.equal([{ id: '1' }]);
+        });
+
+        it('classifies any page with articlesOnly: false', async function () {
+          articleScript.remove();
+          addToPage('<main>' + PAGE_TEXT.repeat(6) + '</main>');
+          mockApi('LanguageModel', session);
+          expect(await init({ categories: { enabled: true, articlesOnly: false } })).to.be.true;
+          expect(session.prompt.firstCall.args[0]).to.include('Content: ' + PAGE_TEXT);
+        });
+
+        it('does not gate keywords or decisions', async function () {
+          articleScript.remove();
+          addToPage('<main>' + PAGE_TEXT.repeat(6) + '</main>');
+          const keywordsSession = { prompt: sinon.stub().resolves(JSON.stringify({ keywords: ['ev'] })), destroy: sinon.stub() };
+          mockApi('LanguageModel', keywordsSession);
+          expect(await init({ keywords: { enabled: true } })).to.be.true;
+        });
+      });
+
+      it('caches the category IDs with a hash of the settings', async function () {
+        mockApi('LanguageModel', session);
+        await init({ categories: { enabled: true, maxCategories: 3 } });
         expect(storedData().categories.value).to.deep.equal(['1', '640', '483']);
         expect(storedData().categories.settings).to.be.a('string');
       });
@@ -617,34 +741,39 @@ describe('Chrome AI RTD Provider', function () {
         expect(runAuction().site.pagecat).to.deep.equal(['483']);
       });
 
-      it('does not reuse cached categories after minScore or maxCategories change', async function () {
+      it('does not reuse entries cached by the earlier, ID-based prompt', async function () {
         mockApi('LanguageModel', session);
+        // settings of the earlier format: [taxonomy, minScore, maxCategories, prompt]
+        setCache({ categories: { settings: utils.cyrb53Hash(JSON.stringify([6, 0.5, 1, null])), value: ['483'] } });
         await init({ categories: { enabled: true } });
-        setCache({ categories: storedData().categories });
-        await init({ categories: { enabled: true, maxCategories: 1 } });
-        expect(session.prompt.calledTwice).to.be.true;
+        expect(session.prompt.calledOnce).to.be.true;
         expect(runAuction().site.pagecat).to.deep.equal(['1']);
       });
 
-      it('does not reuse cached categories from another taxonomy', async function () {
-        mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true } });
-        setCache({ categories: storedData().categories });
-        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
-        await init({ categories: { enabled: true, taxonomy: 1 } });
-        expect(session.prompt.calledTwice).to.be.true;
-        expect(runAuction().site.pagecat).to.deep.equal(['IAB2']);
+      [
+        ['maxCategories', { maxCategories: 2 }],
+        ['articlesOnly', { articlesOnly: false }],
+        ['taxonomy', { taxonomy: 1 }]
+      ].forEach(([setting, change]) => {
+        it(`does not reuse cached categories after ${setting} changes`, async function () {
+          mockApi('LanguageModel', session);
+          await init({ categories: { enabled: true } });
+          setCache({ categories: storedData().categories });
+          await init({ categories: { enabled: true, ...change } });
+          expect(session.prompt.calledTwice).to.be.true;
+        });
       });
 
       it('does not cache when cacheInLocalStorage is false', async function () {
         mockApi('LanguageModel', session);
-        await init({ categories: { enabled: true, cacheInLocalStorage: false } });
+        await init({ categories: { enabled: true, maxCategories: 3, cacheInLocalStorage: false } });
         expect(mockStorage.setDataInLocalStorage.called).to.be.false;
         expect(runAuction().site.pagecat).to.have.length(3);
       });
 
-      it('does nothing when LanguageModel is unavailable', async function () {
+      it('does nothing when no model is available', async function () {
         mockApi('LanguageModel', session, 'unavailable');
+        mockApi('DecisionModel', {}, 'unavailable');
         expect(await init({ categories: { enabled: true } })).to.be.false;
         expect(session.prompt.called).to.be.false;
         expect(runAuction().site).to.be.undefined;
@@ -663,7 +792,7 @@ describe('Chrome AI RTD Provider', function () {
         window.dispatchEvent(new Event('click'));
         await flush();
         expect(LanguageModel.create.calledOnce).to.be.true;
-        expect(runAuction().site.pagecat).to.deep.equal(['1', '640', '483']);
+        expect(runAuction().site.pagecat).to.deep.equal(['1']);
       });
 
       it('creates the model when downloadable and the user is active', async function () {
@@ -697,7 +826,7 @@ describe('Chrome AI RTD Provider', function () {
       });
 
       it('adds pagecat next to publisher site.cat without cattax when the taxonomy is 1', async function () {
-        session = promptSession([{ id: 'IAB2', confidence: 0.9 }]);
+        session = promptSession(['Automotive']);
         mockApi('LanguageModel', session);
         await init({ categories: { enabled: true, taxonomy: 1 } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { cat: ['IAB1-1'] } };
@@ -708,7 +837,7 @@ describe('Chrome AI RTD Provider', function () {
         mockApi('LanguageModel', session);
         await init({ categories: { enabled: true, gamPps: false } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { cattax: 6, sectioncat: ['483'] } };
-        expect(runAuction().site).to.deep.equal({ cattax: 6, sectioncat: ['483'], pagecat: ['1', '640', '483'] });
+        expect(runAuction().site).to.deep.equal({ cattax: 6, sectioncat: ['483'], pagecat: ['1'] });
       });
 
       it('logs prompt errors', async function () {
@@ -717,32 +846,123 @@ describe('Chrome AI RTD Provider', function () {
         expect(await init({ categories: { enabled: true } })).to.be.false;
         expect(logErrorStub.calledWith(sinon.match("Error detecting 'categories'"))).to.be.true;
       });
+
+      describe('with DecisionModel', function () {
+        let model;
+        const names6 = Object.values(chromeAiRtdProvider.TIER_1_CATEGORIES[6]);
+
+        beforeEach(function () {
+          model = {
+            decide: sinon.stub().resolves({
+              category1: { id: 'category1', label: 'Automotive', confidence: 0.6, probabilities: { Automotive: 0.6, 'Fine Art': 0.3, Careers: 0.1 } },
+              category2: { id: 'category2', label: 'Television', confidence: 0.8, probabilities: { Television: 0.8, Sports: 0.15, Unknown: 0.99 } }
+            }),
+            destroy: sinon.stub()
+          };
+        });
+
+        it('splits the 29 names into two choice questions of at most 26 options', function () {
+          const { questions } = chromeAiRtdProvider.getCategoryDecisionSchema({ taxonomy: 6, maxCategories: 1 });
+          expect(questions).to.have.length(2);
+          questions.forEach(question => {
+            expect(question.type).to.equal('choice');
+            expect(question.options.length).to.be.at.most(chromeAiRtdProvider.CONSTANTS.MAX_DECISION_OPTIONS);
+          });
+          expect(questions.flatMap(question => question.options.map(option => option.label))).to.deep.equal(names6);
+          expect(chromeAiRtdProvider.getCategoryDecisionSchema({ taxonomy: 1, maxCategories: 1 }).questions).to.have.length(1);
+        });
+
+        it('picks the most probable winner across the questions', async function () {
+          const DecisionModel = mockApi('DecisionModel', model);
+          const LanguageModel = mockApi('LanguageModel', session);
+          expect(await init({ categories: { enabled: true } })).to.be.true;
+          const schema = DecisionModel.create.firstCall.args[0];
+          expect(schema.questions).to.have.length(2);
+          expect(schema.monitor).to.be.a('function');
+          expect(DecisionModel.availability.firstCall.args[0].questions).to.deep.equal(schema.questions);
+          expect(model.decide.firstCall.args[0]).to.include(`Content: ${PAGE_TEXT}`);
+          expect(model.destroy.called).to.be.true;
+          expect(LanguageModel.create.called).to.be.false;
+          expect(runAuction().site.pagecat).to.deep.equal(['640']);
+        });
+
+        it('ranks every option by probability for maxCategories above 1, dropping unknown labels', async function () {
+          mockApi('DecisionModel', model);
+          await init({ categories: { enabled: true, maxCategories: 3 } });
+          expect(runAuction().site.pagecat).to.deep.equal(['640', '1', '201']);
+        });
+
+        it('uses the label and confidence when there are no probabilities', async function () {
+          model.decide.resolves({ category1: { label: 'Automotive', confidence: 0.4 }, category2: { label: 'Sports', confidence: 0.7 } });
+          mockApi('DecisionModel', model);
+          await init({ categories: { enabled: true, maxCategories: 2 } });
+          expect(runAuction().site.pagecat).to.deep.equal(['483', '1']);
+        });
+      });
+    });
+
+    describe('model selection', function () {
+      const candidates = [{ name: 'DecisionModel', options: {} }, { name: 'LanguageModel', options: {} }];
+      [
+        ['available', 'available', 'DecisionModel'],
+        ['available', 'downloadable', 'DecisionModel'],
+        ['downloadable', 'available', 'LanguageModel'],
+        ['downloading', 'available', 'LanguageModel'],
+        ['downloadable', 'downloadable', 'DecisionModel'],
+        ['downloading', 'downloadable', 'DecisionModel'],
+        ['downloadable', 'downloading', 'LanguageModel'],
+        ['unavailable', 'downloadable', 'LanguageModel'],
+        ['unavailable', 'available', 'LanguageModel'],
+        [undefined, 'downloadable', 'LanguageModel'],
+        ['downloadable', 'unavailable', 'DecisionModel'],
+        ['unavailable', 'unavailable', null]
+      ].forEach(([decisionModel, languageModel, expected]) => {
+        it(`picks ${expected} when DecisionModel is ${decisionModel ?? 'missing'} and LanguageModel is ${languageModel}`, async function () {
+          if (decisionModel) mockApi('DecisionModel', {}, decisionModel);
+          mockApi('LanguageModel', {}, languageModel);
+          setUserActive(true);
+          const api = await chromeAiRtdProvider.selectApi('Test', candidates, () => {});
+          expect(api?.name ?? null).to.equal(expected);
+        });
+      });
+
+      it('defers a download until user activation', async function () {
+        mockApi('DecisionModel', {}, 'downloadable');
+        mockApi('LanguageModel', {}, 'downloadable');
+        const retry = sinon.stub();
+        expect(await chromeAiRtdProvider.selectApi('Test', candidates, retry)).to.equal('deferred');
+        setUserActive(true);
+        window.dispatchEvent(new Event('click'));
+        expect(retry.calledOnce).to.be.true;
+      });
     });
 
     describe('selectCategories', function () {
-      it('drops IDs not in the taxonomy, entries without a numeric confidence, and duplicates', function () {
-        expect(chromeAiRtdProvider.selectCategories([
-          { id: '1', confidence: 0.9 }, { id: 1, confidence: 0.9 }, { id: '42' }, { id: '1', confidence: 0.8 },
-          { id: 'IAB1', confidence: 0.9 }, { id: 'toString', confidence: 0.9 }, null
-        ], { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal(['1']);
-        expect(chromeAiRtdProvider.selectCategories(undefined, { taxonomy: 6, minScore: 0, maxCategories: 5 })).to.deep.equal([]);
+      it('maps names to IDs, dropping unknown names, non-strings and duplicates', function () {
+        expect(chromeAiRtdProvider.selectCategories(
+          ['Automotive', 'IAB1', '1', 1, null, 'toString', 'Automotive', 'Television'],
+          { taxonomy: 6, maxCategories: 5 }
+        )).to.deep.equal(['1', '640']);
+        expect(chromeAiRtdProvider.selectCategories(['Automotive', 'Television'], { taxonomy: 6, maxCategories: 1 })).to.deep.equal(['1']);
+        expect(chromeAiRtdProvider.selectCategories(['Automotive'], { taxonomy: 1, maxCategories: 1 })).to.deep.equal(['IAB2']);
+        expect(chromeAiRtdProvider.selectCategories(undefined, { taxonomy: 6, maxCategories: 5 })).to.deep.equal([]);
       });
     });
 
     describe('prompt overrides', function () {
       it('uses the categories prompt, still appending the categories and page text and constraining the IDs', async function () {
         const session = {
-          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '9999', confidence: 0.9 }] })),
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: ['Automotive', 'Cars'] })),
           destroy: sinon.stub()
         };
         mockApi('LanguageModel', session);
         await init({ categories: { enabled: true, prompt: 'Pick the main topics of this car blog.' } });
         const [prompt, { responseConstraint }] = session.prompt.firstCall.args;
         expect(prompt.startsWith('Pick the main topics of this car blog.')).to.be.true;
-        expect(prompt).to.not.include('Classify this web page text');
-        expect(prompt).to.include('640: Television').and.to.include('A page about cars and new electric vehicles.');
-        expect(responseConstraint.properties.categories.items.properties.id.enum)
-          .to.deep.equal(Object.keys(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
+        expect(prompt).to.not.include('best describes this web page');
+        expect(prompt).to.include('\nTelevision\n').and.to.include('A page about cars and new electric vehicles.');
+        expect(responseConstraint.properties.categories.items.enum)
+          .to.deep.equal(Object.values(chromeAiRtdProvider.TIER_1_CATEGORIES[6]));
         expect(runAuction().site.pagecat).to.deep.equal(['1']);
       });
 
@@ -771,7 +991,7 @@ describe('Chrome AI RTD Provider', function () {
       it('refreshes cached categories and keywords when the prompt changes', async function () {
         const session = {
           prompt: sinon.stub().callsFake((text, { responseConstraint }) => Promise.resolve(JSON.stringify(
-            responseConstraint.properties.keywords ? { keywords: ['ev'] } : { categories: [{ id: '1', confidence: 0.9 }] }
+            responseConstraint.properties.keywords ? { keywords: ['ev'] } : { categories: ['Automotive'] }
           ))),
           destroy: sinon.stub()
         };
@@ -793,21 +1013,21 @@ describe('Chrome AI RTD Provider', function () {
 
       beforeEach(function () {
         session = {
-          prompt: sinon.stub().resolves(JSON.stringify({ categories: [{ id: '1', confidence: 0.9 }, { id: '640', confidence: 0.8 }] })),
+          prompt: sinon.stub().resolves(JSON.stringify({ categories: ['Automotive', 'Television'] })),
           destroy: sinon.stub()
         };
         mockApi('LanguageModel', session);
       });
 
       it('writes no segtax 6 entry with gamPps: false', async function () {
-        await init({ categories: { enabled: true, gamPps: false } });
+        await init({ categories: { enabled: true, maxCategories: 2, gamPps: false } });
         const global = runAuction();
         expect(global.site.content).to.be.undefined;
         expect(getSignals(global)).to.deep.equal([]);
       });
 
       it('writes a segtax 6 site.content.data entry by default, which getSignals sends as IAB_CONTENT_2_2', async function () {
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, maxCategories: 2 } });
         const global = runAuction();
         expect(global.site.pagecat).to.deep.equal(['1', '640']);
         expect(global.site.content.data).to.deep.equal([{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '1' }, { id: '640' }] }]);
@@ -815,7 +1035,7 @@ describe('Chrome AI RTD Provider', function () {
       });
 
       it('writes the segtax 6 entry even when the publisher pagecat is kept', async function () {
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, maxCategories: 2 } });
         reqBidsConfigObj.ortb2Fragments.global = { site: { pagecat: ['IAB1'], cattax: 1 } };
         const global = runAuction();
         expect(global.site.pagecat).to.deep.equal(['IAB1']);
@@ -824,11 +1044,15 @@ describe('Chrome AI RTD Provider', function () {
 
       it('keeps the decisions entry separate', async function () {
         const DecisionModel = mockApi('DecisionModel', {
-          decide: sinon.stub().resolves({ q: { id: 'q', label: 'true', confidence: 1 } }),
+          decide: sinon.stub().resolves({
+            q: { id: 'q', label: 'true', confidence: 1 },
+            category1: { label: 'Automotive', probabilities: { Automotive: 0.9 } },
+            category2: { label: 'Television', probabilities: { Television: 0.8 } }
+          }),
           destroy: sinon.stub()
         });
         await init({
-          categories: { enabled: true },
+          categories: { enabled: true, maxCategories: 2 },
           decisions: { enabled: true, questions: [{ id: 'q', type: 'boolean', prompt: 'Is it about cars?' }] }
         });
         expect(DecisionModel.create.called).to.be.true;
@@ -841,14 +1065,14 @@ describe('Chrome AI RTD Provider', function () {
       });
 
       it('does not add a second segtax 6 chromeAi entry', async function () {
-        await init({ categories: { enabled: true } });
+        await init({ categories: { enabled: true, maxCategories: 2 } });
         const existing = [{ name: 'chromeAi', ext: { segtax: 6 }, segment: [{ id: '483' }] }];
         reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: existing } } };
         expect(runAuction().site.content.data).to.deep.equal(existing);
       });
 
       it('writes no segtax entry for taxonomy 1', async function () {
-        session.prompt.resolves(JSON.stringify({ categories: [{ id: 'IAB2', confidence: 0.9 }] }));
+        session.prompt.resolves(JSON.stringify({ categories: ['Automotive'] }));
         await init({ categories: { enabled: true, taxonomy: 1 } });
         const global = runAuction();
         expect(global.site).to.deep.equal({ pagecat: ['IAB2'], cattax: 1 });
@@ -884,9 +1108,9 @@ describe('Chrome AI RTD Provider', function () {
         await init({ decisions: { enabled: true, questions, minConfidence: 0.5 } });
         expect(DecisionModel.availability.firstCall.args[0]).to.deep.equal({ questions });
         expect(DecisionModel.create.firstCall.args[0].questions).to.deep.equal(questions);
-        expect(model.decide.calledWith('A page about cars and new electric vehicles.')).to.be.true;
+        expect(model.decide.calledWith(sinon.match(`Content: ${PAGE_TEXT}`))).to.be.true;
         expect(model.destroy.called).to.be.true;
-        expect(LanguageModel.availability.called).to.be.false;
+        expect(LanguageModel.create.called).to.be.false;
         reqBidsConfigObj.ortb2Fragments.global = { site: { content: { data: [{ name: 'publisher', segment: [{ id: '1' }] }] } } };
         expect(runAuction().site.content.data).to.deep.equal([
           { name: 'publisher', segment: [{ id: '1' }] },
@@ -922,6 +1146,34 @@ describe('Chrome AI RTD Provider', function () {
       it('does not fall back when promptFallback is false', async function () {
         const LanguageModel = mockApi('LanguageModel', {});
         expect(await init({ decisions: { enabled: true, questions, promptFallback: false } })).to.be.false;
+        expect(LanguageModel.availability.called).to.be.false;
+      });
+
+      it('uses an already downloaded LanguageModel rather than downloading DecisionModel', async function () {
+        const session = { prompt: sinon.stub().resolves(JSON.stringify({ is_review: 'true', audience: 'general', tone: '3' })), destroy: sinon.stub() };
+        const DecisionModel = mockApi('DecisionModel', model, 'downloadable');
+        mockApi('LanguageModel', session);
+        setUserActive(true);
+        expect(await init({ decisions: { enabled: true, questions } })).to.be.true;
+        expect(DecisionModel.create.called).to.be.false;
+        expect(session.prompt.calledOnce).to.be.true;
+      });
+
+      it('downloads DecisionModel rather than LanguageModel when neither is on the device', async function () {
+        const DecisionModel = mockApi('DecisionModel', model, 'downloadable');
+        const LanguageModel = mockApi('LanguageModel', {}, 'downloadable');
+        setUserActive(true);
+        expect(await init({ decisions: { enabled: true, questions } })).to.be.true;
+        expect(DecisionModel.create.calledOnce).to.be.true;
+        expect(LanguageModel.create.called).to.be.false;
+      });
+
+      it('does not use an available LanguageModel when promptFallback is false', async function () {
+        const DecisionModel = mockApi('DecisionModel', model, 'downloadable');
+        const LanguageModel = mockApi('LanguageModel', {});
+        setUserActive(true);
+        expect(await init({ decisions: { enabled: true, questions, promptFallback: false } })).to.be.true;
+        expect(DecisionModel.create.calledOnce).to.be.true;
         expect(LanguageModel.availability.called).to.be.false;
       });
 
