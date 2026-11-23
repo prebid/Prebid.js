@@ -40,4 +40,5 @@ redacted data.
 A module that does not use the privacy controls as described in
 [THREAT_MODEL.md](THREAT_MODEL.md#modules), with no external input involved, can be
 reported in a public issue: the code is already public, so there is nothing to
-disclose privately.
+disclose privately. If you are unsure whether external input is involved, report
+privately.

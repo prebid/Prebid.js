@@ -70,27 +70,31 @@ run with full page privileges: nothing in the browser stops a module from readin
 cookies, globals, or configuration directly.
 
 Privacy controls are therefore enforced by convention: core applies them on the paths
-modules are expected to use, and code review and lint check that modules use those
-paths. A module that goes around them breaks the publisher's controls as surely as
+modules are expected to use, and code review checks that modules use those paths,
+with lint as a first filter. A module that goes around them breaks the publisher's controls as surely as
 an exploit would.
 
 | Activity | Enforced by | Modules must |
 |---|---|---|
 | `accessDevice` | `storageManager` | access cookies and web storage only through a storage manager obtained for the module |
 | `transmitUfpd`, `transmitEids`, `transmitPreciseGeo`, `transmitTid` | redaction of `ortb2` and bid requests before they reach the adapter | take user data, IDs, geolocation, and transaction IDs only from the request they are given, not from configuration, globals, or storage |
-| `enrichUfpd`, `enrichEids` | guarded `ortb2Fragments` passed to RTD and user ID modules | add data to requests only through the fragments they are given |
+| `enrichUfpd`, `enrichEids` (RTD modules) | guarded `ortb2Fragments` passed to the module | add data to requests only through the fragments they are given |
+| `enrichEids` (user ID modules) | `userId`, which drops the IDs of a denied module | provide IDs only as the return value of the submodule interface |
 | `syncUser` | `userSync` | run user syncs only by registering them with `userSync` |
-| `loadExternalScript` | `adloader`; lint limits which files may import it | load scripts only through `adloader`, and only if approved |
-| `accessRequestCredentials` | `ajax` | make network requests through `ajax` |
+| `loadExternalScript` | `adloader`; lint limits which files may import it | load scripts only through `adloader`, and only from a file on the lint allowlist (`plugins/eslint/approvedLoadExternalScriptPaths.js`) |
+| `accessRequestCredentials` | `ajax`, which downgrades credentialed requests | make network requests through `ajax`, not native `fetch` |
 | `fetchBids`, `reportAnalytics`, `acceptBid` | core, before the module is invoked | — |
 
-Lint bans the most common workarounds in modules: direct `localStorage`,
-`sessionStorage`, `document.cookie`, `XMLHttpRequest`, and `navigator.sendBeacon`.
-Other ways around the controls, such as reading user IDs from configuration or
-another module's globals, are caught only in review.
+Review is what enforces this. Lint flags the literal forms of the most common
+workarounds (direct `localStorage`, `sessionStorage`, `document.cookie`,
+`XMLHttpRequest`, and `navigator.sendBeacon`), which catches accidents but not
+intent: an alias, a computed property name, or a disable comment gets past it.
+Passing lint is not evidence that a module stays within the controls. Native `fetch`,
+and reading user IDs from configuration or another module's globals, have no lint
+rule at all.
 
 Modules also handle untrusted responses. Core strips prototype-pollution keys from
-the response bodies it parses on a module's behalf (see
+the response bodies it parses itself (see
 [Known Limitations](#known-limitations)). JSON that a module parses itself must go
 through `parseUntrustedJSON`, and response data must be merged into other objects
 with `mergeDeep` rather than a hand-written recursive merge.
@@ -158,9 +162,15 @@ This is the only accepted risk; other exclusions require a maintainer decision.
 - Privacy behavior depends on the selected modules, CMP integration, publisher
   configuration, rule priorities, and timing. Activity checks allow an operation
   unless an applicable rule denies it; there is no universal default-deny.
-- Core strips prototype-pollution keys from bidder, Prebid Server, and native `adm`
-  response bodies. JSON that a module parses on its own is not covered unless the
-  module uses `parseUntrustedJSON`, and the parser does not protect a merge that
-  walks inherited properties; `mergeDeep` does.
+- Module compliance with the privacy controls rests on review at merge time. Nothing
+  verifies it at runtime, and lint is only a first filter.
+- The `transmit*` activities redact what bid adapters and Prebid Server receive.
+  Analytics adapters are governed by `reportAnalytics` alone: one that is allowed to
+  report sees auction data without that redaction.
+- Core strips prototype-pollution keys from bidder and Prebid Server response bodies,
+  and from native `adm` strings parsed by the ORTB converter. JSON that a module
+  parses on its own, including `adm`, is not covered unless the module uses
+  `parseUntrustedJSON`, and the parser does not protect a merge that walks inherited
+  properties; `mergeDeep` does.
 - Tests and helper names describe intent; they do not show that every caller is
   protected.
