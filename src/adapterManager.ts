@@ -844,7 +844,8 @@ const adapterManager = {
               // Client adapters already isolate a throw so the next bidder still runs.
               // yieldAll stops the queue when this call throws, which drops every later bidder.
               logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
-              uniqueServerRequests.forEach(bidRequest => doneCb.call(bidRequest));
+              // A synchronous throw means no request went out: an error, not a timeout.
+              doneCbs.forEach(done => done(false));
             }
           }
         } else {
@@ -881,6 +882,8 @@ const adapterManager = {
         );
       } catch (e) {
         logError(`${bidderRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: bidderRequest });
+        // A synchronous throw means no request went out: an error, not a timeout.
+        onTimelyResponse(bidderRequest.bidderRequestId);
         adapterDone();
       }
     });

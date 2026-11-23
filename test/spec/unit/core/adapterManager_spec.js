@@ -210,7 +210,8 @@ describe('adapterManager tests', function () {
       function mockDoneCB() {
         doneBidders.push(this.bidderCode);
       }
-      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB);
+      const onTimelyResponse = sinon.stub();
+      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, onTimelyResponse);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       sinon.assert.calledOnce(badAdapterMock.callBids);
       sinon.assert.calledOnce(rubiconAdapterMock.callBids);
@@ -221,6 +222,7 @@ describe('adapterManager tests', function () {
       )).to.be.true;
       // done should be called for our bidder!
       expect(doneBidders.indexOf('badBidder') === -1).to.be.false;
+      sinon.assert.calledOnceWithExactly(onTimelyResponse, bidRequests.find(br => br.bidderCode === 'badBidder').bidderRequestId);
     });
     it('should emit BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
@@ -820,7 +822,9 @@ describe('adapterManager tests', function () {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       sinon.assert.calledOnce(rubiconAdapterMock.callBids);
       expect(doneBidders).to.include('appnexus');
-      sinon.assert.notCalled(onTimelyResponse);
+      const s2sRequestIds = bidRequests.filter(br => br.src === 's2s').map(br => br.bidderRequestId);
+      expect(s2sRequestIds).to.not.be.empty;
+      expect(onTimelyResponse.args.map(([id]) => id)).to.have.members(s2sRequestIds);
       sinon.assert.calledWithMatch(utils.logError, 'prebidServer Bid Adapter emitted an uncaught error when parsing their bidRequest');
 
       delete adapterManager.bidderRegistry['rubicon'];
