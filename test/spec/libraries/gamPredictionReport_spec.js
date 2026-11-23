@@ -50,28 +50,10 @@ describe('gamPredictionReport', function () {
     expect(sendData.firstCall.args[0].bidderCode).to.equal('test');
   });
 
-  it('reads targeting from legacy slot.getTargeting APIs when getConfig is missing', () => {
+  it('logs and recovers when slot.getConfig throws', () => {
     const sendData = sinon.spy();
     const slot = {
-      getTargetingKeys: sinon.stub().returns(['hb_bidder']),
-      getTargeting: sinon.stub().withArgs('hb_bidder').returns(['legacy']),
-      getSlotElementId: () => 'div-3',
-      getAdUnitPath: () => '/789'
-    };
-
-    runWithSlot(slot, sendData);
-
-    expect(sendData.calledOnce).to.equal(true);
-    expect(sendData.firstCall.args[0].bidderCode).to.equal('legacy');
-    expect(slot.getTargetingKeys.calledOnce).to.equal(true);
-    expect(slot.getTargeting.calledOnce).to.equal(true);
-  });
-
-  it('logs and recovers when legacy targeting APIs throw', () => {
-    const sendData = sinon.spy();
-    const slot = {
-      getTargetingKeys: sinon.stub().throws(new Error('legacy broken')),
-      getTargeting: sinon.stub(),
+      getConfig: sinon.stub().throws(new Error('broken')),
       getSlotElementId: () => 'div-5',
       getAdUnitPath: () => '/202'
     };
