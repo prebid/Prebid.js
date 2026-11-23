@@ -54,7 +54,9 @@ The ad server stamps `dealid` on the bids it returns for a deal-backed line item
 
 ## Campaign priority
 
-A bid with a `dealid` also carries the campaign's delivery priority in `ext.prebid.deal`, which Prebid surfaces as `bid.meta.deal`: Premium `4` (sponsorship), Standard High / Medium / Low `6` / `8` / `10` (reservation), Non-guaranteed `12` (non-reservation). House ads and programmatic partner wins carry no deal. To let Prebid rank Epom bids on that priority before price, trust the bidder (under its alias, if it runs under one):
+A bid with a `dealid` also carries the campaign's delivery priority in `ext.prebid.deal`, which Prebid surfaces as `bid.meta.deal`: Premium `4` (sponsorship), Standard High / Medium / Low `6` / `8` / `10` (reservation), Non-guaranteed `12` (non-reservation). House ads and programmatic partner wins carry no deal.
+
+The priority is a fallback, not the main lever. A typical reservation campaign needs no better priority than non-guaranteed demand: it should win on its CPM, and the publisher can leave Prebid's default price ranking alone. Trust the bidder only when price is not enough — a sponsorship that must take the slot whatever the other bidders offer. Once it is trusted, every tier ranks ahead of the tiers below it, so a reservation campaign meant to compete on price belongs in the Non-guaranteed tier. To let Prebid rank Epom bids on priority before price (under the bidder's alias, if it runs under one):
 
 ```javascript
 pbjs.bidderSettings = pbjs.bidderSettings || {};
