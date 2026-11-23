@@ -822,6 +822,21 @@ describe('adapterManager tests', function () {
 
       delete adapterManager.bidderRegistry['rubicon'];
     });
+
+    it('should call done for s2s requests whose adapter is missing', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        bids: [{ bidder: 'appnexus', params: { placementId: 'id' } }]
+      }];
+      const bidRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 's2s-missing', 1000);
+      delete adapterManager.bidderRegistry['prebidServer'];
+      sandbox.stub(utils, 'logError');
+      const doneBidders = [];
+      adapterManager.callBids(adUnits, bidRequests, () => {}, function () { doneBidders.push(this.bidderCode); }, undefined, 1000, () => {});
+      expect(doneBidders).to.eql(['appnexus']);
+      sinon.assert.calledWith(utils.logError, 'missing prebidServer');
+    });
   }); // end s2s tests
 
   describe('Multiple S2S tests', function () {

@@ -596,6 +596,14 @@ describe('s2s configuration', () => {
     cfg1.enabled = false;
     expect(validateConfig([cfg1, cfg2])).to.eql([cfg2]);
   });
+  it('keeps a bidder in every config that lists it', () => {
+    cfg1.bidders = ['bidderA', 'bidderB'];
+    expect(validateConfig([cfg1, cfg2]).map(cfg => cfg.bidders)).to.eql([['bidderA', 'bidderB'], ['bidderA']]);
+  });
+  it('removes a bidder listed twice by the same config', () => {
+    cfg1.bidders = ['bidderA', 'bidderB', 'bidderA'];
+    expect(validateConfig([cfg1, cfg2]).map(cfg => cfg.bidders)).to.eql([['bidderA', 'bidderB'], ['bidderA']]);
+  });
 });
 
 describe('S2S Adapter', function () {
@@ -4236,6 +4244,132 @@ describe('S2S Adapter', function () {
           .map(call => call.args[1].bidderRequest.bidderCode);
         expect(errorFor).to.eql(['appnexus']);
       });
+    });
+  });
+
+  describe('routing between s2sConfigs', () => {
+    const ENDPOINTS = {
+      a: 'https://pbs-a.example/auction',
+      b: 'https://pbs-b.example/auction',
+      c: 'https://pbs-c.example/auction'
+    };
+
+    function setS2SConfigs(biddersByName) {
+      config.setConfig({
+        s2sConfig: Object.entries(biddersByName).map(([name, bidders]) => ({
+          ...CONFIG,
+          name,
+          accountId: name,
+          bidders,
+          endpoint: { p1Consent: ENDPOINTS[name], noP1Consent: ENDPOINTS[name] }
+        }))
+      });
+    }
+
+    function runAuction(adUnits) {
+      const bidderRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 'auction-id', 1000, [], {});
+      adapterManager.callBids(adUnits, bidderRequests, addBidResponse, done, undefined, 1000, sinon.stub(), {});
+    }
+
+    function adUnit(code, bids) {
+      return { code, mediaTypes: { banner: { sizes: [[300, 250]] } }, bids };
+    }
+
+    function requestsTo(name) {
+      return server.requests.filter(req => req.url.startsWith(ENDPOINTS[name])).map(req => JSON.parse(req.requestBody));
+    }
+
+    function biddersSentTo(name) {
+      return requestsTo(name).map(body => body.imp.flatMap(imp => Object.keys(imp.ext.prebid.bidder ?? {})));
+    }
+
+    beforeEach(() => {
+      sinon.stub(events, 'emit');
+    });
+
+    afterEach(() => {
+      events.emit.restore();
+    });
+
+    it('sends a bid routed with s2sConfigName to a later config that shares its bidder', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      runAuction([adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 }, s2sConfigName: 'b' }])]);
+      expect(biddersSentTo('a')).to.eql([]);
+      expect(biddersSentTo('b')).to.eql([['appnexus']]);
+    });
+
+    it('sends a bid routed to several configs to each of them', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'], c: ['appnexus'] });
+      runAuction([adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 }, s2sConfigName: ['a', 'c'] }])]);
+      expect(biddersSentTo('a')).to.eql([['appnexus']]);
+      expect(biddersSentTo('b')).to.eql([]);
+      expect(biddersSentTo('c')).to.eql([['appnexus']]);
+    });
+
+    it('sends a bid without s2sConfigName only to the first config that lists its bidder', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      runAuction([adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 } }])]);
+      expect(biddersSentTo('a')).to.eql([['appnexus']]);
+      expect(biddersSentTo('b')).to.eql([]);
+    });
+
+    it('sends a bid without s2sConfigName past an invalid config to the first valid one', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      const [invalid, valid] = config.getConfig('s2sConfig');
+      delete invalid.accountId;
+      config.setConfig({ s2sConfig: [invalid, valid] });
+      runAuction([adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 } }])]);
+      expect(biddersSentTo('a')).to.eql([]);
+      expect(biddersSentTo('b')).to.eql([['appnexus']]);
+    });
+
+    it('sends stored impressions without s2sConfigName to every server', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus'] });
+      const storedImp = adUnit('stored', [{ bidder: null }]);
+      storedImp.ortb2Imp = { ext: { prebid: { storedrequest: { id: 'stored-imp' } } } };
+      runAuction([storedImp]);
+      ['a', 'b'].forEach(name => {
+        expect(requestsTo(name).map(body => body.imp.map(imp => imp.ext.prebid.storedrequest?.id)), name).to.eql([['stored-imp']]);
+      });
+    });
+
+    it('still sends and completes requests when s2sConfig is replaced before callBids', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['rubicon'] });
+      const adUnits = [adUnit('au', [
+        { bidder: 'appnexus', params: { placementId: 1 } },
+        { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } }
+      ])];
+      const bidderRequests = adapterManager.makeBidRequests(adUnits, Date.now(), 'auction-id', 1000, [], {});
+      config.setConfig({ s2sConfig: config.getConfig('s2sConfig').map(cfg => deepClone(cfg)) });
+      adapterManager.callBids(adUnits, bidderRequests, addBidResponse, done, undefined, 1000, sinon.stub(), {});
+      expect(biddersSentTo('a')).to.eql([['appnexus']]);
+      expect(biddersSentTo('b')).to.eql([['rubicon']]);
+      server.requests.forEach(req => req.respond(200, {}, JSON.stringify({ id: 'resp', seatbid: [] })));
+      expect(done.getCalls().map(call => call.thisValue.bidderCode)).to.have.members(['appnexus', 'rubicon']);
+    });
+
+    it('sends bidders listed by a single config to that config', () => {
+      setS2SConfigs({ a: ['appnexus'], b: ['appnexus', 'rubicon'] });
+      runAuction([adUnit('au', [
+        { bidder: 'appnexus', params: { placementId: 1 } },
+        { bidder: 'rubicon', params: { accountId: 1, siteId: 2, zoneId: 3 } }
+      ])]);
+      expect(biddersSentTo('a')).to.eql([['appnexus']]);
+      expect(biddersSentTo('b')).to.eql([['rubicon']]);
+    });
+
+    it('sends stored impressions to their server when only another server has bidders', () => {
+      setS2SConfigs({ a: ['rubicon'], b: ['appnexus'] });
+      const storedImp = adUnit('stored', [{ module: 'pbsBidAdapter', params: { configName: 'a' } }]);
+      storedImp.ortb2Imp = { ext: { prebid: { storedrequest: { id: 'stored-imp' } } } };
+      runAuction([
+        storedImp,
+        adUnit('au', [{ bidder: 'appnexus', params: { placementId: 1 } }])
+      ]);
+      const toA = requestsTo('a');
+      expect(toA.length).to.equal(1);
+      expect(toA[0].imp.map(imp => imp.ext.prebid.storedrequest?.id)).to.eql(['stored-imp']);
+      expect(biddersSentTo('b')).to.eql([['appnexus']]);
     });
   });
 
