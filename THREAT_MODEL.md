@@ -87,11 +87,10 @@ an exploit would.
 
 Review is what enforces this. Lint flags the literal forms of the most common
 workarounds (direct `localStorage`, `sessionStorage`, `document.cookie`,
-`XMLHttpRequest`, and `navigator.sendBeacon`), which catches accidents but not
-intent: an alias, a computed property name, or a disable comment gets past it.
-Passing lint is not evidence that a module stays within the controls. Native `fetch`,
-and reading user IDs from configuration or another module's globals, have no lint
-rule at all.
+`XMLHttpRequest`, `fetch`, and `navigator.sendBeacon`), which catches accidents but
+not intent: an alias, a computed property name, or a disable comment gets past it.
+Passing lint is not evidence that a module stays within the controls. Reading user
+IDs from configuration or another module's globals has no lint rule at all.
 
 Modules also handle untrusted responses. Core strips prototype-pollution keys from
 the response bodies it parses itself (see
