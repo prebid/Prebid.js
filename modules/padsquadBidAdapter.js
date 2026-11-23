@@ -8,8 +8,11 @@ const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 
+const ACP_ID = 2322; // Google Additional Consent provider ID
+
 export const spec = {
   code: 'padsquad',
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
