@@ -59,7 +59,6 @@ export const spec = {
       url: ENDPOINT_URL,
       data: data,
       options: {
-        contentType: 'application/json',
         withCredentials: false
       },
       bidderRequest
