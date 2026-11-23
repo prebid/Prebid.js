@@ -4,10 +4,12 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
+const ACP_ID = 3196; // Google Additional Consent provider ID
 const BIDDER_URL = 'https://ads-sg.momagic.com/exchange/openrtb25/';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function (bidRequest) {

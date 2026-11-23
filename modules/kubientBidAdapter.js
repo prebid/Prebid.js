@@ -5,11 +5,13 @@ import { config } from '../src/config.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 
 const BIDDER_CODE = 'kubient';
+const ACP_ID = 3177; // Google Additional Consent provider ID
 const END_POINT = 'https://kssp.kbntx.ch/kubprebidjs';
 const VERSION = '1.1';
 const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(

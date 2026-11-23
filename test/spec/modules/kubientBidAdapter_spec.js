@@ -505,3 +505,10 @@ describe('KubientAdapter', function () {
     });
   });
 });
+
+describe('kubientBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3177);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

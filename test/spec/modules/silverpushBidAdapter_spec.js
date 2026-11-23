@@ -416,3 +416,10 @@ describe('Silverpush Adapter', function () {
     });
   });
 });
+
+describe('silverpushBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(1661);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});
