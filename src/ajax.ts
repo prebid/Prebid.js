@@ -6,6 +6,7 @@ import { buildUrl, logError, logWarn, parseUrl } from './utils.js';
 import type { ModuleType } from "./activities/modules.ts";
 
 export const dep = {
+  // eslint-disable-next-line no-restricted-properties
   fetch: window.fetch.bind(window),
   makeRequest: (r, o?) => new Request(r, o),
   timeout(timeout, resource) {

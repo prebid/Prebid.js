@@ -2,6 +2,7 @@ import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import { logInfo, logError } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
 
 let ENDPOINT = 'https://prebid-api.highr.ai/analytics';
 const auctions = {};

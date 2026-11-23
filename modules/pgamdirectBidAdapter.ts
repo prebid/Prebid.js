@@ -12,6 +12,7 @@ import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepSetValue, triggerPixel } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
 
 import type { BidRequest } from '../src/adapterManager.js';
 import type { ORTBImp, ORTBRequest } from '../src/prebid.public.js';
