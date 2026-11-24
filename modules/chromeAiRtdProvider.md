@@ -100,7 +100,7 @@ pbjs.setConfig({
 | `keywords.cacheInLocalStorage` | Boolean | Cache the keywords in localStorage | `true` |
 | `categories.enabled` | Boolean | Classify the page into IAB tier 1 categories | `false` |
 | `categories.taxonomy` | Number | AdCOM `cattax` of the categories: `6` (Content Taxonomy 2.2) or `1` (Content Category Taxonomy 1.0) | `6` |
-| `categories.articlesOnly` | Boolean | Only classify pages with a JSON-LD `Article`, `NewsArticle` or `BlogPosting`, see [Categories](#categories-categories) | `true` |
+| `categories.articlesOnly` | Boolean | Only classify pages marked up as a schema.org `Article` or a subtype, see [Categories](#categories-categories) | `true` |
 | `categories.maxCategories` | Number | Maximum number of categories | `1` |
 | `categories.prompt` | String | Replaces the default instruction, see [Custom prompts](#custom-prompts) | |
 | `categories.gamPps` | Boolean | With taxonomy 6, also send the categories to Google Ad Manager as Publisher Provided Signals, see [Google Ad Manager](#google-ad-manager-publisher-provided-signals) | `true` |
@@ -121,13 +121,15 @@ Values the publisher already set in the auction's first party data are never ove
 
 Keywords, categories and publisher questions get the same short text, read synchronously from the DOM, one labelled line each, skipping empty ones:
 
-- `Title`: `document.title`;
-- `Description`: the `description` meta tag;
-- `Section and tags`: `article:section`, JSON-LD `articleSection` and `BreadcrumbList` names, `article:tag` and the `keywords` meta tag;
+- `Title`: `document.title`, else `og:title`;
+- `Description`: the `description` meta tag, else `og:description`;
+- `Section and tags`: `article:section`, `parsely-section`, JSON-LD `articleSection` and `BreadcrumbList` names, `article:tag`, the `keywords` and `news_keywords` meta tags and JSON-LD `keywords`. Tag and keyword lists separated by commas or semicolons are split; repeats, names of more than 60 characters, the page title and breadcrumbs that link to the home page or to the page itself are left out;
 - `URL path`: the URL path segments made only of words, such as `electric-cars`;
 - `Content`: the first 500 characters of the main content.
 
-The main content is the JSON-LD `articleBody` if there is one, else the text of the first `article`, `main` or `[role=main]` element with at least 200 characters, else the body. Script, style, `noscript`, `template`, SVG and iframe contents and elements marked `hidden` or `aria-hidden="true"` are left out. Language detection gets the first 1000 characters of the main content, without the other lines.
+HTML entities and tags in these values are decoded and removed.
+
+The main content is the JSON-LD `articleBody` if it has at least 200 characters. Otherwise it is the text of the paragraphs, list items, subheadings and quotes of the first `article`, `main` or `[role=main]` element, or of the body, that has at least 200 characters of them, leaving out blocks that are mostly links. Failing that, it is a shorter `articleBody`, else all the text of the first such element with at least 200 characters, else of the body. Either way, script, style, `noscript`, `template`, SVG and iframe contents, navigation, headers, footers, asides, figures and their captions, form controls, dialogs, tooltips and menus, elements marked `hidden` or `aria-hidden="true"`, and text that isn't rendered (`display: none` or `visibility: hidden`) are left out. Visibility is read with `checkVisibility()`, which needs up to date styles but no layout. Language detection gets the first 1000 characters of the main content, without the other lines.
 
 ### Model downloads and user activation
 
@@ -165,7 +167,7 @@ The model picks tier 1 category names of the configured taxonomy, and the module
 
 The model is given category names rather than IDs, which it mostly picked from the top of the list regardless of the page. It isn't asked for confidence scores either: they were high for wrong categories too, so `categories.minScore` is no longer supported and is ignored with a warning. Extra categories were often unrelated to the page, so `maxCategories` defaults to 1; set it to 2 or more for pages that often have more than one topic.
 
-With `articlesOnly` (the default), categories are only detected on pages with a JSON-LD node of type `Article`, `NewsArticle` or `BlogPosting`, at the top level, in an array or in `@graph`. Home, section, search and tag pages rarely have one, and their text describes many articles. `og:type` isn't used, because many themes set `og:type=article` on every page. Set `articlesOnly: false` to classify every page.
+With `articlesOnly` (the default), categories are only detected on pages with a JSON-LD node of type `Article` or one of its subtypes (a type ending in `Article` or `BlogPosting`, or `Report`), at the top level, in an array or in `@graph`, or with exactly one microdata item of such a type (listings usually have several). Home, section, search and tag pages rarely have one, and their text describes many articles. `og:type` isn't used, because many themes set `og:type=article` on every page. Set `articlesOnly: false` to classify every page.
 
 The bundled tier 1 lists come from the IAB Tech Lab taxonomy files:
 

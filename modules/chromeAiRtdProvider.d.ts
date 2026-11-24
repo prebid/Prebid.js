@@ -56,8 +56,8 @@ export interface ChromeAiCategoriesParams {
   /** Defaults to `1`. */
   maxCategories?: number;
   /**
-   * Only classifies pages with a JSON-LD node of type `Article`, `NewsArticle` or `BlogPosting`, which home, section,
-   * search and tag pages usually lack. Defaults to `true`.
+   * Only classifies pages marked up as a schema.org `Article` or one of its subtypes, such as `NewsArticle` or
+   * `BlogPosting`, which home, section, search and tag pages usually lack. Defaults to `true`.
    */
   articlesOnly?: boolean;
   /**

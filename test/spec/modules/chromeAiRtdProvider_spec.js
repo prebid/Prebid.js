@@ -190,10 +190,46 @@ describe('Chrome AI RTD Provider', function () {
       ['color:red', 'tracker', 'Hidden menu', 'Icon label', 'Enable JS'].forEach(text => expect(content).to.not.include(text));
     });
 
-    it('prefers JSON-LD articleBody', function () {
-      addToPage(jsonLd({ '@context': 'https://schema.org', '@type': 'NewsArticle', articleBody: 'Body from JSON-LD about electric cars.' }));
-      addToPage(`<article>${LONG}</article>`);
-      expect(contentLine()).to.equal('Content: Body from JSON-LD about electric cars.');
+    it('leaves out text hidden by stylesheets', function () {
+      addToPage(`<style>.print-only{display:none}.popover{visibility:hidden}</style><main><p class="print-only">Printed for personal use</p>` +
+        `<p>${LONG}<span class="popover">Advertiser disclosure</span></p></main>`);
+      const content = contentLine();
+      expect(content).to.include('Electric cars are getting cheaper');
+      ['Printed for personal use', 'Advertiser disclosure'].forEach(text => expect(content).to.not.include(text));
+    });
+
+    it('leaves out navigation, headers, captions, controls and popups in the main element', function () {
+      addToPage('<main><nav><p>Section menu</p></nav><header><p>Article header</p></header><aside><p>Newsletter signup</p></aside>' +
+        '<figure><img alt=""><figcaption><p>Photo caption</p></figcaption></figure><p><button>Share</button><label>Email</label></p>' +
+        '<div role="dialog"><p>Subscribe dialog</p></div><div role="tooltip"><p>Tooltip text</p></div><dialog><p>Modal</p></dialog>' +
+        `<p>${LONG}</p><footer><p>Site footer</p></footer></main>`);
+      const content = contentLine();
+      expect(content.startsWith('Content: Electric cars are getting cheaper')).to.be.true;
+      ['Section menu', 'Article header', 'Newsletter', 'Photo caption', 'Share', 'Email', 'Subscribe dialog', 'Tooltip text', 'Modal', 'Site footer']
+        .forEach(text => expect(content).to.not.include(text));
+    });
+
+    it('reads paragraphs, list items, subheadings and quotes, leaving out loose text and blocks that are mostly links', function () {
+      addToPage('<article><div>By Jane Doe 5 min read</div><ul><li><a href="/a">Related story one</a></li><li><a href="/b">Related story two</a> new</li></ul>' +
+        `<h2>Prices</h2><p>${LONG}</p><ul><li>Bring a charger</li></ul><blockquote><p>A quote with a <a href="/c">link</a> in it.</p></blockquote></article>`);
+      const content = contentLine();
+      expect(content.startsWith('Content: Prices Electric cars are getting cheaper')).to.be.true;
+      expect(content).to.include('Bring a charger').and.to.include('A quote with a link in it.');
+      ['Jane Doe', 'Related story'].forEach(text => expect(content).to.not.include(text));
+    });
+
+    it('prefers a JSON-LD articleBody of at least 200 characters, with HTML decoded', function () {
+      addToPage(jsonLd({ '@context': 'https://schema.org', '@type': 'NewsArticle', articleBody: `<p>Tom &amp; Jerry&#8217;s cars.</p> ${LONG}` }));
+      addToPage(`<article><p>Text of the article element. ${LONG}</p></article>`);
+      expect(contentLine().startsWith('Content: Tom & Jerry’s cars. Electric cars')).to.be.true;
+    });
+
+    it('prefers the page over a shorter JSON-LD articleBody', function () {
+      addToPage(jsonLd({ '@type': 'NewsArticle', articleBody: 'Only the standfirst.' }));
+      addToPage(`<article><p>${LONG}</p></article>`);
+      const content = contentLine();
+      expect(content.startsWith('Content: Electric cars are getting cheaper')).to.be.true;
+      expect(content).to.not.include('Only the standfirst');
     });
 
     it('uses the first article, main or [role=main] element with at least 200 characters', function () {
@@ -204,12 +240,17 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     it('falls back to the body when no element has enough text', function () {
-      addToPage('<nav>Menu</nav><article>A short article about electric cars.</article>');
-      expect(contentLine()).to.include('Menu').and.to.include('A short article about electric cars.');
+      addToPage('<nav>Menu</nav><div>Loose text before.</div><article>A short article about electric cars.</article>');
+      expect(contentLine()).to.include('Loose text before. A short article about electric cars.').and.to.not.include('Menu');
     });
 
     it('keeps the first 500 characters of the main content', function () {
       addToPage(jsonLd({ '@type': 'Article', articleBody: LONG.repeat(3) }));
+      expect(contentLine()).to.have.length('Content: '.length + chromeAiRtdProvider.CONSTANTS.MAIN_CONTENT_LENGTH);
+    });
+
+    it('keeps the first 500 characters of the text blocks', function () {
+      addToPage(`<article>${`<p>${LONG}</p>`.repeat(3)}</article>`);
       expect(contentLine()).to.have.length('Content: '.length + chromeAiRtdProvider.CONSTANTS.MAIN_CONTENT_LENGTH);
     });
 
@@ -227,8 +268,40 @@ describe('Chrome AI RTD Provider', function () {
       const lines = chromeAiRtdProvider.getPageText().split('\n');
       expect(lines[0]).to.equal('Title: Cheaper electric cars');
       expect(lines[1]).to.equal('Description: Battery prices keep falling.');
-      expect(lines[2]).to.equal('Section and tags: Autos, Technology, News, Cars, EV, Batteries, cars, green');
+      expect(lines[2]).to.equal('Section and tags: Autos, Technology, News, Cars, EV, Batteries, green');
       expect(lines[lines.length - 1]).to.equal('Content: Battery prices keep falling, so electric cars get cheaper.');
+    });
+
+    it('adds keywords, splits lists and leaves out repeats, long names, the title and breadcrumbs to the home page or the page', function () {
+      document.title = 'Cheaper electric cars | Example News';
+      addToPage('<meta name="parsely-section" content="Autos"><meta name="news_keywords" content="EV, autos, Battery prices">', document.head);
+      addToPage(jsonLd({
+        '@graph': [
+          { '@type': 'NewsArticle', headline: 'Cheaper electric cars', keywords: 'charging;  range', articleBody: 'Battery prices keep falling, so electric cars get cheaper.' },
+          { '@type': 'WebPage', keywords: ['Battery Prices', 42, 'A keyword that is much too long to be a section or a tag of the page'] },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com/' },
+              { '@type': 'ListItem', position: 2, name: 'Motoring', item: { '@id': 'https://example.com/motoring/' } },
+              { '@type': 'ListItem', position: 3, name: 'This story', item: window.location.href },
+              { '@type': 'ListItem', position: 3, name: '', item: 'http://[invalid' },
+              { '@type': 'ListItem', position: 4, name: 'Cheaper electric cars' },
+              { '@type': 'ListItem', position: 5, name: 'Cheaper electric cars, with batteries made in Europe, and other news' }
+            ]
+          }
+        ]
+      }));
+      expect(chromeAiRtdProvider.getPageText()).to.include('\nSection and tags: Autos, Motoring, EV, Battery prices, charging, range\n');
+    });
+
+    it('falls back to og:title and og:description, and decodes entities', function () {
+      document.title = '';
+      addToPage('<meta property="og:title" content="Cheaper electric cars"><meta property="og:description" content="Tom&amp;#039;s cars &amp;amp; batteries.">', document.head);
+      addArticle();
+      const lines = chromeAiRtdProvider.getPageText().split('\n');
+      expect(lines[0]).to.equal('Title: Cheaper electric cars');
+      expect(lines[1]).to.equal("Description: Tom's cars & batteries.");
     });
 
     it('adds the URL path segments that are words', function () {
@@ -264,14 +337,35 @@ describe('Chrome AI RTD Provider', function () {
     });
 
     describe('isArticlePage', function () {
-      it('is false without a JSON-LD Article, NewsArticle or BlogPosting', function () {
+      it('is false without a schema.org Article', function () {
         addToPage('<meta property="og:type" content="article">', document.head);
         addToPage(jsonLd({ '@type': 'WebPage' }) + jsonLd({ '@type': 'CollectionPage' }));
         expect(chromeAiRtdProvider.isArticlePage()).to.be.false;
       });
 
       [
+        ['a SocialMediaPosting', { '@type': 'SocialMediaPosting' }],
+        ['a CreativeWork', { '@type': 'https://schema.org/CreativeWork' }]
+      ].forEach(([label, data]) => {
+        it(`is false for ${label}`, function () {
+          addToPage(jsonLd(data));
+          expect(chromeAiRtdProvider.isArticlePage()).to.be.false;
+        });
+      });
+
+      it('is true for exactly one microdata article, not for a listing of several', function () {
+        const item = '<div itemscope itemtype="https://schema.org/NewsArticle"><p>Story</p></div>';
+        addToPage(`<div itemscope itemtype="https://schema.org/WebPage">${item}</div>`);
+        expect(chromeAiRtdProvider.isArticlePage()).to.be.true;
+        addToPage(item);
+        expect(chromeAiRtdProvider.isArticlePage()).to.be.false;
+      });
+
+      [
         ['a top level Article', { '@type': 'Article' }],
+        ['a ReportageNewsArticle', { '@type': 'ReportageNewsArticle' }],
+        ['a LiveBlogPosting', { '@type': 'LiveBlogPosting' }],
+        ['a Report given as a URL', { '@type': 'https://schema.org/Report' }],
         ['a BlogPosting in a top level array', [{ '@type': 'Organization' }, { '@type': 'BlogPosting' }]],
         ['a NewsArticle in @graph', { '@graph': [{ '@type': 'WebSite' }, { '@type': 'NewsArticle' }] }],
         ['an array @type', { '@type': ['NewsArticle', 'Thing'] }]

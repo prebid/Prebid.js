@@ -20,9 +20,9 @@ export const CONSTANTS = Object.freeze({
   MAIN_CONTENT_LENGTH: 500,
   MIN_MAIN_CONTENT_LENGTH: 200,
   MAX_FIELD_LENGTH: 200,
+  MAX_TAG_LENGTH: 60,
   // Bump when the model input or the result format changes, so older cached results are detected again.
-  CACHE_VERSION: 2,
-  ARTICLE_TYPES: ['Article', 'NewsArticle', 'BlogPosting'],
+  CACHE_VERSION: 3,
   MAX_DECISION_OPTIONS: 26, // DecisionModel limit per choice question
   DECISION_TYPES: ['boolean', 'choice', 'score'],
   CATTAX_IAB_CONTENT_2_2: 6,
@@ -285,53 +285,118 @@ export const getJsonLdNodes = () => {
 
 const hasType = (node, types) => toArray(node['@type']).some(type => types.includes(type));
 
-export const isArticlePage = () => getJsonLdNodes().some(node => hasType(node, CONSTANTS.ARTICLE_TYPES));
+/** schema.org `Article` and its subtypes, such as `ReportageNewsArticle`, `LiveBlogPosting` or `Report`. */
+const isArticleType = (type) => isStr(type) && /(Article|BlogPosting|\bReport)$/.test(type);
+
+/** Whether the page has a JSON-LD article node, or exactly one microdata article (listings have several). */
+export const isArticlePage = () => getJsonLdNodes().some(node => toArray(node['@type']).some(isArticleType)) ||
+  Array.from(document.querySelectorAll('[itemscope][itemtype]'))
+    .filter(el => el.getAttribute('itemtype').split(/\s+/).some(isArticleType)).length === 1;
 
 const NON_TEXT_ELEMENTS = 'script, style, noscript, template, svg, iframe, [hidden], [aria-hidden="true"]';
+const SKIPPED_ELEMENTS = `${NON_TEXT_ELEMENTS}, nav, aside, header, footer, figure, button, label, select, textarea, ` +
+  'dialog, [role=navigation], [role=complementary], [role=dialog], [role=alertdialog], [role=tooltip], [role=menu], ' +
+  '[aria-modal="true"]';
+const TEXT_BLOCKS = 'p, li, h2, h3, h4, h5, h6, blockquote, pre, dd';
+
+// Unlike innerText, checkVisibility needs up to date styles but no layout.
+const isRendered = (element) => element.checkVisibility?.({ visibilityProperty: true }) ?? true;
 
 /**
- * Up to `maxLength` characters of the text under `root`, leaving out script and style contents and hidden subtrees.
- * Unlike `innerText`, this needs no layout.
+ * Up to `maxLength` characters of the text under `root`, leaving out script and style contents, navigation,
+ * captions, controls, popups and text that isn't rendered.
  */
 export const getVisibleText = (root, maxLength) => {
   if (!root) return '';
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => (node.nodeType === Node.ELEMENT_NODE && node.matches(NON_TEXT_ELEMENTS)
-      ? NodeFilter.FILTER_REJECT
-      : NodeFilter.FILTER_ACCEPT)
+    acceptNode: (node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return node.matches(SKIPPED_ELEMENTS) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+      }
+      return /\S/.test(node.nodeValue) && isRendered(node.parentElement) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    }
   });
   let text = '';
   while (text.length <= maxLength && walker.nextNode()) {
-    const value = walker.currentNode.nodeType === Node.TEXT_NODE && normalizeSpace(walker.currentNode.nodeValue);
-    if (value) text += (text ? ' ' : '') + value;
+    text += (text ? ' ' : '') + normalizeSpace(walker.currentNode.nodeValue);
   }
   return text.substring(0, maxLength);
 };
 
-/**
- * Up to `maxLength` characters of the page's main content: JSON-LD `articleBody`, else the first `article`, `main`
- * or `[role=main]` element with enough text, else the body.
- */
-export const getMainContent = (maxLength, nodes = getJsonLdNodes()) => {
-  const articleBody = nodes.map(node => normalizeSpace(node.articleBody)).find(Boolean);
-  if (articleBody) return articleBody.substring(0, maxLength);
-  const element = Array.from(document.querySelectorAll('article, main, [role="main"]'))
-    .find(el => getVisibleText(el, CONSTANTS.MIN_MAIN_CONTENT_LENGTH).length >= CONSTANTS.MIN_MAIN_CONTENT_LENGTH);
-  return getVisibleText(element || document.body, maxLength);
+const getLinkedLength = (element) => Array.from(element.querySelectorAll('a'))
+  .reduce((length, link) => length + normalizeSpace(link.textContent).length, 0);
+
+/** Like `getVisibleText`, but only paragraphs, list items, subheadings and quotes that are mostly not links. */
+const getBlockText = (root, maxLength) => {
+  let text = '';
+  for (const block of root.querySelectorAll(TEXT_BLOCKS)) {
+    if (text.length >= maxLength) break;
+    const skipped = block.closest(SKIPPED_ELEMENTS);
+    if (block.querySelector(TEXT_BLOCKS) || (skipped && skipped !== root && root.contains(skipped))) continue;
+    const value = getVisibleText(block, maxLength);
+    if (value && getLinkedLength(block) <= value.length / 2) text += (text ? ' ' : '') + value;
+  }
+  return text.substring(0, maxLength);
 };
 
-/** Publisher section and tags: `article:section`, JSON-LD `articleSection` and breadcrumbs, `article:tag`, keywords. */
+const decodeHtml = (text) => (isStr(text) && /[&<]/.test(text) ? new DOMParser().parseFromString(text, 'text/html').body.textContent : text);
+
+/**
+ * Up to `maxLength` characters of the page's main content: JSON-LD `articleBody` if it has at least
+ * MIN_MAIN_CONTENT_LENGTH characters, else the text blocks of the first `article`, `main`, `[role=main]` element or
+ * body that has that much, else a shorter `articleBody`, else all text of the first such element.
+ */
+export const getMainContent = (maxLength, nodes = getJsonLdNodes()) => {
+  const minLength = CONSTANTS.MIN_MAIN_CONTENT_LENGTH;
+  const body = nodes.map(node => node.articleBody).find(value => normalizeSpace(value));
+  const articleBody = body ? normalizeSpace(decodeHtml(body)) : '';
+  if (articleBody.length >= minLength) return articleBody.substring(0, maxLength);
+  const elements = [...document.querySelectorAll('article, main, [role="main"]'), document.body].filter(Boolean);
+  for (const element of elements) {
+    const text = getBlockText(element, maxLength);
+    if (text.length >= minLength) return text;
+  }
+  if (articleBody) return articleBody.substring(0, maxLength);
+  return getVisibleText(elements.find(el => getVisibleText(el, minLength).length >= minLength) ?? document.body, maxLength);
+};
+
+const normalizeName = (text) => text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+const getPath = (url) => {
+  try {
+    return isStr(url) ? new URL(url, window.location.href).pathname : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
+ * Publisher section and tags: `article:section`, `parsely-section`, JSON-LD `articleSection` and breadcrumbs other
+ * than the home page and the page itself, `article:tag`, keywords meta tags and JSON-LD `keywords`. Tag lists separated
+ * by commas or semicolons are split, and repeats and the page title are left out.
+ */
 const getSectionAndTags = (nodes) => {
+  const seen = new Set([document.title, ...getMetaContents('meta[property="og:title"]'), ...nodes.map(node => node.headline)]
+    .filter(isStr).map(normalizeName));
   const breadcrumbs = nodes.filter(node => hasType(node, ['BreadcrumbList']))
-    .flatMap(node => toArray(node.itemListElement).map(item => item?.name ?? item?.item?.name));
-  const values = [
-    ...getMetaContents('meta[property="article:section"]'),
+    .flatMap(node => toArray(node.itemListElement))
+    .filter(item => !['/', window.location.pathname].includes(getPath(item?.item?.['@id'] ?? item?.item?.url ?? item?.item)))
+    .map(item => item?.name ?? item?.item?.name);
+  const tags = [
+    ...getMetaContents('meta[property="article:tag"], meta[name="keywords"], meta[name="news_keywords"]'),
+    ...nodes.flatMap(node => toArray(node.keywords))
+  ].flatMap(value => (isStr(value) ? value.split(/[,;]/) : []));
+  return [
+    ...getMetaContents('meta[property="article:section"], meta[name="parsely-section"]'),
     ...nodes.flatMap(node => toArray(node.articleSection)),
     ...breadcrumbs,
-    ...getMetaContents('meta[property="article:tag"]'),
-    ...getMetaContents('meta[name="keywords"]')
-  ].map(normalizeSpace).filter(Boolean);
-  return [...new Set(values)].join(', ');
+    ...tags
+  ].map(normalizeSpace).filter(value => {
+    const name = normalizeName(value);
+    if (!name || value.length > CONSTANTS.MAX_TAG_LENGTH || seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  }).join(', ');
 };
 
 const WORD_SEGMENT = new RegExp('^\\p{L}+(?:[-_+ ]\\p{L}+)*$', 'u');
@@ -353,10 +418,10 @@ const getPathWords = () => window.location.pathname.split('/').map(segment => {
  */
 export const getPageText = () => {
   const nodes = getJsonLdNodes();
-  const field = (value) => normalizeSpace(value).substring(0, CONSTANTS.MAX_FIELD_LENGTH);
+  const field = (value) => normalizeSpace(decodeHtml(value)).substring(0, CONSTANTS.MAX_FIELD_LENGTH);
   const lines = [
-    ['Title', field(document.title)],
-    ['Description', field(getMetaContents('meta[name="description"]')[0])],
+    ['Title', field(document.title || getMetaContents('meta[property="og:title"]')[0])],
+    ['Description', field([...getMetaContents('meta[name="description"]'), ...getMetaContents('meta[property="og:description"]')][0])],
     ['Section and tags', field(getSectionAndTags(nodes))],
     ['URL path', field(getPathWords())],
     ['Content', getMainContent(CONSTANTS.MAIN_CONTENT_LENGTH, nodes)]
@@ -793,7 +858,7 @@ const init = async (config) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Categories enabled (taxonomy ${taxonomy}). Initializing...`);
     const articleCheck = articlesOnly !== false ? () => {
       const isArticle = isArticlePage();
-      if (!isArticle) logMessage(`${CONSTANTS.LOG_PRE_FIX} No JSON-LD Article, NewsArticle or BlogPosting on the page; skipping categories.`);
+      if (!isArticle) logMessage(`${CONSTANTS.LOG_PRE_FIX} No schema.org Article on the page; skipping categories.`);
       return isArticle;
     } : undefined;
     activeInitializations.push(initFeature('categories', moduleConfig.categories, classifyPage,
