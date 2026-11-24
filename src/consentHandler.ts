@@ -83,15 +83,21 @@ export interface ConsentHandler<T, M> {
    */
   readonly promise: Promise<T>;
   readonly hash: string;
+  /**
+   * True if `hash` is part of the combined hash of all consent (`allConsent.hash`).
+   */
+  readonly includeHash: boolean;
 }
 
 export function consentHandler<T, M>(
   {
     getMeta = (consentData, generatedAt) => ({ generatedAt } as M),
-    hashFields
+    hashFields,
+    includeHash = () => true
   }: {
     getMeta?: (consentData: T, generatedAt: number) => M,
-    hashFields?: string[]
+    hashFields?: string[],
+    includeHash?: (handler: { enabled: boolean }) => boolean
   } = {}
 ): ConsentHandler<T, M> {
   let enabled;
@@ -201,6 +207,9 @@ export function consentHandler<T, M>(
       }
       return hash;
     },
+    get includeHash() {
+      return includeHash({ enabled });
+    },
     onChange(listener) {
       listeners.push(listener);
     }
@@ -230,7 +239,10 @@ export const gppDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GPP>,
   hashFields: ['applicableSections', 'gppString'],
 });
 
-export const gcmDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GCM>, DefaultConsentMeta>();
+export const gcmDataHandler = consentHandler<ConsentDataFor<typeof CONSENT_GCM>, DefaultConsentMeta>({
+  // keeps the combined hash, which userId stores to detect consent changes, as it was for publishers who do not use GCM
+  includeHash: ({ enabled }) => enabled,
+});
 
 export const coppaDataHandler = (() => {
   const handler = ((handler) => Object.assign(handler, {
@@ -359,10 +371,6 @@ const ALL_HANDLERS = {
   [CONSENT_GCM]: gcmDataHandler,
 } as const;
 
-// hashed only once their module enables them, so that adding them leaves the combined hash (which userId
-// stores to detect consent changes) as it was for publishers who do not use them
-const HASHED_ONLY_WHEN_ENABLED: ReadonlySet<unknown> = new Set([gcmDataHandler]);
-
 export type AllConsentData = {
   [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
 };
@@ -400,7 +408,7 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
     get hash() {
       return cyrb53Hash(
         entries
-          .filter(([_, handler]) => handler.enabled || !HASHED_ONLY_WHEN_ENABLED.has(handler))
+          .filter(([_, handler]) => handler.includeHash)
           .map(([_, handler]) => handler.hash)
           .join(':')
       );

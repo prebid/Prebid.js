@@ -135,6 +135,17 @@ describe('Consent data handler', () => {
       handler.setConsentData({ field: 'value', enabled: true });
       expect(handler.hash).to.eql(h1);
     });
+    it('is included in the combined hash by default', () => {
+      expect(handler.includeHash).to.be.true;
+    });
+    it('can decide whether it is included in the combined hash', () => {
+      handler = consentHandler({ includeHash: ({ enabled }) => enabled });
+      expect(handler.includeHash).to.be.false;
+      handler.enable();
+      expect(handler.includeHash).to.be.true;
+      handler.reset();
+      expect(handler.includeHash).to.be.false;
+    });
     it('does not change when non-hashFields are updated', () => {
       handler = consentHandler({ hashFields: ['field', 'enabled'] });
       handler.setConsentData({ field: 'value', enabled: true });
@@ -173,10 +184,12 @@ describe('multiHandler', () => {
   beforeEach(() => {
     handlers = {
       h1: {
-        onChange: sinon.stub()
+        onChange: sinon.stub(),
+        includeHash: true
       },
       h2: {
-        onChange: sinon.stub()
+        onChange: sinon.stub(),
+        includeHash: true
       }
     };
     multi = multiHandler(handlers);
@@ -224,6 +237,16 @@ describe('multiHandler', () => {
         handlers[handler].hash = 'new';
         expect(multi.hash).to.not.eql(first);
       });
+    });
+    it('leaves out handlers that do not include their hash', () => {
+      handlers.h1.hash = 'one';
+      handlers.h2.hash = 'two';
+      handlers.h2.includeHash = false;
+      const first = multi.hash;
+      handlers.h2.hash = 'new';
+      expect(multi.hash).to.eql(first);
+      handlers.h2.includeHash = true;
+      expect(multi.hash).to.not.eql(first);
     });
   });
   describe('onChange', () => {
