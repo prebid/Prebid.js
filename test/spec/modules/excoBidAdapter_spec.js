@@ -3,6 +3,7 @@ import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'mod
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import sinon from 'sinon';
+import { server } from 'test/mocks/xhr.js';
 
 describe('ExcoBidAdapter', function () {
   const helpers = new AdapterHelpers();
@@ -292,7 +293,6 @@ describe('ExcoBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
-    let stubbedFetch;
     const bid = {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
@@ -309,13 +309,6 @@ describe('ExcoBidAdapter', function () {
       ortb2: {}
     };
 
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
-
     it('should exists and be a function', () => {
       expect(adapter.onTimeout).to.exist.and.to.be.a('function');
     });
@@ -323,12 +316,12 @@ describe('ExcoBidAdapter', function () {
     it('Should create event url', function() {
       const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
       adapter.onTimeout([bid]);
-      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
+      expect(server.requests[0].url).to.equal(pixelUrl);
     });
 
     it('Should trigger event url', function() {
       adapter.onTimeout([bid]);
-      expect(stubbedFetch.callCount).to.equal(1);
+      expect(server.requests.length).to.equal(1);
     });
 
     it('Should include the bid params and time passed in the event url', function() {
@@ -348,15 +341,6 @@ describe('ExcoBidAdapter', function () {
   });
 
   describe('onBidWon', function() {
-    let stubbedFetch;
-
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
-
     it('should exists and be a function', () => {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
@@ -376,7 +360,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(1);
+      expect(server.requests.length).to.equal(1);
     });
 
     it('Should trigger nurl pixel with correct parameters', function() {
@@ -395,8 +379,8 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
 
-      expect(stubbedFetch.callCount).to.equal(1);
-      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.contain('ext_auction_won');
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
@@ -412,7 +396,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(0);
+      expect(server.requests.length).to.equal(0);
     });
   });
 

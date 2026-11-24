@@ -14,6 +14,7 @@ import {
   isStr,
   generateUUID,
 } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
 
 export const SID = window.excoPid || generateUUID();
 export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';

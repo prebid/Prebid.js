@@ -369,6 +369,7 @@ export function waitForElementToLoad(element, timeout) {
 
 export function politeTriggerPixel(url, credentials = 'include', immediate = false) {
   const triggerSync = () => {
+    // eslint-disable-next-line no-restricted-properties
     if (window.fetch && window.Request) {
       try {
         const request = new Request(url, {
@@ -377,6 +378,7 @@ export function politeTriggerPixel(url, credentials = 'include', immediate = fal
           credentials,
           keepalive: true
         });
+        // eslint-disable-next-line no-restricted-properties
         window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
         return;
       } catch (e) {}

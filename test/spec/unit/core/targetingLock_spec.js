@@ -1,5 +1,6 @@
 import { targetingLock } from '../../../../src/targeting/lock.js';
 import { config } from 'src/config.js';
+import { mockGptSlot } from '../../../mocks/gpt.js';
 
 describe('Targeting lock', () => {
   let lock, clock, targeting, sandbox;
@@ -97,16 +98,14 @@ describe('Targeting lock', () => {
       it('should unlock on slotRenderEnded', () => {
         lock.lock(targeting);
         eventHandlers.slotRenderEnded({
-          slot: {
-            getTargeting: (key) => [targeting[key]]
-          }
+          slot: mockGptSlot(targeting)
         });
         expect(lock.isLocked(targeting)).to.be.false;
       });
 
       it('can unlock a given slot', () => {
         lock.lock(targeting);
-        lock.unlock({ getTargeting: (key) => [targeting[key]] });
+        lock.unlock(mockGptSlot(targeting));
         expect(lock.isLocked(targeting)).to.be.false;
       });
 

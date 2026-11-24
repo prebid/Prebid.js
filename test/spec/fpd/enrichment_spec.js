@@ -90,25 +90,38 @@ describe('FPD enrichment', () => {
           tagsToRemove.forEach(tag => document.head.removeChild(tag));
         });
 
-        function addMetaKeywords(keywords = ['kw1', 'kw2']) {
+        function addMetaTag(attr, value, content) {
           const metaTag = document.createElement('meta');
-          metaTag.name = 'keywords';
-          metaTag.content = keywords.join(',');
+          metaTag.setAttribute(attr, value);
+          metaTag.content = content;
           document.head.appendChild(metaTag);
           tagsToRemove.push(metaTag);
         }
 
-        function addJsonKeywords(keywords) {
-          // add a JSON-LD script that contains keywords
+        function addMetaKeywords(keywords = ['kw1', 'kw2'], name = 'keywords') {
+          addMetaTag('name', name, keywords.join(','));
+        }
+
+        function addJsonLd(content) {
           const scriptTag = document.createElement('script');
           scriptTag.type = 'application/ld+json';
-          scriptTag.textContent = JSON.stringify({
+          scriptTag.textContent = typeof content === 'string' ? content : JSON.stringify(content);
+          document.head.appendChild(scriptTag);
+          tagsToRemove.push(scriptTag);
+        }
+
+        function addJsonKeywords(keywords) {
+          addJsonLd({
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             keywords: keywords.join(',')
           });
-          document.head.appendChild(scriptTag);
-          tagsToRemove.push(scriptTag);
+        }
+
+        function expectKeywords(expected) {
+          return fpd(ortb2).then(ortb2 => {
+            expect(ortb2[section].keywords).to.eql(expected);
+          });
         }
 
         testWindows(() => window, () => {
@@ -166,6 +179,145 @@ describe('FPD enrichment', () => {
             addJsonKeywords(['kw2 ', 'kw3']);
             return fpd(ortb2).then(ortb2 => {
               expect(ortb2[section].keywords).to.eql('kw1,kw2,kw3');
+            });
+          });
+
+          it('dedupes case-insensitively, keeping the first spelling', () => {
+            addMetaKeywords(['HWmember', 'Sports']);
+            addJsonKeywords(['hwmember', 'SPORTS', 'news']);
+            return expectKeywords('HWmember,Sports,news');
+          });
+
+          describe('meta tags', () => {
+            it('reads every keywords meta tag', () => {
+              addMetaKeywords(['kw1', 'kw2']);
+              addMetaKeywords(['kw3']);
+              return expectKeywords('kw1,kw2,kw3');
+            });
+
+            it('reads news_keywords', () => {
+              addMetaKeywords(['news1, news2'], 'news_keywords');
+              return expectKeywords('news1,news2');
+            });
+
+            it('reads article:tag, both repeated and comma-separated', () => {
+              addMetaTag('property', 'article:tag', 'tag1');
+              addMetaTag('property', 'article:tag', 'tag2, tag3');
+              return expectKeywords('tag1,tag2,tag3');
+            });
+
+            it('ignores tags without content', () => {
+              const tag = document.createElement('meta');
+              tag.setAttribute('property', 'article:tag');
+              document.head.appendChild(tag);
+              tagsToRemove.push(tag);
+              addMetaKeywords(['kw1']);
+              return expectKeywords('kw1');
+            });
+
+            it('are all ignored when firstPartyData.keywords.meta is false', () => {
+              config.setConfig({ firstPartyData: { keywords: { meta: false } } });
+              addMetaKeywords(['kw1']);
+              addMetaKeywords(['news1'], 'news_keywords');
+              addMetaTag('property', 'article:tag', 'tag1');
+              addJsonKeywords(['json1']);
+              return expectKeywords('json1');
+            });
+          });
+
+          describe('JSON-LD', () => {
+            it('reads keywords inside @graph', () => {
+              addJsonLd({
+                '@context': 'https://schema.org',
+                '@graph': [
+                  { '@type': 'WebSite', name: 'site' },
+                  { '@type': 'Article', keywords: 'kw1,kw2' }
+                ]
+              });
+              return expectKeywords('kw1,kw2');
+            });
+
+            it('reads array keywords', () => {
+              addJsonLd({ '@type': 'Article', keywords: ['kw1', 'kw2, kw3'] });
+              return expectKeywords('kw1,kw2,kw3');
+            });
+
+            it('reads DefinedTerm keywords', () => {
+              addJsonLd({
+                '@type': 'Article',
+                keywords: [
+                  { '@type': 'DefinedTerm', name: 'term1' },
+                  { '@type': 'DefinedTerm', termCode: 'nope' },
+                  'kw1',
+                  42
+                ]
+              });
+              return expectKeywords('term1,kw1');
+            });
+
+            it('reads keywords from nested objects and top-level arrays', () => {
+              addJsonLd([
+                { '@type': 'Article', mainEntity: { '@type': 'Thing', about: [{ keywords: 'nested' }] } },
+                { keywords: 'top' }
+              ]);
+              return expectKeywords('nested,top');
+            });
+
+            it('stops at a maximum depth', () => {
+              let obj = { keywords: 'deep' };
+              for (let i = 0; i < 20; i++) {
+                obj = { child: obj };
+              }
+              addJsonLd({ keywords: 'shallow', child: obj });
+              return expectKeywords('shallow');
+            });
+
+            it('ignores invalid JSON', () => {
+              addJsonLd('{not json');
+              addJsonKeywords(['kw1']);
+              return expectKeywords('kw1');
+            });
+
+            it('is ignored when firstPartyData.keywords.json is false', () => {
+              config.setConfig({ firstPartyData: { keywords: { json: false } } });
+              addJsonLd({ '@graph': [{ keywords: ['json1'] }] });
+              addMetaKeywords(['kw1']);
+              return expectKeywords('kw1');
+            });
+          });
+
+          describe('filtering', () => {
+            Object.entries({
+              'empty and 1-character values': ['', ' ', 'a', ' b '],
+              'values longer than 60 characters': ['x'.repeat(61)],
+              'values containing ":"': ['sponsored: false', 'contentId: 0ab1e9f8'],
+              'values containing ";"': ['New Species; Dolphins and Whales; Fish'],
+              'values containing "|"': ['a | b'],
+              'values starting with "_"': ['_seo', '_commerce'],
+            }).forEach(([t, junk]) => {
+              it(`drops ${t}`, () => {
+                addMetaKeywords(['kw1', ...junk]);
+                addJsonLd({ keywords: [...junk, 'kw2'] });
+                return expectKeywords('kw1,kw2');
+              });
+            });
+
+            it('keeps values of length 2 and 60', () => {
+              const long = 'x'.repeat(60);
+              addMetaKeywords(['AI', long]);
+              return expectKeywords(`AI,${long}`);
+            });
+
+            it('does not treat the ";" of an HTML entity as a separator', () => {
+              addMetaKeywords(['lilo &amp; stitch 2', 'a&#39;b', 'a&#x27;b', 'Dolphins; Fish', 'x &amp; y; z']);
+              return expectKeywords('lilo &amp; stitch 2,a&#39;b,a&#x27;b');
+            });
+
+            it('does not set keywords when everything is filtered out', () => {
+              addMetaKeywords(['a', '_seo']);
+              return fpd(ortb2).then(ortb2 => {
+                expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+              });
             });
           });
         });
