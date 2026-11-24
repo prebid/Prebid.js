@@ -334,7 +334,7 @@ const getBlockText = (root, maxLength) => {
     const skipped = block.closest(SKIPPED_ELEMENTS);
     if (block.querySelector(TEXT_BLOCKS) || (skipped && skipped !== root && root.contains(skipped))) continue;
     const value = getVisibleText(block, maxLength);
-    if (value && getLinkedLength(block) <= value.length / 2) text += (text ? ' ' : '') + value;
+    if (value && getLinkedLength(block) <= normalizeSpace(block.textContent).length / 2) text += (text ? ' ' : '') + value;
   }
   return text.substring(0, maxLength);
 };
@@ -351,7 +351,10 @@ export const getMainContent = (maxLength, nodes = getJsonLdNodes()) => {
   const body = nodes.map(node => node.articleBody).find(value => normalizeSpace(value));
   const articleBody = body ? normalizeSpace(decodeHtml(body)) : '';
   if (articleBody.length >= minLength) return articleBody.substring(0, maxLength);
-  const elements = [...document.querySelectorAll('article, main, [role="main"]'), document.body].filter(Boolean);
+  const elements = [
+    ...Array.from(document.querySelectorAll('article, main, [role="main"]')).filter(el => !el.parentElement?.closest(SKIPPED_ELEMENTS)),
+    document.body
+  ].filter(Boolean);
   for (const element of elements) {
     const text = getBlockText(element, maxLength);
     if (text.length >= minLength) return text;

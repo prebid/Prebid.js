@@ -239,6 +239,20 @@ describe('Chrome AI RTD Provider', function () {
       expect(content).to.not.include('short teaser').and.to.not.include('Home News');
     });
 
+    it('skips article and main elements inside sidebars, navigation and other skipped elements', function () {
+      addToPage(`<aside><article><p>Sidebar teaser. ${LONG}</p></article></aside><nav><main><p>Menu story. ${LONG}</p></main></nav>` +
+        `<article><p>Main story. ${LONG}</p></article>`);
+      const content = contentLine();
+      expect(content.startsWith('Content: Main story.')).to.be.true;
+      expect(content).to.not.include('Sidebar teaser').and.to.not.include('Menu story');
+    });
+
+    it('measures link density over the whole paragraph', function () {
+      const links = '<a href="/x">a linked phrase in the paragraph</a> '.repeat(8);
+      addToPage(`<article><p>Long opening. ${LONG}${LONG}${links}</p><p>Second paragraph. ${LONG}</p></article>`);
+      expect(contentLine().startsWith('Content: Long opening.')).to.be.true;
+    });
+
     it('falls back to the body when no element has enough text', function () {
       addToPage('<nav>Menu</nav><div>Loose text before.</div><article>A short article about electric cars.</article>');
       expect(contentLine()).to.include('Loose text before. A short article about electric cars.').and.to.not.include('Menu');
