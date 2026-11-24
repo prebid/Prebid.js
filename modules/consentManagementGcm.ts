@@ -37,7 +37,7 @@ export interface GCMConfig {
 
 /**
  * Configuration for `consentManagement.gcm`. `timeout` is how long the first auction waits for Consent Mode:
- * for a `default` call when there is none, then for an `update` when there's only a `default`
+ * for a `default` call when there is none, then for `update` calls to set every signal that the defaults deny
  * (no longer than the page's `wait_for_update`, if it sets one). Defaults to 500 (ms).
  */
 export type GCMCMConfig = GCMConfig & Omit<BaseCMConfig, 'waitForCmp' | 'actionTimeout'> & ({
@@ -164,9 +164,9 @@ export type FoldResult = {
    */
   state: GCMConsentData | null;
   /**
-   * True if there was at least one `update`.
+   * True if updates set every Consent Mode signal that the defaults deny, so that no further update is expected.
    */
-  updated: boolean;
+  covered: boolean;
   /**
    * The longest `wait_for_update` given with a `default`.
    */
@@ -226,10 +226,11 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
   const defaults: Record<string, GCMSignalValue> = { ...global };
   Object.entries(restrictive).forEach(([signal, value]) => { defaults[signal] = mostRestrictive(defaults[signal], value); });
   Object.entries(regional).forEach(([signal, { value }]) => { defaults[signal] = value; });
+  const covered = updated && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
   return {
     state: Object.keys(state).length > 0 ? state : null,
-    updated,
+    covered,
     waitForUpdate,
     regionUnknown
   };
@@ -274,12 +275,14 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
   cancelPendingLookup();
   return new PbPromise<void>((resolve) => {
     let waitTimer = null;
+    let settleTimer = null;
     let finished = false;
     let stop = () => null;
     function cancel() {
       finished = true;
       stop();
       if (waitTimer != null) clearTimeout(waitTimer);
+      if (settleTimer != null) clearTimeout(settleTimer);
     }
     function done() {
       if (finished) return;
@@ -287,24 +290,30 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
       gcmDataHandler.setConsentData(currentConsent().state);
       resolve();
     }
-    function check() {
+    function check(settle = true) {
       if (finished) return;
-      const { state, updated, waitForUpdate } = currentConsent();
-      if (updated) {
-        done();
+      const { state, covered, waitForUpdate } = currentConsent();
+      if (covered) {
+        if (!settle) {
+          done();
+        } else if (settleTimer == null) {
+          // commands pushed back to back are folded together
+          settleTimer = setTimeout(done, 0);
+        }
       } else if (commands.length > 0) {
-        // a default is there; wait for an update, no longer than `wait_for_update` (or `timeout`, whichever is shorter)
+        // wait for updates to cover what the defaults deny, no longer than `wait_for_update` (or `timeout`, whichever is shorter)
         setProvisionalConsent(state);
         if (waitForUpdate != null && waitTimer == null) {
           waitTimer = setTimeout(done, waitForUpdate);
         }
       }
     }
-    stop = onCommand(check);
+    stop = onCommand(() => check());
     // a lookup still waiting when the configuration changes must not overwrite what the new one sets
     cancelPendingLookup = cancel;
     watchDataLayer();
-    check();
+    // what the dataLayer already holds was read in one go
+    check(false);
   });
 }
 

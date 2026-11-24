@@ -46,17 +46,64 @@ describe('consentManagementGcm', () => {
 
   describe('foldConsent', () => {
     it('returns no state when there are no commands', () => {
-      expect(foldConsent([])).to.eql({ state: null, updated: false, waitForUpdate: null, regionUnknown: false });
+      expect(foldConsent([])).to.eql({ state: null, covered: false, waitForUpdate: null, regionUnknown: false });
     });
 
     it('folds defaults and updates in order, later ones winning', () => {
-      const { state, updated } = foldConsent([
+      const { state } = foldConsent([
         cmd('default', { ad_storage: 'denied', analytics_storage: 'denied', ad_user_data: 'denied' }),
         cmd('update', { ad_storage: 'granted' }),
         cmd('update', { ad_storage: 'denied', analytics_storage: 'granted' }),
       ]);
-      expect(updated).to.be.true;
       expect(state).to.eql({ ad_storage: 'denied', analytics_storage: 'granted', ad_user_data: 'denied' });
+    });
+
+    describe('covered', () => {
+      Object.entries({
+        'is false without an update': [false, [
+          cmd('default', { ad_storage: 'granted' }),
+        ]],
+        'is true with an update and no default': [true, [
+          cmd('update', { ad_storage: 'denied' }),
+        ]],
+        'is false while a signal the defaults deny has no update': [false, [
+          cmd('default', { ad_storage: 'denied', ad_user_data: 'denied' }),
+          cmd('update', { ad_storage: 'granted' }),
+        ]],
+        'is true once updates, together, set every signal the defaults deny': [true, [
+          cmd('default', { ad_storage: 'denied', ad_user_data: 'denied', analytics_storage: 'granted' }),
+          cmd('update', { ad_storage: 'granted' }),
+          cmd('update', { ad_user_data: 'denied' }),
+        ]],
+        'does not need updates for signals the defaults grant': [true, [
+          cmd('default', { ad_storage: 'denied', analytics_storage: 'granted' }),
+          cmd('update', { ad_storage: 'granted' }),
+        ]],
+        'does not need updates for signals other than the Consent Mode v2 ones': [true, [
+          cmd('default', { ad_storage: 'denied', functionality_storage: 'denied' }),
+          cmd('update', { ad_storage: 'granted' }),
+        ]],
+        'counts a default that comes after the update': [false, [
+          cmd('update', { ad_storage: 'granted' }),
+          cmd('default', { ad_user_data: 'denied' }),
+        ]],
+        'counts region-scoped defaults when the region is unknown': [false, [
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted' }),
+          cmd('default', { ad_user_data: 'denied', region: ['DE'] }),
+          cmd('update', { ad_storage: 'granted' }),
+        ]],
+      }).forEach(([name, [expected, commands]]) => {
+        it(name, () => {
+          expect(foldConsent(commands).covered).to.equal(expected);
+        });
+      });
+
+      it('ignores region-scoped defaults that do not match the region', () => {
+        expect(foldConsent([
+          cmd('default', { ad_user_data: 'denied', region: ['DE'] }),
+          cmd('update', { ad_storage: 'granted' }),
+        ], { region: 'US' }).covered).to.be.true;
+      });
     });
 
     it('lets a later default override an earlier default, but not an update', () => {
@@ -143,7 +190,7 @@ describe('consentManagementGcm', () => {
             ad_user_data: 'granted',
             ad_personalization: 'denied'
           },
-          updated: false,
+          covered: false,
           waitForUpdate: null,
           regionUnknown: true
         });
@@ -335,14 +382,66 @@ describe('consentManagementGcm', () => {
       expect(consentConfig.cmpTimeout).to.equal(500);
     });
 
-    it('resolves at once when there is an update', async () => {
+    it('resolves at once when updates already cover what the default denies', async () => {
       window.dataLayer = [];
       gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', wait_for_update: 500 });
+      gtag('consent', 'update', { ad_storage: 'granted', ad_user_data: 'denied' });
+      await setConsentConfig({ gcm: {} });
+      expect(clock.countTimers()).to.equal(0);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', ad_user_data: 'denied' });
+    });
+
+    it('keeps waiting when an update leaves out a signal the default denies', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', wait_for_update: 200 });
       gtag('consent', 'update', { ad_storage: 'granted' });
-      const done = settled(setConsentConfig({ gcm: {} }));
+      const done = settled(setConsentConfig({ gcm: { timeout: 500 } }));
+      await clock.tickAsync(100);
+      expect(done()).to.be.false;
+      expect(gcmDataHandler.getConsentData()).to.be.null;
+      gtag('consent', 'update', { ad_user_data: 'granted' });
       await clock.tickAsync(0);
       expect(done()).to.be.true;
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', ad_user_data: 'granted' });
+    });
+
+    it('uses the partial update when the rest does not arrive in time', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied' });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      const done = settled(setConsentConfig({ gcm: { timeout: 300 } }));
+      await clock.tickAsync(299);
+      expect(done()).to.be.false;
+      await clock.tickAsync(1);
+      expect(done()).to.be.true;
       expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', ad_user_data: 'denied' });
+    });
+
+    it('folds together updates pushed back to back', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied', wait_for_update: 1000 });
+      const done = settled(setConsentConfig({ gcm: { timeout: 2000 } }));
+      const listener = sinon.stub();
+      gcmDataHandler.onChange(listener);
+      await clock.tickAsync(50);
+      gtag('consent', 'update', { ad_storage: 'denied' });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      expect(done()).to.be.false;
+      sinon.assert.notCalled(listener);
+      await clock.tickAsync(0);
+      expect(done()).to.be.true;
+      sinon.assert.calledOnce(listener);
+      sinon.assert.calledWith(listener, { ad_storage: 'granted' });
+    });
+
+    it('does not settle a lookup that was superseded while folding updates', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied', wait_for_update: 1000 });
+      setConsentConfig({ gcm: { timeout: 2000 } });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      await setConsentConfig({ gcm: { cmpApi: 'static', consentData: { ad_storage: 'denied' } } });
+      await clock.tickAsync(0);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
     });
 
     it('waits up to the timeout for an update when there is only a default', async () => {
