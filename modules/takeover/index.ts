@@ -107,6 +107,10 @@ declare module '../../src/events' {
 }
 
 type Decision = {
+  /**
+   * When the auction started; auctions can end out of order.
+   */
+  startedAt: number;
   adUnitCodes: string[];
   winnerByAdUnit: Map<string, string>;
   droppedAdIds: Set<string>;
@@ -212,7 +216,7 @@ function exclusivityLabel(exclusivity: TakeoverMeta['exclusivity']): string | un
  * Decides which takeover, if any, wins in an auction, and which bids it displaces.
  */
 export function decideTakeovers(auction: AuctionProperties, { renderedBids = () => auctionManager.getAllWinningBids() } = {}): Decision {
-  const decision: Decision = { adUnitCodes: auction.adUnitCodes, winnerByAdUnit: new Map(), droppedAdIds: new Set() };
+  const decision: Decision = { startedAt: auction.timestamp ?? 0, adUnitCodes: auction.adUnitCodes, winnerByAdUnit: new Map(), droppedAdIds: new Set() };
   const excluded = new Set(takeoverConfig.excludeAdUnits ?? []);
   const eligibleCodes = auction.adUnitCodes.filter(code => !excluded.has(code));
   const groups = groupTakeovers(auction, eligibleCodes);
@@ -367,11 +371,11 @@ export function onBidWon(bid: Bid) {
  */
 export function targetBidPoolHook(fn, bidsReceived, ...args) {
   if (!isEnabled()) return fn.call(this, bidsReceived, ...args);
-  // the latest auction for an ad unit decides whether a takeover holds it; with bid caching,
+  // the latest auction to start for an ad unit decides whether a takeover holds it; with bid caching,
   // the pool can also hold bids from earlier auctions, and they must not displace the takeover
   const inPool = new Set(bidsReceived.map(bid => bid.adId));
   const winnerByAdUnit = new Map<string, string | undefined>();
-  decisions.forEach(decision => decision.adUnitCodes.forEach(code => {
+  [...decisions.values()].sort((a, b) => a.startedAt - b.startedAt).forEach(decision => decision.adUnitCodes.forEach(code => {
     const winner = decision.winnerByAdUnit.get(code);
     winnerByAdUnit.set(code, winner != null && inPool.has(winner) ? winner : undefined);
   }));

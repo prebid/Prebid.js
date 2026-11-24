@@ -475,6 +475,16 @@ describe('takeover module', () => {
       expect(next.firstCall.args[0]).to.eql([...tko, fresh]);
     });
 
+    it('lets the auction that started last decide, even when an older one ends later', () => {
+      const tko = [takeoverBid('a', 1, { priority: 5 }), takeoverBid('b', 1, { priority: 5 })];
+      onAuctionEnd({ ...auction(tko, ['a', 'b']), timestamp: 2000 });
+      const stale = bid({ adUnitCode: 'a', cpm: 50, auctionId: 'older-auction' });
+      onAuctionEnd({ ...auction([stale], ['a']), auctionId: 'older-auction', timestamp: 1000 });
+      const next = sinon.spy();
+      targetBidPoolHook(next, [stale, ...tko]);
+      expect(next.firstCall.args[0]).to.eql(tko);
+    });
+
     it('passes bids through when disabled', () => {
       const bids = [bid({ adUnitCode: 'a', cpm: 1 })];
       setConfig({ enabled: false });
