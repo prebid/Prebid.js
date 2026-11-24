@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "rt_uid",
+      "type": "cookie",
+      "maxAgeSeconds": 2592000,
+      "cookieRefresh": true,
+      "domains": [".riptideads.com"],
+      "purposes": [1]
+    }
+  ],
+  "domains": [
+    {
+      "domain": ".riptideads.com",
+      "use": "Riptide's user sync sets the rt_uid cookie to recognize a browser across bid requests. The bid adapter itself stores nothing on the publisher's page."
+    }
+  ]
+}
