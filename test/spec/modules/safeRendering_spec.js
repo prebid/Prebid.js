@@ -96,8 +96,8 @@ describe('safeRendering', () => {
 
       sandbox.spy(events, 'emit');
 
-      sandbox.stub(secureCreatives, 'getBidForMessage').callsFake((msg) => {
-        if (msg?.adId === bid.adId) {
+      sandbox.stub(auctionManager, 'findBidByAdId').callsFake((adId) => {
+        if (adId === bid.adId) {
           return bid;
         }
       });
@@ -160,6 +160,35 @@ describe('safeRendering', () => {
       } finally {
         document.body.removeChild(iframe);
       }
+    });
+
+    describe('when the bid has expired and auctionOptions.replaceExpiredBid is set', () => {
+      let replacement;
+      beforeEach(() => {
+        Object.assign(bid, { adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
+        replacement = { adId: 'replacement-adid', adUnitCode: 'au', mediaType: 'banner', element: bid.element, responseTimestamp: Date.now(), ttl: 300 };
+        auctionManager.findBidByAdId.callsFake((adId) => [bid, replacement].find((b) => b.adId === adId));
+      });
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('sets up the frame for the expired bid, leaving the replacement to its render request', () => {
+        const replaceExpiredBid = sinon.stub().returns(replacement);
+        config.setConfig({ auctionOptions: { replaceExpiredBid } });
+        renderBid(bidHandle);
+        const { adId, token } = getRenderArgs(bid.element);
+        expect(adId).to.eql(bid.adId);
+        expect(validateToken(bid, token)).to.be.true;
+        sinon.assert.notCalled(replaceExpiredBid);
+      });
+
+      it('sets up the frame even if suppressExpiredRender is set', () => {
+        config.setConfig({ auctionOptions: { replaceExpiredBid: () => replacement, suppressExpiredRender: true } });
+        renderBid(bidHandle);
+        expect(getRenderArgs(bid.element).adId).to.eql(bid.adId);
+        sinon.assert.neverCalledWith(events.emit, EVENTS.EXPIRED_RENDER);
+      });
     });
 
     describe('when the element is not in a descendant of Prebid\'s window', () => {
@@ -290,7 +319,7 @@ describe('safeRendering', () => {
       }
     }).forEach(([description, bid]) => {
       it(`refuses a bid with ${description}`, () => {
-        secureCreatives.getBidForMessage.callsFake((req) => req?.adId === bid?.adId && bid);
+        auctionManager.findBidByAdId.callsFake((adId) => adId === bid?.adId ? bid : undefined);
         sandbox.spy(utils, 'logError');
         sandbox.spy(document, 'createElement');
         renderBid(bid);
@@ -411,8 +440,7 @@ describe('safeRendering', () => {
         Object.assign(bid, { ad: '<div></div>', responseTimestamp: Date.now(), ttl: 300 });
         otherBid = { adId: 'other-adid', status: BID_STATUS.RENDERED };
         const findBid = (adId) => [bid, otherBid].find(b => b.adId === adId);
-        sandbox.stub(auctionManager, 'findBidByAdId').callsFake(findBid);
-        secureCreatives.getBidForMessage.callsFake((msg) => findBid(msg?.adId));
+        auctionManager.findBidByAdId.callsFake(findBid);
       });
 
       function waitForEvent(event, bid) {
@@ -461,6 +489,33 @@ describe('safeRendering', () => {
         await render();
         await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, bid);
         sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid, intervention: { type: 'test' } }));
+      });
+
+      describe('when the bid has expired and auctionOptions.replaceExpiredBid is set', () => {
+        let replacement;
+        beforeEach(() => {
+          Object.assign(bid, { adUnitCode: 'au', mediaType: 'banner', responseTimestamp: Date.now() - 10000, ttl: 1 });
+          replacement = { ...bid, adId: 'replacement-adid', responseTimestamp: Date.now(), ttl: 300 };
+          auctionManager.findBidByAdId.callsFake((adId) => [bid, replacement].find(b => b.adId === adId));
+        });
+        afterEach(() => {
+          config.resetConfig();
+        });
+
+        Object.entries({
+          'synchronously': () => replacement,
+          'as a promise': () => Promise.resolve(replacement),
+        }).forEach(([t, replaceExpiredBid]) => {
+          it(`renders the replacement returned ${t}, and handles its messages over the port`, async () => {
+            rendererSrc = `window.render = function(_, {sendMessage}) {
+              sendMessage('Prebid Event', { event: 'browserIntervention', intervention: { type: 'test' } });
+            }`;
+            config.setConfig({ auctionOptions: { replaceExpiredBid } });
+            await render();
+            await waitForEvent(EVENTS.AD_RENDER_SUCCEEDED, replacement);
+            sinon.assert.calledWith(events.emit, EVENTS.BROWSER_INTERVENTION, sinon.match({ bid: replacement }));
+          });
+        });
       });
 
       it('ignores messages over the port for a different adId', async () => {

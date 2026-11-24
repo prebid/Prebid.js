@@ -141,6 +141,121 @@ describe('ajax', () => {
         });
       });
     });
+
+    describe('when the request cannot be prepared', () => {
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      function expectRejection(fn) {
+        let pm;
+        expect(() => { pm = fn(); }).to.not.throw();
+        return pm.then(() => {
+          throw new Error('should have rejected');
+        }, (e) => e);
+      }
+
+      Object.entries({
+        'an invalid URL': ['http://'],
+        'a GET with a body': [EXAMPLE_URL, { body: 'data' }],
+        'an invalid header': [EXAMPLE_URL, { headers: { 'bad header': 'value' } }],
+      }).forEach(([t, args]) => {
+        it(`rejects, instead of throwing, on ${t}`, async () => {
+          expect(await expectRejection(() => fetcherFactory(1000)(...args))).to.be.instanceOf(TypeError);
+          expect(server.requests.length).to.eql(0);
+        });
+
+        it(`does not call request or done on ${t}`, async () => {
+          const request = sinon.stub();
+          const done = sinon.stub();
+          await expectRejection(() => fetcherFactory(1000, { request, done })(...args));
+          sinon.assert.notCalled(request);
+          sinon.assert.notCalled(done);
+        });
+
+        it(`does not leave a timeout pending on ${t}`, async () => {
+          await expectRejection(() => fetcherFactory(1000)(...args));
+          expect(clock.countTimers()).to.eql(0);
+        });
+      });
+
+      describe('with stubbed dependencies', () => {
+        before(() => {
+          server.restore();
+        });
+        after(() => {
+          server.enable();
+        });
+
+        it('rejects with the error that was thrown', async () => {
+          const err = new Error('boom');
+          sandbox.stub(dep, 'makeRequest').throws(err);
+          expect(await expectRejection(() => fetcherFactory(1000)(EXAMPLE_URL))).to.equal(err);
+        });
+
+        it('cleans up the timeout', async () => {
+          const to = { signal: new AbortController().signal, done: sinon.stub() };
+          sandbox.stub(dep, 'timeout').returns(to);
+          await expectRejection(() => fetcherFactory(1000)('http://'));
+          sinon.assert.calledOnce(to.done);
+        });
+
+        it('rejects when the request cannot be started', async () => {
+          const err = new Error('boom');
+          const to = { signal: new AbortController().signal, done: sinon.stub() };
+          sandbox.stub(dep, 'timeout').returns(to);
+          sandbox.stub(dep, 'fetch').throws(err);
+          expect(await expectRejection(() => fetcherFactory(1000)(EXAMPLE_URL))).to.equal(err);
+          sinon.assert.calledOnce(to.done);
+        });
+      });
+
+      it('rejects when using withCallers', async () => {
+        const fetch = fetcherFactory(1000).withCallers([['bidder', 'mockBidder']]);
+        expect(await expectRejection(() => fetch('http://'))).to.be.instanceOf(TypeError);
+      });
+    });
+  });
+
+  describe('ajax with invalid input', () => {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('throws when the request cannot be built', () => {
+      const error = sinon.stub();
+      expect(() => ajaxBuilder(1000)('http://', { error })).to.throw(TypeError);
+      sinon.assert.notCalled(error);
+    });
+
+    describe('with stubbed dependencies', () => {
+      before(() => {
+        server.restore();
+      });
+      after(() => {
+        server.enable();
+      });
+
+      it('throws when the request cannot be started', () => {
+        const err = new Error('cannot start');
+        const makeRequest = dep.makeRequest;
+        sandbox.stub(dep, 'makeRequest').callsFake((r, o) => {
+          if (r instanceof Request) throw err;
+          return makeRequest(r, o);
+        });
+        const error = sinon.stub();
+        expect(() => ajaxBuilder(1000)(EXAMPLE_URL, { error })).to.throw(err);
+        sinon.assert.notCalled(error);
+      });
+    });
   });
 
   describe('toFetchRequest', () => {
@@ -388,6 +503,14 @@ describe('ajax', () => {
           sinon.assert.calledOnce(dep.fetch);
           expect(dep.fetch.firstCall.args[0].keepalive).to.be.true;
         });
+      });
+
+      it('should start the request synchronously when request/done callbacks are provided', () => {
+        const onRequest = sinon.stub();
+        fetcherFactory(1000, { request: onRequest, done: sinon.stub() })(EXAMPLE_URL, { keepalive: true });
+        sinon.assert.calledOnce(dep.fetch);
+        expect(dep.fetch.firstCall.args[0].keepalive).to.be.true;
+        sinon.assert.calledWith(onRequest, EXAMPLE_URL);
       });
 
       it('should not use keepalive for a large body', () => {

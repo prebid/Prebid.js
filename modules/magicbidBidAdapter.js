@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, logWarn, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { fetch } from '../src/ajax.js';
 /** @import { MagicBidParams } from './magicbidBidAdapter.d.ts' */
 
 // ─────────────────────────────────────────────

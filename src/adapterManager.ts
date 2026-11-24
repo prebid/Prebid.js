@@ -832,13 +832,21 @@ const adapterManager = {
             });
 
             // make bid requests
-            s2sAdapter.callBids(
-              s2sBidRequest,
-              uniqueServerRequests,
-              addBidResponse,
-              (timedOut) => doneCbs.forEach(done => done(timedOut)),
-              s2sAjax
-            );
+            try {
+              s2sAdapter.callBids(
+                s2sBidRequest,
+                uniqueServerRequests,
+                addBidResponse,
+                (timedOut) => doneCbs.forEach(done => done(timedOut)),
+                s2sAjax
+              );
+            } catch (e) {
+              // Client adapters already isolate a throw so the next bidder still runs.
+              // yieldAll stops the queue when this call throws, which drops every later bidder.
+              logError(`${s2sConfig.adapter} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: s2sBidRequest });
+              // A synchronous throw means no request went out: an error, not a timeout.
+              doneCbs.forEach(done => done(false));
+            }
           }
         } else {
           logError('missing ' + s2sConfig.adapter);
@@ -874,6 +882,8 @@ const adapterManager = {
         );
       } catch (e) {
         logError(`${bidderRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, { e, bidRequest: bidderRequest });
+        // A synchronous throw means no request went out: an error, not a timeout.
+        onTimelyResponse(bidderRequest.bidderRequestId);
         adapterDone();
       }
     });
@@ -960,13 +970,7 @@ const adapterManager = {
     }
   },
   resolveAlias(alias) {
-    let code = alias;
-    let visited;
-    while (_aliasRegistry[code] && (!visited || !visited.has(code))) {
-      code = _aliasRegistry[code];
-      (visited = visited || new Set()).add(code);
-    }
-    return code;
+    return resolveAlias(alias);
   },
   registerAnalyticsAdapter<P extends AnalyticsProvider>({ adapter, code, gvlid, acpId }: {
     adapter: AnalyticsAdapter<P>,

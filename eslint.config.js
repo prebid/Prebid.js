@@ -241,7 +241,8 @@ module.exports = [
     const {globals, props} = noGlobals({
       require: 'use import instead',
       ...Object.fromEntries(['localStorage', 'sessionStorage'].map(k => [k, 'use storageManager instead'])),
-      XMLHttpRequest: 'use ajax.js instead'
+      XMLHttpRequest: 'use ajax.js instead',
+      fetch: 'use fetch from ajax.js instead'
     })
     return {
       files: sourcePattern(path),
@@ -257,6 +258,11 @@ module.exports = [
         'no-restricted-properties': [
           'error',
           ...props,
+          ...['globalThis', 'self'].map(object => ({
+            object,
+            property: 'fetch',
+            message: 'use fetch from ajax.js instead'
+          })),
           {
             property: 'cookie',
             object: 'document',

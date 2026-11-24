@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER = 'automatad';
+const GVLID = 1464;
 
 const ENDPOINT_URL = 'https://bid.atmtd.com';
 
@@ -13,7 +14,8 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER,
-  aliases: ['atd'],
+  gvlid: GVLID,
+  aliases: [{ code: 'atd', gvlid: GVLID }],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {

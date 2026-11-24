@@ -13,13 +13,15 @@ import { Renderer } from '../src/Renderer.js';
  */
 
 const BIDDER_CODE = 'rtbsape';
+const ACP_ID = 2643; // Google Additional Consent provider ID
 const ENDPOINT = 'https://ssp-rtb.sape.ru/prebid';
 const RENDERER_SRC = 'https://cdn-rtb.sape.ru/js/player.js';
 const MATCH_SRC = 'https://www.acint.net/mc/?dp=141';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['sape'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'sape', acpId: ACP_ID }],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

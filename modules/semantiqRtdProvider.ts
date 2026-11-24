@@ -119,13 +119,23 @@ export const storage = getStorageManager({
 });
 
 /**
+ * Checks whether keywords carry any data.
+ * A page that has not been crawled yet returns only empty values.
+ */
+const hasKeywordData = (keywords: SemantiqKeywords): boolean => Object.values(keywords).some((value) => {
+  const items = Array.isArray(value) ? value : [value];
+
+  return items.some((item) => item?.trim());
+});
+
+/**
  * Gets SemantIQ keywords from session storage.
  */
 const getStorageKeywords = (pageUrl: string): SemantiqKeywords | null => {
   try {
     const storageValue: unknown = JSON.parse(storage.getDataFromSessionStorage(STORAGE_KEY));
 
-    if (!isStoredSemantiqKeywords(storageValue) || storageValue.url !== pageUrl) {
+    if (!isStoredSemantiqKeywords(storageValue) || storageValue.url !== pageUrl || !hasKeywordData(storageValue.keywords)) {
       return null;
     }
 
@@ -207,7 +217,10 @@ const getKeywords = (params: SemantiqRtdParams): Promise<SemantiqKeywords> => ne
           return;
         }
 
-        storage.setDataInSessionStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
+        if (hasKeywordData(data)) {
+          storage.setDataInSessionStorage(STORAGE_KEY, JSON.stringify({ url: pageUrl, keywords: data }));
+        }
+
         resolve(data);
       } catch (error) {
         rejectKeywords(error);

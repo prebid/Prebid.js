@@ -9,6 +9,7 @@ import { deepAccess, getBidIdParameter, logError } from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'viant';
+const GVLID = 1542;
 const ENDPOINT = 'https://bidders-us.adelphic.net/d/rtb/v25/prebid/bidder';
 const ADAPTER_VERSION = '2.0.0';
 
@@ -18,7 +19,8 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['viantortb'],
+  gvlid: GVLID,
+  aliases: [{ code: 'viantortb', gvlid: GVLID }],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {

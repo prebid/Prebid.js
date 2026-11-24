@@ -11,6 +11,7 @@ import { logError, logInfo } from '../src/utils.js';
 const moduleName = 'idImportLibrary';
 let email;
 let conf;
+const registeredInputs = new Set();
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
 export const CONF_DEFAULT_FULL_BODY_SCAN = false;
@@ -20,7 +21,7 @@ const OBSERVER_CONFIG = {
   attributes: true,
   attributeOldValue: false,
   childList: true,
-  attirbuteFilter: ['value'],
+  attributeFilter: ['value'],
   characterData: true,
   characterDataOldValue: false
 };
@@ -40,7 +41,7 @@ function createLogError(prefix) {
 }
 
 function getEmail(value) {
-  const matched = value.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
+  const matched = value.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
   if (!matched) {
     return null;
   }
@@ -96,8 +97,7 @@ function addInputElementsElementListner() {
 
   for (var i = 0; i < inputs.length; i++) {
     _logInfo(`Original Value in Input = ${inputs[i].value}`);
-    inputs[i].addEventListener('change', event => processInputChange(event));
-    inputs[i].addEventListener('blur', event => processInputChange(event));
+    addInputElementListeners(inputs[i]);
   }
 }
 
@@ -110,18 +110,24 @@ function addFormInputElementsElementListner(id) {
   }
   _logInfo('Adding input element listeners');
   const input = document.getElementById(id);
-  input.addEventListener('change', event => processInputChange(event));
-  input.addEventListener('blur', event => processInputChange(event));
+  addInputElementListeners(input);
+}
+
+function addInputElementListeners(input) {
+  if (input) {
+    input.addEventListener('change', processInputChange);
+    input.addEventListener('blur', processInputChange);
+    registeredInputs.add(input);
+  }
 }
 
 function removeInputElementsElementListner() {
   _logInfo('Removing input element listeners');
-  const inputs = document.querySelectorAll('input[type=text], input[type=email]');
-
-  for (var i = 0; i < inputs.length; i++) {
-    inputs[i].removeEventListener('change', event => processInputChange(event));
-    inputs[i].removeEventListener('blur', event => processInputChange(event));
+  for (const input of registeredInputs) {
+    input.removeEventListener('change', processInputChange);
+    input.removeEventListener('blur', processInputChange);
   }
+  registeredInputs.clear();
 }
 
 function processInputChange(event) {
@@ -130,8 +136,8 @@ function processInputChange(event) {
   email = getEmail(value);
   if (email !== null) {
     _logInfo('Email found in input ' + email);
-    postData();
     removeInputElementsElementListner();
+    postData();
   }
 }
 
@@ -294,6 +300,7 @@ export function setConfig(config) {
   if (typeof config.formElementId === 'string') {
     _logInfo('Looking for formElementId ' + config.formElementId);
   }
+  removeInputElementsElementListner();
   conf = config;
   associateIds();
 }

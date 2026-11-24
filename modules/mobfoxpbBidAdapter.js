@@ -3,10 +3,12 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'mobfoxpb';
+const GVLID = 311;
 const AD_URL = 'https://bes.mobfox.com/pbjs';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),

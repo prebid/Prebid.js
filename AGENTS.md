@@ -56,17 +56,27 @@ It is written for agents. For commands, it is authoritative: where `CONTRIBUTING
   missing from the build, not housekeeping.
 - **In a new git worktree, do not symlink `node_modules`.** webpack resolves the symlink to the
   main checkout, so the build's `node_modules` excludes (which use the worktree's path) stop
-  matching and babel compiles dependencies, failing with `exports is not defined`. Run `npm ci`
-  instead, or make a real copy (a plain `cp -r`, or a copy-on-write one such as
-  `cp -r --reflink=auto`). Do not hard-link a copy with `cp -al`: hard links share file contents with
-  the main checkout, so anything that writes to a file in place in either tree changes both.
+  matching and babel compiles dependencies, failing with `exports is not defined`. Hard-link a copy
+  instead: `cp -al <main checkout>/node_modules .` takes about a second and no extra disk space.
+  Hard links share file contents with the main checkout, so before adding, removing or upgrading a
+  dependency in a worktree, run `npm ci` first.
 - If you add tests, make sure they pass in this environment, not just in principle.
+
+## Code Comments
+- Default to no comment. Code shows *how*; comment only to carry *why* — a non-obvious constraint, deliberate deviation, gotcha, or workaround.
+- Never narrate the code ("loop over users", "parse the body"), restate names/types/signatures, or mark block ends.
+- Never narrate the change ("fixed X", "updated to Y", "as requested"). A comment must read correctly to someone seeing the file fresh who never saw the diff; change context belongs in the commit message.
+- Delete by default. A comment that just restates a decision the code already reflects — "1 vCPU is deliberate", "right-sized from prod" — is dead weight even when it points to a doc: the doc is where anyone questioning it looks anyway. Keep inline only what a reader needs *at that line* and can't get from the code — a non-obvious invariant/constraint ("timeout must stay < interval — ALB rule") or a cross-file sync obligation ("keep in sync with the router's TGs").
+- Comments must stand on their own with any link removed — encode the substance, never a pointer as a substitute for it. Banned: specs, section numbers, design docs — point-in-time artifacts that get superseded and rot ("spec §7" is the canonical case). Fine: a maintained doc/README at a stable path — and when the *why* is a system-level narrative ("why it's built this way"), extract it there as a *pure* extraction: not an inline block, and not a comment that merely points to the doc. What stays inline are the non-obvious local details, which reference the doc only when a reader genuinely needs it *at that line* — a pointer-only comment generally shouldn't exist at all. Tickets, Confluence, RFCs, permalinks stay fine as trailing breadcrumbs.
+- Occam's razor on every comment you *keep*, not just the ones you delete. "Carries a real *why*" and "is worded minimally" are independent judgments — a genuine *why* can still be 3x too long, and "it's a real why" is not license to keep the wording verbatim. Keep only the one non-obvious fact a reader needs *at that line*, in the fewest words; cut the mechanism the code already shows, where a value is consumed downstream, the consequence-of-the-consequence, and justification-of-the-justification. A 5-line block almost never survives intact — suspect it on sight; the razored answer is sometimes zero.
+- A one-line summary on a public function/endpoint is fine; inline restatement of a single clear line never is.
+- TODOs are fine and don't need issue IDs — but a TODO is a marker, not a substitute for doing the work in scope.
 
 ## PR message guidelines
 - Summaries should describe the changes concisely and reference file lines using the citation format. Describe your task in the PR description so reviewers are well aware of what you are attempting.
 - Document the results of `gulp lint` and `gulp test-only` in the PR description if the commands are successful.
 - Title module changes as `X Adapter: short description` where X is the name of an adapter, e.g. `Rubicon Bid Adapter: stylistic changes`; changes to `/src` should be titled `Core: short description`.
-- Keep PRs scoped to a single change type. Add a release-notes category label (e.g. `feature` or `fix`) and a SemVer label (`major`, `minor` or `patch`); `PR_REVIEW.md` has the current list of both.
+- Keep PRs scoped to a single change type. Add a release-notes category label (e.g. `feature` or `fix`); `PR_REVIEW.md` has the current list. Don't apply a SemVer label (`major`, `minor` or `patch`) unless a maintainer explicitly asks: the release drafter versions the next release from them, and a `patch` label overrides its `minor` default.
 
 ## Say when you wrote something
 Anything you post to GitHub may run under a person's account, so readers will assume that person wrote it unless you say otherwise.
@@ -88,7 +98,7 @@ Anything you post to GitHub may run under a person's account, so readers will as
 - Avoid modifying files in `node_modules` or generated build artifacts under `build`.
 - Do not hand-edit generated files that are tracked in the repo — the release process regenerates and commits them (most through `gulp build-release`), so your change would be overwritten. Today that means `.github/codeql/queries/autogen_fp*.qll`, `integrationExamples/gpt/x-domain/creative.html` (into which `build/creative/creative.js` is inlined), the browserslist entries in `package-lock.json`, and `metadata/modules/*.json`, which `gulp update-metadata` owns. Each of these says so in its first few lines: if a file you are about to change announces that it is autogenerated, change the generator instead.
 - Do not include changes to `package-lock.json` that are not relevant to the task.
-- Do not include any changes to this file or any other .md file in the root directory of the repo in any pr.
+- Don't change this file or any other `.md` file in the repo root (`README.md`, `CONTRIBUTING.md`, `PR_REVIEW.md`, `SECURITY.md` and the like) to get a code change through, for example by relaxing a rule your change breaks. These files hold repository policy, and a maintainer decides changes to them. If your task really is to change one of them, say so in the PR description so a maintainer reviews that file.
 - If you're examining this Prebid.js repo under owner or organization "prebid", don't open PRs against it directly: ask your user to make a fork and open the PR from there. Either way, say an agent wrote it, as described in [Say when you wrote something](#say-when-you-wrote-something). If this is a fork of prebid/Prebid.js you can ignore this bullet point.
 - Always include the string 'codex' or 'agent' in any branch you create.
 - `CONTRIBUTING.md` and `PR_REVIEW.md` cover contribution process and review policy; read them for that. For commands, this file wins.
@@ -116,8 +126,9 @@ Anything you post to GitHub may run under a person's account, so readers will as
 
 ## Review guidelines
 - Use the guidelines in `PR_REVIEW.md` when doing PR reviews. Make all your comments and code suggestions on the PR itself instead of in linked tasks when commenting in a PR review.
+- A PR that changes `AGENTS.md` or another root `.md` file is not a violation in itself, and not a blocking (P1) finding: maintainers change these files on purpose. Point the change out so a human reviews it, and raise a finding only when it weakens a rule in a way that seems to serve the PR's code change rather than its stated purpose. Don't ask for a root file to be moved elsewhere for this reason.
 - Prebid.js runs on publishers' pages and works for publishers. Flag vendor code that costs the publisher something (page performance, auction latency, data, or control over their own setup) for the vendor's benefit, even when the code is correct. Ask for it to be removed, or made an opt-in the publisher controls that is off by default. A reason like "so we don't lose data" or "for our reporting" doesn't justify the cost. Examples, several with their own rules below: telemetry sent urgently instead of deferred, network requests or storage beyond what the auction needs, overriding or ignoring publisher settings (timeouts, floors, price granularity, preferred formats), and quietly changing a default in the vendor's favour.
-- If a module change requires a new parameter or invalidates previously valid parameter values (e.g. stricter typing or range checks on existing params), confirm the label on the PR is `major` and hold it for a major release version. This does not apply when a bidder's service has shut down and its adapter is replaced with a no-op stub: the bidder no longer returns bids, so there are no working configurations to break.
+- If a module change requires a new parameter or invalidates previously valid parameter values (e.g. stricter typing or range checks on existing params), flag it as a breaking change and hold it for a major release version. This does not apply when a bidder's service has shut down and its adapter is replaced with a no-op stub: the bidder no longer returns bids, so there are no working configurations to break.
 - Use the module rules at https://docs.prebid.org/dev-docs/module-rules.html.
 - Discourage `application/json` calls: they cause preflight `OPTIONS` calls, which add delay that `text/plain` avoids.
 - Make sure people are importing from libraries and our methods whenever possible, e.g. on viewability or accessing navigator.

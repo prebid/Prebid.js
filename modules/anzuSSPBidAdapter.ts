@@ -3,10 +3,12 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isBidRequestValid, buildRequests, interpretResponse } from '../libraries/teqblazeUtils/bidderUtils.ts';
 
 const BIDDER_CODE = 'anzuSSP';
+const GVLID = 733;
 const AD_URL = 'https://endpoint.anzumarketplace.com/pbjs';
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),

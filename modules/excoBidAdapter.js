@@ -14,12 +14,14 @@ import {
   isStr,
   generateUUID,
 } from '../src/utils.js';
+import { fetch } from '../src/ajax.js';
 
 export const SID = window.excoPid || generateUUID();
 export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';
 const SYNC_URL = 'https://cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 
 export const BIDDER_CODE = 'exco';
+const GVLID = 444;
 const VERSION = '0.0.3';
 const CURRENCY = 'USD';
 
@@ -308,6 +310,7 @@ export const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO, BANNER],
 
   /**

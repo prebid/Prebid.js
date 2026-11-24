@@ -3,6 +3,7 @@ import sinon from 'sinon';
 import { spec } from 'modules/pgamdirectBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
 import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 /**
  * Spec for modules/pgamdirectBidAdapter.ts.
@@ -310,59 +311,40 @@ describe('pgamdirect: onBidWon', () => {
 // ---------- onTimeout ------------------------------------------------------
 
 describe('pgamdirect: onTimeout', () => {
-  // Low-priority telemetry uses fetch() + keepalive per AGENTS.md §Review
-  // guidelines. Stub the global so we can assert on the URL without
-  // making a real network call.
-  let sandbox;
-  let fetchStub;
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
-  });
-  afterEach(() => sandbox.restore());
-
   it('swallows empty and malformed input', () => {
     expect(() => spec.onTimeout([])).to.not.throw();
     expect(() => spec.onTimeout(null)).to.not.throw();
     expect(() => spec.onTimeout(undefined)).to.not.throw();
-    expect(fetchStub.called).to.equal(false);
+    expect(server.requests.length).to.equal(0);
   });
 
   it('sends a keepalive beacon with tmax + auction on a real timeout record', () => {
     spec.onTimeout([
       { auctionId: 'a1', timeout: 300, bidId: 'b1', bidder: 'pgamdirect' },
     ]);
-    expect(fetchStub.calledOnce).to.equal(true);
-    const [url, init] = fetchStub.firstCall.args;
+    expect(server.requests.length).to.equal(1);
+    const { url, fetch: { request } } = server.requests[0];
     expect(url).to.include('/rtb/v1/metrics/timeout');
     expect(url).to.include('tmax=300');
     expect(url).to.include('auction=a1');
     // keepalive=true is the whole point — without it Chrome drops the
     // request on unload and we undercount timeouts.
-    expect(init).to.have.property('keepalive', true);
+    expect(request.keepalive).to.equal(true);
   });
 });
 
 // ---------- onBidBillable --------------------------------------------------
 
 describe('pgamdirect: onBidBillable', () => {
-  let sandbox;
-  let fetchStub;
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
-  });
-  afterEach(() => sandbox.restore());
-
   it('sends keepalive beacon with cpm / auction / adid', () => {
     spec.onBidBillable({ cpm: 1.75, auctionId: 'auc-9', adId: 'pbid-42' });
-    expect(fetchStub.calledOnce).to.equal(true);
-    const [url, init] = fetchStub.firstCall.args;
+    expect(server.requests.length).to.equal(1);
+    const { url, fetch: { request } } = server.requests[0];
     expect(url).to.include('/rtb/v1/metrics/billable');
     expect(url).to.include('cpm=1.75');
     expect(url).to.include('auction=auc-9');
     expect(url).to.include('adid=pbid-42');
-    expect(init).to.have.property('keepalive', true);
+    expect(request.keepalive).to.equal(true);
   });
 
   it('tolerates missing fields without throwing', () => {
@@ -375,23 +357,15 @@ describe('pgamdirect: onBidBillable', () => {
 // ---------- onAdRenderSucceeded --------------------------------------------
 
 describe('pgamdirect: onAdRenderSucceeded', () => {
-  let sandbox;
-  let fetchStub;
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    fetchStub = sandbox.stub(window, 'fetch').resolves({ ok: true });
-  });
-  afterEach(() => sandbox.restore());
-
   it('sends keepalive beacon keyed on adId + auctionId', () => {
     spec.onAdRenderSucceeded({ adId: 'pbid-1', auctionId: 'auc-1' });
-    expect(fetchStub.calledOnce).to.equal(true);
-    const [url, init] = fetchStub.firstCall.args;
+    expect(server.requests.length).to.equal(1);
+    const { url, fetch: { request } } = server.requests[0];
     expect(url).to.include('/rtb/v1/metrics/render');
     expect(url).to.include('ok=1');
     expect(url).to.include('adid=pbid-1');
     expect(url).to.include('auction=auc-1');
-    expect(init).to.have.property('keepalive', true);
+    expect(request.keepalive).to.equal(true);
   });
 
   it('swallows arbitrary input', () => {

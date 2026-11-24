@@ -1,11 +1,12 @@
 import { randomFive } from './fixtures.js';
+import { targetingConfigApi } from '../../../mocks/gpt.js';
 
 var Slot = function Slot({ code, divId }) {
   code = code || `ad-slot-code-${randomFive()}`;
   divId = divId || `div-id-${randomFive()}`;
 
   var slot = {
-    targeting: [],
+    targeting: {},
     getSlotElementId: function getSlotElementId() {
       return divId;
     },
@@ -13,26 +14,8 @@ var Slot = function Slot({ code, divId }) {
     getAdUnitPath: function getAdUnitPath() {
       return code;
     },
-
-    setTargeting: function setTargeting(key, value) {
-      var obj = [];
-      obj[key] = value;
-      this.targeting.push(obj);
-    },
-
-    getTargeting: function getTargeting() {
-      return this.targeting;
-    },
-
-    getTargetingKeys: function getTargetingKeys() {
-      return [];
-    },
-
-    clearTargeting: function clearTargeting() {
-      return window.googletag.pubads().getSlots();
-    }
   };
-  slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
+  Object.assign(slot, targetingConfigApi(slot.targeting));
   return slot;
 };
 
@@ -47,11 +30,14 @@ export function emitEvent(eventName, params) {
 }
 
 export function enable() {
+  const targeting = {};
   window.googletag = {
     _slots: [],
     _callbackMap: {},
     _ppid: undefined,
+    _targeting: targeting,
     cmd: [],
+    ...targetingConfigApi(targeting),
     pubads: function () {
       var self = this;
       return {
@@ -65,22 +51,6 @@ export function enable() {
 
         setSlots: function (slots) {
           self._slots = slots;
-        },
-
-        setTargeting: function(key, arrayOfValues) {
-          self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
-        },
-
-        getTargeting: function(key) {
-          return self._targeting[key] || [];
-        },
-
-        getTargetingKeys: function() {
-          return Object.getOwnPropertyNames(self._targeting);
-        },
-
-        clearTargeting: function() {
-          self._targeting = {};
         },
 
         addEventListener: function (eventName, cb) {

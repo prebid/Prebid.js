@@ -94,6 +94,16 @@ describe('resetdigitalBidAdapter', function () {
       expect(req.data).to.not.be.null;
     });
 
+    it('should post to the default endpoint', function () {
+      expect(req.method).to.equal('POST');
+      expect(req.url).to.equal('https://adsreq.resetdigital.co/HB');
+    });
+
+    it('should post to params.endpoint when provided', function () {
+      const customReq = spec.buildRequests([{ ...bannerRequest, params: { ...bannerRequest.params, endpoint: 'https://example.com/custom' } }], { refererInfo: { } });
+      expect(customReq.url).to.equal('https://example.com/custom');
+    });
+
     it('should include one request', function () {
       rdata = JSON.parse(req.data);
       expect(rdata.imps.length).to.equal(1);

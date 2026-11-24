@@ -3,12 +3,14 @@ import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'mabidder';
+const ACP_ID = 3235; // Google Additional Consent provider ID
 export const baseUrl = 'https://prebid.ecdrsvc.com/bid';
 const converter = ortbConverter({});
 
 export const spec = {
   supportedMediaTypes: [BANNER],
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   isBidRequestValid: function(bid) {
     if (typeof bid.params === 'undefined') {
       return false;

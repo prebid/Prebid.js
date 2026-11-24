@@ -126,7 +126,6 @@ describe('WelectAdapter', function () {
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data1,
       options: {
-        contentType: 'application/json',
         withCredentials: false,
         crossOrigin: true,
       }
@@ -137,7 +136,6 @@ describe('WelectAdapter', function () {
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       data: data2,
       options: {
-        contentType: 'application/json',
         withCredentials: false,
         crossOrigin: true,
       }
@@ -149,6 +147,10 @@ describe('WelectAdapter', function () {
 
     it('must return the right formatted requests, with bidderRequest containing first party data', function () {
       expect(adapter.buildRequests([bid2], bidderRequest)).to.deep.equal([request2]);
+    });
+
+    it('does not set a contentType, so no CORS preflight is triggered', function () {
+      expect(adapter.buildRequests([bid1])[0].options?.contentType).to.be.undefined;
     });
   });
 
@@ -193,7 +195,6 @@ describe('WelectAdapter', function () {
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/exampleAlias',
       options: {
-        contentType: 'application/json',
         withCredentials: false,
         crossOrigin: true,
       }
