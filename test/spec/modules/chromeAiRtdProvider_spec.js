@@ -195,6 +195,8 @@ describe('Chrome AI RTD Provider', function () {
         `<p>${LONG}<span class="popover">Advertiser disclosure</span></p></main>`);
       const content = contentLine();
       expect(content).to.include('Electric cars are getting cheaper');
+      // Safari before 17.4 has no checkVisibility; the module only runs where the Chrome AI APIs exist.
+      if (typeof Element.prototype.checkVisibility !== 'function') return;
       ['Printed for personal use', 'Advertiser disclosure'].forEach(text => expect(content).to.not.include(text));
     });
 
