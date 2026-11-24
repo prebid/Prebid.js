@@ -107,6 +107,7 @@ declare module '../../src/events' {
 }
 
 type Decision = {
+  adUnitCodes: string[];
   winnerByAdUnit: Map<string, string>;
   droppedAdIds: Set<string>;
 };
@@ -183,9 +184,11 @@ function totalDesirability(group: TakeoverGroup): number {
 
 function isExcluded(bid: Bid, exclusivity: TakeoverMeta['exclusivity']): boolean {
   if (!exclusivity) return false;
-  const domains = bid.meta?.advertiserDomains ?? [];
+  // domain names are case-insensitive
+  const excludedDomains = (exclusivity.adomain ?? []).map(domain => domain.toLowerCase());
+  const domains = (bid.meta?.advertiserDomains ?? []).filter(domain => typeof domain === 'string');
   const categories = [bid.meta?.primaryCatId, ...(bid.meta?.secondaryCatIds ?? [])].filter(Boolean);
-  return domains.some(domain => exclusivity.adomain?.includes(domain)) ||
+  return domains.some(domain => excludedDomains.includes(domain.toLowerCase())) ||
     categories.some(category => exclusivity.cat?.includes(category));
 }
 
@@ -209,7 +212,7 @@ function exclusivityLabel(exclusivity: TakeoverMeta['exclusivity']): string | un
  * Decides which takeover, if any, wins in an auction, and which bids it displaces.
  */
 export function decideTakeovers(auction: AuctionProperties, { renderedBids = () => auctionManager.getAllWinningBids() } = {}): Decision {
-  const decision: Decision = { winnerByAdUnit: new Map(), droppedAdIds: new Set() };
+  const decision: Decision = { adUnitCodes: auction.adUnitCodes, winnerByAdUnit: new Map(), droppedAdIds: new Set() };
   const excluded = new Set(takeoverConfig.excludeAdUnits ?? []);
   const eligibleCodes = auction.adUnitCodes.filter(code => !excluded.has(code));
   const groups = groupTakeovers(auction, eligibleCodes);
@@ -251,8 +254,9 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
       continue;
     }
     const matched = scope.filter(code => group.bidByAdUnit.has(code));
-    // exclusivity is only charged for, and only applied to, ad units the takeover did not bid on
-    const unmatched = eligibleCodes.filter(code => !matched.includes(code));
+    // exclusivity is only charged for, and only applied to, ad units the takeover did not bid on,
+    // including off-screen ones in viewport mode
+    const unmatched = eligibleCodes.filter(code => !group.bidByAdUnit.has(code));
     if (mode === 'all' && matched.length < scope.length && !takeoverConfig.collapseUnfilled) {
       result(group, { reason: 'notEnoughSlots' });
       continue;
@@ -363,11 +367,17 @@ export function onBidWon(bid: Bid) {
  */
 export function targetBidPoolHook(fn, bidsReceived, ...args) {
   if (!isEnabled()) return fn.call(this, bidsReceived, ...args);
+  // the latest auction for an ad unit decides whether a takeover holds it; with bid caching,
+  // the pool can also hold bids from earlier auctions, and they must not displace the takeover
+  const inPool = new Set(bidsReceived.map(bid => bid.adId));
+  const winnerByAdUnit = new Map<string, string | undefined>();
+  decisions.forEach(decision => decision.adUnitCodes.forEach(code => {
+    const winner = decision.winnerByAdUnit.get(code);
+    winnerByAdUnit.set(code, winner != null && inPool.has(winner) ? winner : undefined);
+  }));
   const remaining = bidsReceived.filter(bid => {
-    const decision = decisions.get(bid.auctionId);
-    if (!decision) return true;
-    if (decision.droppedAdIds.has(bid.adId)) return false;
-    const winner = decision.winnerByAdUnit.get(bid.adUnitCode);
+    if (decisions.get(bid.auctionId)?.droppedAdIds.has(bid.adId)) return false;
+    const winner = winnerByAdUnit.get(bid.adUnitCode);
     return winner == null || winner === bid.adId;
   });
   return fn.call(this, remaining, ...args);

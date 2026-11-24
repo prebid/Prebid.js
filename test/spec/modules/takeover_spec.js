@@ -239,6 +239,22 @@ describe('takeover module', () => {
         expect([...decision.winnerByAdUnit.keys()]).to.eql(['a', 'b']);
       });
 
+      it('keeps excluded bids on off-screen ad units the takeover bid on', () => {
+        setConfig({ enabled: true, modes: ['viewport'], allowExclusivity: true });
+        addElement('a', 0);
+        addElement('b', 0);
+        addElement('c', 100000);
+        recordViewport({ auctionId: AUCTION_ID, adUnits: [{ code: 'a' }, { code: 'b' }, { code: 'c' }] });
+        const exclusivity = { adomain: ['opponent.com'] };
+        const opponent = bid({ adUnitCode: 'c', cpm: 1, meta: { advertiserDomains: ['opponent.com'] } });
+        const decision = decide([
+          ...['a', 'b', 'c'].map(code => takeoverBid(code, 1, { mode: 'viewport', exclusivity, priority: 5 })),
+          opponent
+        ]);
+        expect([...decision.winnerByAdUnit.keys()]).to.eql(['a', 'b']);
+        expect(decision.droppedAdIds.has(opponent.adId)).to.be.false;
+      });
+
       it('loses when nothing was in view', () => {
         recordViewport({ auctionId: AUCTION_ID, adUnits: [{ code: 'a' }, { code: 'b' }] });
         decide(['a', 'b'].map(code => takeoverBid(code, 1, { mode: 'viewport' })));
@@ -379,6 +395,17 @@ describe('takeover module', () => {
         expect(decision.droppedAdIds.has(opponent.adId)).to.be.false;
       });
 
+      it('matches advertiser domains regardless of letter case', () => {
+        setConfig({ enabled: true, allowExclusivity: true });
+        const opponent = bid({ adUnitCode: 'c', cpm: 1, meta: { advertiserDomains: ['Opponent.COM'] } });
+        const decision = decide([
+          takeoverBid('a', 1, { exclusivity: { adomain: ['OPPONENT.com'] }, priority: 5 }),
+          takeoverBid('b', 1, { exclusivity: { adomain: ['OPPONENT.com'] }, priority: 5 }),
+          opponent
+        ]);
+        expect(decision.droppedAdIds.has(opponent.adId)).to.be.true;
+      });
+
       it('is ignored unless the publisher allows exclusivity', () => {
         const opponent = bid({ adUnitCode: 'c', cpm: 1, meta: { advertiserDomains: ['opponent.com'] } });
         const decision = decide([
@@ -420,11 +447,32 @@ describe('takeover module', () => {
     it('removes displaced bids', () => {
       const tko = [takeoverBid('a', 1, { priority: 5 }), takeoverBid('b', 1, { priority: 5 })];
       const other = bid({ adUnitCode: 'a', cpm: 5 });
-      const unrelated = bid({ adUnitCode: 'a', cpm: 5, auctionId: 'other-auction' });
+      const unrelated = bid({ adUnitCode: 'c', cpm: 5, auctionId: 'other-auction' });
       onAuctionEnd(auction([...tko, other]));
       const next = sinon.spy();
       targetBidPoolHook(next, [...tko, other, unrelated], 'reducer', 0);
       expect(next.firstCall.args).to.eql([[...tko, unrelated], 'reducer', 0]);
+    });
+
+    it('removes cached bids from earlier auctions on ad units the takeover won', () => {
+      const cached = bid({ adUnitCode: 'a', cpm: 50, auctionId: 'earlier-auction' });
+      const cachedElsewhere = bid({ adUnitCode: 'c', cpm: 50, auctionId: 'earlier-auction' });
+      onAuctionEnd({ ...auction([cached, cachedElsewhere]), auctionId: 'earlier-auction' });
+      const tko = [takeoverBid('a', 1, { priority: 5 }), takeoverBid('b', 1, { priority: 5 })];
+      onAuctionEnd(auction(tko, ['a', 'b']));
+      const next = sinon.spy();
+      targetBidPoolHook(next, [cached, cachedElsewhere, ...tko]);
+      expect(next.firstCall.args[0]).to.eql([cachedElsewhere, ...tko]);
+    });
+
+    it('lets a later auction without a takeover compete with a cached takeover bid', () => {
+      const tko = [takeoverBid('a', 1, { priority: 5, auctionId: 'earlier-auction' }), takeoverBid('b', 1, { priority: 5, auctionId: 'earlier-auction' })];
+      onAuctionEnd({ ...auction(tko, ['a', 'b']), auctionId: 'earlier-auction' });
+      const fresh = bid({ adUnitCode: 'a', cpm: 5 });
+      onAuctionEnd(auction([fresh], ['a']));
+      const next = sinon.spy();
+      targetBidPoolHook(next, [...tko, fresh]);
+      expect(next.firstCall.args[0]).to.eql([...tko, fresh]);
     });
 
     it('passes bids through when disabled', () => {
