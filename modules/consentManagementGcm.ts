@@ -331,8 +331,8 @@ const parseConfig = configParser({
 let refreshHooked = false;
 
 /**
- * Picks up a `window.dataLayer` that the page replaced since the last auction. It runs after the module's own
- * hook (priority 50) and before `executeCallbacks` (49), which runs storage access queued before consent was known.
+ * Picks up a `window.dataLayer` that the page replaced since the last auction. It runs before `executeCallbacks` (49),
+ * which runs storage access queued before consent was known.
  */
 export function refreshConsentHook(next, reqBidsConfigObj) {
   refreshConsent();
@@ -355,7 +355,7 @@ export function setConsentConfig(cmConfig) {
   consentConfig = parseConfig(cmConfig);
   if (consentConfig.requestBidsHook != null && !refreshHooked) {
     refreshHooked = true;
-    getHook('requestBids').before(refreshConsentHook, 49.5);
+    getHook('requestBids').before(refreshConsentHook, 50);
   }
   return consentConfig.loadConsentData?.()?.catch?.(() => null);
 }
