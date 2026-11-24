@@ -984,6 +984,30 @@ describe('consentManagementGcm', () => {
       expect(hooks()).to.eql([consentConfig.requestBidsHook, refreshConsentHook]);
     });
 
+    it('is not ready until the lookup settles, even if consent was read before it was configured', async () => {
+      await allConsent.promise;
+      expect(gcmDataHandler.ready).to.be.true;
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      setConsentConfig({ gcm: { timeout: 300 } });
+      expect(gcmDataHandler.ready).to.be.false;
+      const read = settled(gcmDataHandler.promise);
+      await clock.tickAsync(299);
+      expect(read()).to.be.false;
+      await clock.tickAsync(1);
+      expect(read()).to.be.true;
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+    });
+
+    it('keeps its consent data when it is configured again', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      await configure({ gcm: { timeout: 0 } });
+      setConsentConfig({ gcm: { timeout: 300 } });
+      expect(gcmDataHandler.ready).to.be.true;
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+    });
+
     it('computes a hash for the initial consent data', async () => {
       gtag('consent', 'update', { ad_storage: 'granted' });
       await setConsentConfig({ gcm: {} });

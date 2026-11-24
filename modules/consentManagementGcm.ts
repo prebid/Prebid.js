@@ -575,6 +575,10 @@ export function setConsentConfig(cmConfig) {
   if (region != null && !regionPending && current.region == null) {
     logWarn('consentManagement.gcm.region must be a country or subdivision code, such as \'US\' or \'US-CA\', or a promise for one; ignoring it', region);
   }
+  if (cfg != null && typeof cfg === 'object' && cfg.enabled !== false && !gcmDataHandler.enabled) {
+    // reading the consent promise before the module is configured leaves the handler ready, with no data
+    gcmDataHandler.reset();
+  }
   consentConfig = parseConfig(cmConfig);
   hookRefresh(consentConfig.requestBidsHook != null);
   const loaded = consentConfig.loadConsentData?.()?.catch?.(() => null);
