@@ -114,9 +114,8 @@ function deleteValueFromLocalStorage(submodule) {
 }
 
 export function deleteStoredValue(submodule) {
-  if (!submodule.enabledStorageTypes) populateEnabledStorageTypes(submodule);
-
-  submodule.enabledStorageTypes.forEach(storageType => {
+  // not enabledStorageTypes: deletion must still work after storage access was revoked
+  getConfiguredStorageTypes(submodule.config).forEach(storageType => {
     switch (storageType) {
       case COOKIE:
         deleteValueFromCookie(submodule);

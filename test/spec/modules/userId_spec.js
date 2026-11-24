@@ -1972,6 +1972,17 @@ describe('User ID', function () {
           expect(coreStorage.getCookie('MOCKID')).to.include('1111');
         });
 
+        it('should still delete stored IDs on requestDataDeletion after access is revoked', async () => {
+          allowStorage = true;
+          startInit();
+          await clearStack();
+          expectId();
+          allowStorage = false;
+          await getGlobal().refreshUserIds();
+          requestDataDeletion(sinon.stub());
+          expect(coreStorage.getCookie('MOCKID')).to.not.exist;
+        });
+
         it('should ignore a callback that completes after access is revoked', async () => {
           allowStorage = true;
           mockIdCallback.reset();
