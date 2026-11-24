@@ -1908,6 +1908,84 @@ describe('User ID', function () {
         });
       });
 
+      describe('when storage access changes after init', () => {
+        let allowStorage, unregisterRule;
+        beforeEach(() => {
+          unregisterRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'testStorageAccess', (params) => {
+            if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID && !allowStorage) {
+              return { allow: false };
+            }
+          });
+          mockIdCallback.callsFake((cb) => cb(MOCK_ID));
+        });
+        afterEach(() => {
+          unregisterRule();
+        });
+
+        function expectNoId() {
+          sinon.assert.notCalled(mockIdSystem.getId);
+          expect(getGlobal().getUserIds()).to.eql({});
+        }
+
+        function expectId() {
+          sinon.assert.calledOnce(mockIdSystem.getId);
+          expect(mockIdSystem.getId.getCall(0).args[0].enabledStorageTypes).to.eql(['cookie']);
+          expect(getGlobal().getUserIds()).to.eql({ mid: '1111' });
+          expect(coreStorage.getCookie('MOCKID')).to.include('1111');
+        }
+
+        it('should fetch IDs on refreshUserIds once access is granted', async () => {
+          allowStorage = false;
+          startInit();
+          await clearStack();
+          expectNoId();
+          allowStorage = true;
+          await getGlobal().refreshUserIds();
+          expectId();
+        });
+
+        it('should fetch IDs on a consent change that grants access', async () => {
+          consentSandbox.restore();
+          allConsent.reset();
+          gdprDataHandler.enable();
+          allowStorage = false;
+          gdprDataHandler.setConsentData({ consentString: 'denied' });
+          startInit();
+          await clearStack();
+          expectNoId();
+          allowStorage = true;
+          gdprDataHandler.setConsentData({ consentString: 'granted' });
+          await clearStack();
+          expectId();
+        });
+
+        it('should drop IDs, and leave storage alone, on a refresh after access is revoked', async () => {
+          allowStorage = true;
+          startInit();
+          await clearStack();
+          expectId();
+          allowStorage = false;
+          await getGlobal().refreshUserIds();
+          sinon.assert.calledOnce(mockIdSystem.getId);
+          expect(getGlobal().getUserIds()).to.eql({});
+          allowStorage = true;
+          expect(coreStorage.getCookie('MOCKID')).to.include('1111');
+        });
+
+        it('should ignore a callback that completes after access is revoked', async () => {
+          allowStorage = true;
+          mockIdCallback.reset();
+          startInit();
+          await clearStack();
+          sinon.assert.calledOnce(mockIdCallback);
+          allowStorage = false;
+          await getGlobal().refreshUserIds();
+          mockIdCallback.callArg(0, MOCK_ID);
+          await clearStack();
+          expect(getGlobal().getUserIds()).to.eql({});
+        });
+      });
+
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init

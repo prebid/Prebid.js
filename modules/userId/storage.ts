@@ -114,7 +114,7 @@ function deleteValueFromLocalStorage(submodule) {
 }
 
 export function deleteStoredValue(submodule) {
-  populateEnabledStorageTypes(submodule);
+  if (!submodule.enabledStorageTypes) populateEnabledStorageTypes(submodule);
 
   submodule.enabledStorageTypes.forEach(storageType => {
     switch (storageType) {
@@ -352,10 +352,6 @@ function canUseCookies(submodule) {
 const STORAGE_PURPOSES = [1, 2, 3, 4, 7];
 
 export function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvider>) {
-  if (submodule.enabledStorageTypes) {
-    return;
-  }
-
   const storageTypes = getConfiguredStorageTypes(submodule.config);
 
   submodule.enabledStorageTypes = storageTypes.filter(type => {
