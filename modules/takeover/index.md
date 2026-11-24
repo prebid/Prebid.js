@@ -75,7 +75,7 @@ pbjs.setConfig({
 | `excludeAdUnits` | `[]` | Ad units never taken over. |
 | `collapseUnfilled` | `false` | In `all` mode, leave ad units the takeover has no bid for empty instead of rejecting the takeover. |
 | `blockRefresh` | `false` | Skip `requestBids` for ad units that rendered a takeover bid. |
-| `allowExclusivity` | `false` | Let takeovers keep the advertisers and categories in their `exclusivity` out of the page's other ad units. |
+| `allowExclusivity` | `false` | Let takeovers keep the advertisers and categories in their `exclusivity` out of the ad units they did not bid on. |
 | `exclusivityLabels` | `{}` | Maps `hb_excl` targeting values to IAB categories, so the ad server can apply competitive exclusions. |
 | `viewportPercent` | `50` | Percentage of an ad unit's element that must be in view for `viewport` mode. |
 

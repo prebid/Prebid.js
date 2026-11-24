@@ -298,6 +298,14 @@ describe('takeover module', () => {
         expect(results()).to.eql([]);
       });
 
+      it('drops every bid of a rejected takeover, including repeat bids on an ad unit', () => {
+        const first = takeoverBid('a', 1, { minSlots: 3 });
+        const repeat = takeoverBid('a', 0.5, { minSlots: 3 });
+        const second = takeoverBid('b', 1, { minSlots: 3 });
+        const decision = decide([first, repeat, second]);
+        [first, repeat, second].forEach(b => expect(decision.droppedAdIds.has(b.adId)).to.be.true);
+      });
+
       it('keeps the most desirable bid when a takeover bids twice on a slot', () => {
         const low = takeoverBid('a', 1);
         const high = takeoverBid('a', 2);
@@ -358,6 +366,17 @@ describe('takeover module', () => {
           bid({ adUnitCode: 'c', cpm: 1 })
         ]);
         expect(decision.winnerByAdUnit.size).to.equal(0);
+      });
+
+      it('does not remove excluded bids from an ad unit the takeover bid on but lost', () => {
+        setConfig({ enabled: true, allowExclusivity: true });
+        const opponent = bid({ adUnitCode: 'c', cpm: 1, priority: 1, meta: { advertiserDomains: ['opponent.com'] } });
+        const decision = decide([
+          takeoverBid('a', 1, { exclusivity, priority: 5 }), takeoverBid('b', 1, { exclusivity, priority: 5 }),
+          takeoverBid('c', 1, { exclusivity, priority: 5 }), opponent
+        ]);
+        expect([...decision.winnerByAdUnit.keys()]).to.eql(['a', 'b']);
+        expect(decision.droppedAdIds.has(opponent.adId)).to.be.false;
       });
 
       it('is ignored unless the publisher allows exclusivity', () => {
