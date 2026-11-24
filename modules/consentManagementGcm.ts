@@ -47,7 +47,8 @@ export interface GCMConfig {
 /**
  * Configuration for `consentManagement.gcm`. `timeout` is how long the first auction waits for Consent Mode:
  * for a `default` call when there is none, then for `update` calls to set every signal that the defaults deny
- * (no longer than the page's `wait_for_update`, if it sets one). Defaults to 500 (ms).
+ * (no longer than the page's `wait_for_update`, if it sets one). There is no wait for updates when the defaults
+ * deny no signal and set no `wait_for_update`. Defaults to 500 (ms).
  */
 export type GCMCMConfig = GCMConfig & Omit<BaseCMConfig, 'waitForCmp' | 'actionTimeout'> & ({
   cmpApi?: typeof DATALAYER_API;
@@ -250,7 +251,8 @@ export type FoldResult = {
    */
   state: GCMConsentData | null;
   /**
-   * True if updates set every Consent Mode signal that the defaults deny, so that no further update is expected.
+   * True if no further update is expected: updates set every Consent Mode signal that the defaults deny; or the
+   * page's defaults deny none, and do not ask to wait for an update.
    */
   covered: boolean;
   /**
@@ -288,6 +290,7 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
   const visitorRegion = parseRegion(region);
   let waitForUpdate = null;
   let updated = false;
+  let defaulted = false;
   let regionAmbiguous = false;
 
   cmds.forEach(({ command, params }) => {
@@ -299,6 +302,7 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
     }
     const regions = regionsOf(params);
     if (regions == null) return;
+    defaulted = true;
     const wait = params.wait_for_update;
     if (isNumber(wait) && (wait as number) >= 0) {
       waitForUpdate = Math.max(waitForUpdate ?? 0, wait as number);
@@ -330,7 +334,9 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
   fromTag(defaults, tag?.defaults);
   fromTag(updates, tag?.updates);
   updated = updated || Object.keys(updates).length > 0;
-  const covered = updated && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
+  // defaults that Google's tag has, but not the dataLayer, may have come with a `wait_for_update` that is not known
+  const noWait = defaulted && waitForUpdate == null && Object.keys(tag?.defaults ?? {}).length === 0;
+  const covered = (updated || noWait) && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
   return {
     state: Object.keys(state).length > 0 ? state : null,

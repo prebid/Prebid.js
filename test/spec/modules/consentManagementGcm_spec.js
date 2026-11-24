@@ -133,6 +133,12 @@ describe('consentManagementGcm', () => {
         ], { tag: { defaults: { ad_user_data: 'denied' }, updates: {} } }).covered).to.be.false;
       });
 
+      it('expects an update when it has defaults, as they may have asked to wait', () => {
+        const commands = [cmd('default', { ad_storage: 'granted' })];
+        expect(foldConsent(commands, { tag: { defaults: {}, updates: {} } }).covered).to.be.true;
+        expect(foldConsent(commands, { tag: { defaults: { ad_storage: 'granted' }, updates: {} } }).covered).to.be.false;
+      });
+
       it('finds nothing when it knows nothing', () => {
         expect(foldConsent([], { tag: { defaults: {}, updates: {} } }).found).to.be.false;
       });
@@ -140,8 +146,21 @@ describe('consentManagementGcm', () => {
 
     describe('covered', () => {
       Object.entries({
-        'is false without an update': [false, [
+        'is false without an update, when a default denies a signal': [false, [
+          cmd('default', { ad_storage: 'denied', analytics_storage: 'granted' }),
+        ]],
+        'is true without an update, when the defaults deny no signal and do not ask to wait': [true, [
           cmd('default', { ad_storage: 'granted' }),
+        ]],
+        'is true without an update, when the defaults only deny signals other than the Consent Mode v2 ones': [true, [
+          cmd('default', { functionality_storage: 'denied' }),
+        ]],
+        'is false without an update, when a default that denies no signal asks to wait': [false, [
+          cmd('default', { ad_storage: 'granted', wait_for_update: 0 }),
+        ]],
+        'is false without a default or an update': [false, []],
+        'is false when the only default is ignored': [false, [
+          cmd('default', { ad_storage: 'granted', region: [] }),
         ]],
         'is true with an update and no default': [true, [
           cmd('update', { ad_storage: 'denied' }),
@@ -340,7 +359,7 @@ describe('consentManagementGcm', () => {
       it('leave no state when they only grant', () => {
         expect(foldConsent([cmd('default', { ad_storage: 'granted', region: ['US'] })])).to.eql({
           state: null,
-          covered: false,
+          covered: true,
           found: true,
           waitForUpdate: null,
           regionAmbiguous: true
@@ -631,6 +650,43 @@ describe('consentManagementGcm', () => {
       expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', ad_user_data: 'denied' });
     });
 
+    it('does not wait for an update when the default denies no signal and does not ask to wait', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted', analytics_storage: 'granted', functionality_storage: 'denied' });
+      await setConsentConfig({ gcm: { timeout: 300 } });
+      expect(clock.countTimers()).to.equal(0);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', analytics_storage: 'granted', functionality_storage: 'denied' });
+    });
+
+    it('applies an update that still comes after such a default', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted' });
+      await setConsentConfig({ gcm: { timeout: 300 } });
+      gtag('consent', 'update', { ad_storage: 'denied' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+    });
+
+    it('waits for an update when a default that denies no signal asks to wait', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted', wait_for_update: 200 });
+      const done = settled(setConsentConfig({ gcm: { timeout: 300 } }));
+      await clock.tickAsync(199);
+      expect(done()).to.be.false;
+      await clock.tickAsync(1);
+      expect(done()).to.be.true;
+    });
+
+    it('waits for an update when Google\'s tag has defaults, as they may have asked to wait', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted' });
+      googleTag({ entries: { ad_storage: { default: true } } });
+      const done = settled(setConsentConfig({ gcm: { timeout: 300 } }));
+      await clock.tickAsync(299);
+      expect(done()).to.be.false;
+      await clock.tickAsync(1);
+      expect(done()).to.be.true;
+    });
+
     it('keeps waiting when an update leaves out a signal the default denies', async () => {
       window.dataLayer = [];
       gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', wait_for_update: 200 });
@@ -906,15 +962,23 @@ describe('consentManagementGcm', () => {
       });
 
       it('apply by the latest region when it is configured again while waiting', async () => {
-        setConsentConfig({ gcm: { timeout: 300, region: 'GB' } });
+        setConsentConfig({ gcm: { timeout: 300, region: 'US-CA' } });
         await clock.tickAsync(100);
+        expect(gcmDataHandler.ready).to.be.false;
+        await setConsentConfig({ gcm: { timeout: 300, region: 'GB' } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        await clock.tickAsync(500);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('wait again for an update when the region configured again makes them deny', async () => {
+        await setConsentConfig({ gcm: { timeout: 300, region: 'GB' } });
         const done = settled(setConsentConfig({ gcm: { timeout: 300, region: 'DE' } }));
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
         await clock.tickAsync(299);
         expect(done()).to.be.false;
-        expect(gcmDataHandler.ready).to.be.false;
         await clock.tickAsync(1);
         expect(done()).to.be.true;
-        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
       });
 
       ['US_CA', 'USA', 'us-', ' '].forEach(region => {
@@ -970,10 +1034,20 @@ describe('consentManagementGcm', () => {
         it('apply by a region that resolves while waiting, without restarting the wait', async () => {
           const done = settled(setConsentConfig({ gcm: { timeout: 300, region } }));
           await clock.tickAsync(100);
-          resolveRegion('GB');
+          resolveRegion('DE');
           await clock.tickAsync(199);
           expect(done()).to.be.false;
           await clock.tickAsync(1);
+          expect(done()).to.be.true;
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        });
+
+        it('stop waiting when it resolves to a region where they deny nothing', async () => {
+          const done = settled(setConsentConfig({ gcm: { timeout: 300, region } }));
+          await clock.tickAsync(100);
+          expect(done()).to.be.false;
+          resolveRegion('GB');
+          await clock.tickAsync(0);
           expect(done()).to.be.true;
           expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
         });
