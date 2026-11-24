@@ -637,6 +637,93 @@ describe('consentManagementGcm', () => {
         sinon.assert.calledWith(utils.logWarn, sinon.match(/region must be a string/));
       });
 
+      describe('when the region is a promise', () => {
+        let resolveRegion, rejectRegion, region;
+        beforeEach(() => {
+          region = new Promise((resolve, reject) => {
+            resolveRegion = resolve;
+            rejectRegion = reject;
+          });
+        });
+
+        function regionWarnings() {
+          return utils.logWarn.getCalls().filter(call => /region/.test(call.args[0])).length;
+        }
+
+        it('all apply until it resolves, without a warning', async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+          expect(regionWarnings()).to.equal(0);
+        });
+
+        it('apply by the region once it resolves, notifying of the change', async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          const listener = sinon.stub();
+          gcmDataHandler.onChange(listener);
+          resolveRegion('GB');
+          await clock.tickAsync(0);
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+          sinon.assert.calledOnce(listener);
+          expect(regionWarnings()).to.equal(0);
+        });
+
+        it('apply by a region that resolves while waiting, without restarting the wait', async () => {
+          const done = settled(setConsentConfig({ gcm: { timeout: 300, region } }));
+          await clock.tickAsync(100);
+          resolveRegion('GB');
+          await clock.tickAsync(199);
+          expect(done()).to.be.false;
+          await clock.tickAsync(1);
+          expect(done()).to.be.true;
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        });
+
+        it('lets a lookup settle that only its region kept waiting', async () => {
+          gtag('consent', 'update', { analytics_storage: 'granted' });
+          const done = settled(setConsentConfig({ gcm: { timeout: 300, region } }));
+          await clock.tickAsync(100);
+          expect(done()).to.be.false;
+          resolveRegion('GB');
+          await clock.tickAsync(0);
+          expect(done()).to.be.true;
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', analytics_storage: 'granted' });
+        });
+
+        it('all apply, with a warning, if it is rejected', async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          rejectRegion(new Error('no geo'));
+          await clock.tickAsync(0);
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a string/));
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/region-scoped/));
+        });
+
+        it('all apply, with a warning, if it does not resolve to a string', async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          resolveRegion(['GB']);
+          await clock.tickAsync(0);
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a string/));
+        });
+
+        it('is ignored if the configuration changed before it resolves', async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          await configure({ gcm: { timeout: 0, region: 'US-CA' } });
+          refreshConsentHook(() => null, {});
+          resolveRegion('GB');
+          await clock.tickAsync(0);
+          refreshConsentHook(() => null, {});
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        });
+
+        it('is accepted through setConfig', async () => {
+          config.setConfig({ consentManagement: { gcm: { timeout: 0, region } } });
+          resolveRegion('GB');
+          await clock.tickAsync(0);
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        });
+      });
+
       it('are overridden by an update', async () => {
         await configure({ gcm: { timeout: 0 } });
         gtag('consent', 'update', { ad_storage: 'granted' });

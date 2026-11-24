@@ -29,10 +29,11 @@ export interface GCMConfig {
   /**
    * The visitor's region, as an ISO 3166-1 alpha-2 country code (e.g. 'US') or ISO 3166-2 subdivision code (e.g. 'US-CA'),
    * matching the codes gtag takes in the `region` option of `gtag('consent', 'default', ...)`.
-   * Without it, region-scoped defaults all apply, as the visitor may be in any of them: a signal is denied if any
-   * default denies it.
+   * It can also be a promise for it, if it is not known when Prebid is configured.
+   * Without it, or until it is known, region-scoped defaults all apply, as the visitor may be in any of them:
+   * a signal is denied if any default denies it.
    */
-  region?: string;
+  region?: string | PromiseLike<string>;
 }
 
 /**
@@ -57,7 +58,7 @@ type ConsentCommand = {
 };
 
 export let consentConfig = {} as any;
-let gcmConfig: GCMConfig = {};
+let gcmConfig: Pick<GCMConfig, 'defaultWhenAbsent'> & { region?: string, regionPending?: boolean } = {};
 
 let commands: ConsentCommand[] = [];
 let seen = new WeakSet<object>();
@@ -249,7 +250,7 @@ function nullConsent(): GCMConsentData | null {
  */
 export function currentConsent(): FoldResult {
   const result = foldConsent(commands, { region: gcmConfig.region });
-  if (result.regionUnknown && !regionWarningLogged) {
+  if (result.regionUnknown && !gcmConfig.regionPending && !regionWarningLogged) {
     regionWarningLogged = true;
     logWarn('consentManagement.gcm: the visitor\'s region is unknown, so every region-scoped Consent Mode default applies: a signal is denied if any default denies it. Set consentManagement.gcm.region to apply only those that match.');
   }
@@ -351,15 +352,32 @@ export function refreshConsentHook(next, reqBidsConfigObj) {
 export function setConsentConfig(cmConfig) {
   cancelPendingLookup();
   const cfg = cmConfig?.[CONSENT_GCM];
-  gcmConfig = {
+  const region = cfg?.region;
+  const regionPending = typeof (region as PromiseLike<string>)?.then === 'function';
+  const current = gcmConfig = {
     defaultWhenAbsent: cfg?.defaultWhenAbsent === 'denied' ? 'denied' : null,
-    region: isStr(cfg?.region) ? cfg.region : undefined,
+    region: isStr(region) ? region : undefined,
+    regionPending,
   };
+  if (regionPending) {
+    const setRegion = (value?: unknown) => {
+      // the configuration has changed since
+      if (gcmConfig !== current) return;
+      current.regionPending = false;
+      if (isStr(value)) {
+        current.region = value;
+      } else {
+        logWarn('consentManagement.gcm.region did not resolve to a string, such as \'US\' or \'US-CA\'; ignoring it', value);
+      }
+      notifyCommandListeners();
+    };
+    Promise.resolve(region).then(setRegion, setRegion);
+  }
   if (cfg?.defaultWhenAbsent != null && cfg.defaultWhenAbsent !== 'denied') {
     logWarn(`consentManagement.gcm.defaultWhenAbsent must be null or 'denied'; ignoring "${cfg.defaultWhenAbsent}"`);
   }
-  if (cfg?.region != null && !isStr(cfg.region)) {
-    logWarn('consentManagement.gcm.region must be a string, such as \'US\' or \'US-CA\'; ignoring it', cfg.region);
+  if (region != null && !isStr(region) && !regionPending) {
+    logWarn('consentManagement.gcm.region must be a string, such as \'US\' or \'US-CA\', or a promise for one; ignoring it', region);
   }
   consentConfig = parseConfig(cmConfig);
   if (consentConfig.requestBidsHook != null && !refreshHooked) {

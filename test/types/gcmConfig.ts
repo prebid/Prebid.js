@@ -31,6 +31,23 @@ export const gcmStatic: Config = {
   }
 };
 
+export const gcmLateRegion: Config = {
+  consentManagement: {
+    gcm: {
+      region: Promise.resolve('US-CA')
+    }
+  }
+};
+
+export const badRegion: Config = {
+  consentManagement: {
+    gcm: {
+      // @ts-expect-error region is a string, or a promise for one
+      region: ['US-CA']
+    }
+  }
+};
+
 export const badDefaultWhenAbsent: Config = {
   consentManagement: {
     gcm: {
