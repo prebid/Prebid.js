@@ -196,12 +196,29 @@ describe('consentManagementGcm', () => {
         });
       });
 
-      it('grant a signal only if every default that sets it grants it', () => {
+      it('do not grant a signal that no default without a region grants', () => {
         expect(foldConsent([
           cmd('default', { ad_storage: 'granted', region: ['US'] }),
           cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', region: ['CA'] }),
           cmd('default', { ad_user_data: 'denied', region: ['DE'] }),
-        ]).state).to.eql({ ad_storage: 'granted', ad_user_data: 'denied' });
+        ]).state).to.eql({ ad_user_data: 'denied' });
+      });
+
+      it('leave no state when they only grant', () => {
+        expect(foldConsent([cmd('default', { ad_storage: 'granted', region: ['US'] })])).to.eql({
+          state: null,
+          covered: false,
+          waitForUpdate: null,
+          regionUnknown: true
+        });
+      });
+
+      it('agree with a region that matches none of them, when they only grant', () => {
+        const commands = [
+          cmd('default', { analytics_storage: 'granted' }),
+          cmd('default', { ad_storage: 'granted', region: ['US'] }),
+        ];
+        expect(foldConsent(commands).state).to.eql(foldConsent(commands, { region: 'DE' }).state);
       });
 
       it('do not depend on the order of defaults', () => {

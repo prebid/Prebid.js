@@ -30,8 +30,8 @@ export interface GCMConfig {
    * The visitor's region, as an ISO 3166-1 alpha-2 country code (e.g. 'US') or ISO 3166-2 subdivision code (e.g. 'US-CA'),
    * matching the codes gtag takes in the `region` option of `gtag('consent', 'default', ...)`.
    * It can also be a promise for it, if it is not known when Prebid is configured.
-   * Without it, or until it is known, region-scoped defaults all apply, as the visitor may be in any of them:
-   * a signal is denied if any default denies it.
+   * Without it, or until it is known, a signal is denied if any region-scoped default denies it, as the visitor
+   * may be in any of those regions.
    */
   region?: string | PromiseLike<string>;
 }
@@ -145,10 +145,6 @@ function regionsOf(params: Record<string, unknown>): string[] {
   return regions.filter(isStr).map(r => r.trim().toUpperCase());
 }
 
-function mostRestrictive(a: GCMSignalValue | undefined, b: GCMSignalValue): GCMSignalValue {
-  return a === 'denied' || b === 'denied' ? 'denied' : 'granted';
-}
-
 /**
  * How specifically a region-scoped default matches the visitor's region: 2 for a subdivision ('US-CA'), 1 for its
  * country ('US'), 0 for no match. As in gtag, a more specific match wins.
@@ -183,14 +179,14 @@ export type FoldResult = {
  * - Defaults without a region apply to everyone; later ones win.
  * - With `region`, the visitor's region, region-scoped defaults apply only if they match it; the most specific
  *   match wins over less specific ones, and over defaults without a region.
- * - Without `region`, region-scoped defaults all apply, together with those without a region: a signal is denied
- *   if any of them denies it, which is never more permissive than what gtag resolves for the visitor.
+ * - Without `region`, a signal is denied if any region-scoped default denies it; region-scoped grants are left out,
+ *   as the visitor may be in none of those regions. This is never more permissive than what gtag resolves.
  * - Updates then apply on top, in order.
  */
 export function foldConsent(cmds: ConsentCommand[], { region }: { region?: string } = {}): FoldResult {
   const global: Record<string, GCMSignalValue> = {};
   const regional: Record<string, { value: GCMSignalValue, match: number }> = {};
-  const restrictive: Record<string, GCMSignalValue> = {};
+  const deniedInSomeRegion = new Set<string>();
   const updates: Record<string, GCMSignalValue> = {};
   const visitorRegion = isStr(region) && region.trim() !== '' ? region.trim().toUpperCase() : null;
   let waitForUpdate = null;
@@ -213,7 +209,7 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
       signals.forEach(([signal, value]) => { global[signal] = value; });
     } else if (visitorRegion == null) {
       regionUnknown = regionUnknown || signals.length > 0;
-      signals.forEach(([signal, value]) => { restrictive[signal] = mostRestrictive(restrictive[signal], value); });
+      signals.forEach(([signal, value]) => { if (value === 'denied') deniedInSomeRegion.add(signal); });
     } else {
       const match = regionMatch(regions, visitorRegion);
       if (match > 0) {
@@ -225,7 +221,7 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
   });
 
   const defaults: Record<string, GCMSignalValue> = { ...global };
-  Object.entries(restrictive).forEach(([signal, value]) => { defaults[signal] = mostRestrictive(defaults[signal], value); });
+  deniedInSomeRegion.forEach(signal => { defaults[signal] = 'denied'; });
   Object.entries(regional).forEach(([signal, { value }]) => { defaults[signal] = value; });
   const covered = updated && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
@@ -252,7 +248,7 @@ export function currentConsent(): FoldResult {
   const result = foldConsent(commands, { region: gcmConfig.region });
   if (result.regionUnknown && !gcmConfig.regionPending && !regionWarningLogged) {
     regionWarningLogged = true;
-    logWarn('consentManagement.gcm: the visitor\'s region is unknown, so every region-scoped Consent Mode default applies: a signal is denied if any default denies it. Set consentManagement.gcm.region to apply only those that match.');
+    logWarn('consentManagement.gcm: the visitor\'s region is unknown, so a signal is denied if any region-scoped Consent Mode default denies it. Set consentManagement.gcm.region to apply only those that match.');
   }
   if (result.state == null) result.state = nullConsent();
   return result;
