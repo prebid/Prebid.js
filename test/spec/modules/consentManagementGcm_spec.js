@@ -3,6 +3,7 @@ import {
   currentConsent,
   enrichFPDHook,
   foldConsent,
+  readGoogleTagData,
   refreshConsentHook,
   resetConsentData,
   setConsentConfig,
@@ -26,11 +27,20 @@ describe('consentManagementGcm', () => {
     return { command, params };
   }
 
+  function googleTag({ entries = {}, usedDefault = true, geo = { 0: 'US', 1: 'US-CA' } } = {}) {
+    window.google_tag_data = {
+      ics: { entries, usedDefault },
+      xcd: { ip_geo_data_cache: { get: () => typeof geo === 'string' ? geo : JSON.stringify(geo) } }
+    };
+    return window.google_tag_data;
+  }
+
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     hadDataLayer = Object.prototype.hasOwnProperty.call(window, 'dataLayer');
     originalDataLayer = window.dataLayer;
     delete window.dataLayer;
+    delete window.google_tag_data;
     resetConsentData();
   });
 
@@ -38,6 +48,7 @@ describe('consentManagementGcm', () => {
     resetConsentData();
     config.resetConfig();
     sandbox.restore();
+    delete window.google_tag_data;
     if (hadDataLayer) {
       window.dataLayer = originalDataLayer;
     } else {
@@ -47,7 +58,7 @@ describe('consentManagementGcm', () => {
 
   describe('foldConsent', () => {
     it('returns no state when there are no commands', () => {
-      expect(foldConsent([])).to.eql({ state: null, covered: false, waitForUpdate: null, regionAmbiguous: false });
+      expect(foldConsent([])).to.eql({ state: null, covered: false, found: false, waitForUpdate: null, regionAmbiguous: false });
     });
 
     it('folds defaults and updates in order, later ones winning', () => {
@@ -57,6 +68,74 @@ describe('consentManagementGcm', () => {
         cmd('update', { ad_storage: 'denied', analytics_storage: 'granted' }),
       ]);
       expect(state).to.eql({ ad_storage: 'denied', analytics_storage: 'granted', ad_user_data: 'denied' });
+    });
+
+    it('takes any value but granted as denied for Consent Mode v2 signals, as gtag does', () => {
+      expect(foldConsent([
+        cmd('default', { ad_storage: 'Denied', analytics_storage: false, ad_user_data: 0, ad_personalization: null }),
+        cmd('update', { ad_storage: 'GRANTED', analytics_storage: undefined }),
+      ]).state).to.eql({ ad_storage: 'denied', analytics_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+    });
+
+    Object.entries({
+      'an empty list': [],
+      'no string': [123, null],
+      'a number': 5,
+    }).forEach(([name, region]) => {
+      it(`ignores a default whose region is ${name}, as gtag does`, () => {
+        const result = foldConsent([
+          cmd('default', { ad_storage: 'denied' }),
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', wait_for_update: 500, region }),
+        ], { region: 'US' });
+        expect(result.state).to.eql({ ad_storage: 'denied' });
+        expect(result.waitForUpdate).to.be.null;
+      });
+    });
+
+    describe('with what Google\'s tag knows', () => {
+      it('denies what its defaults deny', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted' }),
+        ], { tag: { defaults: { ad_storage: 'denied' }, updates: {} } }).state).to.eql({ ad_storage: 'denied', ad_user_data: 'granted' });
+      });
+
+      it('does not grant what the commands deny by default', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'denied' }),
+        ], { tag: { defaults: { ad_storage: 'granted' }, updates: {} } }).state).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('takes the defaults and updates that the commands do not set', () => {
+        const result = foldConsent([], {
+          tag: {
+            defaults: { ad_storage: 'denied', analytics_storage: 'granted' },
+            updates: { ad_storage: 'granted' }
+          }
+        });
+        expect(result).to.eql({
+          state: { ad_storage: 'granted', analytics_storage: 'granted' },
+          covered: true,
+          found: true,
+          waitForUpdate: null,
+          regionAmbiguous: false
+        });
+      });
+
+      it('denies what its updates deny, over updates in the commands', () => {
+        expect(foldConsent([
+          cmd('update', { ad_storage: 'granted', ad_user_data: 'denied' }),
+        ], { tag: { defaults: {}, updates: { ad_storage: 'denied', ad_user_data: 'granted' } } }).state).to.eql({ ad_storage: 'denied', ad_user_data: 'denied' });
+      });
+
+      it('needs updates for what its defaults deny', () => {
+        expect(foldConsent([
+          cmd('update', { ad_storage: 'granted' }),
+        ], { tag: { defaults: { ad_user_data: 'denied' }, updates: {} } }).covered).to.be.false;
+      });
+
+      it('finds nothing when it knows nothing', () => {
+        expect(foldConsent([], { tag: { defaults: {}, updates: {} } }).found).to.be.false;
+      });
     });
 
     describe('covered', () => {
@@ -244,6 +323,7 @@ describe('consentManagementGcm', () => {
             ad_personalization: 'denied'
           },
           covered: false,
+          found: true,
           waitForUpdate: null,
           regionAmbiguous: true
         });
@@ -261,6 +341,7 @@ describe('consentManagementGcm', () => {
         expect(foldConsent([cmd('default', { ad_storage: 'granted', region: ['US'] })])).to.eql({
           state: null,
           covered: false,
+          found: true,
           waitForUpdate: null,
           regionAmbiguous: true
         });
@@ -293,6 +374,77 @@ describe('consentManagementGcm', () => {
       it('are not flagged when they set no signal', () => {
         expect(foldConsent([cmd('default', { wait_for_update: 100, region: ['DE'] })]).regionAmbiguous).to.be.false;
       });
+    });
+  });
+
+  describe('readGoogleTagData', () => {
+    it('is null without google_tag_data, or without its consent state', () => {
+      expect(readGoogleTagData()).to.be.null;
+      window.google_tag_data = { xcd: {} };
+      expect(readGoogleTagData()).to.be.null;
+    });
+
+    it('reads the region, and the defaults and updates of each signal', () => {
+      googleTag({
+        entries: {
+          ad_storage: { implicit: true, default: false, update: true, region: 'US-CA' },
+          analytics_storage: { implicit: true, default: true },
+          ad_user_data: { implicit: true },
+          ad_personalization: { update: false, default: undefined },
+        }
+      });
+      expect(readGoogleTagData()).to.eql({
+        region: 'US-CA',
+        defaults: { ad_storage: 'denied', analytics_storage: 'granted' },
+        updates: { ad_storage: 'granted', ad_personalization: 'denied' }
+      });
+    });
+
+    it('reads a country when there is no subdivision', () => {
+      googleTag({ geo: { 0: 'DE', 1: '' } });
+      expect(readGoogleTagData().region).to.equal('DE');
+    });
+
+    it('does not read the region before the tag has used a default', () => {
+      googleTag({ usedDefault: false, entries: { ad_storage: { update: true } } });
+      expect(readGoogleTagData()).to.eql({ region: null, defaults: {}, updates: { ad_storage: 'granted' } });
+    });
+
+    Object.entries({
+      'no country': { 1: 'US-CA' },
+      'an empty object, as when the tag could not find it': {},
+      'a country that is not a code': { 0: 'USA', 1: '' },
+      'a lower case country': { 0: 'us', 1: '' },
+      'a subdivision of another country': { 0: 'US', 1: 'CA-ON' },
+      'a subdivision without its country': { 0: 'US', 1: 'CA' },
+      'a subdivision that is not a string': { 0: 'US', 1: 5 },
+      'no subdivision at all': { 0: 'US' },
+      'something that is not an object': '"US"',
+    }).forEach(([name, geo]) => {
+      it(`reads no region from ${name}`, () => {
+        googleTag({ geo });
+        expect(readGoogleTagData()).to.eql({ region: null, defaults: {}, updates: {} });
+      });
+    });
+
+    Object.entries({
+      'the region is not JSON': (tag) => { tag.xcd.ip_geo_data_cache.get = () => 'US'; },
+      'reading the region throws': (tag) => { tag.xcd.ip_geo_data_cache.get = () => { throw new Error(); }; },
+      'entries is not an object': (tag) => { tag.ics.entries = 'x'; },
+      'usedDefault is not a boolean': (tag) => { delete tag.ics.usedDefault; },
+      'a default is not a boolean': (tag) => { tag.ics.entries.ad_storage = { default: 'granted' }; },
+      'an update is not a boolean': (tag) => { tag.ics.entries.ad_storage = { default: true, update: 1 }; },
+      'google_tag_data throws': () => { Object.defineProperty(window, 'google_tag_data', { configurable: true, get() { throw new Error(); } }); },
+    }).forEach(([name, breakIt]) => {
+      it(`takes nothing when ${name}`, () => {
+        breakIt(googleTag({ entries: { analytics_storage: { default: false } } }));
+        expect(readGoogleTagData()).to.be.null;
+      });
+    });
+
+    it('reads no region when the tag has none, keeping its consent state', () => {
+      delete googleTag({ entries: { ad_storage: { default: false } } }).xcd;
+      expect(readGoogleTagData()).to.eql({ region: null, defaults: { ad_storage: 'denied' }, updates: {} });
     });
   });
 
@@ -876,6 +1028,119 @@ describe('consentManagementGcm', () => {
         await configure({ gcm: { timeout: 0 } });
         gtag('consent', 'update', { ad_storage: 'granted' });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+    });
+
+    describe('with Google\'s tag', () => {
+      const regionWarnings = () => utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length;
+
+      beforeEach(() => {
+        window.dataLayer = [];
+        gtag('consent', 'default', { ad_storage: 'granted' });
+        gtag('consent', 'default', { ad_storage: 'denied', region: ['DE', 'US-CA'] });
+      });
+
+      it('uses its region for region-scoped defaults, when none is configured', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' } });
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        expect(regionWarnings()).to.equal(0);
+        sinon.assert.calledWith(utils.logInfo, sinon.match(/region from Google's tag \(US-WA\)/));
+      });
+
+      it('denies what its defaults deny, whatever its region', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' }, entries: { ad_storage: { default: false } } });
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('takes a country from it as not specific enough for defaults for its subdivisions', async () => {
+        googleTag({ geo: { 0: 'US', 1: '' } });
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        expect(regionWarnings()).to.equal(1);
+      });
+
+      it('prefers the configured region', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' } });
+        await configure({ gcm: { timeout: 0, region: 'US-CA' } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('uses its region until a promise for the configured one resolves', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' } });
+        let resolveRegion;
+        await configure({ gcm: { timeout: 0, region: new Promise(resolve => { resolveRegion = resolve; }) } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        resolveRegion('DE');
+        await clock.tickAsync(0);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('takes the region as unknown when the tag is not as expected', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' } }).ics.entries = null;
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        expect(regionWarnings()).to.equal(1);
+      });
+
+      it('does not read it when googleTagData is false', async () => {
+        googleTag({ geo: { 0: 'US', 1: 'US-WA' }, entries: { ad_user_data: { default: false } } });
+        await configure({ gcm: { timeout: 0, googleTagData: false } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('reads the Consent Mode that did not go through the dataLayer', async () => {
+        window.dataLayer = [];
+        googleTag({ entries: { ad_storage: { default: false }, analytics_storage: { default: true } } });
+        const done = settled(setConsentConfig({ gcm: { timeout: 300 } }));
+        await clock.tickAsync(299);
+        expect(done()).to.be.false;
+        await clock.tickAsync(1);
+        expect(done()).to.be.true;
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied', analytics_storage: 'granted' });
+      });
+
+      it('notices what it learns while waiting, and stops waiting once its updates cover what is denied', async () => {
+        window.dataLayer = [];
+        const done = settled(setConsentConfig({ gcm: { timeout: 1000 } }));
+        await clock.tickAsync(100);
+        const tag = googleTag({ entries: { ad_storage: { default: false } } });
+        await clock.tickAsync(100);
+        expect(done()).to.be.false;
+        tag.ics.entries.ad_storage.update = true;
+        await clock.tickAsync(50);
+        // the update is folded a task later
+        await clock.tickAsync(1);
+        expect(done()).to.be.true;
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('stops looking at it once the wait is over', async () => {
+        window.dataLayer = [];
+        googleTag({ entries: { ad_storage: { default: false } } });
+        await configure({ gcm: { timeout: 100 } });
+        await clock.tickAsync(50);
+        expect(clock.countTimers()).to.equal(0);
+      });
+
+      it('catches up with it after a command that it had not processed yet', async () => {
+        const tag = googleTag({ geo: { 0: 'US', 1: 'US-WA' }, entries: { ad_storage: { default: true, update: false } } });
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        gtag('consent', 'update', { ad_storage: 'granted' });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        tag.ics.entries.ad_storage.update = true;
+        await clock.tickAsync(0);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('applies defaultWhenAbsent when neither it nor the dataLayer has any Consent Mode', async () => {
+        window.dataLayer = [];
+        googleTag();
+        await configure({ gcm: { timeout: 0, defaultWhenAbsent: 'denied' } });
+        expect(gcmDataHandler.getConsentData().ad_storage).to.equal('denied');
+        expect(Object.keys(gcmDataHandler.getConsentData())).to.have.length(4);
       });
     });
 

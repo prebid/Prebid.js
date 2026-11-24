@@ -34,7 +34,8 @@ export const gcmStatic: Config = {
 export const gcmLateRegion: Config = {
   consentManagement: {
     gcm: {
-      region: Promise.resolve('US-CA')
+      region: Promise.resolve('US-CA'),
+      googleTagData: false
     }
   }
 };

@@ -3,7 +3,7 @@
  * sets through `gtag('consent', 'default' | 'update', {...})`, from the documented `dataLayer` protocol, and makes it
  * available as `gcm` consent data and as `regs.ext.gcm` in bid requests.
  */
-import { deepSetValue, isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
+import { deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { CONSENT_GCM, gcmDataHandler } from '../src/consentHandler.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
@@ -15,9 +15,9 @@ import type { GCMConsentData, GCMSignalValue } from '../src/types/consent/gcm.d.
 export type { GCMConsentData, GCMSignalValue } from '../src/types/consent/gcm.d.ts';
 
 export const GCM_SIGNALS = ['ad_storage', 'analytics_storage', 'ad_user_data', 'ad_personalization'] as const;
-const SIGNAL_VALUES: readonly unknown[] = ['granted', 'denied'] satisfies GCMSignalValue[];
 const DATALAYER_API = 'dataLayer';
 const DEFAULT_TIMEOUT = 500;
+const TAG_POLL_INTERVAL = 50;
 
 export interface GCMConfig {
   /**
@@ -35,6 +35,13 @@ export interface GCMConfig {
    * may be in any of those regions.
    */
   region?: string | PromiseLike<string>;
+  /**
+   * Whether to also read what Google's tag (gtag.js or Google Tag Manager) keeps in `window.google_tag_data`: the
+   * Consent Mode state that did not go through the dataLayer (such as what Tag Manager consent templates set), and
+   * the visitor's region, used when `region` is not given. It is not a documented interface, so anything unexpected
+   * in it is ignored. Defaults to true.
+   */
+  googleTagData?: boolean;
 }
 
 /**
@@ -59,13 +66,14 @@ type ConsentCommand = {
 };
 
 export let consentConfig = {} as any;
-let gcmConfig: Pick<GCMConfig, 'defaultWhenAbsent'> & { region?: string, regionPending?: boolean } = {};
+let gcmConfig: Pick<GCMConfig, 'defaultWhenAbsent' | 'googleTagData'> & { region?: string, regionPending?: boolean } = {};
 
 let commands: ConsentCommand[] = [];
 let seen = new WeakSet<object>();
 let watched: { dataLayer: unknown[]; push: unknown[]['push']; wrapper: unknown[]['push'] } | null = null;
 let commandListeners: (() => void)[] = [];
 let regionWarningLogged = false;
+let tagRegionLogged = false;
 let cancelPendingLookup = () => {};
 
 function toCommand(entry: any): ConsentCommand | null {
@@ -119,7 +127,11 @@ export function watchDataLayer(win: any = window) {
     // it stays in place after a reset if `push` was wrapped again since, and must not read for what is watched later
     if (watched?.wrapper === wrapper) {
       try {
-        if (entries.map(readEntry).some(Boolean)) notifyCommandListeners();
+        if (entries.map(readEntry).some(Boolean)) {
+          notifyCommandListeners();
+          // Google's tag may only process the command after this, when `push` was wrapped by it later
+          if (win.google_tag_data != null) setTimeout(notifyCommandListeners, 0);
+        }
       } catch (e) {
         logError('Error reading Google Consent Mode from dataLayer', e);
       }
@@ -139,15 +151,27 @@ function onCommand(listener: () => void): () => void {
   };
 }
 
+/**
+ * The signals in the parameters of a consent command. As in gtag, any value but 'granted' denies a Consent Mode v2
+ * signal; other parameters are signals only if they are 'granted' or 'denied'.
+ */
 function signalsOf(params: Record<string, unknown>): [string, GCMSignalValue][] {
-  return Object.entries(params).filter(([_, value]) => SIGNAL_VALUES.includes(value)) as [string, GCMSignalValue][];
+  return Object.entries(params).flatMap(([name, value]): [string, GCMSignalValue][] => {
+    if (value === 'granted' || value === 'denied') return [[name, value]];
+    return value !== undefined && (GCM_SIGNALS as readonly string[]).includes(name) ? [[name, 'denied']] : [];
+  });
 }
 
-function regionsOf(params: Record<string, unknown>): string[] {
+/**
+ * The regions a default is scoped to: none if it has no `region`, and null if its `region` names no region,
+ * in which case gtag ignores the default.
+ */
+function regionsOf(params: Record<string, unknown>): string[] | null {
   const region = params.region;
-  const regions = Array.isArray(region) ? region : region == null ? [] : [region];
+  if (region == null) return [];
   // as gtag does: upper case, but not trimmed
-  return regions.filter(isStr).map(r => r.toUpperCase());
+  const regions = (Array.isArray(region) ? region : [region]).filter(isStr).map(r => r.toUpperCase());
+  return regions.length > 0 ? regions : null;
 }
 
 const REGION_CODE = /^[A-Z]{2}(-[A-Z0-9]{1,3})?$/;
@@ -158,6 +182,56 @@ const REGION_CODE = /^[A-Z]{2}(-[A-Z0-9]{1,3})?$/;
 export function parseRegion(region: unknown): string | null {
   const code = typeof region === 'string' ? region.trim().toUpperCase() : '';
   return REGION_CODE.test(code) ? code : null;
+}
+
+export type GoogleTagData = {
+  /**
+   * The visitor's region as Google's tag resolved it; null if unknown.
+   */
+  region: string | null;
+  /**
+   * The defaults it resolved for the visitor's region, and the updates it has seen, by signal.
+   */
+  defaults: Record<string, GCMSignalValue>;
+  updates: Record<string, GCMSignalValue>;
+};
+
+function tagRegion(tagData: any): string | null {
+  const cache = tagData.xcd?.ip_geo_data_cache;
+  if (typeof cache?.get !== 'function') return null;
+  const geo = JSON.parse(cache.get());
+  const country = geo?.['0'];
+  const subdivision = geo?.['1'];
+  if (!isStr(country) || !/^[A-Z]{2}$/.test(country)) return null;
+  if (subdivision === '') return country;
+  return isStr(subdivision) && REGION_CODE.test(subdivision) && subdivision.startsWith(`${country}-`) ? subdivision : null;
+}
+
+/**
+ * What Google's tag (gtag.js or Google Tag Manager) knows, read from `window.google_tag_data`. That is not a
+ * documented interface: if anything in it is not as expected, nothing is taken from it.
+ */
+export function readGoogleTagData(win: any = window): GoogleTagData | null {
+  try {
+    const ics = win.google_tag_data?.ics;
+    if (ics == null || typeof ics.entries !== 'object' || ics.entries == null || typeof ics.usedDefault !== 'boolean') return null;
+    const data: GoogleTagData = { region: null, defaults: {}, updates: {} };
+    for (const [signal, entry] of Object.entries<any>(ics.entries)) {
+      for (const [layer, values] of [['default', data.defaults], ['update', data.updates]] as const) {
+        const granted = entry?.[layer];
+        if (typeof granted === 'boolean') {
+          values[signal] = granted ? 'granted' : 'denied';
+        } else if (granted != null) {
+          return null;
+        }
+      }
+    }
+    // the region is only taken once the tag has resolved defaults with it
+    if (ics.usedDefault) data.region = tagRegion(win.google_tag_data);
+    return data;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -180,6 +254,10 @@ export type FoldResult = {
    */
   covered: boolean;
   /**
+   * True if any Consent Mode was found, be it in the commands or in what Google's tag knows.
+   */
+  found: boolean;
+  /**
    * The longest `wait_for_update` given with a `default`.
    */
   waitForUpdate: number | null;
@@ -199,8 +277,10 @@ export type FoldResult = {
  *   of `region`, if it is a country) only deny: a signal is denied if any of them denies it, and what they grant
  *   is left out. This is never more permissive than what gtag resolves.
  * - Updates then apply on top, in order.
+ * - What Google's tag knows (`tag`) can only deny, or set what the commands do not: its view may be behind the
+ *   commands, but it also has the state that never went through the dataLayer.
  */
-export function foldConsent(cmds: ConsentCommand[], { region }: { region?: string } = {}): FoldResult {
+export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: string, tag?: Pick<GoogleTagData, 'defaults' | 'updates'> } = {}): FoldResult {
   const global: Record<string, GCMSignalValue> = {};
   const regional: Record<string, { value: GCMSignalValue, match: number }> = {};
   const deniedInPossibleRegion = new Set<string>();
@@ -217,11 +297,12 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
       signals.forEach(([signal, value]) => { updates[signal] = value; });
       return;
     }
+    const regions = regionsOf(params);
+    if (regions == null) return;
     const wait = params.wait_for_update;
     if (isNumber(wait) && (wait as number) >= 0) {
       waitForUpdate = Math.max(waitForUpdate ?? 0, wait as number);
     }
-    const regions = regionsOf(params);
     if (regions.length === 0) {
       signals.forEach(([signal, value]) => { global[signal] = value; });
     } else {
@@ -241,11 +322,20 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
   const defaults: Record<string, GCMSignalValue> = { ...global };
   Object.entries(regional).forEach(([signal, { value }]) => { defaults[signal] = value; });
   deniedInPossibleRegion.forEach(signal => { defaults[signal] = 'denied'; });
+  const fromTag = (values: Record<string, GCMSignalValue>, tagValues: Record<string, GCMSignalValue> = {}) => {
+    Object.entries(tagValues).forEach(([signal, value]) => {
+      if (value === 'denied' || values[signal] == null) values[signal] = value;
+    });
+  };
+  fromTag(defaults, tag?.defaults);
+  fromTag(updates, tag?.updates);
+  updated = updated || Object.keys(updates).length > 0;
   const covered = updated && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
   return {
     state: Object.keys(state).length > 0 ? state : null,
     covered,
+    found: cmds.length > 0 || Object.keys(state).length > 0,
     waitForUpdate,
     regionAmbiguous
   };
@@ -260,10 +350,16 @@ function nullConsent(): GCMConsentData | null {
 }
 
 /**
- * The current Consent Mode state, from the dataLayer commands read so far, with `defaultWhenAbsent` applied.
+ * The current Consent Mode state, from the dataLayer commands read so far and what Google's tag knows,
+ * with `defaultWhenAbsent` applied.
  */
 export function currentConsent(): FoldResult {
-  const result = foldConsent(commands, { region: gcmConfig.region });
+  const tag = gcmConfig.googleTagData === false ? null : readGoogleTagData();
+  if (gcmConfig.region == null && tag?.region != null && !tagRegionLogged) {
+    tagRegionLogged = true;
+    logInfo(`consentManagement.gcm: using the visitor's region from Google's tag (${tag.region}), as consentManagement.gcm.region is not set`);
+  }
+  const result = foldConsent(commands, { region: gcmConfig.region ?? tag?.region, tag });
   if (result.regionAmbiguous && !gcmConfig.regionPending && !regionWarningLogged) {
     regionWarningLogged = true;
     logWarn('consentManagement.gcm: the visitor\'s region is unknown, or is a country while Consent Mode defaults are scoped to its subdivisions, so a signal is denied if any region-scoped default that may apply denies it. Set consentManagement.gcm.region, to the subdivision (such as \'US-CA\') in the latter case, to apply only those that match.');
@@ -291,6 +387,7 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
   return new PbPromise<void>((resolve) => {
     let waitTimer = null;
     let settleTimer = null;
+    let tagTimer = null;
     let finished = false;
     let stop = () => null;
     function cancel() {
@@ -298,6 +395,7 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
       stop();
       if (waitTimer != null) clearTimeout(waitTimer);
       if (settleTimer != null) clearTimeout(settleTimer);
+      if (tagTimer != null) clearInterval(tagTimer);
     }
     function done() {
       if (finished) return;
@@ -307,7 +405,7 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
     }
     function check(settle = true) {
       if (finished) return;
-      const { state, covered, waitForUpdate } = currentConsent();
+      const { state, covered, found, waitForUpdate } = currentConsent();
       if (covered) {
         if (!settle) {
           done();
@@ -315,7 +413,7 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
           // commands pushed back to back are folded together
           settleTimer = setTimeout(done, 0);
         }
-      } else if (commands.length > 0) {
+      } else if (found) {
         // wait for updates to cover what the defaults deny, no longer than `wait_for_update` (or `timeout`, whichever is shorter)
         setProvisionalConsent(state);
         if (waitForUpdate != null && waitTimer == null) {
@@ -332,6 +430,19 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
     watchDataLayer();
     // what the dataLayer already holds was read in one go
     check(false);
+    if (!finished && gcmConfig.googleTagData !== false) {
+      // Google's tag gives no notice of what it learns
+      let known = JSON.stringify(readGoogleTagData());
+      tagTimer = setInterval(() => {
+        // later changes are picked up with the next command or auction
+        if (finished || gcmDataHandler.ready) return clearInterval(tagTimer);
+        const now = JSON.stringify(readGoogleTagData());
+        if (now !== known) {
+          known = now;
+          check();
+        }
+      }, TAG_POLL_INTERVAL);
+    }
   });
 }
 
@@ -384,6 +495,7 @@ export function setConsentConfig(cmConfig) {
   const regionPending = typeof (region as PromiseLike<string>)?.then === 'function';
   const current = gcmConfig = {
     defaultWhenAbsent: cfg?.defaultWhenAbsent === 'denied' ? 'denied' : null,
+    googleTagData: cfg?.googleTagData !== false,
     region: parseRegion(region) ?? undefined,
     regionPending,
   };
@@ -433,6 +545,7 @@ export function resetConsentData() {
   commands = [];
   seen = new WeakSet();
   regionWarningLogged = false;
+  tagRegionLogged = false;
   commandListeners = [refreshConsent];
   hookRefresh(false);
 }
