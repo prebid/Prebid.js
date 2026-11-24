@@ -15,6 +15,36 @@ type BidIdentifiers = ContextIdentifiers & {
   bidId: Identifier;
 };
 
+export type TakeoverMode = 'all' | 'max' | 'viewport';
+
+/**
+ * Page takeover metadata (corresponds to ORTB `bid.ext.prebid.deal.takeover`).
+ * Bids from the same bidder that share a `dealId` form one takeover; the takeover module decides whether it wins.
+ * @see https://github.com/prebid/Prebid.js/issues/15719
+ */
+export interface TakeoverMeta {
+  /**
+   * `all`: every ad unit in the auction, or none. `max`: as many as the takeover wins, at least `minSlots`.
+   * `viewport`: every ad unit in view when bids are requested. Defaults to `max` when missing or unknown.
+   */
+  mode: TakeoverMode;
+  /**
+   * Minimum number of ad units the takeover must win in `max` and `viewport` modes.
+   */
+  minSlots?: number;
+  /**
+   * Advertisers and categories the takeover keeps out of the page's other ad units.
+   */
+  exclusivity?: {
+    adomain?: string[];
+    cat?: string[];
+  };
+  /**
+   * Set by the takeover module to tie a takeover's bids together for analytics.
+   */
+  groupId?: string;
+}
+
 /**
  * Deal metadata (corresponds to ORTB `bid.ext.prebid.deal`).
  * @see https://github.com/prebid/Prebid.js/issues/15602
@@ -48,6 +78,10 @@ export interface DealMeta {
    * `ext.prebid.as.apb`. Informational only: whether Prebid.js trusts the metadata depends on `allowPriorityBids`, not on this field.
    */
   source?: string;
+  /**
+   * Page takeover terms. Acted on only by the takeover module, and only for bidders the publisher accepts takeovers from.
+   */
+  takeover?: TakeoverMeta;
 }
 
 /**

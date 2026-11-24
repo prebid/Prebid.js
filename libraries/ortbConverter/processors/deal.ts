@@ -1,9 +1,42 @@
 import { isPlainObject } from '../../../src/utils.js';
-import type { DealMeta } from '../../../src/bidfactory.ts';
+import type { DealMeta, TakeoverMeta } from '../../../src/bidfactory.ts';
 import type { ORTBBid } from '../../../src/types/ortb/response.d.ts';
+import type { TakeoverExt } from '../../../src/types/ortb/ext/deal.d.ts';
 
 function isNonNegativeNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+const TAKEOVER_MODES = ['all', 'max', 'viewport'];
+
+function nonEmptyStrings(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return;
+  const strings = value.filter(item => typeof item === 'string' && item !== '');
+  return strings.length > 0 ? strings : undefined;
+}
+
+function getTakeoverMeta(takeover: TakeoverExt | undefined): TakeoverMeta | undefined {
+  if (!isPlainObject(takeover)) {
+    return;
+  }
+  const { mode, min_slots: minSlots, exclusivity } = takeover;
+  const takeoverMeta: TakeoverMeta = {
+    mode: TAKEOVER_MODES.includes(mode) ? mode as TakeoverMeta['mode'] : 'max'
+  };
+  if (Number.isInteger(minSlots) && minSlots > 0) {
+    takeoverMeta.minSlots = minSlots;
+  }
+  if (isPlainObject(exclusivity)) {
+    const adomain = nonEmptyStrings(exclusivity.adomain);
+    const cat = nonEmptyStrings(exclusivity.cat);
+    if (adomain || cat) {
+      takeoverMeta.exclusivity = {
+        ...(adomain && { adomain }),
+        ...(cat && { cat })
+      };
+    }
+  }
+  return takeoverMeta;
 }
 
 /**
@@ -34,6 +67,10 @@ export function getDealMeta(bid: ORTBBid): DealMeta | undefined {
   }
   if (typeof deal.source === 'string' && deal.source !== '') {
     dealMeta.source = deal.source;
+  }
+  const takeover = getTakeoverMeta(deal.takeover);
+  if (takeover) {
+    dealMeta.takeover = takeover;
   }
   return dealMeta;
 }
