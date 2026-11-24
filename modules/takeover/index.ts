@@ -57,7 +57,7 @@ export type TakeoverConfig = {
    */
   blockRefresh?: boolean;
   /**
-   * Whether takeovers may keep advertisers or categories out of the page's other ad units.
+   * Whether takeovers may keep advertisers or categories out of the ad units they did not bid on.
    */
   allowExclusivity?: boolean;
   /**
@@ -117,6 +117,7 @@ type TakeoverGroup = {
   dealId: string;
   terms: TakeoverMeta;
   bidByAdUnit: Map<string, Bid>;
+  adIds: Set<string>;
 };
 
 let takeoverConfig: TakeoverConfig | undefined;
@@ -158,9 +159,10 @@ function groupTakeovers(auction: AuctionProperties, eligibleCodes: string[]): Ta
     if (!acceptedModes().includes(terms.mode) || !isAccepted(bid, auction.bidderRequests)) return;
     const id = `${auction.auctionId}:${bid.bidderCode}:${bid.dealId}`;
     if (!groups.has(id)) {
-      groups.set(id, { id, bidderCode: bid.bidderCode, dealId: String(bid.dealId), terms, bidByAdUnit: new Map() });
+      groups.set(id, { id, bidderCode: bid.bidderCode, dealId: String(bid.dealId), terms, bidByAdUnit: new Map(), adIds: new Set() });
     }
     const group = groups.get(id);
+    group.adIds.add(bid.adId);
     const current = group.bidByAdUnit.get(bid.adUnitCode);
     group.bidByAdUnit.set(bid.adUnitCode, current ? getHighestDesirability(current, bid) : bid);
   });
@@ -228,11 +230,11 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
 
   // takeovers are ranked against each other first; only one can win an auction
   groups.sort((a, b) => (bestPriority(a) - bestPriority(b)) || (totalDesirability(b) - totalDesirability(a)));
-  const takeoverAdIds = new Set(groups.flatMap(group => [...group.bidByAdUnit.values()].map(bid => bid.adId)));
+  const takeoverAdIds = new Set(groups.flatMap(group => [...group.adIds]));
   const otherBids = auction.bidsReceived.filter(bid => !takeoverAdIds.has(bid.adId));
   const otherBidsFor = (code: string) => otherBids.filter(bid => bid.adUnitCode === code);
 
-  let winner: { group: TakeoverGroup, codes: string[] } | undefined;
+  let winner: { group: TakeoverGroup, codes: string[], unmatched: string[] } | undefined;
   for (const group of groups) {
     if (winner) {
       result(group, { reason: 'outranked' });
@@ -249,6 +251,8 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
       continue;
     }
     const matched = scope.filter(code => group.bidByAdUnit.has(code));
+    // exclusivity is only charged for, and only applied to, ad units the takeover did not bid on
+    const unmatched = eligibleCodes.filter(code => !matched.includes(code));
     if (mode === 'all' && matched.length < scope.length && !takeoverConfig.collapseUnfilled) {
       result(group, { reason: 'notEnoughSlots' });
       continue;
@@ -272,8 +276,7 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
     let won = outright;
     if (sameTier.length > 0) {
       const exclusivity = takeoverConfig.allowExclusivity ? group.terms.exclusivity : undefined;
-      const outside = eligibleCodes.filter(code => !matched.includes(code));
-      const exclusivityCost = outside.reduce((cost, code) => {
+      const exclusivityCost = unmatched.reduce((cost, code) => {
         const best = bestBid(otherBidsFor(code));
         const bestAllowed = bestBid(otherBidsFor(code).filter(bid => !isExcluded(bid, exclusivity)));
         return cost + (best ? desirability(best) : 0) - (bestAllowed ? desirability(bestAllowed) : 0);
@@ -293,17 +296,17 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
       result(group, { reason: sameTier.length > 0 && !won.includes(sameTier[0]) ? 'lostOnValue' : 'notEnoughSlots' });
       continue;
     }
-    winner = { group, codes: won };
+    winner = { group, codes: won, unmatched };
   }
 
   groups.forEach(group => {
     const keep = winner?.group === group ? winner.codes : [];
-    group.bidByAdUnit.forEach((bid, code) => {
-      if (!keep.includes(code)) decision.droppedAdIds.add(bid.adId);
-    });
+    auction.bidsReceived
+      .filter(bid => group.adIds.has(bid.adId) && !keep.includes(bid.adUnitCode))
+      .forEach(bid => decision.droppedAdIds.add(bid.adId));
   });
   if (winner) {
-    const { group, codes } = winner;
+    const { group, codes, unmatched } = winner;
     const exclusivity = takeoverConfig.allowExclusivity ? group.terms.exclusivity : undefined;
     const label = exclusivity && exclusivityLabel(exclusivity);
     codes.forEach(code => {
@@ -319,7 +322,7 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
     }
     if (exclusivity) {
       otherBids
-        .filter(bid => !codes.includes(bid.adUnitCode) && isExcluded(bid, exclusivity))
+        .filter(bid => unmatched.includes(bid.adUnitCode) && isExcluded(bid, exclusivity))
         .forEach(bid => decision.droppedAdIds.add(bid.adId));
     }
     result(group, {
