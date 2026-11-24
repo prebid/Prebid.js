@@ -300,7 +300,8 @@ const SKIPPED_ELEMENTS = `${NON_TEXT_ELEMENTS}, nav, aside, header, footer, figu
 const TEXT_BLOCKS = 'p, li, h2, h3, h4, h5, h6, blockquote, pre, dd';
 
 // Unlike innerText, checkVisibility needs up to date styles but no layout.
-const isRendered = (element) => element.checkVisibility?.({ visibilityProperty: true }) ?? true;
+// checkVisibilityCSS is visibilityProperty's name before Chrome 121.
+const isRendered = (element) => element.checkVisibility?.({ visibilityProperty: true, checkVisibilityCSS: true }) ?? true;
 
 /**
  * Up to `maxLength` characters of the text under `root`, leaving out script and style contents, navigation,
