@@ -29,6 +29,10 @@
     ids=unified             add a second user ID module (unifiedId) that fetches its ID from tdid.json on this server
     nogcm=1                 leave consentManagement.gcm unconfigured
     pbjs_debug=true         Prebid debug logging
+    gtagdelay=<ms>          request gtag.js this long after it would otherwise be (with gtag=after: after Prebid ran its queue)
+    pre=<js>                JavaScript run before anything else on the page, e.g. to set window.google_tag_data
+  demo.report() returns Prebid's consent metadata and auctions next to what Google's tag resolved (google_tag_data.ics,
+  its region, and the gcs/gcd of the Analytics hits sent so far); demo.log has Prebid's consentManagement.gcm messages.
 -->
 <html>
 
@@ -36,6 +40,7 @@
     <title>Prebid.js - Google Consent Mode v2</title>
     <script>
         var qs = new URLSearchParams(location.search);
+        if (qs.get('pre') != null) (0, eval)(qs.get('pre'));
         var GTAG_ID = 'G-XXXXXXX';
         var GTAG_ORDER = qs.get('gtag') || 'before';
         var CONSENT_MODE = qs.get('cm') !== 'none';
@@ -104,8 +109,44 @@
             // consent commands pushed by `later`, and when
             pushes: [],
             // when Prebid tried to enable the `probe` analytics adapter
-            probe: []
+            probe: [],
+            log: [],
+            report: function () {
+                var tag, ics = null, region = null;
+                try {
+                    tag = window.google_tag_data;
+                    ics = tag.ics && { usedDefault: tag.ics.usedDefault, wasSetLate: tag.ics.wasSetLate, entries: JSON.parse(JSON.stringify(tag.ics.entries)) };
+                } catch (e) { ics = 'unreadable: ' + e; }
+                try { region = tag.xcd.ip_geo_data_cache.get(); } catch (e) {}
+                return {
+                    consent: window.pbjs && pbjs.getConsentMetadata ? pbjs.getConsentMetadata().gcm : null,
+                    auctions: demo.auctions.map(function (a) { return { waitedMs: a.waitedMs, requestedAt: a.requestedAt, gcm: a.regs && a.regs.ext && a.regs.ext.gcm, eids: (a.eids || []).length }; }),
+                    gtagLoadedAt: demo.gtagLoadedAt != null && demo.configuredAt != null ? Math.round(demo.gtagLoadedAt - demo.configuredAt) : demo.gtagLoadedAt != null,
+                    ics: ics,
+                    tagRegion: region,
+                    hits: performance.getEntriesByType('resource').filter(function (e) { return /\/g\/collect/.test(e.name); }).map(function (e) {
+                        var u = new URL(e.name);
+                        return { at: demo.configuredAt != null ? Math.round(e.startTime - demo.configuredAt) : null, gcs: u.searchParams.get('gcs'), gcd: u.searchParams.get('gcd'), en: u.searchParams.get('en') };
+                    }),
+                    log: demo.log,
+                    pushes: demo.pushes,
+                    regionSettledAt: demo.regionSettledAt,
+                    errors: demo.errors
+                };
+            },
+            errors: []
         };
+        window.addEventListener('error', function (e) { demo.errors.push(String(e.message)); });
+        ['info', 'warn', 'error'].forEach(function (level) {
+            var orig = console[level];
+            console[level] = function () {
+                var text = Array.prototype.map.call(arguments, function (a) { return typeof a === 'string' ? a : ''; }).join(' ');
+                if (/consentManagement|Consent Mode|GCM|dataLayer/i.test(text)) {
+                    demo.log.push({ at: demo.configuredAt != null ? demo.since() : null, level: level, text: text.replace(/%c|display: inline-block;[^;]*;[^;]*;[^;]*;[^ ]*/g, '').trim().slice(0, 400) });
+                }
+                return orig.apply(this, arguments);
+            };
+        });
 
         function loadScript(src) {
             return new Promise(function (resolve) {
@@ -117,9 +158,13 @@
         }
 
         var loadGtag = function () {
-            return CONSENT_MODE && GTAG_ORDER !== 'none'
-                ? loadScript('https://www.googletagmanager.com/gtag/js?id=' + GTAG_ID + (LAYER !== 'dataLayer' ? '&l=' + LAYER : ''))
-                : Promise.resolve();
+            if (!CONSENT_MODE || GTAG_ORDER === 'none') return Promise.resolve();
+            var src = 'https://www.googletagmanager.com/gtag/js?id=' + GTAG_ID + (LAYER !== 'dataLayer' ? '&l=' + LAYER : '');
+            var load = function () { return loadScript(src).then(function () { demo.gtagLoadedAt = performance.now(); }); };
+            if (qs.get('gtagdelay') == null) return load();
+            // does not hold Prebid back
+            setTimeout(load, Number(qs.get('gtagdelay')));
+            return Promise.resolve();
         };
         var loadPrebid = function () { return loadScript('../../build/dev/prebid.js'); };
 
