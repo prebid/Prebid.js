@@ -20,6 +20,7 @@ export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleNa
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
+const OPTOUT_COOKIE_DAYS = 365;
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 export type SharedIdSystemModuleName = 'sharedId' | 'pubCommonId';
@@ -201,6 +202,25 @@ function hasOptedOut() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
 
+/**
+ * Make an opt-out durable: copy a localStorage-only opt-out into the cookie, where a first-party SharedID endpoint
+ * (which can't read localStorage) sees it on its next request, and delete the stored ID.
+ */
+function enforceOptOut(storedId, handle?: IdHandle) {
+  if (!storage.cookiesAreEnabled()) {
+    logInfo('PubCommonId: cookies are not available, the opt-out is not copied to a cookie');
+  } else if (!readValue(OPTOUT_NAME, COOKIE)) {
+    const expires = new Date(Date.now() + OPTOUT_COOKIE_DAYS * 24 * 60 * 60 * 1000).toUTCString();
+    storage.setCookie(OPTOUT_NAME, '1', expires, 'Lax', sharedIdSystemSubmodule.domainOverride());
+    if (!readValue(OPTOUT_NAME, COOKIE)) {
+      logInfo('PubCommonId: could not write the opt-out cookie');
+    }
+  }
+  if (storedId) {
+    handle?.remove();
+  }
+}
+
 export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   /**
    * used to link submodule with config
@@ -226,6 +246,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   getId: function (config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
+      enforceOptOut(storedId, handle);
       return;
     }
     if (consentData?.coppa) {
@@ -269,6 +290,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   extendId: function(config = {} as any, consentData, storedId, handle) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
+      enforceOptOut(storedId, handle);
       return { id: undefined };
     }
     if (consentData?.coppa) {

@@ -1,5 +1,13 @@
-import { sharedIdSystemSubmodule, resetPixelStorageWarning } from 'modules/sharedIdSystem.js';
+import { sharedIdSystemSubmodule, resetPixelStorageWarning, storage } from 'modules/sharedIdSystem.js';
 import { config } from 'src/config.js';
+import { registerActivityControl } from 'src/activities/rules.js';
+import { ACTIVITY_ACCESS_DEVICE } from 'src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_STORAGE_KEY,
+  ACTIVITY_PARAM_STORAGE_TYPE,
+  ACTIVITY_PARAM_STORAGE_WRITE
+} from 'src/activities/params.js';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
@@ -562,6 +570,156 @@ describe('SharedId System', function () {
     it('should not warn without pixelUrl', function () {
       sharedIdSystemSubmodule.getId(cfg('html5', {}), undefined);
       sinon.assert.notCalled(utils.logWarn);
+    });
+  });
+
+  describe('opt-out', function () {
+    const OPTOUT = '_pubcid_optout';
+    const EXPIRED = 'Thu, 01 Jan 1970 00:00:01 GMT';
+    const pixelConfig = {
+      params: { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true },
+      storage: { type: 'cookie', name: '_pubcid', expires: 10 }
+    };
+    let sandbox, unregister;
+
+    function eraseCookie(name) {
+      [undefined, sharedIdSystemSubmodule.domainOverride()].forEach(domain => storage.setCookie(name, '', EXPIRED, undefined, domain));
+    }
+
+    function mockHandle() {
+      return { get: sinon.stub(), manage: sinon.spy(), set: sinon.spy(), touch: sinon.spy(), remove: sinon.spy() };
+    }
+
+    function deny(test) {
+      unregister = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'sharedId opt-out test', params =>
+        params[ACTIVITY_PARAM_COMPONENT_NAME] === 'sharedId' && test(params) ? { allow: false } : undefined);
+    }
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+      sandbox.stub(utils, 'triggerPixel');
+      utils.logInfo.resetHistory();
+      localStorage.setItem(OPTOUT, '1');
+    });
+
+    afterEach(function () {
+      unregister?.();
+      unregister = undefined;
+      sandbox.restore();
+      localStorage.removeItem(OPTOUT);
+      eraseCookie(OPTOUT);
+    });
+
+    Object.entries({
+      getId: (handle, storedId) => sharedIdSystemSubmodule.getId(pixelConfig, undefined, storedId, handle),
+      extendId: (handle, storedId) => sharedIdSystemSubmodule.extendId(pixelConfig, undefined, storedId, handle)
+    }).forEach(([method, invoke]) => {
+      describe(method, function () {
+        it('should copy a localStorage-only opt-out into the cookie', function () {
+          invoke(mockHandle(), 'stored-id');
+          expect(storage.getCookie(OPTOUT)).to.equal('1');
+        });
+
+        it('should not write the cookie again when it is already set', function () {
+          storage.setCookie(OPTOUT, '1');
+          localStorage.removeItem(OPTOUT);
+          sandbox.spy(storage, 'setCookie');
+          invoke(mockHandle(), 'stored-id');
+          sinon.assert.notCalled(storage.setCookie);
+        });
+
+        it('should delete the stored id', function () {
+          const handle = mockHandle();
+          invoke(handle, 'stored-id');
+          sinon.assert.calledOnce(handle.remove);
+        });
+
+        it('should not touch storage again when there is no stored id and the cookie is set', function () {
+          const handle = mockHandle();
+          invoke(handle, 'stored-id');
+          sandbox.spy(storage, 'setCookie');
+          const again = mockHandle();
+          invoke(again, undefined);
+          sinon.assert.notCalled(storage.setCookie);
+          sinon.assert.notCalled(again.remove);
+        });
+
+        it('should not report an id or fire the pixel', function () {
+          const result = invoke(mockHandle(), 'stored-id');
+          expect(result?.id).to.be.undefined;
+          expect(result?.callback).to.be.undefined;
+          sinon.assert.notCalled(utils.triggerPixel);
+        });
+
+        it('should skip the cookie when the opt-out cookie write is denied', function () {
+          deny(params => params[ACTIVITY_PARAM_STORAGE_KEY] === OPTOUT && params[ACTIVITY_PARAM_STORAGE_WRITE]);
+          const handle = mockHandle();
+          invoke(handle, 'stored-id');
+          expect(storage.getCookie(OPTOUT)).to.be.null;
+          sinon.assert.calledWith(utils.logInfo, sinon.match('could not write the opt-out cookie'));
+          sinon.assert.calledOnce(handle.remove);
+          sinon.assert.notCalled(utils.triggerPixel);
+        });
+
+        it('should skip the cookie when cookies are denied', function () {
+          deny(params => params[ACTIVITY_PARAM_STORAGE_TYPE] === 'cookie');
+          sandbox.spy(storage, 'setCookie');
+          invoke(mockHandle(), 'stored-id');
+          sinon.assert.notCalled(storage.setCookie);
+          sinon.assert.calledWith(utils.logInfo, sinon.match('opt-out is not copied to a cookie'));
+        });
+      });
+    });
+
+    describe('with the User ID module', function () {
+      const NAME = 'pubcid_optout_spec';
+
+      before(() => {
+        attachIdSystem(sharedIdSystemSubmodule);
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        ['', '_cst', '_last'].forEach(suffix => eraseCookie(NAME + suffix));
+        ['', '_cst', '_last', '_exp'].forEach(suffix => localStorage.removeItem(NAME + suffix));
+      });
+
+      function configure(type) {
+        config.setConfig({
+          userSync: {
+            // with no auction in this test, a zero auctionDelay would hold the first initialization until one ends
+            auctionDelay: 50,
+            userIds: [{ name: 'sharedId', params: { pixelUrl: '/wp-json/pubcid/v1/extend/', extend: true }, storage: { type, name: NAME, expires: 10 } }]
+          }
+        });
+      }
+
+      it('should delete the ID cookie and its companions, and copy the opt-out into a cookie', async function () {
+        storage.setCookie(NAME, 'stored-id');
+        storage.setCookie(`${NAME}_cst`, 'hash');
+        configure('cookie');
+        await getGlobal().refreshUserIds();
+        expect(storage.getCookie(NAME)).to.not.be.ok;
+        expect(storage.getCookie(`${NAME}_cst`)).to.not.be.ok;
+        expect(storage.getCookie(OPTOUT)).to.equal('1');
+        expect(getGlobal().getUserIds().pubcid).to.be.undefined;
+        sinon.assert.notCalled(utils.triggerPixel);
+      });
+
+      it('should delete the localStorage ID and its companions', async function () {
+        localStorage.setItem(NAME, 'stored-id');
+        localStorage.setItem(`${NAME}_exp`, new Date(Date.now() + 60 * 60 * 1000).toUTCString());
+        localStorage.setItem(`${NAME}_cst`, 'hash');
+        configure('html5');
+        await getGlobal().refreshUserIds();
+        expect(localStorage.getItem(NAME)).to.be.null;
+        expect(localStorage.getItem(`${NAME}_exp`)).to.be.null;
+        expect(localStorage.getItem(`${NAME}_cst`)).to.be.null;
+        expect(storage.getCookie(OPTOUT)).to.equal('1');
+        expect(getGlobal().getUserIds().pubcid).to.be.undefined;
+        sinon.assert.notCalled(utils.triggerPixel);
+      });
     });
   });
 
