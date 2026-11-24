@@ -5,7 +5,7 @@
  */
 import { deepSetValue, isNumber, isPlainObject, isStr, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { CONSENT_GCM, gcmDataHandler, gdprDataHandler, gppDataHandler } from '../src/consentHandler.js';
+import { CONSENT_GCM, gcmDataHandler } from '../src/consentHandler.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { getHook } from '../src/hook.js';
 import { PbPromise } from '../src/utils/promise.js';
@@ -16,10 +16,6 @@ export type { GCMConsentData, GCMSignalValue } from '../src/types/consent/gcm.d.
 
 export const GCM_SIGNALS = ['ad_storage', 'analytics_storage', 'ad_user_data', 'ad_personalization'] as const;
 const SIGNAL_VALUES: readonly unknown[] = ['granted', 'denied'] satisfies GCMSignalValue[];
-/**
- * GPP section ID of the IAB EU TCF v2 section.
- */
-const GPP_SID_TCF_EU = 2;
 const DATALAYER_API = 'dataLayer';
 const DEFAULT_TIMEOUT = 500;
 
@@ -33,7 +29,8 @@ export interface GCMConfig {
   /**
    * The visitor's region, as an ISO 3166-1 alpha-2 country code (e.g. 'US') or ISO 3166-2 subdivision code (e.g. 'US-CA'),
    * matching the codes gtag takes in the `region` option of `gtag('consent', 'default', ...)`.
-   * Region-scoped defaults are ignored without it, unless GDPR applies, in which case they all apply.
+   * Without it, region-scoped defaults all apply, as the visitor may be in any of them: a signal is denied if any
+   * default denies it.
    */
   region?: string;
 }
@@ -137,15 +134,6 @@ function onCommand(listener: () => void): () => void {
   };
 }
 
-/**
- * True if GDPR applies according to the other consent modules: TCF's `gdprApplies`, or GPP's applicable sections
- * including the EU TCF section.
- */
-export function gdprApplies(): boolean {
-  return gdprDataHandler.getConsentData()?.gdprApplies === true ||
-    (gppDataHandler.getConsentData()?.applicableSections ?? []).includes(GPP_SID_TCF_EU);
-}
-
 function signalsOf(params: Record<string, unknown>): [string, GCMSignalValue][] {
   return Object.entries(params).filter(([_, value]) => SIGNAL_VALUES.includes(value)) as [string, GCMSignalValue][];
 }
@@ -184,21 +172,21 @@ export type FoldResult = {
    */
   waitForUpdate: number | null;
   /**
-   * True if region-scoped defaults were ignored, for lack of a visitor region.
+   * True if region-scoped defaults were all applied, for lack of a visitor region.
    */
-  regionsIgnored: boolean;
+  regionUnknown: boolean;
 };
 
 /**
  * Fold consent commands, in order, into the current Consent Mode state.
  * - Defaults without a region apply to everyone; later ones win.
- * - When GDPR applies, region-scoped defaults all apply, as if they matched the visitor, and a signal is denied if any
- *   default denies it.
- * - Otherwise, region-scoped defaults apply only if they match `region`, the visitor's region; the most specific
- *   match wins over less specific ones, and over defaults without a region. Without `region` they are ignored.
+ * - With `region`, the visitor's region, region-scoped defaults apply only if they match it; the most specific
+ *   match wins over less specific ones, and over defaults without a region.
+ * - Without `region`, region-scoped defaults all apply, together with those without a region: a signal is denied
+ *   if any of them denies it, which is never more permissive than what gtag resolves for the visitor.
  * - Updates then apply on top, in order.
  */
-export function foldConsent(cmds: ConsentCommand[], { gdpr = false, region }: { gdpr?: boolean, region?: string } = {}): FoldResult {
+export function foldConsent(cmds: ConsentCommand[], { region }: { region?: string } = {}): FoldResult {
   const global: Record<string, GCMSignalValue> = {};
   const regional: Record<string, { value: GCMSignalValue, match: number }> = {};
   const restrictive: Record<string, GCMSignalValue> = {};
@@ -206,7 +194,7 @@ export function foldConsent(cmds: ConsentCommand[], { gdpr = false, region }: { 
   const visitorRegion = isStr(region) && region.trim() !== '' ? region.trim().toUpperCase() : null;
   let waitForUpdate = null;
   let updated = false;
-  let regionsIgnored = false;
+  let regionUnknown = false;
 
   cmds.forEach(({ command, params }) => {
     const signals = signalsOf(params);
@@ -222,33 +210,28 @@ export function foldConsent(cmds: ConsentCommand[], { gdpr = false, region }: { 
     const regions = regionsOf(params);
     if (regions.length === 0) {
       signals.forEach(([signal, value]) => { global[signal] = value; });
-    } else if (gdpr) {
+    } else if (visitorRegion == null) {
+      regionUnknown = regionUnknown || signals.length > 0;
       signals.forEach(([signal, value]) => { restrictive[signal] = mostRestrictive(restrictive[signal], value); });
-    } else if (visitorRegion != null) {
+    } else {
       const match = regionMatch(regions, visitorRegion);
       if (match > 0) {
         signals.forEach(([signal, value]) => {
           if (match >= (regional[signal]?.match ?? 0)) regional[signal] = { value, match };
         });
       }
-    } else if (signals.length > 0) {
-      regionsIgnored = true;
     }
   });
 
-  let defaults: Record<string, GCMSignalValue>;
-  if (gdpr) {
-    defaults = { ...global };
-    Object.entries(restrictive).forEach(([signal, value]) => { defaults[signal] = mostRestrictive(defaults[signal], value); });
-  } else {
-    defaults = Object.assign({}, global, Object.fromEntries(Object.entries(regional).map(([signal, { value }]) => [signal, value])));
-  }
+  const defaults: Record<string, GCMSignalValue> = { ...global };
+  Object.entries(restrictive).forEach(([signal, value]) => { defaults[signal] = mostRestrictive(defaults[signal], value); });
+  Object.entries(regional).forEach(([signal, { value }]) => { defaults[signal] = value; });
   const state = Object.assign(defaults, updates);
   return {
     state: Object.keys(state).length > 0 ? state : null,
     updated,
     waitForUpdate,
-    regionsIgnored
+    regionUnknown
   };
 }
 
@@ -262,13 +245,12 @@ function nullConsent(): GCMConsentData | null {
 
 /**
  * The current Consent Mode state, from the dataLayer commands read so far, with `defaultWhenAbsent` applied.
- * `warn` should only be set once TCF and GPP have settled, as they decide whether region-scoped defaults apply.
  */
-export function currentConsent(warn = false): FoldResult {
-  const result = foldConsent(commands, { gdpr: gdprApplies(), region: gcmConfig.region });
-  if (warn && result.regionsIgnored && !regionWarningLogged) {
+export function currentConsent(): FoldResult {
+  const result = foldConsent(commands, { region: gcmConfig.region });
+  if (result.regionUnknown && !regionWarningLogged) {
     regionWarningLogged = true;
-    logWarn('consentManagement.gcm: ignoring region-scoped Consent Mode defaults, as the visitor\'s region is unknown and GDPR does not apply. Set consentManagement.gcm.region to apply them.');
+    logWarn('consentManagement.gcm: the visitor\'s region is unknown, so every region-scoped Consent Mode default applies: a signal is denied if any default denies it. Set consentManagement.gcm.region to apply only those that match.');
   }
   if (result.state == null) result.state = nullConsent();
   return result;
@@ -284,7 +266,7 @@ function isReadingDataLayer() {
 function refreshConsent() {
   if (isReadingDataLayer() && gcmDataHandler.enabled && gcmDataHandler.ready) {
     watchDataLayer();
-    gcmDataHandler.setConsentData(currentConsent(true).state);
+    gcmDataHandler.setConsentData(currentConsent().state);
   }
 }
 
@@ -349,9 +331,8 @@ const parseConfig = configParser({
 let refreshHooked = false;
 
 /**
- * Runs after the consent management modules' own hooks (priority 50), so the GCM state used in the auction is
- * folded with the TCF and GPP data of the same auction. It runs before `executeCallbacks` (49), which runs
- * storage access queued before consent was known.
+ * Picks up a `window.dataLayer` that the page replaced since the last auction. It runs after the module's own
+ * hook (priority 50) and before `executeCallbacks` (49), which runs storage access queued before consent was known.
  */
 export function refreshConsentHook(next, reqBidsConfigObj) {
   refreshConsent();
@@ -380,8 +361,6 @@ export function setConsentConfig(cmConfig) {
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-// TCF and GPP decide whether region-scoped defaults all apply, so GCM is refolded when they change
-[gdprDataHandler, gppDataHandler].forEach(handler => handler.onChange(refreshConsent));
 onCommand(refreshConsent);
 
 /**

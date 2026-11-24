@@ -3,13 +3,12 @@ import {
   currentConsent,
   enrichFPDHook,
   foldConsent,
-  gdprApplies,
   refreshConsentHook,
   resetConsentData,
   setConsentConfig,
   watchDataLayer,
 } from 'modules/consentManagementGcm.js';
-import { allConsent, gcmDataHandler, gdprDataHandler, gppDataHandler } from 'src/consentHandler.js';
+import { allConsent, gcmDataHandler } from 'src/consentHandler.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { PbPromise } from 'src/utils/promise.js';
@@ -37,8 +36,6 @@ describe('consentManagementGcm', () => {
   afterEach(() => {
     resetConsentData();
     config.resetConfig();
-    gdprDataHandler.reset();
-    gppDataHandler.reset();
     sandbox.restore();
     if (hadDataLayer) {
       window.dataLayer = originalDataLayer;
@@ -49,7 +46,7 @@ describe('consentManagementGcm', () => {
 
   describe('foldConsent', () => {
     it('returns no state when there are no commands', () => {
-      expect(foldConsent([])).to.eql({ state: null, updated: false, waitForUpdate: null, regionsIgnored: false });
+      expect(foldConsent([])).to.eql({ state: null, updated: false, waitForUpdate: null, regionUnknown: false });
     });
 
     it('folds defaults and updates in order, later ones winning', () => {
@@ -90,22 +87,13 @@ describe('consentManagementGcm', () => {
       ]).waitForUpdate).to.equal(300);
     });
 
-    describe('region-scoped defaults, when GDPR does not apply', () => {
+    describe('region-scoped defaults, with a visitor region', () => {
       const commands = [
         cmd('default', { ad_storage: 'granted', analytics_storage: 'granted', ad_user_data: 'granted' }),
         cmd('default', { ad_storage: 'denied', analytics_storage: 'denied', region: ['US'] }),
         cmd('default', { ad_storage: 'granted', region: ['US-CA', 'US-CO'] }),
         cmd('default', { ad_user_data: 'denied', region: ['DE', 'FR'] }),
       ];
-
-      it('are ignored without a visitor region', () => {
-        expect(foldConsent(commands)).to.eql({
-          state: { ad_storage: 'granted', analytics_storage: 'granted', ad_user_data: 'granted' },
-          updated: false,
-          waitForUpdate: null,
-          regionsIgnored: true
-        });
-      });
 
       Object.entries({
         'US-CA': { ad_storage: 'granted', analytics_storage: 'denied', ad_user_data: 'granted' },
@@ -118,7 +106,7 @@ describe('consentManagementGcm', () => {
         it(`apply by most specific match for region '${region}'`, () => {
           const result = foldConsent(commands, { region });
           expect(result.state).to.eql(expected);
-          expect(result.regionsIgnored).to.be.false;
+          expect(result.regionUnknown).to.be.false;
         });
       });
 
@@ -141,58 +129,53 @@ describe('consentManagementGcm', () => {
       });
     });
 
-    describe('region-scoped defaults, when GDPR applies', () => {
+    describe('region-scoped defaults, without a visitor region', () => {
       it('all apply, the most restrictive winning', () => {
         expect(foldConsent([
           cmd('default', { ad_storage: 'granted', analytics_storage: 'denied', ad_user_data: 'granted' }),
           cmd('default', { ad_storage: 'denied', region: ['DE'] }),
           cmd('default', { analytics_storage: 'granted', ad_personalization: 'granted', region: ['US'] }),
           cmd('default', { ad_personalization: 'denied', region: ['FR'] }),
-        ], { gdpr: true }).state).to.eql({
-          ad_storage: 'denied',
-          analytics_storage: 'denied',
-          ad_user_data: 'granted',
-          ad_personalization: 'denied'
+        ])).to.eql({
+          state: {
+            ad_storage: 'denied',
+            analytics_storage: 'denied',
+            ad_user_data: 'granted',
+            ad_personalization: 'denied'
+          },
+          updated: false,
+          waitForUpdate: null,
+          regionUnknown: true
         });
       });
 
-      it('apply regardless of the configured region', () => {
+      it('grant a signal only if every default that sets it grants it', () => {
         expect(foldConsent([
-          cmd('default', { ad_storage: 'granted' }),
+          cmd('default', { ad_storage: 'granted', region: ['US'] }),
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', region: ['CA'] }),
+          cmd('default', { ad_user_data: 'denied', region: ['DE'] }),
+        ]).state).to.eql({ ad_storage: 'granted', ad_user_data: 'denied' });
+      });
+
+      it('do not depend on the order of defaults', () => {
+        expect(foldConsent([
           cmd('default', { ad_storage: 'denied', region: ['DE'] }),
-        ], { gdpr: true, region: 'US' }).state).to.eql({ ad_storage: 'denied' });
+          cmd('default', { ad_storage: 'granted' }),
+        ]).state).to.eql({ ad_storage: 'denied' });
       });
 
       it('are overridden by updates', () => {
         const result = foldConsent([
           cmd('default', { ad_storage: 'denied', region: ['DE'] }),
           cmd('update', { ad_storage: 'granted' }),
-        ], { gdpr: true });
+        ]);
         expect(result.state).to.eql({ ad_storage: 'granted' });
-        expect(result.regionsIgnored).to.be.false;
+        expect(result.regionUnknown).to.be.true;
       });
-    });
-  });
 
-  describe('gdprApplies', () => {
-    it('is false without TCF or GPP data', () => {
-      expect(gdprApplies()).to.be.false;
-    });
-
-    it('follows TCF gdprApplies', () => {
-      gdprDataHandler.enable();
-      gdprDataHandler.setConsentData({ gdprApplies: false });
-      expect(gdprApplies()).to.be.false;
-      gdprDataHandler.setConsentData({ gdprApplies: true });
-      expect(gdprApplies()).to.be.true;
-    });
-
-    it('is true when GPP applicable sections include EU TCF', () => {
-      gppDataHandler.enable();
-      gppDataHandler.setConsentData({ applicableSections: [7] });
-      expect(gdprApplies()).to.be.false;
-      gppDataHandler.setConsentData({ applicableSections: [7, 2] });
-      expect(gdprApplies()).to.be.true;
+      it('are not flagged when they set no signal', () => {
+        expect(foldConsent([cmd('default', { wait_for_update: 100, region: ['DE'] })]).regionUnknown).to.be.false;
+      });
     });
   });
 
@@ -522,52 +505,57 @@ describe('consentManagementGcm', () => {
         gtag('consent', 'default', { ad_storage: 'denied', region: ['DE', 'US-CA'] });
       });
 
-      it('are ignored, with a single warning, without a region when GDPR does not apply', async () => {
+      it('all apply, with a single warning, without a region', async () => {
         await configure({ gcm: { timeout: 0 } });
-        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
-        expect(utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length).to.equal(0);
-        refreshConsentHook(() => null, {});
-        refreshConsentHook(() => null, {});
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        gtag('consent', 'default', { ad_user_data: 'denied', region: ['FR'] });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied', ad_user_data: 'denied' });
         expect(utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length).to.equal(1);
       });
 
-      it('apply by the configured region when GDPR does not apply', async () => {
+      it('apply by the configured region', async () => {
         await configure({ gcm: { timeout: 0, region: 'US-CA' } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        expect(utils.logWarn.getCalls().filter(call => /region-scoped/.test(call.args[0])).length).to.equal(0);
       });
 
-      it('warns on, and ignores, a region that is not a string', async () => {
-        await configure({ gcm: { timeout: 0, region: ['US-CA'] } });
+      it('do not apply when the configured region does not match', async () => {
+        await configure({ gcm: { timeout: 0, region: 'GB' } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('apply by a region configured later, from the next auction', async () => {
+        await configure({ gcm: { timeout: 0 } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        await configure({ gcm: { timeout: 0, region: 'GB' } });
+        refreshConsentHook(() => null, {});
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('warns on a region that is not a string, and treats it as unknown', async () => {
+        await configure({ gcm: { timeout: 0, region: ['GB'] } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
         sinon.assert.calledWith(utils.logWarn, sinon.match(/region must be a string/));
       });
 
-      Object.entries({
-        TCF: () => {
-          gdprDataHandler.enable();
-          gdprDataHandler.setConsentData({ gdprApplies: true });
-        },
-        GPP: () => {
-          gppDataHandler.enable();
-          gppDataHandler.setConsentData({ applicableSections: [2] });
-        }
-      }).forEach(([framework, applyGdpr]) => {
-        it(`apply as most restrictive when ${framework} says GDPR applies`, async () => {
-          applyGdpr();
-          await configure({ gcm: { timeout: 0, region: 'GB' } });
-          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-        });
-
-        it(`are refolded before the auction when ${framework} resolves after GCM`, async () => {
-          await configure({ gcm: { timeout: 0 } });
-          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
-          applyGdpr();
-          const next = sinon.stub();
-          refreshConsentHook(next, { bidsBackHandler: 'x' });
-          sinon.assert.calledWith(next, { bidsBackHandler: 'x' });
-          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-        });
+      it('are overridden by an update', async () => {
+        await configure({ gcm: { timeout: 0 } });
+        gtag('consent', 'update', { ad_storage: 'granted' });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
       });
+    });
+
+    it('picks up a replaced dataLayer before the auction', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      await configure({ gcm: { timeout: 0 } });
+      window.dataLayer = [];
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      const next = sinon.stub();
+      refreshConsentHook(next, { bidsBackHandler: 'x' });
+      sinon.assert.calledWith(next, { bidsBackHandler: 'x' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
     });
 
     it('waits for GCM in the requestBids hook', async () => {
