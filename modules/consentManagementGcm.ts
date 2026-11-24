@@ -28,7 +28,8 @@ export interface GCMConfig {
   defaultWhenAbsent?: null | 'denied';
   /**
    * The visitor's region, as an ISO 3166-1 alpha-2 country code (e.g. 'US') or ISO 3166-2 subdivision code (e.g. 'US-CA'),
-   * matching the codes gtag takes in the `region` option of `gtag('consent', 'default', ...)`.
+   * matching the codes gtag takes in the `region` option of `gtag('consent', 'default', ...)`. A country is not
+   * specific enough for defaults scoped to its subdivisions, which then apply as if the region was unknown.
    * It can also be a promise for it, if it is not known when Prebid is configured.
    * Without it, or until it is known, a signal is denied if any region-scoped default denies it, as the visitor
    * may be in any of those regions.
@@ -115,10 +116,13 @@ export function watchDataLayer(win: any = window) {
   // so either can be first
   const wrapper = function (this: unknown, ...entries: unknown[]) {
     const result = push.apply(this, entries);
-    try {
-      if (entries.map(readEntry).some(Boolean)) notifyCommandListeners();
-    } catch (e) {
-      logError('Error reading Google Consent Mode from dataLayer', e);
+    // it stays in place after a reset if `push` was wrapped again since, and must not read for what is watched later
+    if (watched?.wrapper === wrapper) {
+      try {
+        if (entries.map(readEntry).some(Boolean)) notifyCommandListeners();
+      } catch (e) {
+        logError('Error reading Google Consent Mode from dataLayer', e);
+      }
     }
     return result;
   };
@@ -142,7 +146,18 @@ function signalsOf(params: Record<string, unknown>): [string, GCMSignalValue][] 
 function regionsOf(params: Record<string, unknown>): string[] {
   const region = params.region;
   const regions = Array.isArray(region) ? region : region == null ? [] : [region];
-  return regions.filter(isStr).map(r => r.trim().toUpperCase());
+  // as gtag does: upper case, but not trimmed
+  return regions.filter(isStr).map(r => r.toUpperCase());
+}
+
+const REGION_CODE = /^[A-Z]{2}(-[A-Z0-9]{1,3})?$/;
+
+/**
+ * A region in the form gtag takes it; null if it is not a country ('US') or subdivision ('US-CA') code.
+ */
+export function parseRegion(region: unknown): string | null {
+  const code = typeof region === 'string' ? region.trim().toUpperCase() : '';
+  return REGION_CODE.test(code) ? code : null;
 }
 
 /**
@@ -169,9 +184,10 @@ export type FoldResult = {
    */
   waitForUpdate: number | null;
   /**
-   * True if region-scoped defaults were all applied, for lack of a visitor region.
+   * True if there are region-scoped defaults that may or may not apply to the visitor, as their region is unknown
+   * or not specific enough; only what they deny was applied.
    */
-  regionUnknown: boolean;
+  regionAmbiguous: boolean;
 };
 
 /**
@@ -179,19 +195,20 @@ export type FoldResult = {
  * - Defaults without a region apply to everyone; later ones win.
  * - With `region`, the visitor's region, region-scoped defaults apply only if they match it; the most specific
  *   match wins over less specific ones, and over defaults without a region.
- * - Without `region`, a signal is denied if any region-scoped default denies it; region-scoped grants are left out,
- *   as the visitor may be in none of those regions. This is never more permissive than what gtag resolves.
+ * - Region-scoped defaults that may or may not match (all of them without a valid `region`; those for subdivisions
+ *   of `region`, if it is a country) only deny: a signal is denied if any of them denies it, and what they grant
+ *   is left out. This is never more permissive than what gtag resolves.
  * - Updates then apply on top, in order.
  */
 export function foldConsent(cmds: ConsentCommand[], { region }: { region?: string } = {}): FoldResult {
   const global: Record<string, GCMSignalValue> = {};
   const regional: Record<string, { value: GCMSignalValue, match: number }> = {};
-  const deniedInSomeRegion = new Set<string>();
+  const deniedInPossibleRegion = new Set<string>();
   const updates: Record<string, GCMSignalValue> = {};
-  const visitorRegion = isStr(region) && region.trim() !== '' ? region.trim().toUpperCase() : null;
+  const visitorRegion = parseRegion(region);
   let waitForUpdate = null;
   let updated = false;
-  let regionUnknown = false;
+  let regionAmbiguous = false;
 
   cmds.forEach(({ command, params }) => {
     const signals = signalsOf(params);
@@ -207,11 +224,12 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
     const regions = regionsOf(params);
     if (regions.length === 0) {
       signals.forEach(([signal, value]) => { global[signal] = value; });
-    } else if (visitorRegion == null) {
-      regionUnknown = regionUnknown || signals.length > 0;
-      signals.forEach(([signal, value]) => { if (value === 'denied') deniedInSomeRegion.add(signal); });
     } else {
-      const match = regionMatch(regions, visitorRegion);
+      if (visitorRegion == null || regions.some(r => r.startsWith(`${visitorRegion}-`))) {
+        regionAmbiguous = regionAmbiguous || signals.length > 0;
+        signals.forEach(([signal, value]) => { if (value === 'denied') deniedInPossibleRegion.add(signal); });
+      }
+      const match = visitorRegion == null ? 0 : regionMatch(regions, visitorRegion);
       if (match > 0) {
         signals.forEach(([signal, value]) => {
           if (match >= (regional[signal]?.match ?? 0)) regional[signal] = { value, match };
@@ -221,15 +239,15 @@ export function foldConsent(cmds: ConsentCommand[], { region }: { region?: strin
   });
 
   const defaults: Record<string, GCMSignalValue> = { ...global };
-  deniedInSomeRegion.forEach(signal => { defaults[signal] = 'denied'; });
   Object.entries(regional).forEach(([signal, { value }]) => { defaults[signal] = value; });
+  deniedInPossibleRegion.forEach(signal => { defaults[signal] = 'denied'; });
   const covered = updated && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
   return {
     state: Object.keys(state).length > 0 ? state : null,
     covered,
     waitForUpdate,
-    regionUnknown
+    regionAmbiguous
   };
 }
 
@@ -246,9 +264,9 @@ function nullConsent(): GCMConsentData | null {
  */
 export function currentConsent(): FoldResult {
   const result = foldConsent(commands, { region: gcmConfig.region });
-  if (result.regionUnknown && !gcmConfig.regionPending && !regionWarningLogged) {
+  if (result.regionAmbiguous && !gcmConfig.regionPending && !regionWarningLogged) {
     regionWarningLogged = true;
-    logWarn('consentManagement.gcm: the visitor\'s region is unknown, so a signal is denied if any region-scoped Consent Mode default denies it. Set consentManagement.gcm.region to apply only those that match.');
+    logWarn('consentManagement.gcm: the visitor\'s region is unknown, or is a country while Consent Mode defaults are scoped to its subdivisions, so a signal is denied if any region-scoped default that may apply denies it. Set consentManagement.gcm.region, to the subdivision (such as \'US-CA\') in the latter case, to apply only those that match.');
   }
   if (result.state == null) result.state = nullConsent();
   return result;
@@ -306,8 +324,11 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
       }
     }
     stop = onCommand(() => check());
-    // a lookup still waiting when the configuration changes must not overwrite what the new one sets
-    cancelPendingLookup = cancel;
+    // a superseded lookup is settled without setting consent data, which also stops its timeout from doing so
+    cancelPendingLookup = () => {
+      cancel();
+      resolve();
+    };
     watchDataLayer();
     // what the dataLayer already holds was read in one go
     check(false);
@@ -336,9 +357,20 @@ const parseConfig = configParser({
 
 let refreshHooked = false;
 
+function hookRefresh(hooked: boolean) {
+  if (hooked === refreshHooked) return;
+  refreshHooked = hooked;
+  if (hooked) {
+    getHook('requestBids').before(refreshConsentHook, 50);
+  } else {
+    getHook('requestBids').getHooks({ hook: refreshConsentHook }).remove();
+  }
+}
+
 /**
  * Picks up a `window.dataLayer` that the page replaced since the last auction. It runs before `executeCallbacks` (49),
- * which runs storage access queued before consent was known.
+ * which runs storage access queued before consent was known, and is registered after the module's own hook,
+ * to run after it.
  */
 export function refreshConsentHook(next, reqBidsConfigObj) {
   refreshConsent();
@@ -352,7 +384,7 @@ export function setConsentConfig(cmConfig) {
   const regionPending = typeof (region as PromiseLike<string>)?.then === 'function';
   const current = gcmConfig = {
     defaultWhenAbsent: cfg?.defaultWhenAbsent === 'denied' ? 'denied' : null,
-    region: isStr(region) ? region : undefined,
+    region: parseRegion(region) ?? undefined,
     regionPending,
   };
   if (regionPending) {
@@ -360,10 +392,9 @@ export function setConsentConfig(cmConfig) {
       // the configuration has changed since
       if (gcmConfig !== current) return;
       current.regionPending = false;
-      if (isStr(value)) {
-        current.region = value;
-      } else {
-        logWarn('consentManagement.gcm.region did not resolve to a string, such as \'US\' or \'US-CA\'; ignoring it', value);
+      current.region = parseRegion(value) ?? undefined;
+      if (current.region == null) {
+        logWarn('consentManagement.gcm.region did not resolve to a country or subdivision code, such as \'US\' or \'US-CA\'; ignoring it', value);
       }
       notifyCommandListeners();
     };
@@ -372,15 +403,15 @@ export function setConsentConfig(cmConfig) {
   if (cfg?.defaultWhenAbsent != null && cfg.defaultWhenAbsent !== 'denied') {
     logWarn(`consentManagement.gcm.defaultWhenAbsent must be null or 'denied'; ignoring "${cfg.defaultWhenAbsent}"`);
   }
-  if (region != null && !isStr(region) && !regionPending) {
-    logWarn('consentManagement.gcm.region must be a string, such as \'US\' or \'US-CA\', or a promise for one; ignoring it', region);
+  if (region != null && !regionPending && current.region == null) {
+    logWarn('consentManagement.gcm.region must be a country or subdivision code, such as \'US\' or \'US-CA\', or a promise for one; ignoring it', region);
   }
   consentConfig = parseConfig(cmConfig);
-  if (consentConfig.requestBidsHook != null && !refreshHooked) {
-    refreshHooked = true;
-    getHook('requestBids').before(refreshConsentHook, 50);
-  }
-  return consentConfig.loadConsentData?.()?.catch?.(() => null);
+  hookRefresh(consentConfig.requestBidsHook != null);
+  const loaded = consentConfig.loadConsentData?.()?.catch?.(() => null);
+  // consent data from an earlier configuration follows the new one at once
+  refreshConsent();
+  return loaded;
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
@@ -403,10 +434,7 @@ export function resetConsentData() {
   seen = new WeakSet();
   regionWarningLogged = false;
   commandListeners = [refreshConsent];
-  if (refreshHooked) {
-    getHook('requestBids').getHooks({ hook: refreshConsentHook }).remove();
-    refreshHooked = false;
-  }
+  hookRefresh(false);
 }
 
 export function enrichFPDHook(next, fpd) {

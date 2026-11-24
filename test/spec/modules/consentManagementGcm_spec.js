@@ -12,6 +12,7 @@ import { allConsent, gcmDataHandler } from 'src/consentHandler.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { PbPromise } from 'src/utils/promise.js';
+import { getHook } from 'src/hook.js';
 import 'src/prebid.js';
 
 describe('consentManagementGcm', () => {
@@ -46,7 +47,7 @@ describe('consentManagementGcm', () => {
 
   describe('foldConsent', () => {
     it('returns no state when there are no commands', () => {
-      expect(foldConsent([])).to.eql({ state: null, covered: false, waitForUpdate: null, regionUnknown: false });
+      expect(foldConsent([])).to.eql({ state: null, covered: false, waitForUpdate: null, regionAmbiguous: false });
     });
 
     it('folds defaults and updates in order, later ones winning', () => {
@@ -153,12 +154,19 @@ describe('consentManagementGcm', () => {
         it(`apply by most specific match for region '${region}'`, () => {
           const result = foldConsent(commands, { region });
           expect(result.state).to.eql(expected);
-          expect(result.regionUnknown).to.be.false;
+          expect(result.regionAmbiguous).to.equal(region === 'US');
         });
       });
 
       it('accept a single region as a string', () => {
         expect(foldConsent([cmd('default', { ad_storage: 'denied', region: 'de' })], { region: 'DE' }).state).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('do not match a region with spaces around it, as in gtag', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'denied' }),
+          cmd('default', { ad_storage: 'granted', region: [' DE '] }),
+        ], { region: 'DE' }).state).to.eql({ ad_storage: 'denied' });
       });
 
       it('let the later default win among equally specific matches', () => {
@@ -176,8 +184,53 @@ describe('consentManagementGcm', () => {
       });
     });
 
+    describe('region-scoped defaults, when the visitor region is a country', () => {
+      it('deny what those for its subdivisions deny', () => {
+        const result = foldConsent([
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted' }),
+          cmd('default', { ad_storage: 'denied', region: ['US-CA'] }),
+          cmd('default', { ad_user_data: 'denied', region: ['DE-BY'] }),
+        ], { region: 'US' });
+        expect(result.state).to.eql({ ad_storage: 'denied', ad_user_data: 'granted' });
+        expect(result.regionAmbiguous).to.be.true;
+      });
+
+      it('deny what those for its subdivisions deny, over what the one for the country grants', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'denied', region: ['US-CA'] }),
+          cmd('default', { ad_storage: 'granted', region: ['US'] }),
+        ], { region: 'US' }).state).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('do not grant what those for its subdivisions grant', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'denied', region: ['US'] }),
+          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', region: ['US-CA'] }),
+        ], { region: 'US' }).state).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('are not ambiguous when none is for its subdivisions', () => {
+        expect(foldConsent([
+          cmd('default', { ad_storage: 'denied', region: ['US', 'DE-BY', 'USA'] }),
+        ], { region: 'US' }).regionAmbiguous).to.be.false;
+      });
+    });
+
+    describe('region-scoped defaults, with a visitor region that is not a region code', () => {
+      ['US_CA', 'USA', 'U', 'US-', 'US-CALI', '', 5, null].forEach(region => {
+        it(`deny what any of them denies, for ${JSON.stringify(region)}`, () => {
+          const result = foldConsent([
+            cmd('default', { ad_storage: 'granted' }),
+            cmd('default', { ad_storage: 'denied', region: ['US-CA'] }),
+          ], { region });
+          expect(result.state).to.eql({ ad_storage: 'denied' });
+          expect(result.regionAmbiguous).to.be.true;
+        });
+      });
+    });
+
     describe('region-scoped defaults, without a visitor region', () => {
-      it('all apply, the most restrictive winning', () => {
+      it('deny what any of them denies', () => {
         expect(foldConsent([
           cmd('default', { ad_storage: 'granted', analytics_storage: 'denied', ad_user_data: 'granted' }),
           cmd('default', { ad_storage: 'denied', region: ['DE'] }),
@@ -192,7 +245,7 @@ describe('consentManagementGcm', () => {
           },
           covered: false,
           waitForUpdate: null,
-          regionUnknown: true
+          regionAmbiguous: true
         });
       });
 
@@ -209,7 +262,7 @@ describe('consentManagementGcm', () => {
           state: null,
           covered: false,
           waitForUpdate: null,
-          regionUnknown: true
+          regionAmbiguous: true
         });
       });
 
@@ -234,11 +287,11 @@ describe('consentManagementGcm', () => {
           cmd('update', { ad_storage: 'granted' }),
         ]);
         expect(result.state).to.eql({ ad_storage: 'granted' });
-        expect(result.regionUnknown).to.be.true;
+        expect(result.regionAmbiguous).to.be.true;
       });
 
       it('are not flagged when they set no signal', () => {
-        expect(foldConsent([cmd('default', { wait_for_update: 100, region: ['DE'] })]).regionUnknown).to.be.false;
+        expect(foldConsent([cmd('default', { wait_for_update: 100, region: ['DE'] })]).regionAmbiguous).to.be.false;
       });
     });
   });
@@ -327,6 +380,24 @@ describe('consentManagementGcm', () => {
       expect(gtmSeen.length).to.equal(1);
       expect(window.dataLayer.length).to.equal(1);
       expect(state()).to.eql({ ad_storage: 'denied' });
+    });
+
+    it('reads commands in order when re-enabled after GTM wrapped push', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      await setConsentConfig({ gcm: {} });
+      const wrapped = window.dataLayer.push;
+      window.dataLayer.push = function () {
+        return wrapped.apply(this, arguments);
+      };
+      await setConsentConfig({ gcm: { enabled: false } });
+      gtag('consent', 'update', { ad_storage: 'denied' });
+      expect(state()).to.be.null;
+      await setConsentConfig({ gcm: {} });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
     });
 
     it('does not wrap push twice', () => {
@@ -571,6 +642,39 @@ describe('consentManagementGcm', () => {
       expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
     });
 
+    it('does not let the timeout of a lookup set consent data after the module is disabled', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      setConsentConfig({ gcm: { timeout: 300 } });
+      await clock.tickAsync(100);
+      await setConsentConfig({ gcm: { enabled: false } });
+      await clock.tickAsync(300);
+      expect(gcmDataHandler.ready).to.be.false;
+      expect(allConsent.getConsentMeta().gcm).to.be.undefined;
+    });
+
+    it('releases an auction that waits for a lookup when the configuration changes', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'denied' });
+      setConsentConfig({ gcm: { timeout: 300 } });
+      const next = sinon.stub();
+      consentConfig.requestBidsHook(next, {});
+      await setConsentConfig({ gcm: { cmpApi: 'static', consentData: { ad_storage: 'granted' } } });
+      await clock.tickAsync(0);
+      sinon.assert.calledOnce(next);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+    });
+
+    it('runs the refresh hook after its own again, when configured again after the configuration was removed', async () => {
+      const hooks = () => getHook('requestBids').getHooks().map(({ hook }) => hook).filter(hook => [refreshConsentHook, consentConfig.requestBidsHook].includes(hook));
+      await configure({ gcm: { timeout: 0 } });
+      expect(hooks()).to.eql([consentConfig.requestBidsHook, refreshConsentHook]);
+      await setConsentConfig({});
+      expect(hooks()).to.eql([]);
+      await configure({ gcm: { timeout: 0 } });
+      expect(hooks()).to.eql([consentConfig.requestBidsHook, refreshConsentHook]);
+    });
+
     it('computes a hash for the initial consent data', async () => {
       gtag('consent', 'update', { ad_storage: 'granted' });
       await setConsentConfig({ gcm: {} });
@@ -621,7 +725,7 @@ describe('consentManagementGcm', () => {
         gtag('consent', 'default', { ad_storage: 'denied', region: ['DE', 'US-CA'] });
       });
 
-      it('all apply, with a single warning, without a region', async () => {
+      it('deny what any of them denies, with a single warning, without a region', async () => {
         await configure({ gcm: { timeout: 0 } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
         gtag('consent', 'default', { ad_user_data: 'denied', region: ['FR'] });
@@ -640,18 +744,45 @@ describe('consentManagementGcm', () => {
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
       });
 
-      it('apply by a region configured later, from the next auction', async () => {
+      it('apply by a region configured later, at once', async () => {
         await configure({ gcm: { timeout: 0 } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-        await configure({ gcm: { timeout: 0, region: 'GB' } });
-        refreshConsentHook(() => null, {});
+        setConsentConfig({ gcm: { timeout: 300, region: 'GB' } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+        await clock.tickAsync(300);
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
       });
 
-      it('warns on a region that is not a string, and treats it as unknown', async () => {
+      it('apply by the latest region when it is configured again while waiting', async () => {
+        setConsentConfig({ gcm: { timeout: 300, region: 'GB' } });
+        await clock.tickAsync(100);
+        const done = settled(setConsentConfig({ gcm: { timeout: 300, region: 'DE' } }));
+        await clock.tickAsync(299);
+        expect(done()).to.be.false;
+        expect(gcmDataHandler.ready).to.be.false;
+        await clock.tickAsync(1);
+        expect(done()).to.be.true;
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      ['US_CA', 'USA', 'us-', ' '].forEach(region => {
+        it(`warns on region '${region}', and takes it as unknown`, async () => {
+          await configure({ gcm: { timeout: 0, region } });
+          expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/region must be a country or subdivision code/));
+        });
+      });
+
+      it('deny what those for its subdivisions deny, with a warning, when the region is a country', async () => {
+        await configure({ gcm: { timeout: 0, region: 'us' } });
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+        sinon.assert.calledWith(utils.logWarn, sinon.match(/region-scoped/));
+      });
+
+      it('warns on a region that is not a string, and takes it as unknown', async () => {
         await configure({ gcm: { timeout: 0, region: ['GB'] } });
         expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-        sinon.assert.calledWith(utils.logWarn, sinon.match(/region must be a string/));
+        sinon.assert.calledWith(utils.logWarn, sinon.match(/region must be a country or subdivision code/));
       });
 
       describe('when the region is a promise', () => {
@@ -667,7 +798,7 @@ describe('consentManagementGcm', () => {
           return utils.logWarn.getCalls().filter(call => /region/.test(call.args[0])).length;
         }
 
-        it('all apply until it resolves, without a warning', async () => {
+        it('deny what any of them denies until it resolves, without a warning', async () => {
           await configure({ gcm: { timeout: 0, region } });
           expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
           expect(regionWarnings()).to.equal(0);
@@ -706,21 +837,21 @@ describe('consentManagementGcm', () => {
           expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted', analytics_storage: 'granted' });
         });
 
-        it('all apply, with a warning, if it is rejected', async () => {
+        it('deny what any of them denies, with a warning, if it is rejected', async () => {
           await configure({ gcm: { timeout: 0, region } });
           rejectRegion(new Error('no geo'));
           await clock.tickAsync(0);
           expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a string/));
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a country or subdivision code/));
           sinon.assert.calledWith(utils.logWarn, sinon.match(/region-scoped/));
         });
 
-        it('all apply, with a warning, if it does not resolve to a string', async () => {
+        it('deny what any of them denies, with a warning, if it does not resolve to a region code', async () => {
           await configure({ gcm: { timeout: 0, region } });
           resolveRegion(['GB']);
           await clock.tickAsync(0);
           expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
-          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a string/));
+          sinon.assert.calledWith(utils.logWarn, sinon.match(/did not resolve to a country or subdivision code/));
         });
 
         it('is ignored if the configuration changed before it resolves', async () => {

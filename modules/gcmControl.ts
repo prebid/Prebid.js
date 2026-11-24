@@ -91,16 +91,24 @@ export function getRules(rules: unknown = {}): Partial<Record<Activity, SignalRu
   return byActivity;
 }
 
-export function gcmRule(signalRules: SignalRule[], getConsent = () => gcmDataHandler.getConsentData()) {
+/**
+ * While the Consent Mode state is not known yet, every signal is taken as denied.
+ */
+function isPending() {
+  return gcmDataHandler.enabled && !gcmDataHandler.ready;
+}
+
+export function gcmRule(signalRules: SignalRule[], getConsent = () => gcmDataHandler.getConsentData(), pending = isPending) {
   return function (params: ActivityParams) {
     const consent = getConsent();
-    if (consent == null) return;
+    const unknown = consent == null && pending();
+    if (consent == null && !unknown) return;
     const componentType = params[ACTIVITY_PARAM_COMPONENT_TYPE];
     const denied = signalRules
-      .filter(({ signal, componentTypes }) => consent[signal] === 'denied' && (componentTypes == null || componentTypes.includes(componentType)))
+      .filter(({ signal, componentTypes }) => (unknown || consent[signal] === 'denied') && (componentTypes == null || componentTypes.includes(componentType)))
       .map(({ signal }) => signal);
     if (denied.length > 0) {
-      return { allow: false, reason: `Consent Mode ${denied.join(', ')} denied` };
+      return { allow: false, reason: unknown ? 'Consent Mode state is not available yet' : `Consent Mode ${denied.join(', ')} denied` };
     }
   };
 }

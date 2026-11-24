@@ -131,6 +131,34 @@ describe('gcmControl', () => {
     });
   });
 
+  describe('while the Consent Mode state is not known yet', () => {
+    const rule = (pending) => gcmRule(getRules()[ACTIVITY_ACCESS_DEVICE], () => null, pending);
+
+    it('takes every signal as denied', () => {
+      expect(rule(() => true)(activityParams(MODULE_TYPE_UID, 'mockModule'))).to.eql({ allow: false, reason: 'Consent Mode state is not available yet' });
+    });
+
+    it('still only denies to the types of component in the rule', () => {
+      expect(rule(() => true)(activityParams(MODULE_TYPE_RTD, 'mockModule'))).to.be.undefined;
+    });
+
+    it('has no opinion when there is no Consent Mode state', () => {
+      expect(rule(() => false)(activityParams(MODULE_TYPE_UID, 'mockModule'))).to.be.undefined;
+    });
+
+    it('follows the handler: enabled and not ready', () => {
+      const check = () => gcmRule(getRules()[ACTIVITY_ACCESS_DEVICE])(activityParams(MODULE_TYPE_UID, 'mockModule'))?.allow;
+      gcmDataHandler.reset();
+      expect(check()).to.be.undefined;
+      gcmDataHandler.enable();
+      expect(check()).to.be.false;
+      gcmDataHandler.setConsentData(null);
+      expect(check()).to.be.undefined;
+      gcmDataHandler.setConsentData({ ad_storage: 'denied' });
+      expect(check()).to.be.false;
+    });
+  });
+
   describe('getRules', () => {
     it('maps activities to the signals that deny them, by default', () => {
       expect(getRules()).to.eql({
