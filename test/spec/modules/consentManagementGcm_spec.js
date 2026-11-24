@@ -23,6 +23,11 @@ describe('consentManagementGcm', () => {
     (window.dataLayer = window.dataLayer || []).push(arguments);
   }
 
+  // a consent command as `gtag()` pushes it
+  function args() {
+    return arguments;
+  }
+
   function cmd(command, params) {
     return { command, params };
   }
@@ -77,18 +82,38 @@ describe('consentManagementGcm', () => {
       ]).state).to.eql({ ad_storage: 'denied', analytics_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
     });
 
-    Object.entries({
-      'an empty list': [],
-      'no string': [123, null],
-      'a number': 5,
-    }).forEach(([name, region]) => {
-      it(`ignores a default whose region is ${name}, as gtag does`, () => {
-        const result = foldConsent([
-          cmd('default', { ad_storage: 'denied' }),
-          cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', wait_for_update: 500, region }),
-        ], { region: 'US' });
-        expect(result.state).to.eql({ ad_storage: 'denied' });
-        expect(result.waitForUpdate).to.be.null;
+    it('ignores a default whose region is an empty list, as gtag does', () => {
+      const result = foldConsent([
+        cmd('default', { ad_storage: 'denied' }),
+        cmd('default', { ad_storage: 'granted', ad_user_data: 'granted', wait_for_update: 500, region: [] }),
+      ], { region: 'US' });
+      expect(result.state).to.eql({ ad_storage: 'denied' });
+      expect(result.waitForUpdate).to.be.null;
+    });
+
+    describe('reads the region of a default as gtag does', () => {
+      const fold = (region, visitorRegion = 'US-CA') => foldConsent([
+        cmd('default', { ad_storage: 'granted' }),
+        cmd('default', { ad_storage: 'denied', region }),
+      ], { region: visitorRegion }).state.ad_storage;
+
+      Object.entries({
+        'a list within the list': [[['US-CA']], 'denied'],
+        'a mix of strings and other values': [[123, 'US-CA'], 'denied'],
+        'an empty string, as everywhere': ['', 'denied'],
+        'a list with an empty string, as everywhere': [[''], 'denied'],
+        'an empty string along with other regions, as everywhere': [['', 'DE'], 'denied'],
+        'values that are no region, which match none': [[123, null, {}, true], 'granted'],
+        'a number, which matches no region': [5, 'granted'],
+        'a value that cannot be made a string, left out': [[{ toString() { throw new Error(); } }, 'DE'], 'granted'],
+      }).forEach(([name, [region, expected]]) => {
+        it(name, () => {
+          expect(fold(region)).to.equal(expected);
+        });
+      });
+
+      it('denies what a default for values that are no region denies, when the region is unknown', () => {
+        expect(fold([123], null)).to.equal('denied');
       });
     });
 
@@ -134,9 +159,16 @@ describe('consentManagementGcm', () => {
       });
 
       it('expects an update when it has defaults, as they may have asked to wait', () => {
-        const commands = [cmd('default', { ad_storage: 'granted' })];
-        expect(foldConsent(commands, { tag: { defaults: {}, updates: {} } }).covered).to.be.true;
-        expect(foldConsent(commands, { tag: { defaults: { ad_storage: 'granted' }, updates: {} } }).covered).to.be.false;
+        const commands = [
+          cmd('default', { ad_storage: 'granted' }),
+          cmd('default', { ad_user_data: 'granted', region: ['DE'] }),
+        ];
+        const covered = (defaults) => foldConsent(commands, { region: 'US', tag: { defaults, updates: {} } }).covered;
+        expect(covered({})).to.be.true;
+        // gtag.js has the defaults of the dataLayer too
+        expect(covered({ ad_storage: 'granted' })).to.be.true;
+        expect(covered({ ad_storage: 'granted', ad_user_data: 'granted' })).to.be.true;
+        expect(covered({ ad_storage: 'granted', analytics_storage: 'granted' })).to.be.false;
       });
 
       it('finds nothing when it knows nothing', () => {
@@ -489,13 +521,15 @@ describe('consentManagementGcm', () => {
       expect(state()).to.eql({ ad_storage: 'granted', analytics_storage: 'denied' });
     });
 
-    it('accepts plain arrays, and ignores entries that are not consent commands', () => {
+    it('ignores entries that are not consent commands, and commands that are arrays, as gtag does', () => {
       window.dataLayer = [
-        ['consent', 'default', { ad_storage: 'denied' }],
+        args('consent', 'default', { ad_storage: 'denied' }),
         { event: 'gtm.js' },
-        ['consent', 'other', { ad_storage: 'granted' }],
-        ['consent', 'update', 'ad_storage'],
-        ['config', 'G-XYZ', { ad_storage: 'granted' }],
+        ['consent', 'update', { ad_storage: 'granted' }],
+        { 0: 'consent', 1: 'update', 2: { ad_storage: 'granted' }, length: 3 },
+        args('consent', 'other', { ad_storage: 'granted' }),
+        args('consent', 'update', 'ad_storage'),
+        args('config', 'G-XYZ', { ad_storage: 'granted' }),
         null,
         'consent'
       ];
@@ -508,7 +542,7 @@ describe('consentManagementGcm', () => {
       const original = window.dataLayer.push;
       watchDataLayer();
       expect(window.dataLayer.push).to.not.equal(original);
-      expect(window.dataLayer.push({ event: 'a' }, ['consent', 'update', { ad_storage: 'granted' }])).to.equal(2);
+      expect(window.dataLayer.push({ event: 'a' }, args('consent', 'update', { ad_storage: 'granted' }))).to.equal(2);
       expect(window.dataLayer.length).to.equal(2);
       expect(state()).to.eql({ ad_storage: 'granted' });
     });
@@ -517,7 +551,7 @@ describe('consentManagementGcm', () => {
       gtag('consent', 'update', { ad_storage: 'granted' });
       await setConsentConfig({ gcm: {} });
       sandbox.stub(utils, 'logError');
-      const entry = ['consent', 'update', {}];
+      const entry = args('consent', 'update', {});
       Object.defineProperty(entry[2], 'ad_storage', { enumerable: true, get() { throw new Error('boom'); } });
       expect(() => window.dataLayer.push(entry)).to.not.throw();
       sinon.assert.called(utils.logError);
@@ -583,7 +617,7 @@ describe('consentManagementGcm', () => {
       gtag('consent', 'default', { ad_storage: 'denied' });
       gtag('consent', 'update', { ad_storage: 'granted' });
       const old = window.dataLayer;
-      window.dataLayer = [old[0], ['consent', 'update', { analytics_storage: 'denied' }]];
+      window.dataLayer = [old[0], args('consent', 'update', { analytics_storage: 'denied' })];
       watchDataLayer();
       expect(state()).to.eql({ ad_storage: 'granted', analytics_storage: 'denied' });
       gtag('consent', 'update', { ad_storage: 'denied' });
@@ -676,10 +710,19 @@ describe('consentManagementGcm', () => {
       expect(done()).to.be.true;
     });
 
-    it('waits for an update when Google\'s tag has defaults, as they may have asked to wait', async () => {
+    it('does not wait for an update when Google\'s tag has the same defaults', async () => {
       window.dataLayer = [];
       gtag('consent', 'default', { ad_storage: 'granted' });
-      googleTag({ entries: { ad_storage: { default: true } } });
+      googleTag({ entries: { ad_storage: { default: true }, analytics_storage: { implicit: true } } });
+      await setConsentConfig({ gcm: { timeout: 300 } });
+      expect(clock.countTimers()).to.equal(0);
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+    });
+
+    it('waits for an update when Google\'s tag has other defaults, as they may have asked to wait', async () => {
+      window.dataLayer = [];
+      gtag('consent', 'default', { ad_storage: 'granted' });
+      googleTag({ entries: { ad_storage: { default: true }, analytics_storage: { default: true } } });
       const done = settled(setConsentConfig({ gcm: { timeout: 300 } }));
       await clock.tickAsync(299);
       expect(done()).to.be.false;
@@ -871,6 +914,64 @@ describe('consentManagementGcm', () => {
       await clock.tickAsync(0);
       sinon.assert.calledOnce(next);
       expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+    });
+
+    describe('when it is configured again while an auction waits', () => {
+      let next;
+      beforeEach(async () => {
+        window.dataLayer = [];
+        gtag('consent', 'default', { ad_storage: 'denied' });
+        setConsentConfig({ gcm: { timeout: 300 } });
+        next = sinon.stub();
+        consentConfig.requestBidsHook(next, {});
+        await clock.tickAsync(100);
+        setConsentConfig({ gcm: { timeout: 300 } });
+        await clock.tickAsync(50);
+      });
+
+      it('keeps the auction waiting', () => {
+        sinon.assert.notCalled(next);
+        expect(gcmDataHandler.ready).to.be.false;
+      });
+
+      it('lets the auction go when an update comes', async () => {
+        gtag('consent', 'update', { ad_storage: 'granted' });
+        await clock.tickAsync(1);
+        sinon.assert.calledOnce(next);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      });
+
+      it('lets the auction go with the defaults, no later than it would have', async () => {
+        await clock.tickAsync(149);
+        sinon.assert.notCalled(next);
+        await clock.tickAsync(1);
+        sinon.assert.calledOnce(next);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('lets the auction go with the defaults of a region configured the second time', async () => {
+        gtag('consent', 'default', { ad_user_data: 'denied', region: ['DE'] });
+        setConsentConfig({ gcm: { timeout: 300, region: 'US' } });
+        await clock.tickAsync(150);
+        sinon.assert.calledOnce(next);
+        expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'denied' });
+      });
+
+      it('lets the auction go when the module is then disabled', async () => {
+        await setConsentConfig({ gcm: { enabled: false } });
+        await clock.tickAsync(0);
+        sinon.assert.calledOnce(next);
+      });
+    });
+
+    it('does not log an error on a command when google_tag_data cannot be read', async () => {
+      window.dataLayer = [];
+      await configure({ gcm: { timeout: 0 } });
+      sandbox.stub(utils, 'logError');
+      Object.defineProperty(window, 'google_tag_data', { configurable: true, get() { throw new Error(); } });
+      gtag('consent', 'update', { ad_storage: 'granted' });
+      expect(gcmDataHandler.getConsentData()).to.eql({ ad_storage: 'granted' });
+      sinon.assert.notCalled(utils.logError);
     });
 
     it('runs the refresh hook after its own again, when configured again after the configuration was removed', async () => {

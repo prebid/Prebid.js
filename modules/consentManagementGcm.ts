@@ -75,10 +75,29 @@ let watched: { dataLayer: unknown[]; push: unknown[]['push']; wrapper: unknown[]
 let commandListeners: (() => void)[] = [];
 let regionWarningLogged = false;
 let tagRegionLogged = false;
-let cancelPendingLookup = () => {};
+
+type PendingLookup = {
+  cancel(): void;
+  resolve(): void;
+  setProvisional(consent: GCMConsentData | null): void;
+  adopt(lookup: PendingLookup): void;
+};
+let pendingLookup: PendingLookup | null = null;
+
+/**
+ * Stop the lookup that is still waiting, if any. It is left unsettled, for auctions that wait for it:
+ * either resolve it, or have the lookup that replaces it adopt it.
+ */
+function supersedeLookup(): PendingLookup | null {
+  const lookup = pendingLookup;
+  pendingLookup = null;
+  lookup?.cancel();
+  return lookup;
+}
 
 function toCommand(entry: any): ConsentCommand | null {
-  if (entry != null && typeof entry === 'object' && entry[0] === 'consent' &&
+  // gtag only takes the `arguments` objects that `gtag()` pushes, not arrays
+  if (Object.prototype.toString.call(entry) === '[object Arguments]' && entry[0] === 'consent' &&
     (entry[1] === 'default' || entry[1] === 'update') && isPlainObject(entry[2])) {
     return { command: entry[1], params: entry[2] };
   }
@@ -131,7 +150,7 @@ export function watchDataLayer(win: any = window) {
         if (entries.map(readEntry).some(Boolean)) {
           notifyCommandListeners();
           // Google's tag may only process the command after this, when `push` was wrapped by it later
-          if (win.google_tag_data != null) setTimeout(notifyCommandListeners, 0);
+          if (hasGoogleTag(win)) setTimeout(notifyCommandListeners, 0);
         }
       } catch (e) {
         logError('Error reading Google Consent Mode from dataLayer', e);
@@ -142,6 +161,14 @@ export function watchDataLayer(win: any = window) {
   dataLayer.push = wrapper;
   watched = { dataLayer, push, wrapper };
   if (changed) notifyCommandListeners();
+}
+
+function hasGoogleTag(win: any): boolean {
+  try {
+    return win.google_tag_data != null;
+  } catch (e) {
+    return false;
+  }
 }
 
 function onCommand(listener: () => void): () => void {
@@ -164,14 +191,20 @@ function signalsOf(params: Record<string, unknown>): [string, GCMSignalValue][] 
 }
 
 /**
- * The regions a default is scoped to: none if it has no `region`, and null if its `region` names no region,
- * in which case gtag ignores the default.
+ * The regions a default is scoped to, as gtag reads its `region`: each made a string, in upper case and not
+ * trimmed, with '' for everywhere. None if it has no `region`; null if its `region` is an empty list, in which
+ * case gtag ignores the default.
  */
 function regionsOf(params: Record<string, unknown>): string[] | null {
   const region = params.region;
   if (region == null) return [];
-  // as gtag does: upper case, but not trimmed
-  const regions = (Array.isArray(region) ? region : [region]).filter(isStr).map(r => r.toUpperCase());
+  const regions = (Array.isArray(region) ? region : [region]).flatMap(r => {
+    try {
+      return [String(r).toUpperCase()];
+    } catch (e) {
+      return [];
+    }
+  });
   return regions.length > 0 ? regions : null;
 }
 
@@ -252,7 +285,7 @@ export type FoldResult = {
   state: GCMConsentData | null;
   /**
    * True if no further update is expected: updates set every Consent Mode signal that the defaults deny; or the
-   * page's defaults deny none, and do not ask to wait for an update.
+   * defaults deny none, and those in the dataLayer, with no other in Google's tag, do not ask to wait for an update.
    */
   covered: boolean;
   /**
@@ -290,7 +323,7 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
   const visitorRegion = parseRegion(region);
   let waitForUpdate = null;
   let updated = false;
-  let defaulted = false;
+  const defaultSignals = new Set<string>();
   let regionAmbiguous = false;
 
   cmds.forEach(({ command, params }) => {
@@ -300,16 +333,18 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
       signals.forEach(([signal, value]) => { updates[signal] = value; });
       return;
     }
-    const regions = regionsOf(params);
-    if (regions == null) return;
-    defaulted = true;
+    const allRegions = regionsOf(params);
+    if (allRegions == null) return;
+    signals.forEach(([signal]) => defaultSignals.add(signal));
     const wait = params.wait_for_update;
     if (isNumber(wait) && (wait as number) >= 0) {
       waitForUpdate = Math.max(waitForUpdate ?? 0, wait as number);
     }
-    if (regions.length === 0) {
+    const regions = allRegions.filter(r => r !== '');
+    if (regions.length < allRegions.length || allRegions.length === 0) {
       signals.forEach(([signal, value]) => { global[signal] = value; });
-    } else {
+    }
+    if (regions.length > 0) {
       if (visitorRegion == null || regions.some(r => r.startsWith(`${visitorRegion}-`))) {
         regionAmbiguous = regionAmbiguous || signals.length > 0;
         signals.forEach(([signal, value]) => { if (value === 'denied') deniedInPossibleRegion.add(signal); });
@@ -335,7 +370,7 @@ export function foldConsent(cmds: ConsentCommand[], { region, tag }: { region?: 
   fromTag(updates, tag?.updates);
   updated = updated || Object.keys(updates).length > 0;
   // defaults that Google's tag has, but not the dataLayer, may have come with a `wait_for_update` that is not known
-  const noWait = defaulted && waitForUpdate == null && Object.keys(tag?.defaults ?? {}).length === 0;
+  const noWait = defaultSignals.size > 0 && waitForUpdate == null && Object.keys(tag?.defaults ?? {}).every(signal => defaultSignals.has(signal));
   const covered = (updated || noWait) && GCM_SIGNALS.every(signal => defaults[signal] !== 'denied' || signal in updates);
   const state = Object.assign(defaults, updates);
   return {
@@ -389,25 +424,45 @@ function refreshConsent() {
 }
 
 function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null) => void) {
-  cancelPendingLookup();
-  return new PbPromise<void>((resolve) => {
+  supersedeLookup()?.resolve();
+  return new PbPromise<void>((resolveLookup) => {
     let waitTimer = null;
     let settleTimer = null;
     let tagTimer = null;
     let finished = false;
+    let provisional: { consent: GCMConsentData | null } | null = null;
     let stop = () => null;
-    function cancel() {
-      finished = true;
-      stop();
-      if (waitTimer != null) clearTimeout(waitTimer);
-      if (settleTimer != null) clearTimeout(settleTimer);
-      if (tagTimer != null) clearInterval(tagTimer);
-    }
+    // lookups that this one replaced, with auctions that may still wait for them
+    const adopted: PendingLookup[] = [];
+    const lookup: PendingLookup = {
+      cancel() {
+        finished = true;
+        stop();
+        if (waitTimer != null) clearTimeout(waitTimer);
+        if (settleTimer != null) clearTimeout(settleTimer);
+        if (tagTimer != null) clearInterval(tagTimer);
+        if (pendingLookup === lookup) pendingLookup = null;
+      },
+      resolve() {
+        adopted.forEach(other => other.resolve());
+        resolveLookup();
+      },
+      // on timeout, the provisional consent is what the auctions waiting for this lookup run with
+      setProvisional(consent) {
+        provisional = { consent };
+        setProvisionalConsent(consent);
+        adopted.forEach(other => other.setProvisional(consent));
+      },
+      adopt(other) {
+        adopted.push(other);
+        if (provisional != null) other.setProvisional(provisional.consent);
+      }
+    };
     function done() {
       if (finished) return;
-      cancel();
+      lookup.cancel();
       gcmDataHandler.setConsentData(currentConsent().state);
-      resolve();
+      lookup.resolve();
     }
     function check(settle = true) {
       if (finished) return;
@@ -421,18 +476,14 @@ function lookupDataLayer(setProvisionalConsent: (consent: GCMConsentData | null)
         }
       } else if (found) {
         // wait for updates to cover what the defaults deny, no longer than `wait_for_update` (or `timeout`, whichever is shorter)
-        setProvisionalConsent(state);
+        lookup.setProvisional(state);
         if (waitForUpdate != null && waitTimer == null) {
           waitTimer = setTimeout(done, waitForUpdate);
         }
       }
     }
     stop = onCommand(() => check());
-    // a superseded lookup is settled without setting consent data, which also stops its timeout from doing so
-    cancelPendingLookup = () => {
-      cancel();
-      resolve();
-    };
+    pendingLookup = lookup;
     watchDataLayer();
     // what the dataLayer already holds was read in one go
     check(false);
@@ -495,7 +546,7 @@ export function refreshConsentHook(next, reqBidsConfigObj) {
 }
 
 export function setConsentConfig(cmConfig) {
-  cancelPendingLookup();
+  const superseded = supersedeLookup();
   const cfg = cmConfig?.[CONSENT_GCM];
   const region = cfg?.region;
   const regionPending = typeof (region as PromiseLike<string>)?.then === 'function';
@@ -527,6 +578,14 @@ export function setConsentConfig(cmConfig) {
   consentConfig = parseConfig(cmConfig);
   hookRefresh(consentConfig.requestBidsHook != null);
   const loaded = consentConfig.loadConsentData?.()?.catch?.(() => null);
+  if (superseded != null) {
+    // auctions that wait for the earlier lookup wait for the new one instead, no longer than they would have
+    if (pendingLookup != null) {
+      pendingLookup.adopt(superseded);
+    } else {
+      superseded.resolve();
+    }
+  }
   // consent data from an earlier configuration follows the new one at once
   refreshConsent();
   return loaded;
@@ -540,7 +599,7 @@ onCommand(refreshConsent);
  * restoring the dataLayer's `push` if it's still the module's wrapper.
  */
 export function resetConsentData() {
-  cancelPendingLookup();
+  supersedeLookup()?.resolve();
   consentConfig = {};
   gcmConfig = {};
   gcmDataHandler.reset();
