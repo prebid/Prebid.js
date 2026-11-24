@@ -262,3 +262,10 @@ describe('+widespaceAdatperTest', function () {
     });
   });
 });
+
+describe('widespaceBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(2624);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

@@ -199,3 +199,10 @@ describe('ClickforceAdapter', function () {
     });
   });
 });
+
+describe('clickforceBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(135);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

@@ -163,17 +163,7 @@ describe('Reconciliation Real time data submodule', function () {
         document.body.appendChild(adSlotElement);
 
         const adSlot = makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
-        // Fix targeting methods
-        adSlot.targeting = {};
-        adSlot.setTargeting = function(key, value) {
-          this.targeting[key] = [value];
-        };
-        adSlot.getTargeting = function(key) {
-          return this.targeting[key];
-        };
-
-        adSlot.setTargeting('RSDK_AUID', '/reconciliationAdunit');
-        adSlot.setTargeting('RSDK_ADID', '12345');
+        adSlot.setConfig({ targeting: { RSDK_AUID: '/reconciliationAdunit', RSDK_ADID: '12345' } });
         adSlotIframe.contentDocument.open();
         adSlotIframe.contentDocument.write(`<script>
           window.parent.postMessage(JSON.stringify({

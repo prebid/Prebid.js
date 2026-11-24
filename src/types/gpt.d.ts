@@ -33,9 +33,6 @@ export type GptSlot = googletag.Slot;
  * `typeof googletag` - a value, which cannot be declared as empty the way the types above can.
  */
 export interface GptApi {
-  pubads(): {
-    getTargetingKeys(): string[];
-    getTargeting(key: string): string[];
-    setTargeting(key: string, value: string | string[]): void;
-  };
+  getConfig(keys: 'targeting'): { targeting?: Record<string, string | string[] | null> | null };
+  setConfig(config: { targeting?: Record<string, string | string[] | null> | null }): void;
 }

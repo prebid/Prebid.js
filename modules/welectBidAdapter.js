@@ -87,7 +87,6 @@ export const spec = {
         url: url,
         data: data,
         options: {
-          contentType: 'application/json',
           withCredentials: false,
           crossOrigin: true,
         },

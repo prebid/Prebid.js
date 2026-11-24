@@ -210,7 +210,8 @@ describe('adapterManager tests', function () {
       function mockDoneCB() {
         doneBidders.push(this.bidderCode);
       }
-      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB);
+      const onTimelyResponse = sinon.stub();
+      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, onTimelyResponse);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       sinon.assert.calledOnce(badAdapterMock.callBids);
       sinon.assert.calledOnce(rubiconAdapterMock.callBids);
@@ -221,6 +222,7 @@ describe('adapterManager tests', function () {
       )).to.be.true;
       // done should be called for our bidder!
       expect(doneBidders.indexOf('badBidder') === -1).to.be.false;
+      sinon.assert.calledOnceWithExactly(onTimelyResponse, bidRequests.find(br => br.bidderCode === 'badBidder').bidderRequestId);
     });
     it('should emit BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
@@ -814,10 +816,15 @@ describe('adapterManager tests', function () {
         doneBidders.push(this.bidderCode);
       }
 
-      expect(() => adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, () => {})).to.not.throw();
+      const onTimelyResponse = sinon.stub();
+
+      expect(() => adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB, undefined, 1000, onTimelyResponse)).to.not.throw();
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       sinon.assert.calledOnce(rubiconAdapterMock.callBids);
       expect(doneBidders).to.include('appnexus');
+      const s2sRequestIds = bidRequests.filter(br => br.src === 's2s').map(br => br.bidderRequestId);
+      expect(s2sRequestIds).to.not.be.empty;
+      expect(onTimelyResponse.args.map(([id]) => id)).to.have.members(s2sRequestIds);
       sinon.assert.calledWithMatch(utils.logError, 'prebidServer Bid Adapter emitted an uncaught error when parsing their bidRequest');
 
       delete adapterManager.bidderRegistry['rubicon'];
@@ -2205,12 +2212,14 @@ describe('adapterManager tests', function () {
 
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
-            { code: 'one', bids: [{ bidder: null }] },
+            { code: 'one', bids: [{ bidder: null }, { bidder: 'mockBidder1' }] },
             { code: 'two', bids: [{ module: 'pbsBidAdapter', params: { configName: 'mock1' } }, { module: 'pbsBidAdapter', params: { configName: 'mock2' } }] }
           ];
-          dep.isAllowed.callsFake(({ componentType }) => componentType !== 'bidder');
+          dep.isAllowed.callsFake((activity, { componentType } = {}) => componentType !== 'bidder');
           const bidRequests = makeBidRequests();
           expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.equal(3);
+          expect(bidRequests.flatMap(br => br.bids).map(bid => bid.bidder)).to.not.include('mockBidder1');
+          expect(bidRequests.flatMap(br => br.adUnitsS2SCopy).flatMap(au => au.bids).map(bid => bid.bidder)).to.not.include('mockBidder1');
         });
 
         it('should check if the s2s adapter itself is allowed to fetch bids', () => {
@@ -3390,6 +3399,27 @@ describe('adapterManager tests', function () {
         adapterManager.aliasRegistry['alias1'] = 'alias2';
         adapterManager.aliasRegistry['alias2'] = 'alias2';
         expect(adapterManager.resolveAlias('alias2')).to.eql('alias2');
+      });
+      it('resolves alias chains to the underlying bidder', () => {
+        adapterManager.aliasRegistry['chainAlias1'] = 'chainAlias2';
+        adapterManager.aliasRegistry['chainAlias2'] = 'chainAlias3';
+        adapterManager.aliasRegistry['chainAlias3'] = 'mockBidder';
+        try {
+          expect(adapterManager.resolveAlias('chainAlias1')).to.eql('mockBidder');
+          expect(adapterManager.resolveAlias('chainAlias2')).to.eql('mockBidder');
+        } finally {
+          ['chainAlias1', 'chainAlias2', 'chainAlias3'].forEach(alias => delete adapterManager.aliasRegistry[alias]);
+        }
+      });
+      it('terminates on multi-alias cycles', () => {
+        adapterManager.aliasRegistry['cycleAlias1'] = 'cycleAlias2';
+        adapterManager.aliasRegistry['cycleAlias2'] = 'cycleAlias3';
+        adapterManager.aliasRegistry['cycleAlias3'] = 'cycleAlias1';
+        try {
+          expect(adapterManager.resolveAlias('cycleAlias1')).to.be.oneOf(['cycleAlias1', 'cycleAlias2', 'cycleAlias3']);
+        } finally {
+          ['cycleAlias1', 'cycleAlias2', 'cycleAlias3'].forEach(alias => delete adapterManager.aliasRegistry[alias]);
+        }
       });
       it('returns self when not an alias', () => {
         delete adapterManager.aliasRegistry['missing'];

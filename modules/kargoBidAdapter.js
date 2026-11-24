@@ -1,6 +1,7 @@
 import { _each, isEmpty, buildUrl, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { fetch } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 

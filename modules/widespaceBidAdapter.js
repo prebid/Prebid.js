@@ -7,6 +7,7 @@ import { getConnectionInfo } from '../libraries/connectionInfo/connectionUtils.j
 import { getAdUnitElement } from '../src/utils/adUnits.js';
 
 const BIDDER_CODE = 'widespace';
+const ACP_ID = 2624; // Google Additional Consent provider ID
 const WS_ADAPTER_VERSION = '2.0.1';
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
@@ -19,6 +20,7 @@ let preReqTime = 0;
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
 
   supportedMediaTypes: ['banner'],
 
