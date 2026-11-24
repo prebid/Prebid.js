@@ -76,7 +76,7 @@ import { browserSupportsYield, yieldAll } from "./utils/yield.ts";
 import { type MediaType } from "./mediaTypes.ts";
 import { getRendererDef, isRendererAllowed, RENDERER_TYPES } from "./utils/renderers.ts";
 
-export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler } from './consentHandler.js';
+export { gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler, gcmDataHandler } from './consentHandler.js';
 
 export const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
