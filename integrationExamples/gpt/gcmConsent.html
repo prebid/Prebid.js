@@ -2,7 +2,7 @@
   Google Consent Mode v2 with Prebid.js (consentManagementGcm + gcmControl), using Google's real gtag.js and GPT.
 
   Build and serve:
-    npx gulp serve-fast --modules=consentManagementGcm,gcmControl,openxBidAdapter,userId,sharedIdSystem,genericAnalyticsAdapter
+    npx gulp serve-fast --modules=consentManagementGcm,gcmControl,openxBidAdapter,userId,sharedIdSystem,unifiedIdSystem,genericAnalyticsAdapter
   then open http://localhost:9999/integrationExamples/gpt/gcmConsent.html
 
   Query parameters (all optional):
@@ -12,6 +12,18 @@
     wait=<ms>               wait_for_update passed with the default
     update=<ms>             grant everything this long after the first requestBids
     regional=1              the default is granted globally, and denied for region US-CA
+    cmds=<json>             consent commands pushed before gtag.js loads, instead of the default; a list of [command, params],
+                            e.g. cmds=[["default",{"ad_storage":"denied","region":["US-CA"]}],["update",{"ad_storage":"granted"}]]
+    later=<json>            consent commands pushed after setConfig; a list of [ms, command, params].
+                            Entries with the same delay are pushed back to back, in the same task
+    regionp=<json>          consentManagement.gcm.region is a promise: {"after":<ms>,"value":<any>} resolves that long after
+                            setConfig, {"after":<ms>,"reject":true} rejects, {"manual":true} leaves it to
+                            demo.resolveRegion(value) / demo.rejectRegion()
+    delay=<ms>              call the first requestBids this long after setConfig, instead of right away
+    probe=1                 register an analytics adapter ('probe') that never stays enabled, so that Prebid tries to enable it
+                            again on every consent change that allows analytics; attempts are listed in demo.probe
+  Times in demo (pushes, probe, regionSettledAt, auctions[].requestedAt) are ms since setConfig; auctions[].waitedMs is from
+  requestBids to bidRequested.
     gcm=<json>              merged into consentManagement.gcm, e.g. gcm={"timeout":2000,"defaultWhenAbsent":"denied","region":"US-CA"}
     layer=<name>            use a renamed data layer (gtag.js loaded with &l=<name>) instead of window.dataLayer
     ids=unified             add a second user ID module (unifiedId) that fetches its ID from tdid.json on this server
@@ -43,6 +55,13 @@
             if (qs.get('regional')) {
                 gtag('consent', 'default', all('granted'));
                 gtag('consent', 'default', Object.assign(all('denied'), { region: ['US-CA'] }));
+            } else if (qs.get('cmds') != null) {
+                JSON.parse(qs.get('cmds')).forEach(function (cmd) {
+                    gtag('consent', cmd[0], cmd[1]);
+                    SIGNALS.forEach(function (signal) {
+                        if (cmd[1][signal] != null && cmd[1].region == null) signalState[signal] = cmd[1][signal];
+                    });
+                });
             } else if (DEFAULT_VALUE !== 'none') {
                 var defaults = all(DEFAULT_VALUE);
                 if (qs.get('wait') != null) defaults.wait_for_update = Number(qs.get('wait'));
@@ -78,7 +97,14 @@
         var demo = {
             analyticsEvents: [],
             auctions: [],
-            requestedAt: null
+            requestedAt: null,
+            configuredAt: null,
+            // ms since setConfig
+            since: function () { return Math.round((performance.now() - demo.configuredAt) * 10) / 10; },
+            // consent commands pushed by `later`, and when
+            pushes: [],
+            // when Prebid tried to enable the `probe` analytics adapter
+            probe: []
         };
 
         function loadScript(src) {
@@ -131,6 +157,31 @@
 
         pbjs.que.push(function () {
             var gcm = Object.assign({ timeout: 500 }, JSON.parse(qs.get('gcm') || '{}'));
+            if (qs.get('regionp') != null) {
+                var regionp = JSON.parse(qs.get('regionp'));
+                gcm.region = new Promise(function (resolve, reject) {
+                    demo.resolveRegion = resolve;
+                    demo.rejectRegion = function () { reject(new Error('region lookup failed')); };
+                    if (!regionp.manual) {
+                        setTimeout(function () {
+                            demo.regionSettledAt = demo.since();
+                            regionp.reject ? demo.rejectRegion() : resolve(regionp.value);
+                        }, regionp.after);
+                    }
+                });
+            }
+            if (qs.get('probe')) {
+                pbjs.registerAnalyticsAdapter({
+                    code: 'probe',
+                    adapter: {
+                        enableAnalytics: function () {
+                            demo.probe.push(demo.since());
+                            throw new Error('probe: staying disabled');
+                        },
+                        disableAnalytics: function () {}
+                    }
+                });
+            }
             var userIds = [{
                 name: 'sharedId',
                 storage: { name: '_sharedid', type: 'cookie', expires: 30 }
@@ -142,6 +193,7 @@
                     storage: { name: 'pbjs-unifiedid', type: 'html5', expires: 30 }
                 });
             }
+            demo.configuredAt = performance.now();
             pbjs.setConfig({
                 debug: qs.get('pbjs_debug') === 'true',
                 consentManagement: qs.get('nogcm') ? {} : { gcm: gcm },
@@ -163,9 +215,11 @@
                     }
                 }
             });
+            if (qs.get('probe')) pbjs.enableAnalytics({ provider: 'probe' });
             pbjs.onEvent('bidRequested', function (bidderRequest) {
                 demo.auctions.push({
                     waitedMs: Math.round(performance.now() - demo.requestedAt),
+                    requestedAt: Math.round(demo.requestedAt - demo.configuredAt),
                     bidder: bidderRequest.bidderCode,
                     regs: bidderRequest.ortb2.regs,
                     user: bidderRequest.ortb2.user,
@@ -178,7 +232,24 @@
                 mediaTypes: { banner: { sizes: [[300, 250]] } },
                 bids: [{ bidder: 'openx', params: { unit: '539439964', delDomain: 'se-demo-d.openx.net' } }]
             }]);
-            runAuction();
+            if (qs.get('delay') != null) {
+                setTimeout(runAuction, Number(qs.get('delay')));
+            } else {
+                runAuction();
+            }
+            var later = {};
+            JSON.parse(qs.get('later') || '[]').forEach(function (entry) {
+                (later[entry[0]] = later[entry[0]] || []).push(entry);
+            });
+            Object.keys(later).forEach(function (ms) {
+                setTimeout(function () {
+                    later[ms].forEach(function (entry) {
+                        demo.pushes.push({ at: demo.since(), command: entry[1], params: entry[2] });
+                        gtag('consent', entry[1], entry[2]);
+                        if (entry[1] === 'update') Object.assign(signalState, entry[2]);
+                    });
+                }, Number(ms));
+            });
             if (qs.get('update') != null) {
                 setTimeout(function () { setAll('granted'); }, Number(qs.get('update')));
             }
