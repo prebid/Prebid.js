@@ -55,15 +55,12 @@ export const converter = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if (!context.mediaType) {
-      const mediaType = inferMediaType(bid, context.imp);
-      if (!mediaType) return;
-      context.mediaType = mediaType;
-    }
+    const mediaType = context.mediaType ?? inferMediaType(bid, context.imp);
+    if (!mediaType) return;
     if (typeof bid.adm === 'string') {
       bid.adm = bid.adm.replace(/\$\{AUCTION_PRICE\}/g, String(bid.price));
     }
-    const bidResponse = buildBidResponse(bid, context);
+    const bidResponse = buildBidResponse(bid, { ...context, mediaType });
     if ((bidResponse.mediaType === VIDEO || bidResponse.mediaType === AUDIO) && /^https?:\/\//i.test(String(bidResponse.vastXml || '').trim())) {
       bidResponse.vastUrl = bidResponse.vastXml.trim();
       delete bidResponse.vastXml;

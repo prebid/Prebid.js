@@ -209,6 +209,24 @@ describe('Appnerve bid adapter', function () {
         expect(spec.interpretResponse(response({ impid: multi.bidId, adm: '<VAST version="3.0"></VAST>' }), build([multi])[0])[0].mediaType).to.equal(VIDEO);
         expect(spec.interpretResponse(response({ impid: multi.bidId, adm: '<div></div>', w: 300, h: 250 }), build([multi])[0])[0].mediaType).to.equal(BANNER);
       });
+
+      it('resolves the media type separately for each bid in one response', function () {
+        const multi = bidRequest({ banner: { sizes: [[300, 250]] }, video: { context: 'outstream', playerSize: [[640, 360]], mimes: ['video/mp4'] } });
+        const request = build([multi])[0];
+        const body = {
+          id: 'response',
+          cur: 'USD',
+          seatbid: [{
+            seat: 'appnerve',
+            bid: [
+              { id: 'b1', impid: multi.bidId, price: 1, crid: 'c1', adm: '<VAST version="3.0"></VAST>', mtype: 2 },
+              { id: 'b2', impid: multi.bidId, price: 1, crid: 'c2', adm: '<div></div>', w: 300, h: 250, mtype: 1 }
+            ]
+          }]
+        };
+        const bids = spec.interpretResponse({ body }, request);
+        expect(bids.map((b) => b.mediaType)).to.deep.equal([VIDEO, BANNER]);
+      });
     }
 
     if (FEATURES.VIDEO && FEATURES.NATIVE) {
