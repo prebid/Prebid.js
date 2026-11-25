@@ -48,7 +48,8 @@ export const EVENTS = {
   BROWSI_INIT: 'browsiInit',
   BROWSI_DATA: 'browsiData',
   BROWSER_INTERVENTION: 'browserIntervention',
-  CONSENT_METADATA_CHANGED: 'consentMetadataChanged'
+  CONSENT_METADATA_CHANGED: 'consentMetadataChanged',
+  CONSENT_DATA_CHANGED: 'consentDataChanged'
 } as const;
 
 export const AD_RENDER_FAILED_REASON = {

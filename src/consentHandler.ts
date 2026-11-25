@@ -454,9 +454,18 @@ declare module './events' {
      * Fired when the result of `getConsentMetadata()` changes; the payload is its new value.
      */
     [EVENTS.CONSENT_METADATA_CHANGED]: [AllConsentMeta];
+    /**
+     * Fired when consent changes; the payload is the new result of `getConsentData()`.
+     */
+    [EVENTS.CONSENT_DATA_CHANGED]: [AllConsentData];
   }
 }
 
-Object.values(ALL_HANDLERS).forEach(handler => handler.onMetaChange(() => {
-  events.emit(EVENTS.CONSENT_METADATA_CHANGED, allConsent.getConsentMeta());
-}));
+Object.values(ALL_HANDLERS).forEach(handler => {
+  handler.onMetaChange(() => {
+    events.emit(EVENTS.CONSENT_METADATA_CHANGED, allConsent.getConsentMeta());
+  });
+  handler.onChange(() => {
+    events.emit(EVENTS.CONSENT_DATA_CHANGED, allConsent.getConsentData());
+  });
+});

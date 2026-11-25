@@ -438,6 +438,84 @@ describe('allConsent', () => {
     });
   });
 
+  describe('consentDataChanged event', () => {
+    let listener;
+    beforeEach(() => {
+      listener = sinon.stub();
+      events.on(EVENTS.CONSENT_DATA_CHANGED, listener);
+    });
+    afterEach(() => {
+      events.off(EVENTS.CONSENT_DATA_CHANGED, listener);
+      gppDataHandler.reset();
+      gdprDataHandler.reset();
+    });
+
+    it('fires with the new result of getConsentData when consent changes', () => {
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' });
+      sinon.assert.calledOnce(listener);
+      const data = listener.args[0][0];
+      expect(data.gpp).to.eql({ gppString: 'gpp' });
+      expect(data).to.eql(getGlobal().getConsentData());
+    });
+
+    it('does not fire when the same consent is set again', () => {
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' });
+      gppDataHandler.setConsentData({ gppString: 'gpp' });
+      sinon.assert.calledOnce(listener);
+    });
+
+    it('does not fire when only fields that do not identify consent change', () => {
+      gdprDataHandler.enable();
+      gdprDataHandler.setConsentData({ gdprApplies: true, consentString: 'abc', vendorData: { eventStatus: 'tcloaded' } });
+      gdprDataHandler.setConsentData({ gdprApplies: true, consentString: 'abc', vendorData: { eventStatus: 'useractioncomplete' } });
+      sinon.assert.calledOnce(listener);
+    });
+
+    it('fires when consent string changes', () => {
+      gdprDataHandler.enable();
+      gdprDataHandler.setConsentData({ gdprApplies: true, consentString: 'abc' });
+      gdprDataHandler.setConsentData({ gdprApplies: true, consentString: 'def' });
+      sinon.assert.calledTwice(listener);
+      expect(listener.secondCall.args[0].gdpr.consentString).to.equal('def');
+    });
+
+    it('keeps firing after allConsent.reset()', () => {
+      allConsent.reset();
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' });
+      sinon.assert.calledOnce(listener);
+    });
+
+    it('fires on coppa config changes', () => {
+      try {
+        config.setConfig({ coppa: true });
+        sinon.assert.calledOnce(listener);
+        expect(listener.args[0][0].coppa).to.be.true;
+      } finally {
+        config.resetConfig();
+      }
+    });
+  });
+
+  describe('pbjs.getConsentData', () => {
+    afterEach(() => gppDataHandler.reset());
+
+    it('returns data for enabled consent types and null for the others', () => {
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' });
+      const data = getGlobal().getConsentData();
+      expect(data.gpp).to.eql({ gppString: 'gpp' });
+      expect(data.gdpr).to.be.null;
+      expect(data.usp).to.be.null;
+    });
+
+    it('returns the same as allConsent.getConsentData()', () => {
+      expect(getGlobal().getConsentData()).to.eql(allConsent.getConsentData());
+    });
+  });
+
   it('includes gcm', () => {
     expect(allConsent.getConsentData()).to.have.property('gcm');
   });

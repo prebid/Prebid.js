@@ -451,6 +451,7 @@ declare module './prebidGlobal' {
     getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
     getAdserverTargeting: typeof getAdserverTargeting;
     getConsentMetadata: typeof getConsentMetadata;
+    getConsentData: typeof getConsentData;
     getNoBids: typeof getNoBids;
     getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
     getBidResponses: typeof getBidResponses;
@@ -547,6 +548,14 @@ function getConsentMetadata() {
   return allConsent.getConsentMeta();
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
+
+/**
+ * Returns the consent data collected by each consent management module that is enabled; `null` for those that are not.
+ */
+function getConsentData() {
+  return allConsent.getConsentData();
+}
+addApiMethod('getConsentData', getConsentData);
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
   const responses = auctionManager[type]()
