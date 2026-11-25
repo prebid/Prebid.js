@@ -102,6 +102,26 @@ describe('railuAnalytics sampleRate', function () {
 });
 
 describe('railuUtils analytics', function () {
+  it('never revives an auction already reported, and stays bounded', function () {
+    const c = makeCollector();
+    c.on('auctionInit', { auctionId: 'a', adUnits: [{ code: 's1', mediaTypes: { banner: { sizes: [[300, 250]] } }, bids: [] }] });
+    c.drop('a');
+    c.on('bidWon', { auctionId: 'a', adUnitCode: 's1', bidderCode: 'railu', cpm: 1 });
+    expect(c.auction('a')).to.equal(null);
+    for (let i = 0; i < 50; i++) c.on('auctionInit', { auctionId: 'x' + i, adUnits: [] });
+    expect(c.size()).to.be.at.most(20);
+  });
+
+  it('reports the format that sold on a multiformat slot', function () {
+    const c = makeCollector();
+    c.on('auctionInit', { auctionId: 'b', adUnits: [{ code: 's1', mediaTypes: { video: { playerSize: [[640, 360]] }, banner: { sizes: [[300, 250]] } }, bids: [{ bidder: 'railu' }] }] });
+    c.on('bidResponse', { auctionId: 'b', adUnitCode: 's1', bidderCode: 'railu', cpm: 2, mediaType: 'banner' });
+    c.on('bidWon', { auctionId: 'b', adUnitCode: 's1', bidderCode: 'railu', cpm: 2, mediaType: 'banner' });
+    const slot = observation(c.auction('b'), {}).slots[0];
+    expect(slot.format).to.equal('banner');
+    expect(slot.formats).to.deep.equal(['video', 'banner']);
+  });
+
   it('records what the ad server filled when Prebid had no winner', function () {
     const c = makeCollector();
     c.on('auctionInit', { auctionId: 'a', adUnits: [{ code: 's1', mediaTypes: { banner: { sizes: [[728, 90]] } }, bids: [{ bidder: 'railu' }] }] });

@@ -6,8 +6,12 @@
 
 export const OBS_VERSION = 1;
 export const MAX_SLOTS = 50;
+export const MAX_AUCTIONS = 20; // auctions held at once; the oldest goes first, so a long page never grows the map
 
-const fmtOf = (mt) => (mt && mt.video ? 'video' : mt && mt.native ? 'native' : mt && mt.banner ? 'banner' : 'banner');
+const FORMATS = ['banner', 'video', 'native'];
+const declaredOf = (mt) => Object.keys(mt || {}).filter((k) => FORMATS.includes(k) && mt[k]); // in the ad unit's order
+const fmtOf = (mt) => declaredOf(mt)[0] || 'banner';
+const bidFmt = (b) => (b && FORMATS.includes(b.mediaType) ? b.mediaType : null);
 const sizesOf = (mt) => {
   const s = (mt && mt.banner && mt.banner.sizes) || (mt && mt.video && mt.video.playerSize) || [];
   return (Array.isArray(s) ? s : []).filter((x) => Array.isArray(x) && x.length === 2).slice(0, 6).map((x) => x[0] + 'x' + x[1]);
@@ -16,25 +20,35 @@ const cpm = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? M
 
 export function makeCollector() {
   const auctions = new Map();
-  const get = (id) => { let a = auctions.get(id); if (!a) { a = { id, slots: new Map(), ended: false, t: 0 }; auctions.set(id, a); } return a; };
-  const slot = (a, code) => { let s = a.slots.get(code); if (!s) { s = { code: String(code).slice(0, 80), format: 'banner', sizes: [], asked: new Set(), bids: [], nobid: 0, winner: null, rendered: null, empty: null }; a.slots.set(code, s); } return s; };
+  const done = new Set(); // auctions already reported: a late bidWon or bidResponse never brings one back (bounded below)
+  const get = (id, create = true) => {
+    let a = auctions.get(id);
+    if (!a && create && !done.has(id)) {
+      a = { id, slots: new Map(), ended: false, t: 0 }; auctions.set(id, a);
+      while (auctions.size > MAX_AUCTIONS) auctions.delete(auctions.keys().next().value);
+    }
+    return a || null;
+  };
+  const slot = (a, code) => { let s = a.slots.get(code); if (!s) { s = { code: String(code).slice(0, 80), format: 'banner', formats: [], sizes: [], asked: new Set(), bids: [], nobid: 0, winner: null, rendered: null, empty: null }; a.slots.set(code, s); } return s; };
   return {
     // Prebid event names as in src/constants.js EVENTS
     on(type, args, now = Date.now()) {
       if (!args) return;
       if (type === 'auctionInit') {
-        const a = get(args.auctionId); a.t = now;
-        for (const u of args.adUnits || []) { const s = slot(a, u.code); s.format = fmtOf(u.mediaTypes); s.sizes = sizesOf(u.mediaTypes); for (const b of u.bids || []) if (b && b.bidder) s.asked.add(String(b.bidder)); }
+        const a = get(args.auctionId); if (!a) return; a.t = now;
+        for (const u of args.adUnits || []) { const s = slot(a, u.code); s.format = fmtOf(u.mediaTypes); s.formats = declaredOf(u.mediaTypes); s.sizes = sizesOf(u.mediaTypes); for (const b of u.bids || []) if (b && b.bidder) s.asked.add(String(b.bidder)); }
       } else if (type === 'noBid') {
-        slot(get(args.auctionId), args.adUnitCode).nobid += 1;
+        const a = get(args.auctionId, false); if (a) slot(a, args.adUnitCode).nobid += 1;
       } else if (type === 'bidResponse') {
-        const s = slot(get(args.auctionId), args.adUnitCode);
-        s.bids.push({ bidder: String(args.bidderCode || args.bidder || ''), cpm: cpm(args.cpm), deal: args.dealId ? String(args.dealId).slice(0, 64) : null });
+        const a = get(args.auctionId, false); if (!a) return;
+        const s = slot(a, args.adUnitCode);
+        s.bids.push({ bidder: String(args.bidderCode || args.bidder || ''), cpm: cpm(args.cpm), deal: args.dealId ? String(args.dealId).slice(0, 64) : null, format: bidFmt(args) });
       } else if (type === 'auctionEnd') {
-        const a = get(args.auctionId); a.ended = true; a.endT = now;
+        const a = get(args.auctionId, false); if (a) { a.ended = true; a.endT = now; }
       } else if (type === 'bidWon') {
-        const s = slot(get(args.auctionId), args.adUnitCode);
-        s.winner = { bidder: String(args.bidderCode || args.bidder || ''), cpm: cpm(args.cpm), deal: args.dealId ? String(args.dealId).slice(0, 64) : null };
+        const a = get(args.auctionId, false); if (!a) return;
+        const s = slot(a, args.adUnitCode);
+        s.winner = { bidder: String(args.bidderCode || args.bidder || ''), cpm: cpm(args.cpm), deal: args.dealId ? String(args.dealId).slice(0, 64) : null, format: bidFmt(args) };
       }
     },
     // Google Publisher Tag slotRenderEnded, matched to the ad unit code (the slot element id or ad unit path)
@@ -42,8 +56,8 @@ export function makeCollector() {
       for (const a of auctions.values()) { const s = a.slots.get(code); if (s) { s.rendered = !isEmpty; s.empty = !!isEmpty; } }
     },
     auction(id) { return auctions.get(id) || null; },
-    drop(id) { auctions.delete(id); },
-    clear() { auctions.clear(); },
+    drop(id) { auctions.delete(id); done.add(id); if (done.size > 200) done.delete(done.values().next().value); },
+    clear() { auctions.clear(); done.clear(); },
     size() { return auctions.size; },
   };
 }
@@ -55,9 +69,13 @@ export function observation(a, { tid, domain, sample = 1 } = {}) {
   for (const s of a.slots.values()) {
     if (slots.length >= MAX_SLOTS) break;
     const top = s.bids.reduce((m, b) => Math.max(m, b.cpm), 0);
+    // the format that sold: the winner's media type, else the top bid's, else the first the ad unit declares
+    const best = s.bids.reduce((m, b) => (b.cpm > (m ? m.cpm : -1) ? b : m), null);
+    const format = (s.winner && s.winner.format) || (best && best.format) || s.format;
     slots.push({
       code: s.code,
-      format: s.format,
+      format,
+      ...(s.formats.length > 1 ? { formats: s.formats } : {}),
       sizes: s.sizes,
       asked: s.asked.size,
       bids: s.bids.length,
