@@ -22,7 +22,7 @@ export function shouldLogAPPR(auctionData, adUnitId) {
 }
 
 // common error logger for medianet analytics and bid adapter
-export function errorLogger(event, data = undefined, analytics = true) {
+export function errorLogger(event, data = undefined, analytics = true, loggingEndpoint = POST_ENDPOINT) {
   const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? { ...event, logData: data } : { name: event, relatedData: data };
   const refererInfo = mnetGlobals.refererInfo || getRefererInfo();
   const errorData = Object.assign({},
@@ -41,7 +41,7 @@ export function errorLogger(event, data = undefined, analytics = true) {
       rd: relatedData || '',
     },
     logData);
-  const loggingHost = analytics ? EVENT_PIXEL_URL : POST_ENDPOINT;
+  const loggingHost = analytics ? EVENT_PIXEL_URL : loggingEndpoint;
   const payload = analytics ? mnFormatQS(errorData) : formatQS(errorData);
 
   function send() {
