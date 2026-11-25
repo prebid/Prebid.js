@@ -5,6 +5,7 @@ import {
   decideTakeovers,
   EXCLUSIVITY_TARGETING_KEY,
   onAuctionEnd,
+  onAuctionInit,
   onBidWon,
   recordViewport,
   reset,
@@ -483,6 +484,31 @@ describe('takeover module', () => {
       const next = sinon.spy();
       targetBidPoolHook(next, [stale, ...tko]);
       expect(next.firstCall.args[0]).to.eql(tko);
+    });
+
+    it('breaks ties between auctions that started in the same millisecond by start order', () => {
+      const tko = [takeoverBid('a', 1, { priority: 5 }), takeoverBid('b', 1, { priority: 5 })];
+      const stale = bid({ adUnitCode: 'a', cpm: 50, auctionId: 'older-auction' });
+      onAuctionInit({ auctionId: 'older-auction', adUnits: [{ code: 'a' }] });
+      onAuctionInit({ auctionId: AUCTION_ID, adUnits: [{ code: 'a' }, { code: 'b' }] });
+      onAuctionEnd({ ...auction(tko, ['a', 'b']), timestamp: 1000 });
+      onAuctionEnd({ ...auction([stale], ['a']), auctionId: 'older-auction', timestamp: 1000 });
+      const next = sinon.spy();
+      targetBidPoolHook(next, [stale, ...tko]);
+      expect(next.firstCall.args[0]).to.eql(tko);
+    });
+
+    it('applies exclusivity to cached bids from earlier auctions', () => {
+      setConfig({ enabled: true, allowExclusivity: true });
+      const exclusivity = { adomain: ['opponent.com'] };
+      const cachedOpponent = bid({ adUnitCode: 'c', cpm: 5, auctionId: 'earlier-auction', meta: { advertiserDomains: ['opponent.com'] } });
+      const cachedAllowed = bid({ adUnitCode: 'c', cpm: 5, auctionId: 'earlier-auction', meta: { advertiserDomains: ['shoes.com'] } });
+      onAuctionEnd({ ...auction([cachedOpponent, cachedAllowed]), auctionId: 'earlier-auction', timestamp: 1000 });
+      const tko = [takeoverBid('a', 1, { exclusivity, priority: 5 }), takeoverBid('b', 1, { exclusivity, priority: 5 })];
+      onAuctionEnd({ ...auction(tko), timestamp: 2000 });
+      const next = sinon.spy();
+      targetBidPoolHook(next, [cachedOpponent, cachedAllowed, ...tko]);
+      expect(next.firstCall.args[0]).to.eql([cachedAllowed, ...tko]);
     });
 
     it('passes bids through when disabled', () => {

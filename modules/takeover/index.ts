@@ -111,8 +111,16 @@ type Decision = {
    * When the auction started; auctions can end out of order.
    */
   startedAt: number;
+  /**
+   * Breaks ties between auctions that started in the same millisecond.
+   */
+  startOrder: number;
   adUnitCodes: string[];
   winnerByAdUnit: Map<string, string>;
+  /**
+   * Exclusivity the winning takeover applies to ad units it did not bid on.
+   */
+  exclusivityByAdUnit: Map<string, TakeoverMeta['exclusivity']>;
   droppedAdIds: Set<string>;
 };
 
@@ -128,6 +136,8 @@ type TakeoverGroup = {
 let takeoverConfig: TakeoverConfig | undefined;
 const decisions = new Map<string, Decision>();
 const inViewByAuction = new Map<string, Set<string>>();
+const startOrderByAuction = new Map<string, number>();
+let auctionsStarted = 0;
 const takenOverAdUnits = new Set<string>();
 
 function remember<T>(store: Map<string, T>, auctionId: string, value: T) {
@@ -216,7 +226,14 @@ function exclusivityLabel(exclusivity: TakeoverMeta['exclusivity']): string | un
  * Decides which takeover, if any, wins in an auction, and which bids it displaces.
  */
 export function decideTakeovers(auction: AuctionProperties, { renderedBids = () => auctionManager.getAllWinningBids() } = {}): Decision {
-  const decision: Decision = { startedAt: auction.timestamp ?? 0, adUnitCodes: auction.adUnitCodes, winnerByAdUnit: new Map(), droppedAdIds: new Set() };
+  const decision: Decision = {
+    startedAt: auction.timestamp ?? 0,
+    startOrder: startOrderByAuction.get(auction.auctionId) ?? 0,
+    adUnitCodes: auction.adUnitCodes,
+    winnerByAdUnit: new Map(),
+    exclusivityByAdUnit: new Map(),
+    droppedAdIds: new Set()
+  };
   const excluded = new Set(takeoverConfig.excludeAdUnits ?? []);
   const eligibleCodes = auction.adUnitCodes.filter(code => !excluded.has(code));
   const groups = groupTakeovers(auction, eligibleCodes);
@@ -329,6 +346,7 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
         .forEach(code => otherBidsFor(code).forEach(bid => decision.droppedAdIds.add(bid.adId)));
     }
     if (exclusivity) {
+      unmatched.forEach(code => decision.exclusivityByAdUnit.set(code, exclusivity));
       otherBids
         .filter(bid => unmatched.includes(bid.adUnitCode) && isExcluded(bid, exclusivity))
         .forEach(bid => decision.droppedAdIds.add(bid.adId));
@@ -342,6 +360,12 @@ export function decideTakeovers(auction: AuctionProperties, { renderedBids = () 
 
   results.forEach(takeoverResult => events.emit(EVENTS.TAKEOVER_RESULT, takeoverResult));
   return decision;
+}
+
+export function onAuctionInit(auction: Pick<AuctionProperties, 'auctionId' | 'adUnits'>) {
+  if (!isEnabled()) return;
+  remember(startOrderByAuction, auction.auctionId, ++auctionsStarted);
+  recordViewport(auction);
 }
 
 export function recordViewport(auction: Pick<AuctionProperties, 'auctionId' | 'adUnits'>) {
@@ -375,12 +399,21 @@ export function targetBidPoolHook(fn, bidsReceived, ...args) {
   // the pool can also hold bids from earlier auctions, and they must not displace the takeover
   const inPool = new Set(bidsReceived.map(bid => bid.adId));
   const winnerByAdUnit = new Map<string, string | undefined>();
-  [...decisions.values()].sort((a, b) => a.startedAt - b.startedAt).forEach(decision => decision.adUnitCodes.forEach(code => {
-    const winner = decision.winnerByAdUnit.get(code);
-    winnerByAdUnit.set(code, winner != null && inPool.has(winner) ? winner : undefined);
-  }));
+  const exclusivityByAdUnit = new Map<string, TakeoverMeta['exclusivity']>();
+  [...decisions.values()]
+    .sort((a, b) => (a.startedAt - b.startedAt) || (a.startOrder - b.startOrder))
+    .forEach(decision => {
+      const showing = [...decision.winnerByAdUnit.values()].some(adId => inPool.has(adId));
+      decision.adUnitCodes.forEach(code => {
+        const winner = decision.winnerByAdUnit.get(code);
+        winnerByAdUnit.set(code, winner != null && inPool.has(winner) ? winner : undefined);
+        exclusivityByAdUnit.set(code, showing ? decision.exclusivityByAdUnit.get(code) : undefined);
+      });
+    });
   const remaining = bidsReceived.filter(bid => {
     if (decisions.get(bid.auctionId)?.droppedAdIds.has(bid.adId)) return false;
+    // exclusivity also applies to cached bids from earlier auctions
+    if (isExcluded(bid, exclusivityByAdUnit.get(bid.adUnitCode))) return false;
     const winner = winnerByAdUnit.get(bid.adUnitCode);
     return winner == null || winner === bid.adId;
   });
@@ -417,11 +450,13 @@ export function reset() {
   takeoverConfig = undefined;
   decisions.clear();
   inViewByAuction.clear();
+  startOrderByAuction.clear();
+  auctionsStarted = 0;
   takenOverAdUnits.clear();
 }
 
 config.getConfig(MODULE_NAME, conf => setConfig(conf[MODULE_NAME]));
-events.on(EVENTS.AUCTION_INIT, recordViewport);
+events.on(EVENTS.AUCTION_INIT, onAuctionInit);
 events.on(EVENTS.AUCTION_END, onAuctionEnd);
 events.on(EVENTS.BID_WON, onBidWon);
 setupBeforeHookFnOnce(getHighestCpmBidsFromBidPool, targetBidPoolHook);
