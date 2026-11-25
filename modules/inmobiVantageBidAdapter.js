@@ -8,6 +8,8 @@ import { extPrebidMediaType } from '../libraries/pbsExtensions/processors/mediaT
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('./inmobiVantageBidAdapter.d.ts').InmobiVantageBidderParams} InmobiVantageBidderParams
+ * @typedef {BidRequest & { params: InmobiVantageBidderParams }} InmobiVantageBidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
@@ -51,7 +53,7 @@ const CONVERTER = ortbConverter({
  * Builds an impression object for oRTB 2.5 requests based on the bid request.
  *
  * @param {function} buildImp - Function to build the imp object.
- * @param {Object} bidRequest - The request containing bid details.
+ * @param {InmobiVantageBidRequest} bidRequest - The request containing bid details.
  * @param {Object} context - Context for the impression.
  * @returns {Object} The constructed impression object.
  */
@@ -206,7 +208,7 @@ export const spec = {
   /**
    * Validates if a bid request contains the required parameters for InMobi.
    *
-   * @param {Object} bid - Bid request to validate.
+   * @param {InmobiVantageBidRequest} bid - Bid request to validate.
    * @returns {boolean} True if the bid request is valid, otherwise false.
    */
   isBidRequestValid: (bid) => {
@@ -220,7 +222,7 @@ export const spec = {
   /**
    * Builds the server request from bid requests for InMobi.
    *
-   * @param {BidRequest[]} bidRequests - Array of bid requests.
+   * @param {InmobiVantageBidRequest[]} bidRequests - Array of bid requests.
    * @param {Object} bidderRequest - Additional request details.
    * @returns {ServerRequest} The server request for bidding.
    */
