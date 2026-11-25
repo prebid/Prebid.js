@@ -1,6 +1,8 @@
 import { cyrb53Hash, deepEqual, isEmpty, isStr, timestamp, uniques } from './utils.js';
 import { defer, PbPromise } from './utils/promise.js';
 import { config } from './config.js';
+import * as events from './events.js';
+import { EVENTS } from './constants.js';
 import type { ModuleType } from "./activities/modules.ts";
 import type { TCFConsentData } from "./types/consent/tcf.d.ts";
 import type { GPPConsentData } from "./types/consent/gpp.d.ts";
@@ -66,6 +68,10 @@ export interface ConsentHandler<T, M> {
   error(err): void;
   onChange(listener: (consentData: T) => void): void;
   /**
+   * Register a listener for changes to the result of `getConsentMeta()`. Like `onChange`, listeners are kept across `reset`.
+   */
+  onMetaChange(listener: (consentMeta: M) => void): void;
+  /**
    * Enable this consent handler. This should be called by the relevant consent management module
    * on initialization.
    */
@@ -109,7 +115,9 @@ export function consentHandler<T, M>(
   let hash;
   let error;
   let hasError;
+  let lastMeta;
   const listeners = [];
+  const metaListeners = [];
   function reset() {
     df = defer();
     enabled = false;
@@ -120,6 +128,21 @@ export function consentHandler<T, M>(
     hash = null;
     error = null;
     hasError = false;
+    notifyMetaListeners();
+  }
+
+  function getConsentMeta(): M {
+    if (generatedTime != null && consentData != null) {
+      return getMeta(consentData, generatedTime);
+    }
+  }
+
+  function notifyMetaListeners() {
+    const meta = getConsentMeta();
+    if (!deepEqual(meta, lastMeta)) {
+      lastMeta = meta;
+      metaListeners.forEach(l => l(meta));
+    }
   }
 
   function getHashData(consentData) {
@@ -151,6 +174,7 @@ export function consentHandler<T, M>(
     ready = true;
     df.resolve(data);
     notifyListeners(changed);
+    notifyMetaListeners();
   }
   function reject(err) {
     const changed = update(null);
@@ -159,6 +183,7 @@ export function consentHandler<T, M>(
     hasError = true;
     df.reject(err);
     notifyListeners(changed);
+    notifyMetaListeners();
   }
   reset();
 
@@ -192,11 +217,7 @@ export function consentHandler<T, M>(
     getConsentData(): T {
       return enabled ? consentData : null;
     },
-    getConsentMeta(): M {
-      if (generatedTime != null && consentData != null) {
-        return getMeta(consentData, generatedTime);
-      }
-    },
+    getConsentMeta,
     error: reject,
     get hash() {
       if (dirty) {
@@ -212,6 +233,9 @@ export function consentHandler<T, M>(
     },
     onChange(listener) {
       listeners.push(listener);
+    },
+    onMetaChange(listener) {
+      metaListeners.push(listener);
     }
   };
 }
@@ -423,3 +447,25 @@ export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
 
 export const allConsent = multiHandler();
 export const GVL_PURPOSES = {}; // this is populated by plugins/gvlPurposes.js
+
+declare module './events' {
+  interface Events {
+    /**
+     * Fired when the result of `getConsentMetadata()` changes; the payload is its new value.
+     */
+    [EVENTS.CONSENT_METADATA_CHANGED]: [AllConsentMeta];
+    /**
+     * Fired when consent changes; the payload is the new result of `getConsentData()`.
+     */
+    [EVENTS.CONSENT_DATA_CHANGED]: [AllConsentData];
+  }
+}
+
+Object.values(ALL_HANDLERS).forEach(handler => {
+  handler.onMetaChange(() => {
+    events.emit(EVENTS.CONSENT_METADATA_CHANGED, allConsent.getConsentMeta());
+  });
+  handler.onChange(() => {
+    events.emit(EVENTS.CONSENT_DATA_CHANGED, allConsent.getConsentData());
+  });
+});
