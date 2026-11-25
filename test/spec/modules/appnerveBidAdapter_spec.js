@@ -150,6 +150,11 @@ describe('Appnerve bid adapter', function () {
       expect(imp.bidfloorcur).to.equal('USD');
     });
 
+    it('keeps an explicitly configured imp.secure value', function () {
+      const bid = { ...banner(), ortb2Imp: { secure: 0 } };
+      expect(build([bid])[0].data.imp[0].secure).to.equal(0);
+    });
+
     it('keeps impression level first party data', function () {
       const bid = { ...banner(), ortb2Imp: { ext: { gpid: '/123/slot' } } };
       expect(build([bid])[0].data.imp[0].ext.gpid).to.equal('/123/slot');

@@ -8,7 +8,7 @@ export const ENDPOINT = 'https://exchange.appnerve.net/openrtb2/auction';
 const DEFAULT_TTL = 300;
 const SUPPORTED_MEDIA_TYPES: MediaType[] = [BANNER, VIDEO, NATIVE, AUDIO];
 
-type AppnerveBidParams = {
+export type AppnerveBidParams = {
   /**
    * Appnerve Exchange ad source ID.
    */
@@ -52,7 +52,6 @@ export const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = getSourceId(bidRequest.params as AppnerveBidParams);
-    imp.secure = 1;
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
