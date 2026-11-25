@@ -174,28 +174,26 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     return bids;
   },
 
+  // One sync per call: the iframe when the publisher allows it, otherwise the image pixel.
   getUserSyncs(syncOptions, _serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
-    if (coppa || !syncOptions.pixelEnabled) {
+    if (coppa) {
       return [];
     }
+    const type = syncOptions.iframeEnabled ? 'iframe' : syncOptions.pixelEnabled ? 'image' : null;
+    if (!type) {
+      return [];
+    }
+    // Boldwin's sync endpoint expects every signal in the URL, with an empty value when it is unknown.
     const params = new URLSearchParams();
-    if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params.set('gdpr', gdprConsent.gdprApplies ? '1' : '0');
+    if (type === 'iframe') {
+      params.set('type', 'iframe');
     }
-    if (gdprConsent?.consentString) {
-      params.set('gdpr_consent', gdprConsent.consentString);
-    }
-    if (uspConsent) {
-      params.set('us_privacy', uspConsent);
-    }
-    if (gppConsent?.gppString) {
-      params.set('gpp', gppConsent.gppString);
-    }
-    if (gppConsent?.applicableSections?.length) {
-      params.set('gpp_sid', gppConsent.applicableSections.join(','));
-    }
-    const query = params.toString();
-    return [{ type: 'image', url: query ? `${SYNC_URL}?${query}` : SYNC_URL }];
+    params.set('gdpr', typeof gdprConsent?.gdprApplies === 'boolean' ? (gdprConsent.gdprApplies ? '1' : '0') : '');
+    params.set('gdpr_consent', gdprConsent?.consentString || '');
+    params.set('us_privacy', uspConsent || '');
+    params.set('gpp', gppConsent?.gppString || '');
+    params.set('gpp_sid', gppConsent?.applicableSections?.join(',') || '');
+    return [{ type, url: `${SYNC_URL}?${params.toString()}` }];
   },
 };
 

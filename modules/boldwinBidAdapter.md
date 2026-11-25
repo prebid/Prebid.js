@@ -23,8 +23,9 @@ starts, whoever plays it. For banner and native it hands them to Prebid as event
 Prebid fires `burl` when the bid becomes billable and native `nurl` when the bid wins. For
 banners Prebid adds `nurl` to the markup as a pixel.
 
-User sync is an image pixel. It carries the GDPR, US Privacy and GPP signals Prebid has, and
-no sync is made when COPPA applies.
+User sync is an iframe when the publisher allows iframe syncs, otherwise an image pixel; the
+adapter returns one of them, never both. It carries the GDPR, US Privacy and GPP signals Prebid
+has, and no sync is made when COPPA applies.
 
 # Bid Params
 

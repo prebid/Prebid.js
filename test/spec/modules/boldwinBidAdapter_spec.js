@@ -376,36 +376,41 @@ describe('boldwin bid adapter', function () {
 
   describe('getUserSyncs', function () {
     const PIXEL = { iframeEnabled: false, pixelEnabled: true };
+    const IFRAME = { iframeEnabled: true, pixelEnabled: false };
+    const BOTH = { iframeEnabled: true, pixelEnabled: true };
+    const EMPTY_SIGNALS = 'gdpr=&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
-    it('returns one image pixel', function () {
-      expect(spec.getUserSyncs(PIXEL, [], null, null, null, false)).to.deep.equal([{ type: 'image', url: SYNC_URL }]);
+    it('returns one image pixel when only pixels are allowed', function () {
+      expect(spec.getUserSyncs(PIXEL, [], null, null, null, false)).to.deep.equal([{ type: 'image', url: `${SYNC_URL}?${EMPTY_SIGNALS}` }]);
     });
 
-    it('returns no sync when pixels are disabled, even if iframes are allowed', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, [], null, null, null, false)).to.deep.equal([]);
+    it('returns one iframe when iframes are allowed', function () {
+      const iframe = [{ type: 'iframe', url: `${SYNC_URL}?type=iframe&${EMPTY_SIGNALS}` }];
+      expect(spec.getUserSyncs(IFRAME, [], null, null, null, false)).to.deep.equal(iframe);
+      expect(spec.getUserSyncs(BOTH, [], null, null, null, false)).to.deep.equal(iframe);
+    });
+
+    it('returns no sync when neither iframes nor pixels are allowed', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [], null, null, null, false)).to.deep.equal([]);
     });
 
     it('returns no sync under COPPA', function () {
-      expect(spec.getUserSyncs(PIXEL, [], null, '1YNN', null, true)).to.deep.equal([]);
+      expect(spec.getUserSyncs(BOTH, [], null, '1YNN', null, true)).to.deep.equal([]);
     });
 
     it('adds every privacy signal that is present, in the documented order', function () {
       const gdprConsent = { gdprApplies: true, consentString: 'CONSENT' };
       const gppConsent = { gppString: 'DBABTA~1YNN', applicableSections: [7, 8] };
-      expect(spec.getUserSyncs(PIXEL, [], gdprConsent, '1YNN', gppConsent, false)).to.deep.equal([{
-        type: 'image',
-        url: `${SYNC_URL}?gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=DBABTA%7E1YNN&gpp_sid=7%2C8`,
-      }]);
+      const query = 'gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=DBABTA%7E1YNN&gpp_sid=7%2C8';
+      expect(spec.getUserSyncs(PIXEL, [], gdprConsent, '1YNN', gppConsent, false)[0].url).to.equal(`${SYNC_URL}?${query}`);
+      expect(spec.getUserSyncs(IFRAME, [], gdprConsent, '1YNN', gppConsent, false)[0].url).to.equal(`${SYNC_URL}?type=iframe&${query}`);
     });
 
-    it('sends gdpr=0 when GDPR does not apply and leaves gdpr out when unknown', function () {
-      expect(spec.getUserSyncs(PIXEL, [], { gdprApplies: false }, null, null, false)[0].url).to.equal(`${SYNC_URL}?gdpr=0`);
-      expect(spec.getUserSyncs(PIXEL, [], { consentString: 'CONSENT' }, null, null, false)[0].url).to.equal(`${SYNC_URL}?gdpr_consent=CONSENT`);
-    });
-
-    it('leaves out empty privacy signals', function () {
-      const gppConsent = { gppString: '', applicableSections: [] };
-      expect(spec.getUserSyncs(PIXEL, [], { consentString: '' }, '', gppConsent, false)).to.deep.equal([{ type: 'image', url: SYNC_URL }]);
+    it('sends gdpr=0 when GDPR does not apply and empty values for unknown signals', function () {
+      expect(spec.getUserSyncs(PIXEL, [], { gdprApplies: false }, null, null, false)[0].url)
+        .to.equal(`${SYNC_URL}?gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=`);
+      expect(spec.getUserSyncs(PIXEL, [], { consentString: 'CONSENT' }, '', { gppString: '', applicableSections: [] }, false)[0].url)
+        .to.equal(`${SYNC_URL}?gdpr=&gdpr_consent=CONSENT&us_privacy=&gpp=&gpp_sid=`);
     });
   });
 
