@@ -46,9 +46,6 @@ export const buildRequests = function (validBidRequests, bidderRequest) {
     method: 'POST',
     url: bidderEndpoint,
     data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
-    options: {
-      contentType: 'application/json'
-    },
     bidderRequest
   };
 };
