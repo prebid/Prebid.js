@@ -203,4 +203,4 @@ Open the browser console to see the logs.
 
 Any suggestions or questions can be directed to [prebid@optable.co](mailto:prebid@optable.co).
 
-Alternatively please open a new [issue](https://github.com/prebid/prebid-server-java/issues/new) or [pull request](https://github.com/prebid/prebid-server-java/pulls) in this repository.
+Alternatively please open a new [issue](https://github.com/prebid/Prebid.js/issues/new) or [pull request](https://github.com/prebid/Prebid.js/pulls) in the Prebid.js repository.
