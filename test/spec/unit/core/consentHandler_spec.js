@@ -1,6 +1,10 @@
 import { allConsent, consentHandler, coppaDataHandler, gcmDataHandler, gdprDataHandler, gppDataHandler, gvlidList, gvlidRegistry, multiHandler, normalizeGvlid, uspDataHandler, VENDORLESS_GVLID } from '../../../../src/consentHandler.js';
 import { cyrb53Hash } from '../../../../src/utils.js';
 import { config } from 'src/config.js';
+import * as events from 'src/events.js';
+import { EVENTS } from 'src/constants.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import 'src/prebid.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -72,6 +76,63 @@ describe('Consent data handler', () => {
         handler.setConsentData({ tcString: 'constant', other: 'ignored' });
         sinon.assert.notCalled(listener);
       });
+    });
+  });
+
+  describe('onMetaChange', () => {
+    let listener;
+    beforeEach(() => {
+      listener = sinon.stub();
+      handler.onMetaChange(listener);
+    });
+    it('should trigger when consent data is first set', () => {
+      handler.setConsentData('data', 1);
+      sinon.assert.calledOnceWithExactly(listener, { generatedAt: 1 });
+    });
+    it('should trigger when the same data is set again at a different time', () => {
+      handler.setConsentData('data', 1);
+      handler.setConsentData('data', 2);
+      sinon.assert.calledTwice(listener);
+      sinon.assert.calledWith(listener, { generatedAt: 2 });
+    });
+    it('should not trigger when metadata does not change', () => {
+      handler.setConsentData('data', 1);
+      handler.setConsentData('other', 1);
+      sinon.assert.calledOnce(listener);
+    });
+    it('should not trigger when null data is set', () => {
+      handler.setConsentData(null, 1);
+      sinon.assert.notCalled(listener);
+    });
+    it('should trigger on error, when there was metadata', () => {
+      handler.setConsentData('data', 1);
+      handler.promise.catch(() => null);
+      handler.error(new Error());
+      sinon.assert.calledTwice(listener);
+      sinon.assert.calledWith(listener.secondCall, undefined);
+    });
+    it('should trigger on reset, when there was metadata', () => {
+      handler.setConsentData('data', 1);
+      handler.reset();
+      sinon.assert.calledTwice(listener);
+      sinon.assert.calledWith(listener.secondCall, undefined);
+    });
+    it('should not trigger on reset when there was no metadata', () => {
+      handler.reset();
+      sinon.assert.notCalled(listener);
+    });
+    it('should keep listeners across reset', () => {
+      handler.reset();
+      handler.enable();
+      handler.setConsentData('after reset', 1);
+      sinon.assert.calledWith(listener, { generatedAt: 1 });
+    });
+    it('should not trigger when changes do not affect metadata', () => {
+      handler = consentHandler({ getMeta: (data) => ({ size: data.length }) });
+      handler.onMetaChange(listener);
+      handler.setConsentData('aaa', 1);
+      handler.setConsentData('bbb', 2);
+      sinon.assert.calledOnceWithExactly(listener, { size: 3 });
     });
   });
 
@@ -317,6 +378,62 @@ describe('allConsent', () => {
         sinon.assert.calledWith(listener, sinon.match({ [name]: { marker: name } }));
       } finally {
         handler.reset();
+      }
+    });
+  });
+
+  describe('consentMetadataChanged event', () => {
+    let listener;
+    beforeEach(() => {
+      listener = sinon.stub();
+      events.on(EVENTS.CONSENT_METADATA_CHANGED, listener);
+    });
+    afterEach(() => {
+      events.off(EVENTS.CONSENT_METADATA_CHANGED, listener);
+      gppDataHandler.reset();
+    });
+
+    it('fires with the new result of getConsentMetadata when it changes', () => {
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' }, 123);
+      sinon.assert.calledOnce(listener);
+      const meta = listener.args[0][0];
+      expect(meta.gpp).to.eql({ generatedAt: 123 });
+      expect(meta).to.eql(getGlobal().getConsentMetadata());
+    });
+
+    it('fires when consent data is reset', () => {
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' }, 123);
+      gppDataHandler.reset();
+      sinon.assert.calledTwice(listener);
+      expect(listener.secondCall.args[0].gpp).to.be.undefined;
+    });
+
+    it('does not fire when getConsentMetadata does not change', () => {
+      gdprDataHandler.enable();
+      try {
+        gdprDataHandler.setConsentData({ gdprApplies: true, consentString: 'abc' }, 123);
+        sinon.assert.notCalled(listener);
+      } finally {
+        gdprDataHandler.reset();
+      }
+    });
+
+    it('keeps firing after allConsent.reset()', () => {
+      allConsent.reset();
+      gppDataHandler.enable();
+      gppDataHandler.setConsentData({ gppString: 'gpp' }, 123);
+      sinon.assert.calledOnce(listener);
+    });
+
+    it('fires on coppa config changes', () => {
+      try {
+        config.setConfig({ coppa: true });
+        sinon.assert.calledOnce(listener);
+        expect(listener.args[0][0].coppa).to.be.true;
+      } finally {
+        config.resetConfig();
       }
     });
   });
