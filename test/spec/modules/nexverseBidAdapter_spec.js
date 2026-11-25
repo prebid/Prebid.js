@@ -139,7 +139,7 @@ describe('nexverseBidAdapterTests', () => {
     it('includes user demographics, consent, referrer, and app details', () => {
       Object.assign(bid.params, { yob: '1980', gender: 'F', keywords: 'news', geoLat: 10, geoLon: 20 });
       Object.assign(bidderRequest, {
-        userId: 'buyer-user',
+        ortb2: { user: { buyeruid: 'buyer-user' } },
         gdprConsent: { gdprApplies: true, consentString: 'gdpr-consent' },
         uspConsent: '1YNN',
         app: { id: 'app-1', name: 'Example', bundle: 'example.app', domain: 'app.example', storeUrl: 'https://store.example/app', cat: ['IAB1'] }
