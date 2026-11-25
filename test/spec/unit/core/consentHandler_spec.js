@@ -33,6 +33,46 @@ describe('Consent data handler', () => {
     }
   });
 
+  it('releases existing readers when a framework stays disabled', async () => {
+    handler.enable();
+    const pending = handler.promise;
+    handler.reset();
+    expect(await pending).to.equal(null);
+    handler.enable();
+    const next = handler.promise;
+    handler.setConsentData('next');
+    expect(await next).to.equal('next');
+  });
+
+  it('keeps combined readers waiting for all reconfigured frameworks', async () => {
+    const other = consentHandler();
+    handler.enable();
+    other.enable();
+    const pending = multiHandler({ one: handler, two: other }).promise;
+    const settled = sinon.spy();
+    pending.then(settled);
+    handler.reset();
+    handler.enable();
+    handler.reset();
+    handler.enable();
+    await Promise.resolve();
+    handler.setConsentData(false);
+    await Promise.resolve();
+    sinon.assert.notCalled(settled);
+    other.setConsentData('other');
+    expect(await pending).to.deep.equal({ one: false, two: 'other' });
+  });
+
+  it('propagates the replacement lookup error to existing readers', async () => {
+    handler.enable();
+    const error = new Error('lookup failed');
+    const pending = handler.promise.catch(e => e);
+    handler.reset();
+    handler.enable();
+    handler.error(error);
+    expect(await pending).to.equal(error);
+  });
+
   describe('onChange', () => {
     let listener;
     beforeEach(() => {
