@@ -6,10 +6,16 @@ Maintainer: product@liveIntent.com
 
 # Description
 
-This module reads LiveIntent segments from the User ID module via 
-`pbjs.getUserIds().lipb.segments` and injects them into `ortb2.user.data`
-as a `{ name: 'liveintent.com', segment: [...] }` entry during
+This module reads LiveIntent segments from the LiveIntent EID
+(`source: 'liveintent.com'`) already present on the auction's
+`ortb2Fragments` — specifically `user.ext.eids[].ext.segments` — and
+copies them into that same fragment's `ortb2.user.data` as a
+`{ name: 'liveintent.com', segment: [...] }` entry during
 `getBidRequestData`.
+
+Because it uses the request fragments (global and per-bidder), segment
+enrichment follows the same bidder scoping and EID activity controls as
+the LiveIntent ID itself.
 
 Please visit [LiveIntent](https://www.liveIntent.com/) for more information.
 
