@@ -88,6 +88,61 @@ describe('common processors', () => {
       it('allows negative integer priority', () => {
         expect(dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type: 4, priority: -1 } } } }).priority).to.equal(-1);
       });
+
+      describe('takeover', () => {
+        function takeoverFor(takeover) {
+          return dealMetaFor({ dealid: 'deal-1', ext: { prebid: { deal: { type: 3, takeover } } } }).takeover;
+        }
+
+        it('is normalized from ext.prebid.deal.takeover', () => {
+          expect(takeoverFor({
+            mode: 'viewport',
+            min_slots: 3,
+            exclusivity: { adomain: ['opponent.com'], cat: ['IAB11-4'] }
+          })).to.eql({
+            mode: 'viewport',
+            minSlots: 3,
+            exclusivity: { adomain: ['opponent.com'], cat: ['IAB11-4'] }
+          });
+        });
+
+        it('is not set when missing or not an object', () => {
+          expect(takeoverFor(undefined)).to.not.exist;
+          expect(takeoverFor('all')).to.not.exist;
+        });
+
+        ['all', 'max', 'viewport'].forEach(mode => {
+          it(`keeps mode ${mode}`, () => {
+            expect(takeoverFor({ mode }).mode).to.equal(mode);
+          });
+        });
+
+        [undefined, 'page', 1].forEach(mode => {
+          it(`defaults mode to max when it is ${mode}`, () => {
+            expect(takeoverFor({ mode }).mode).to.equal('max');
+          });
+        });
+
+        it('drops fields that are not correctly typed', () => {
+          expect(takeoverFor({
+            mode: 'all',
+            min_slots: 0,
+            exclusivity: { adomain: 'opponent.com', cat: [1, ''] },
+            groupId: 'from-bidder'
+          })).to.eql({ mode: 'all' });
+        });
+
+        it('keeps only the valid entries of exclusivity lists', () => {
+          expect(takeoverFor({ exclusivity: { adomain: ['a.com', 2, ''] } })).to.eql({
+            mode: 'max',
+            exclusivity: { adomain: ['a.com'] }
+          });
+        });
+
+        it('drops a non-integer min_slots', () => {
+          expect(takeoverFor({ min_slots: 2.5 }).minSlots).to.not.exist;
+        });
+      });
     });
   });
   describe('bid imp fpd', () => {

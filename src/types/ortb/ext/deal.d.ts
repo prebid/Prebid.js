@@ -1,6 +1,27 @@
 // https://github.com/prebid/Prebid.js/issues/15602
 
 /**
+ * Page takeover extension (`seatbid[].bid[].ext.prebid.deal.takeover`); see https://github.com/prebid/Prebid.js/issues/15719.
+ */
+export type TakeoverExt = Partial<{
+  /**
+   * `all`, `max` or `viewport`.
+   */
+  mode: string;
+  /**
+   * Minimum number of ad units the takeover must win in `max` and `viewport` modes.
+   */
+  min_slots: number;
+  /**
+   * Advertiser domains and IAB categories kept out of the page's other ad units.
+   */
+  exclusivity: Partial<{
+    adomain: string[];
+    cat: string[];
+  }>;
+}>;
+
+/**
  * Deal metadata extension (`seatbid[].bid[].ext.prebid.deal`).
  */
 export type DealExt = Partial<{
@@ -28,4 +49,8 @@ export type DealExt = Partial<{
    * Who validated the deal metadata; Prebid Server sets "adserver" on metadata from bidders listed in `ext.prebid.as.apb`.
    */
   source: string;
+  /**
+   * Page takeover terms.
+   */
+  takeover: TakeoverExt;
 }>;
