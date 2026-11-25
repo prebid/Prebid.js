@@ -43,6 +43,7 @@ export function makeCollector() {
     },
     auction(id) { return auctions.get(id) || null; },
     drop(id) { auctions.delete(id); },
+    clear() { auctions.clear(); },
     size() { return auctions.size; },
   };
 }
@@ -66,7 +67,7 @@ export function observation(a, { tid, domain, sample = 1 } = {}) {
       empty: s.empty,
     });
   }
-  return { v: OBS_VERSION, tid: String(tid || ''), domain: String(domain || '').toLowerCase().slice(0, 120), sample: Math.max(0.001, Math.min(1, Number(sample) || 1)), slots };
+  return { v: OBS_VERSION, tid: String(tid || ''), domain: String(domain || '').toLowerCase().slice(0, 120), sample: Number.isFinite(Number(sample)) && Number(sample) > 0 ? Math.min(1, Number(sample)) : 1, slots }; // as set: a rate below 0.001 stays what it is
 }
 
 /** The outcome of one slot, as the server records it. */

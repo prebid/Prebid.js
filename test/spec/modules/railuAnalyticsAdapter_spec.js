@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import railuAnalytics from 'modules/railuAnalyticsAdapter.js';
+import railuAnalytics, { sampleRate } from 'modules/railuAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import { EVENTS } from 'src/constants.js';
 import { makeCollector, observation, slotOutcome } from 'libraries/railuUtils/analyticsUtils.js';
@@ -23,8 +23,13 @@ function runAuction() {
 describe('railuAnalyticsAdapter', function () {
   let clock, beacon;
 
+  let bg;
   beforeEach(function () {
     clock = sinon.useFakeTimers();
+    // run Prebid's background tasks at once (scheduler.postTask / requestIdleCallback are not driven by fake timers)
+    bg = [];
+    if (window.scheduler && window.scheduler.postTask) bg.push(sinon.stub(window.scheduler, 'postTask').callsFake((t) => { t(); return Promise.resolve(); }));
+    if (typeof window.requestIdleCallback === 'function') bg.push(sinon.stub(window, 'requestIdleCallback').callsFake((t) => { t(); return 1; }));
     beacon = sinon.stub(navigator, 'sendBeacon').returns(true);
     sinon.stub(events, 'getEvents').returns([]);
   });
@@ -33,6 +38,7 @@ describe('railuAnalyticsAdapter', function () {
     if (railuAnalytics.enabled) railuAnalytics.disableAnalytics(); // disabling a never-enabled adapter resets its enableAnalytics
     events.getEvents.restore();
     beacon.restore();
+    bg.forEach((x) => x.restore());
     clock.restore();
   });
 
@@ -57,6 +63,22 @@ describe('railuAnalyticsAdapter', function () {
     expect(Object.keys(body).sort()).to.deep.equal(['domain', 'sample', 'slots', 'tid', 'v']);
   });
 
+  it('reports nothing at sample 0', function () {
+    railuAnalytics.enableAnalytics({ provider: 'railu', options: { tid: 't_x', sample: 0 } });
+    runAuction();
+    clock.tick(4000);
+    expect(beacon.called).to.equal(false);
+  });
+
+  it('cancels a pending report when analytics is disabled', function () {
+    railuAnalytics.enableAnalytics({ provider: 'railu', options: { tid: 't_x' } });
+    runAuction();
+    clock.tick(500);
+    railuAnalytics.disableAnalytics();
+    clock.tick(4000);
+    expect(beacon.called).to.equal(false);
+  });
+
   it('sends nothing without a tag ID', function () {
     railuAnalytics.enableAnalytics({ provider: 'railu', options: {} });
     runAuction();
@@ -69,6 +91,13 @@ describe('railuAnalyticsAdapter', function () {
     runAuction();
     clock.tick(4000); // Prebid delivers queued events after a short debounce; the beacon goes 3 s after auctionEnd
     expect(beacon.firstCall.args[0]).to.equal('https://staging.example/v1/observe?tid=t_x');
+  });
+});
+
+describe('railuAnalytics sampleRate', function () {
+  it('keeps the rate as set: 0 is none, only an absent or invalid value is 1', function () {
+    expect(sampleRate(0)).to.equal(0); expect(sampleRate(0.0005)).to.equal(0.0005); expect(sampleRate(2)).to.equal(1);
+    expect(sampleRate(undefined)).to.equal(1); expect(sampleRate('x')).to.equal(1);
   });
 });
 
