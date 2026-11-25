@@ -203,11 +203,19 @@ function getIds(priorityMap): Partial<UserId> {
   );
 }
 
+const warnedNoPrimaryIds = new WeakSet();
+
 function getPrimaryIds(submodule) {
   if (submodule.primaryIds) return submodule.primaryIds;
   const ids = Object.keys(submodule.eids ?? {});
   if (ids.length > 1) {
-    throw new Error(`ID submodule ${submodule.name} can provide multiple IDs, but does not specify 'primaryIds'`);
+    // This runs whenever the priority maps are rebuilt (init, setConfig, every new ID), outside any per-module
+    // error handling: a throw here would break every ID module, not just this one. Treat none of its IDs as primary.
+    if (!warnedNoPrimaryIds.has(submodule)) {
+      warnedNoPrimaryIds.add(submodule);
+      logError(`${MODULE_NAME}: ID submodule ${submodule.name} can provide multiple IDs, but does not specify 'primaryIds'; none of its IDs will be treated as primary`);
+    }
+    return [];
   }
   return ids;
 }
