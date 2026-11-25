@@ -201,7 +201,6 @@ function collectJsonLdKeywords(node, keywords: string[], depth = 0) {
 export const getJsonLdKeywords = memoize(() => {
   return winFallback((win) => {
     const keywords: string[] = [];
-    // Array.from, not NodeList.prototype.forEach, which Chrome 50 lacks (it broke the ES5 E2E job on Chrome 50)
     Array.from(win.document.querySelectorAll('script[type="application/ld+json"]')).forEach((scriptTag: HTMLScriptElement) => {
       try {
         collectJsonLdKeywords(JSON.parse(scriptTag.textContent), keywords);
