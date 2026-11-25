@@ -5,6 +5,7 @@ import {
   spec
 } from 'modules/smartxBidAdapter.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { fillVideoDefaults } from '../../../src/video.js';
 
 describe('The smartx adapter', function () {
   before(function () {
@@ -335,6 +336,153 @@ describe('The smartx adapter', function () {
       expect(request.data.imp[0].video.linearity).to.equal(3);
     });
 
+    it('should pass plcmt from the ad unit', function () {
+      bid.mediaTypes.video.plcmt = 4;
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.plcmt).to.equal(4);
+    });
+
+    it('should not send plcmt when the ad unit does not declare it', function () {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video).to.not.have.property('plcmt');
+    });
+
+    it('should pass the plcmt core fills in for outstream', function () {
+      bid.mediaTypes.video.context = 'outstream';
+      fillVideoDefaults(bid);
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.plcmt).to.equal(4);
+    });
+
+    it('should pass the plcmt core fills in for muted playback', function () {
+      bid.mediaTypes.video.playbackmethod = [2];
+      fillVideoDefaults(bid);
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.plcmt).to.equal(2);
+    });
+
+    it('should let params.plcmt override the plcmt of the ad unit', function () {
+      bid.mediaTypes.video.plcmt = 4;
+      bid.params.plcmt = 1;
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.plcmt).to.equal(1);
+    });
+
+    it('should let params.plcmt override the plcmt core fills in', function () {
+      bid.mediaTypes.video.context = 'outstream';
+      fillVideoDefaults(bid);
+      bid.params.plcmt = 1;
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(bid.mediaTypes.video.plcmt).to.equal(4);
+      expect(request.data.imp[0].video.plcmt).to.equal(1);
+    });
+
+    it('should pass skip: 0 from the ad unit', function () {
+      bid.mediaTypes.video.skip = 0;
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.skip).to.equal(0);
+    });
+
+    it('should let params.skip: 0 override the ad unit', function () {
+      bid.mediaTypes.video.skip = 1;
+      bid.params.skip = 0;
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.skip).to.equal(0);
+    });
+
+    it('should treat empty string params as not set', function () {
+      bid.mediaTypes.video.plcmt = 4;
+      bid.params.maxduration = '';
+      bid.params.plcmt = '';
+      bid.params.skip = '';
+
+      var video = spec.buildRequests([bid], bidRequestObj)[0].data.imp[0].video;
+
+      expect(video.maxduration).to.equal(500);
+      expect(video.plcmt).to.equal(4);
+      expect(video).to.not.have.property('skip');
+    });
+
+    it('should pass ortb video fields declared on the ad unit', function () {
+      Object.assign(bid.mediaTypes.video, {
+        linearity: 2,
+        startdelay: -1,
+        pos: 3,
+        delivery: [1],
+        protocols: [7, 8],
+        api: [1, 2],
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        minbitrate: 100,
+        maxbitrate: 1000,
+        skip: 1,
+        skipmin: 10,
+        skipafter: 5,
+        battr: [1, 8],
+        playbackend: 2,
+        playbackmethod: [2]
+      });
+
+      var video = spec.buildRequests([bid], bidRequestObj)[0].data.imp[0].video;
+
+      expect(video).to.contain({
+        linearity: 2,
+        startdelay: -1,
+        pos: 3,
+        minduration: 5,
+        maxduration: 30,
+        minbitrate: 100,
+        maxbitrate: 1000,
+        skip: 1,
+        skipmin: 10,
+        skipafter: 5,
+        playbackend: 2
+      });
+      expect(video.delivery).to.deep.equal([1]);
+      expect(video.protocols).to.deep.equal([7, 8]);
+      expect(video.api).to.deep.equal([1, 2]);
+      expect(video.mimes).to.deep.equal(['video/mp4']);
+      expect(video.battr).to.deep.equal([1, 8]);
+      expect(video.playbackmethod).to.deep.equal([2]);
+    });
+
+    it('should let bidder params override the ad unit', function () {
+      bid.mediaTypes.video.linearity = 2;
+      bid.mediaTypes.video.startdelay = -1;
+      bid.params.linearity = 1;
+      bid.params.startdelay = 30;
+
+      var video = spec.buildRequests([bid], bidRequestObj)[0].data.imp[0].video;
+
+      expect(video.linearity).to.equal(1);
+      expect(video.startdelay).to.equal(30);
+    });
+
+    it('should read a flat playerSize', function () {
+      bid.mediaTypes.video.playerSize = [640, 360];
+
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp[0].video.w).to.equal(640);
+      expect(request.data.imp[0].video.h).to.equal(360);
+    });
+
     it('should pass min and max duration params', function () {
       var request;
 
@@ -345,6 +493,85 @@ describe('The smartx adapter', function () {
 
       expect(request.data.imp[0].video.minduration).to.equal(3);
       expect(request.data.imp[0].video.maxduration).to.equal(15);
+    });
+
+    it('should pass dsa param and initialize the regs.ext object', function () {
+      var request;
+
+      bid.ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: 1,
+              pubrender: 0,
+              datatopub: 2,
+              transparency: [
+                {
+                  domain: "platform.example",
+                  dsaparams: [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext).to.deep.equal({
+        dsa: bid.ortb2.regs.ext.dsa
+      });
+    });
+
+    it('should pass dsa param and extend the regs.ext object', function () {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'foo'
+      };
+
+      bid.ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: 1,
+              pubrender: 0,
+              datatopub: 2,
+              transparency: [
+                {
+                  domain: "platform.example",
+                  dsaparams: [1, 2]
+                }
+              ]
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext).to.deep.equal({
+        gdpr: 1,
+        dsa: bid.ortb2.regs.ext.dsa
+      });
+    });
+
+    it('should not initialize the regs.ext object when dsa is not provided', function () {
+      var request;
+
+      bid.ortb2 = {
+        regs: {
+          ext: {}
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data).not.to.have.property('regs');
     });
 
     it('should pass schain param', function () {
@@ -393,6 +620,367 @@ describe('The smartx adapter', function () {
       request = spec.buildRequests([bid], bidRequestObj)[0];
 
       expect(request.data.site.content.ext.sitekey).to.equal('foo');
+    });
+
+    it('should pass first party content from ortb2', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: {
+          content: {
+            id: 'vod-8891-e03',
+            episode: 3,
+            season: '12',
+            series: 'Nordlicht',
+            genre: 'drama',
+            cat: ['IAB1-7'],
+            data: [{
+              name: 'publisher.example',
+              segment: [{
+                id: 'sports'
+              }]
+            }]
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content).to.deep.equal({
+        id: 'vod-8891-e03',
+        episode: 3,
+        season: '12',
+        series: 'Nordlicht',
+        genre: 'drama',
+        cat: ['IAB1-7'],
+        data: [{
+          name: 'publisher.example',
+          segment: [{
+            id: 'sports'
+          }]
+        }],
+        ext: {
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      });
+    });
+
+    it('should keep the first party content ext next to the prebid stamp and the sitekey', function () {
+      var request;
+
+      bid.params.sitekey = 'foo';
+      bid.ortb2 = {
+        site: {
+          content: {
+            id: 'vod-8891-e03',
+            ext: {
+              custom: 'bar'
+            }
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content.ext).to.deep.equal({
+        custom: 'bar',
+        sitekey: 'foo',
+        prebid: {
+          name: 'pbjs',
+          version: '$prebid.version$'
+        }
+      });
+    });
+
+    it('should send an app object instead of site on app requests', function () {
+      var request;
+
+      bid.params.siteId = 'site-7';
+      bid.params.publisherId = 'pub-3';
+      bid.ortb2 = {
+        app: {
+          bundle: 'com.example.tv',
+          name: 'Example TV',
+          publisher: {
+            name: 'Example'
+          },
+          content: {
+            id: 'vod-8891-e03',
+            series: 'Nordlicht'
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data).to.not.have.property('site');
+      expect(request.data.app).to.deep.equal({
+        bundle: 'com.example.tv',
+        name: 'Example TV',
+        id: 'site-7',
+        publisher: {
+          name: 'Example',
+          id: 'pub-3'
+        },
+        content: {
+          id: 'vod-8891-e03',
+          series: 'Nordlicht',
+          ext: {
+            prebid: {
+              name: 'pbjs',
+              version: '$prebid.version$'
+            }
+          }
+        }
+      });
+    });
+
+    it('should put the sitekey into the app content on app requests', function () {
+      var request;
+
+      bid.params.sitekey = 'foo';
+      bid.ortb2 = {
+        app: {
+          bundle: 'com.example.tv'
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.content.ext).to.deep.equal({
+        sitekey: 'foo',
+        prebid: {
+          name: 'pbjs',
+          version: '$prebid.version$'
+        }
+      });
+    });
+
+    it('should send only the prebid stamp when there is no first party content', function () {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content).to.deep.equal({
+        ext: {
+          prebid: {
+            name: 'pbjs',
+            version: '$prebid.version$'
+          }
+        }
+      });
+    });
+
+    it('should pass ortb2.site.inventorypartnerdomain (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: { inventorypartnerdomain: 'partner.example' }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+    });
+
+    it('should pass ortb2.site.ext.inventorypartnerdomain (2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: { ext: { inventorypartnerdomain: 'partner.example' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+    });
+
+    it('should not set site.ext.inventorypartnerdomain when it is absent (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        site: {}
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site).not.to.have.property('ext');
+    });
+
+    it('should pass ortb2.app.inventorypartnerdomain (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { inventorypartnerdomain: 'partner.example' }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('partner.example'); // Side-effect of copying app
+    });
+
+    it('should pass ortb2.app.inventorypartnerdomain and preserve app.ext properties (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: {
+          inventorypartnerdomain: 'partner.example',
+          ext: { custom: 'bar' }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example',
+        custom: 'bar'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('partner.example'); // Side-effect of copying app
+    });
+
+    it('should pass ortb2.app.ext.inventorypartnerdomain (2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { ext: { inventorypartnerdomain: 'partner.example' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'partner.example'
+      });
+      expect(request.data.app).to.not.have.property('inventorypartnerdomain');
+    });
+
+    it('should not set app.ext.inventorypartnerdomain when it is absent (2.6)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: { ext: { custom: 'bar' } }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).not.to.have.property('inventorypartnerdomain');
+    });
+
+    it('should prefer ortb2.app.inventorypartnerdomain over ortb2.app.ext.inventorypartnerdomain (2.6 > 2.5)', function () {
+      var request;
+
+      bid.ortb2 = {
+        app: {
+          inventorypartnerdomain: 'new.example',
+          ext: { inventorypartnerdomain: 'old.example' }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.app.ext).to.deep.equal({
+        inventorypartnerdomain: 'new.example'
+      });
+      expect(request.data.app.inventorypartnerdomain).to.equal('new.example');  // Side-effect of copying app
+    });
+
+    it('should pass eids', function () {
+      var request;
+      var eids = [{
+        source: 'id5-sync.com',
+        inserter: 'publisher.example',
+        matcher: 'id5-sync.com',
+        mm: 3,
+        uids: [{
+          id: 'ID5*foo',
+          atype: 1,
+          ext: {
+            linkType: 2
+          }
+        }],
+        ext: {
+          provider: 'publisher.example'
+        }
+      }, {
+        source: 'pubcid.org',
+        uids: [{
+          id: 'bar',
+          atype: 1
+        }]
+      }];
+
+      var expected = JSON.parse(JSON.stringify(eids));
+
+      bid.ortb2 = {
+        user: {
+          ext: {
+            eids: eids
+          }
+        }
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user.ext.eids).to.deep.equal(expected);
+    });
+
+    it('should not send a user object when there are no eids', function () {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user).to.equal(undefined);
+    });
+
+    it('should leave the request unchanged when ortb2.user carries no eids', function () {
+      var baseline = spec.buildRequests([bid], bidRequestObj)[0].data;
+
+      [{ user: {} }, { user: { ext: {} } }, { user: { ext: { eids: [] } } }].forEach(function (ortb2) {
+        bid.ortb2 = ortb2;
+
+        var data = spec.buildRequests([bid], bidRequestObj)[0].data;
+
+        expect(data.user).to.equal(undefined);
+        expect({ ...data, id: baseline.id }).to.deep.equal(baseline);
+      });
+    });
+
+    it('should keep the eids when targeting is sent as well', function () {
+      var request;
+
+      bid.ortb2 = {
+        user: {
+          ext: {
+            eids: [{
+              source: 'id5-sync.com',
+              uids: [{
+                id: 'ID5*foo',
+                atype: 1
+              }]
+            }]
+          }
+        }
+      };
+      bid.params.user = {
+        data: [{
+          id: 'emq',
+          name: 'emq',
+          segment: [{
+            name: 'emq',
+            value: 'foo'
+          }]
+        }]
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user.ext.eids[0].source).to.equal('id5-sync.com');
+      expect(request.data.user.data[0].id).to.equal('emq');
     });
   });
 
@@ -457,7 +1045,8 @@ describe('The smartx adapter', function () {
               w: 400,
               h: 300,
               ext: {
-                slot: 'slot123'
+                slot: 'slot123',
+                dsa: {}
               }
             }, {
               impid: 124,
@@ -481,6 +1070,7 @@ describe('The smartx adapter', function () {
       expect(responses).to.be.an('array').with.length(2);
       expect(bidderRequestObj).to.be.an('Object');
       expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
+      expect(responses[0].meta.dsa).to.deep.equal({});
       expect(responses[0].meta.advertiserDomains[0]).to.equal('abc.com');
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].currency).to.equal('USD');
@@ -491,6 +1081,7 @@ describe('The smartx adapter', function () {
       expect(responses[0].mediaType).to.equal('video');
       expect(responses[0].width).to.equal(400);
       expect(responses[0].height).to.equal(300);
+      expect(responses[1].meta.dsa).to.equal(undefined);
       expect(responses[1].meta.advertiserDomains[0]).to.equal('def.com');
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].currency).to.equal('USD');
@@ -553,6 +1144,15 @@ describe('The smartx adapter', function () {
           }]
         }
       };
+    });
+
+    it('should read a flat playerSize for the renderer', function () {
+      bidderRequestObj.bidRequest.bids[0].mediaTypes.video.playerSize = [400, 300];
+
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      expect(responses[0].renderer.config.player_width).to.equal(400);
+      expect(responses[0].renderer.config.player_height).to.equal(300);
     });
 
     it('should attempt to insert the script without outstream config options set', function () {
