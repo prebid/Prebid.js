@@ -25,7 +25,7 @@ banners Prebid adds `nurl` to the markup as a pixel.
 
 User sync is an iframe when the publisher allows iframe syncs, otherwise an image pixel; the
 adapter returns one of them, never both. It carries the GDPR, US Privacy and GPP signals Prebid
-has, and no sync is made when COPPA applies.
+has, and no sync is made when `pbjs.setConfig({ coppa: true })` is set.
 
 # Bid Params
 

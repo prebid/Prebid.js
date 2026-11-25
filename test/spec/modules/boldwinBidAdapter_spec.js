@@ -411,6 +411,8 @@ describe('boldwin bid adapter', function () {
         .to.equal(`${SYNC_URL}?gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=`);
       expect(spec.getUserSyncs(PIXEL, [], { consentString: 'CONSENT' }, '', { gppString: '', applicableSections: [] }, false)[0].url)
         .to.equal(`${SYNC_URL}?gdpr=&gdpr_consent=CONSENT&us_privacy=&gpp=&gpp_sid=`);
+      expect(spec.getUserSyncs(PIXEL, [], null, null, { gppString: 'DBABTA~1YNN' }, false)[0].url)
+        .to.equal(`${SYNC_URL}?gdpr=&gdpr_consent=&us_privacy=&gpp=DBABTA%7E1YNN&gpp_sid=`);
     });
   });
 
