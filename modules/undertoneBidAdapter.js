@@ -76,12 +76,16 @@ export const spec = {
     const pageSizeArray = vw === 0 || vh === 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
-      'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
     const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
       commons.schain = schain;
+    }
+    const user = bidderRequest.ortb2?.user;
+    const eids = [...(user?.ext?.eids ?? []), ...(user?.eids ?? [])];
+    if (eids.length) {
+      commons.uids = eids;
     }
     const payload = {
       'x-ut-hb-params': [],

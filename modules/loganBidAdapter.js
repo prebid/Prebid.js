@@ -5,11 +5,13 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { buildUserSyncs, interpretResponse, isBidRequestValid, getBidFloor, consentCheck } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'logan';
+const GVLID = 1518;
 const AD_URL = 'https://USeast2.logan.ai/pbjs';
 const SYNC_URL = 'https://ssp-cookie.logan.ai';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid,

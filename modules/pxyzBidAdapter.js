@@ -8,15 +8,17 @@ import { isArray, logError, logInfo } from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'pxyz';
+const GVLID = 490;
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
 
   // This adapter was previously named playgroundxyz - this alias ensures
   // backwards compatibility for publishers
-  aliases: ['playgroundxyz'],
+  aliases: [{ code: 'playgroundxyz', gvlid: GVLID }],
 
   supportedMediaTypes: [BANNER],
 

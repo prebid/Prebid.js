@@ -1,0 +1,347 @@
+<!--
+  Google Consent Mode v2 with Prebid.js (consentManagementGcm + gcmControl), using Google's real gtag.js and GPT.
+
+  Build and serve:
+    npx gulp serve-fast --modules=consentManagementGcm,gcmControl,openxBidAdapter,userId,sharedIdSystem,unifiedIdSystem,genericAnalyticsAdapter
+  then open http://localhost:9999/integrationExamples/gpt/gcmConsent.html
+
+  Query parameters (all optional):
+    gtag=before|after|none  load gtag.js before Prebid (default), after it, or not at all (the gtag() stub still pushes to dataLayer)
+    cm=none                 no Consent Mode on the page: no dataLayer, no gtag
+    default=denied|granted|none   value of the four signals in gtag('consent', 'default') (default: denied)
+    wait=<ms>               wait_for_update passed with the default
+    update=<ms>             grant everything this long after the first requestBids
+    regional=1              the default is granted globally, and denied for region US-CA
+    cmds=<json>             consent commands pushed before gtag.js loads, instead of the default; a list of [command, params],
+                            e.g. cmds=[["default",{"ad_storage":"denied","region":["US-CA"]}],["update",{"ad_storage":"granted"}]]
+    later=<json>            consent commands pushed after setConfig; a list of [ms, command, params].
+                            Entries with the same delay are pushed back to back, in the same task
+    regionp=<json>          consentManagement.gcm.region is a promise: {"after":<ms>,"value":<any>} resolves that long after
+                            setConfig, {"after":<ms>,"reject":true} rejects, {"manual":true} leaves it to
+                            demo.resolveRegion(value) / demo.rejectRegion()
+    delay=<ms>              call the first requestBids this long after setConfig, instead of right away
+    probe=1                 register an analytics adapter ('probe') that never stays enabled, so that Prebid tries to enable it
+                            again on every consent change that allows analytics; attempts are listed in demo.probe
+  Times in demo (pushes, probe, regionSettledAt, auctions[].requestedAt) are ms since setConfig; auctions[].waitedMs is from
+  requestBids to bidRequested.
+    gcm=<json>              merged into consentManagement.gcm, e.g. gcm={"timeout":2000,"defaultWhenAbsent":"denied","region":"US-CA"}
+    layer=<name>            use a renamed data layer (gtag.js loaded with &l=<name>) instead of window.dataLayer
+    ids=unified             add a second user ID module (unifiedId) that fetches its ID from tdid.json on this server
+    nogcm=1                 leave consentManagement.gcm unconfigured
+    pbjs_debug=true         Prebid debug logging
+    gtagdelay=<ms>          request gtag.js this long after it would otherwise be (with gtag=after: after Prebid ran its queue)
+    pre=<js>                JavaScript run before anything else on the page, e.g. to set window.google_tag_data
+  demo.report() returns Prebid's consent metadata and auctions next to what Google's tag resolved (google_tag_data.ics,
+  its region, and the gcs/gcd of the Analytics hits sent so far); demo.log has Prebid's consentManagement.gcm messages.
+-->
+<html>
+
+<head>
+    <title>Prebid.js - Google Consent Mode v2</title>
+    <script>
+        var qs = new URLSearchParams(location.search);
+        if (qs.get('pre') != null) (0, eval)(qs.get('pre'));
+        var GTAG_ID = 'G-XXXXXXX';
+        var GTAG_ORDER = qs.get('gtag') || 'before';
+        var CONSENT_MODE = qs.get('cm') !== 'none';
+        var DEFAULT_VALUE = qs.get('default') || 'denied';
+        var LAYER = qs.get('layer') || 'dataLayer';
+        var SIGNALS = ['ad_storage', 'analytics_storage', 'ad_user_data', 'ad_personalization'];
+        var signalState = {};
+
+        function all(value) {
+            return Object.fromEntries(SIGNALS.map(function (signal) { return [signal, value]; }));
+        }
+
+        if (CONSENT_MODE) {
+            window[LAYER] = window[LAYER] || [];
+            function gtag() { window[LAYER].push(arguments); }
+
+            if (qs.get('regional')) {
+                gtag('consent', 'default', all('granted'));
+                gtag('consent', 'default', Object.assign(all('denied'), { region: ['US-CA'] }));
+            } else if (qs.get('cmds') != null) {
+                JSON.parse(qs.get('cmds')).forEach(function (cmd) {
+                    gtag('consent', cmd[0], cmd[1]);
+                    SIGNALS.forEach(function (signal) {
+                        if (cmd[1][signal] != null && cmd[1].region == null) signalState[signal] = cmd[1][signal];
+                    });
+                });
+            } else if (DEFAULT_VALUE !== 'none') {
+                var defaults = all(DEFAULT_VALUE);
+                if (qs.get('wait') != null) defaults.wait_for_update = Number(qs.get('wait'));
+                gtag('consent', 'default', defaults);
+                signalState = all(DEFAULT_VALUE);
+            }
+            gtag('js', new Date());
+            gtag('config', GTAG_ID);
+        }
+
+        function setSignal(signal, value) {
+            var update = {};
+            update[signal] = value;
+            signalState[signal] = value;
+            gtag('consent', 'update', update);
+            render();
+        }
+
+        function setAll(value) {
+            Object.assign(signalState, all(value));
+            gtag('consent', 'update', all(value));
+            render();
+        }
+    </script>
+    <script>
+        var PREBID_TIMEOUT = 1500;
+        var AD_UNIT = 'div-gpt-ad-1460505748561-0';
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var demo = {
+            analyticsEvents: [],
+            auctions: [],
+            requestedAt: null,
+            configuredAt: null,
+            // ms since setConfig
+            since: function () { return Math.round((performance.now() - demo.configuredAt) * 10) / 10; },
+            // consent commands pushed by `later`, and when
+            pushes: [],
+            // when Prebid tried to enable the `probe` analytics adapter
+            probe: [],
+            log: [],
+            report: function () {
+                var tag, ics = null, region = null;
+                try {
+                    tag = window.google_tag_data;
+                    ics = tag.ics && { usedDefault: tag.ics.usedDefault, wasSetLate: tag.ics.wasSetLate, entries: JSON.parse(JSON.stringify(tag.ics.entries)) };
+                } catch (e) { ics = 'unreadable: ' + e; }
+                try { region = tag.xcd.ip_geo_data_cache.get(); } catch (e) {}
+                return {
+                    consent: window.pbjs && pbjs.getConsentMetadata ? pbjs.getConsentMetadata().gcm : null,
+                    auctions: demo.auctions.map(function (a) { return { waitedMs: a.waitedMs, requestedAt: a.requestedAt, gcm: a.regs && a.regs.ext && a.regs.ext.gcm, eids: (a.eids || []).length }; }),
+                    gtagLoadedAt: demo.gtagLoadedAt != null && demo.configuredAt != null ? Math.round(demo.gtagLoadedAt - demo.configuredAt) : demo.gtagLoadedAt != null,
+                    ics: ics,
+                    tagRegion: region,
+                    hits: performance.getEntriesByType('resource').filter(function (e) { return /\/g\/collect/.test(e.name); }).map(function (e) {
+                        var u = new URL(e.name);
+                        return { at: demo.configuredAt != null ? Math.round(e.startTime - demo.configuredAt) : null, gcs: u.searchParams.get('gcs'), gcd: u.searchParams.get('gcd'), en: u.searchParams.get('en') };
+                    }),
+                    log: demo.log,
+                    pushes: demo.pushes,
+                    regionSettledAt: demo.regionSettledAt,
+                    errors: demo.errors
+                };
+            },
+            errors: []
+        };
+        window.addEventListener('error', function (e) { demo.errors.push(String(e.message)); });
+        ['info', 'warn', 'error'].forEach(function (level) {
+            var orig = console[level];
+            console[level] = function () {
+                var text = Array.prototype.map.call(arguments, function (a) { return typeof a === 'string' ? a : ''; }).join(' ');
+                if (/consentManagement|Consent Mode|GCM|dataLayer/i.test(text)) {
+                    demo.log.push({ at: demo.configuredAt != null ? demo.since() : null, level: level, text: text.replace(/%c|display: inline-block;[^;]*;[^;]*;[^;]*;[^ ]*/g, '').trim().slice(0, 400) });
+                }
+                return orig.apply(this, arguments);
+            };
+        });
+
+        function loadScript(src) {
+            return new Promise(function (resolve) {
+                var el = document.createElement('script');
+                el.src = src;
+                el.onload = el.onerror = resolve;
+                document.head.appendChild(el);
+            });
+        }
+
+        var loadGtag = function () {
+            if (!CONSENT_MODE || GTAG_ORDER === 'none') return Promise.resolve();
+            var src = 'https://www.googletagmanager.com/gtag/js?id=' + GTAG_ID + (LAYER !== 'dataLayer' ? '&l=' + LAYER : '');
+            var load = function () { return loadScript(src).then(function () { demo.gtagLoadedAt = performance.now(); }); };
+            if (qs.get('gtagdelay') == null) return load();
+            // does not hold Prebid back
+            setTimeout(load, Number(qs.get('gtagdelay')));
+            return Promise.resolve();
+        };
+        var loadPrebid = function () { return loadScript('../../build/dev/prebid.js'); };
+
+        loadScript('https://securepubads.g.doubleclick.net/tag/js/gpt.js');
+        if (GTAG_ORDER === 'after') {
+            // gtag.js is requested only once Prebid has run its queue, and so wrapped dataLayer.push
+            pbjs.que.push(function () { setTimeout(loadGtag); });
+            loadPrebid();
+        } else {
+            loadGtag().then(loadPrebid);
+        }
+
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], AD_UNIT).addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+
+        function runAuction() {
+            pbjs.que.push(function () {
+                demo.requestedAt = performance.now();
+                pbjs.requestBids({
+                    timeout: PREBID_TIMEOUT,
+                    bidsBackHandler: function () {
+                        googletag.cmd.push(function () {
+                            pbjs.setTargetingForGPTAsync();
+                            googletag.pubads().refresh();
+                        });
+                        render();
+                    }
+                });
+            });
+        }
+
+        pbjs.que.push(function () {
+            var gcm = Object.assign({ timeout: 500 }, JSON.parse(qs.get('gcm') || '{}'));
+            if (qs.get('regionp') != null) {
+                var regionp = JSON.parse(qs.get('regionp'));
+                gcm.region = new Promise(function (resolve, reject) {
+                    demo.resolveRegion = resolve;
+                    demo.rejectRegion = function () { reject(new Error('region lookup failed')); };
+                    if (!regionp.manual) {
+                        setTimeout(function () {
+                            demo.regionSettledAt = demo.since();
+                            regionp.reject ? demo.rejectRegion() : resolve(regionp.value);
+                        }, regionp.after);
+                    }
+                });
+            }
+            if (qs.get('probe')) {
+                pbjs.registerAnalyticsAdapter({
+                    code: 'probe',
+                    adapter: {
+                        enableAnalytics: function () {
+                            demo.probe.push(demo.since());
+                            throw new Error('probe: staying disabled');
+                        },
+                        disableAnalytics: function () {}
+                    }
+                });
+            }
+            var userIds = [{
+                name: 'sharedId',
+                storage: { name: '_sharedid', type: 'cookie', expires: 30 }
+            }];
+            if (qs.get('ids') === 'unified') {
+                userIds.push({
+                    name: 'unifiedId',
+                    params: { url: new URL('tdid.json', location.href).href },
+                    storage: { name: 'pbjs-unifiedid', type: 'html5', expires: 30 }
+                });
+            }
+            demo.configuredAt = performance.now();
+            pbjs.setConfig({
+                debug: qs.get('pbjs_debug') === 'true',
+                consentManagement: qs.get('nogcm') ? {} : { gcm: gcm },
+                userSync: { userIds: userIds, auctionDelay: userIds.length > 1 ? 300 : 0 },
+                // first party data, to show what ad_user_data and ad_personalization redact
+                ortb2: {
+                    user: { yob: 1990, keywords: 'demo', data: [{ name: 'demo', segment: [{ id: '1' }] }] },
+                    device: { geo: { lat: 40.712776, lon: -74.005974 } }
+                }
+            });
+            pbjs.enableAnalytics({
+                provider: 'generic',
+                options: {
+                    batchSize: 1,
+                    handler: function (events) {
+                        events.forEach(function (event) {
+                            demo.analyticsEvents.push({ auction: demo.auctions.length, eventType: event.eventType });
+                        });
+                    }
+                }
+            });
+            if (qs.get('probe')) pbjs.enableAnalytics({ provider: 'probe' });
+            pbjs.onEvent('bidRequested', function (bidderRequest) {
+                demo.auctions.push({
+                    waitedMs: Math.round(performance.now() - demo.requestedAt),
+                    requestedAt: Math.round(demo.requestedAt - demo.configuredAt),
+                    bidder: bidderRequest.bidderCode,
+                    regs: bidderRequest.ortb2.regs,
+                    user: bidderRequest.ortb2.user,
+                    geo: bidderRequest.ortb2.device && bidderRequest.ortb2.device.geo,
+                    eids: bidderRequest.bids[0].userIdAsEids
+                });
+            });
+            pbjs.addAdUnits([{
+                code: AD_UNIT,
+                mediaTypes: { banner: { sizes: [[300, 250]] } },
+                bids: [{ bidder: 'openx', params: { unit: '539439964', delDomain: 'se-demo-d.openx.net' } }]
+            }]);
+            if (qs.get('delay') != null) {
+                setTimeout(runAuction, Number(qs.get('delay')));
+            } else {
+                runAuction();
+            }
+            var later = {};
+            JSON.parse(qs.get('later') || '[]').forEach(function (entry) {
+                (later[entry[0]] = later[entry[0]] || []).push(entry);
+            });
+            Object.keys(later).forEach(function (ms) {
+                setTimeout(function () {
+                    later[ms].forEach(function (entry) {
+                        demo.pushes.push({ at: demo.since(), command: entry[1], params: entry[2] });
+                        gtag('consent', entry[1], entry[2]);
+                        if (entry[1] === 'update') Object.assign(signalState, entry[2]);
+                    });
+                }, Number(ms));
+            });
+            if (qs.get('update') != null) {
+                setTimeout(function () { setAll('granted'); }, Number(qs.get('update')));
+            }
+        });
+
+        function render() {
+            var status = document.getElementById('status');
+            if (status == null) return;
+            SIGNALS.forEach(function (signal) {
+                document.getElementById('state-' + signal).textContent = signalState[signal] || '(not set)';
+            });
+            var last = demo.auctions[demo.auctions.length - 1];
+            status.textContent = JSON.stringify({
+                consentMetadata: window.pbjs && pbjs.getConsentMetadata ? pbjs.getConsentMetadata() : null,
+                cookies: document.cookie,
+                auctions: demo.auctions.length,
+                analyticsEventsInLastAuction: demo.analyticsEvents.filter(function (e) { return e.auction === demo.auctions.length; }).length,
+                lastBidRequest: last
+            }, null, 2);
+        }
+        setInterval(render, 500);
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js with Google Consent Mode v2</h2>
+    <table id="controls">
+        <tr><td>ad_storage</td><td id="state-ad_storage"></td>
+            <td><button onclick="setSignal('ad_storage', 'granted')">grant</button><button onclick="setSignal('ad_storage', 'denied')">deny</button></td></tr>
+        <tr><td>analytics_storage</td><td id="state-analytics_storage"></td>
+            <td><button onclick="setSignal('analytics_storage', 'granted')">grant</button><button onclick="setSignal('analytics_storage', 'denied')">deny</button></td></tr>
+        <tr><td>ad_user_data</td><td id="state-ad_user_data"></td>
+            <td><button onclick="setSignal('ad_user_data', 'granted')">grant</button><button onclick="setSignal('ad_user_data', 'denied')">deny</button></td></tr>
+        <tr><td>ad_personalization</td><td id="state-ad_personalization"></td>
+            <td><button onclick="setSignal('ad_personalization', 'granted')">grant</button><button onclick="setSignal('ad_personalization', 'denied')">deny</button></td></tr>
+    </table>
+    <p>
+        <button id="grant-all" onclick="setAll('granted')">grant all</button>
+        <button id="deny-all" onclick="setAll('denied')">deny all</button>
+        <button id="run-auction" onclick="runAuction()">run auction</button>
+    </p>
+    <div id='div-gpt-ad-1460505748561-0'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+    </div>
+    <pre id="status"></pre>
+</body>
+
+</html>

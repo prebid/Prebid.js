@@ -3,6 +3,7 @@ import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'mod
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import { config } from '../../../src/config.js';
 import sinon from 'sinon';
+import { server } from 'test/mocks/xhr.js';
 
 describe('ExcoBidAdapter', function () {
   const helpers = new AdapterHelpers();
@@ -218,6 +219,11 @@ describe('ExcoBidAdapter', function () {
       });
     });
 
+    it('should keep netRevenue false when the bid says so', function () {
+      expect(helpers.adoptBidResponse({ meta: {} }, { netRevenue: false }, {}).netRevenue).to.equal(false);
+      expect(helpers.adoptBidResponse({ meta: {} }, {}, {}).netRevenue).to.equal(true);
+    });
+
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null, BUILT_REQ);
       expect(responses).to.have.length(0);
@@ -266,6 +272,18 @@ describe('ExcoBidAdapter', function () {
       expect(params.get('gdpr_consent')).to.equal('abc');
     });
 
+    it('should not double-encode consent strings in the exco sync url', function () {
+      const params = new URL(helpers.createSyncUrl({
+        gdprApplies: true,
+        consentString: 'a+b/c=',
+        gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        applicableSections: [2, 6]
+      })).searchParams;
+      expect(params.get('gdpr_consent')).to.equal('a+b/c=');
+      expect(params.get('gpp')).to.equal('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(params.get('gpp_sid')).to.equal('2,6');
+    });
+
     it('should return pixels only user syncs', function () {
       const syncs = adapter.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, serverResponses);
       expect(syncs).to.deep.equal([
@@ -275,28 +293,21 @@ describe('ExcoBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
-    let stubbedFetch;
     const bid = {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
       sizes: [[300, 250]],
-      params: {
+      // as adapterManager.callTimedOutBidders passes them: one entry per bid of this bidder on the ad unit
+      params: [{
         accountId: 'accountId',
         publisherId: 'publisherId',
         tagId: 'tagId',
-      },
+      }],
       metrics: {
         timeSince: () => 500,
       },
       ortb2: {}
     };
-
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
 
     it('should exists and be a function', () => {
       expect(adapter.onTimeout).to.exist.and.to.be.a('function');
@@ -305,25 +316,31 @@ describe('ExcoBidAdapter', function () {
     it('Should create event url', function() {
       const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
       adapter.onTimeout([bid]);
-      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
+      expect(server.requests[0].url).to.equal(pixelUrl);
     });
 
     it('Should trigger event url', function() {
       adapter.onTimeout([bid]);
-      expect(stubbedFetch.callCount).to.equal(1);
+      expect(server.requests.length).to.equal(1);
+    });
+
+    it('Should include the bid params and time passed in the event url', function() {
+      const params = new URL(helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.get('publisherId')).to.equal('publisherId');
+      expect(params.get('accountId')).to.equal('accountId');
+      expect(params.get('tagId')).to.equal('tagId');
+      expect(params.get('extraData.timepassed')).to.equal('500');
+    });
+
+    it('Should not throw when the bid has no metrics', function() {
+      const { metrics, ...noMetrics } = bid;
+      const params = new URL(helpers.getEventUrl([noMetrics], 'mcd_bidder_auction_timeout')).searchParams;
+      expect(params.has('extraData.timepassed')).to.be.false;
+      expect(params.get('tagId')).to.equal('tagId');
     });
   });
 
   describe('onBidWon', function() {
-    let stubbedFetch;
-
-    beforeEach(function() {
-      stubbedFetch = sinon.stub(window, 'fetch');
-    });
-    afterEach(function() {
-      stubbedFetch.restore();
-    });
-
     it('should exists and be a function', () => {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
@@ -343,7 +360,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(1);
+      expect(server.requests.length).to.equal(1);
     });
 
     it('Should trigger nurl pixel with correct parameters', function() {
@@ -362,8 +379,8 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
 
-      expect(stubbedFetch.callCount).to.equal(1);
-      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.contain('ext_auction_won');
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
@@ -379,7 +396,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(0);
+      expect(server.requests.length).to.equal(0);
     });
   });
 
@@ -411,5 +428,11 @@ describe('ExcoBidAdapter', function () {
     it('should return false if URL does not contain exco_debug=true', function () {
       expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
     });
+  });
+});
+
+describe('excoBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(adapter.gvlid).to.equal(444);
   });
 });

@@ -8,6 +8,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'pangle';
+const ACP_ID = 3100; // Google Additional Consent provider ID
 const ENDPOINT = 'https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads';
 
 const OUTSTREAM_RENDERER_URL = 'https://sf16-static.i18n-pglstatp.com/obj/ad-pattern-sg/pangle/web/ads/video.js';
@@ -91,6 +92,7 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   getDeviceType: function (ua) {

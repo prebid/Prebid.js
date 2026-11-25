@@ -86,7 +86,7 @@ describe('iqxBidAdapter', () => {
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT + '/bid');
-      expect(request.options).to.have.property('contentType').and.to.equal('application/json');
+      expect(request.options?.contentType).to.be.undefined;
       expect(request).to.have.property('data');
     });
 
@@ -434,5 +434,15 @@ describe('iqxBidAdapter', () => {
       const result = getBidFloor(bid);
       expect(result).to.equal(5);
     });
+  });
+});
+
+describe('iqxBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1577);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'iqx')).to.have.property('gvlid', 1577);
   });
 });

@@ -115,7 +115,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(buildRequestData(bid, bidderRequest)),
-      options: { contentType: 'application/json', withCredentials: true },
+      options: { contentType: 'text/plain', withCredentials: true },
     }));
   },
 
@@ -184,16 +184,6 @@ function buildRequestData(bid, bidderRequest) {
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
   const { pubid, adtagid, bcat, badv, bapp } = bid.params;
-
-  const { userId } = bid;
-  const uid2Token = userId?.uid2?.id;
-  if (uid2Token) {
-    if (firstPartyData.user) {
-      firstPartyData.user.uid2_token = uid2Token;
-    } else {
-      firstPartyData.user = { uid2_token: uid2Token };
-    }
-  }
 
   const userProfileId = tmaGetId();
   if (userProfileId) {

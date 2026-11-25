@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { _each, canAccessWindowTop, deepAccess, deepSetValue, getDomLoadingDuration, getWindowSelf, getWindowTop } from '../src/utils.js';
 import { coppaDataHandler } from '../src/consentHandler.js';
 export const BIDDER_CODE = 'bliink';
+const GVLID = 658;
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid';
 
 export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html';
@@ -12,7 +13,7 @@ const VIDEO = 'video';
 const BANNER = 'banner';
 window.bliinkBid = window.bliinkBid || {};
 const supportedMediaTypes = [BANNER, VIDEO];
-const aliasBidderCode = ['bk'];
+const aliasBidderCode = [{ code: 'bk', gvlid: GVLID }];
 const CURRENCY = 'EUR';
 
 /**
@@ -301,10 +302,11 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 };
 
 /**
- * @type {{interpretResponse: typeof interpretResponse, code: string, aliases: string[], getUserSyncs: typeof getUserSyncs, buildRequests: typeof buildRequests, isBidRequestValid: typeof isBidRequestValid}}
+ * @type {{interpretResponse: typeof interpretResponse, code: string, gvlid: number, aliases: {code: string, gvlid: number}[], getUserSyncs: typeof getUserSyncs, buildRequests: typeof buildRequests, isBidRequestValid: typeof isBidRequestValid}}
  */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: aliasBidderCode,
   supportedMediaTypes: supportedMediaTypes,
   isBidRequestValid,

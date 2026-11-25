@@ -7,6 +7,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'getintent';
+const ACP_ID = 1215; // Google Additional Consent provider ID
 const IS_NET_REVENUE = true;
 const BID_HOST = 'px.adhigh.net';
 const BID_BANNER_PATH = '/rtb/direct_banner';
@@ -35,7 +36,8 @@ const OPTIONAL_PROPERTIES = [
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['getintentAdapter'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'getintentAdapter', acpId: ACP_ID }],
   supportedMediaTypes: ['video', 'banner'],
 
   /**

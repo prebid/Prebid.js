@@ -52,6 +52,8 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 | params.bidders.\<bidder\>.customCohorts | Object | Custom cohorts source configuration for a specific bidder.                                   | -                  |
 | params.bidders.\<bidder\>.customCohorts.source | String | Storage type to read custom cohorts from. Currently only `'ls'` (localStorage) is supported. | -                  |
 | params.bidders.\<bidder\>.customCohorts.key | String | The localStorage key to read custom cohorts from.                                          | -                  |
+| params.transformations | Object[]             | Extra `user.data` entries to add for each bidder the module writes ortb2 data for. Each entry is `{id: 'iab', config: {segtax: Number, iabIds: Object<string, string>}}`: the bidder's Permutive cohort IDs are mapped through `iabIds` (unmapped IDs are dropped) and added as a `permutive.com` entry with `ext.segtax` set to `segtax`. Only `iab` is supported. | `[]` |
+| params.overwrites      | Object               | Legacy. Custom functions keyed by bidder code (`appnexusAst` bids use the `appnexus` key). For every bid of that bidder in the auction's ad units, the module calls `fn(bid, segmentData, acEnabled, utils, bidIdentity)`, where `segmentData` holds the cohorts read from localStorage (keys `ac`, `ix`, `rubicon`, `appnexus`, `gam`, `ssp`, `topics`), `acEnabled` is `true` if the bidder is in `acBidders`, `utils` is `{deepSetValue, deepAccess, isFn, mergeDeep}` and `bidIdentity` returns its argument. The return value is ignored; the function modifies `bid` directly. | `{}` |
 
 #### Consent
 

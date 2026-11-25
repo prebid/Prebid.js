@@ -197,3 +197,14 @@ describe('distroscaleBidAdapter', function() {
     });
   });
 });
+
+describe('distroscaleBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(2262);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
+  it('declares the same Additional Consent provider ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'ds')).to.have.property('acpId', 2262);
+  });
+});

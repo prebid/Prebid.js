@@ -590,3 +590,9 @@ describe('SmootBidAdapter', function () {
     });
   });
 });
+
+describe('smootBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1481);
+  });
+});

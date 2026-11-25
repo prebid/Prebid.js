@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import xeAnalytics, { dep } from 'modules/xeAnalyticsAdapter.js';
 import { setDebounceDelay } from 'libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
+import { getGvlid, getGvlidFromAnalyticsAdapter } from 'modules/tcfControl.js';
 import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 
@@ -115,10 +116,29 @@ describe('xe analytics adapter', function () {
     clock.restore();
   });
 
-  it('registers as "xe" with GVL id 1383', function () {
-    const entry = adapterManager.getAnalyticsAdapter('xe');
-    expect(entry.adapter).to.equal(xeAnalytics);
-    expect(entry.gvlid).to.equal(1383);
+  it('registers as "xe"', function () {
+    expect(adapterManager.getAnalyticsAdapter('xe').adapter).to.equal(xeAnalytics);
+  });
+
+  describe('gvlid', function () {
+    const gvlidOf = options => getGvlid('analytics', 'xe', () => getGvlidFromAnalyticsAdapter('xe', { provider: 'xe', options }));
+
+    it('is 1383 by default', function () {
+      expect(gvlidOf(undefined)).to.equal(1383);
+      expect(gvlidOf({ bidders: ['myXeAlias'] })).to.equal(1383);
+    });
+
+    [1234, [1234, 1383]].forEach(gvlid => {
+      it(`is ${JSON.stringify(gvlid)} when the options set it`, function () {
+        expect(gvlidOf({ gvlid })).to.eql(gvlid);
+      });
+    });
+
+    [0, -1, 12.5, Infinity, NaN, '1234', [], ['1234'], [1234, 12.5], null].forEach(gvlid => {
+      it(`falls back to 1383 for ${typeof gvlid === 'number' ? gvlid : JSON.stringify(gvlid)}`, function () {
+        expect(gvlidOf({ gvlid })).to.equal(1383);
+      });
+    });
   });
 
   it('sends one auction 3 s after auctionEnd, with the wins and renders of that window', function () {
@@ -323,6 +343,31 @@ describe('xe analytics adapter', function () {
     fullAuction();
     clock.tick(3000);
     expect(sentOf('auction')[0].smp).to.equal(0.25);
+  });
+
+  it('sends to the host from the options', function () {
+    enable({ host: 'Prebid.Adipolo.live' });
+    fullAuction();
+    clock.tick(3000);
+    expect(ajax.firstCall.args[0]).to.equal('https://prebid.adipolo.live/analytics');
+  });
+
+  ['prebid.example.live', 'https://prebid.adipolo.live', 'prebid.adipolo.live/x', 'evil.prebid.adipolo.live', 42].forEach(host => {
+    it(`ignores the host ${JSON.stringify(host)}`, function () {
+      enable({ host });
+      fullAuction();
+      clock.tick(3000);
+      expect(ajax.firstCall.args[0]).to.equal(ENDPOINT);
+    });
+  });
+
+  it('goes back to the default host after disableAnalytics', function () {
+    enable({ host: 'prebid.adipolo.live' });
+    xeAnalytics.disableAnalytics();
+    enable();
+    fullAuction();
+    clock.tick(3000);
+    expect(ajax.firstCall.args[0]).to.equal(ENDPOINT);
   });
 
   it('falls back to the user agent device type and keeps going after a bad event', function () {

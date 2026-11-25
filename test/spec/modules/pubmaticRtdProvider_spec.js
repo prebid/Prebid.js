@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import * as utils from '../../../src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 import * as pubmaticRtdProvider from '../../../modules/pubmaticRtdProvider.js';
 
 describe('Pubmatic RTD Provider', () => {
   let sandbox;
-  let fetchStub;
   let logErrorStub;
   let originalPluginManager;
   let originalConfigJsonManager;
@@ -14,7 +14,6 @@ describe('Pubmatic RTD Provider', () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    fetchStub = sandbox.stub(window, 'fetch');
     logErrorStub = sinon.stub(utils, 'logError');
 
     // Store original implementations
@@ -259,47 +258,34 @@ describe('Pubmatic RTD Provider', () => {
     });
 
     it('should fetch config successfully', async () => {
-      const mockResponse = {
-        ok: true,
-        headers: {
-          get: sinon.stub().withArgs('country_code').returns('US')
-        },
-        json: sinon.stub().resolves({ plugins: { test: { enabled: true } } })
-      };
+      const pm = configManager.fetchConfig('pub-123', 'profile-456');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
+      server.requests[0].respond(200, { 'Content-Type': 'application/json', country_code: 'US' }, JSON.stringify({ plugins: { test: { enabled: true } } }));
 
-      fetchStub.resolves(mockResponse);
-
-      const result = await configManager.fetchConfig('pub-123', 'profile-456');
+      const result = await pm;
 
       expect(result).to.be.true;
-      expect(fetchStub.calledOnce).to.be.true;
-      expect(fetchStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
       expect(configManager.country).to.equal('US');
     });
 
     it('should handle missing country_code header and set country to undefined', async () => {
-      const mockResponse = {
-        ok: true,
-        headers: {
-          get: sinon.stub().withArgs('country_code').returns(null)
-        },
-        json: sinon.stub().resolves({ plugins: { test: { enabled: true } } })
-      };
+      const pm = configManager.fetchConfig('pub-123', 'profile-456');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ plugins: { test: { enabled: true } } }));
 
-      fetchStub.resolves(mockResponse);
-
-      const result = await configManager.fetchConfig('pub-123', 'profile-456');
+      const result = await pm;
 
       expect(result).to.be.true;
-      expect(fetchStub.calledOnce).to.be.true;
-      expect(fetchStub.firstCall.args[0]).to.equal(`${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.BASEURL}/pub-123/profile-456/${pubmaticRtdProvider.CONSTANTS.ENDPOINTS.CONFIGS}`);
       expect(configManager.country).to.be.undefined;
     });
 
     it('should handle fetch errors', async () => {
-      fetchStub.rejects(new Error('Network error'));
+      const pm = configManager.fetchConfig('pub-123', 'profile-456');
+      server.requests[0].error(new Error('Network error'));
 
-      const result = await configManager.fetchConfig('pub-123', 'profile-456');
+      const result = await pm;
 
       expect(result).to.be.null;
       expect(logErrorStub.calledOnce).to.be.true;

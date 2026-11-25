@@ -88,40 +88,6 @@ export const spec = {
           break;
       }
 
-      // LiveRampID
-      const idlEnv = deepAccess(bidRequest, 'userId.idl_env');
-      if (isStr(idlEnv) && !isEmpty(idlEnv)) {
-        payload.lr_env = idlEnv;
-      }
-
-      // IMID
-      const imuid = deepAccess(bidRequest, 'userId.imuid');
-      if (isStr(imuid) && !isEmpty(imuid)) {
-        payload.imuid = imuid;
-      }
-
-      // DACID
-      const fuuid = deepAccess(bidRequest, 'userId.dacId.fuuid');
-      const dacid = deepAccess(bidRequest, 'userId.dacId.id');
-      if (isStr(fuuid) && !isEmpty(fuuid)) {
-        payload.fuuid = fuuid;
-      }
-      if (isStr(dacid) && !isEmpty(dacid)) {
-        payload.dac_id = dacid;
-      }
-
-      // ID5
-      const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
-      if (isStr(id5id) && !isEmpty(id5id)) {
-        payload.id5Id = id5id;
-      }
-
-      // UID2.0
-      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
-      if (isStr(uid2) && !isEmpty(uid2)) {
-        payload.uid2id = uid2;
-      }
-
       // GPID
       const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
       if (isStr(gpid) && !isEmpty(gpid)) {

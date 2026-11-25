@@ -1,334 +1,327 @@
+import { expect } from 'chai';
 import { init } from 'modules/userId/index.js';
 import * as utils from 'src/utils.js';
-import * as idImportlibrary from 'modules/idImportLibrary.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
+import * as idImportLibrary from 'modules/idImportLibrary.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 import { config } from 'src/config.js';
-import { hook } from '../../../src/hook.js';
-import * as activities from '../../../src/activities/rules.js';
-import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
-import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
+import { hook } from 'src/hook.js';
+import * as activities from 'src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD } from 'src/activities/activities.js';
 import { server } from 'test/mocks/xhr.js';
-import { normalizeEmail, sha256Base64 } from '../../../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+import * as emailHash from 'libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+import { GreedyPromise } from 'libraries/greedy/greedyPromise.js';
 
-var expect = require('chai').expect;
-
-const mockMutationObserver = {
-  observe: () => {
-    return null;
-  }
-};
-
-describe('IdImportLibrary Tests', function () {
+describe('IdImportLibrary', function () {
+  const NativeMutationObserver = window.MutationObserver;
+  const url = 'https://example.com/id-import';
+  const userIds = { id: { MOCKID: '1111' } };
   let sandbox;
-  let clock;
+  let fixture;
+  let observers;
+  let observerStub;
+  let refreshUserIds;
+  let getUserIds;
+  let hashStub;
 
-  before(() => {
+  before(function () {
     hook.ready();
     init(config);
   });
 
   beforeEach(function () {
-    utils.logInfo.restore?.();
-    utils.logError.restore?.();
-    sinon.stub(utils, 'logInfo');
-    sinon.stub(utils, 'logError');
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'logInfo');
+    sandbox.stub(utils, 'logError');
+    sandbox.stub(activities, 'isActivityAllowed').returns(true);
+    refreshUserIds = sandbox.stub(getGlobal(), 'refreshUserIds');
+    getUserIds = sandbox.stub(getGlobal(), 'getUserIds').returns(userIds);
+    // Keep non-hashing tests synchronous so no digest outlives its test.
+    hashStub = sandbox.stub(emailHash, 'sha256Base64').returns(GreedyPromise.resolve('hashed-email'));
+    fixture = document.createElement('div');
+    document.body.appendChild(fixture);
+    observers = [];
+    observerStub = sandbox.stub(window, 'MutationObserver').callsFake(callback => {
+      const observer = { callback, observe: sandbox.spy(), disconnect: sandbox.spy() };
+      observers.push(observer);
+      return observer;
+    });
   });
 
   afterEach(function () {
-    utils.logInfo.restore();
-    utils.logError.restore();
-    idImportlibrary.setConfig({});
+    // An accepted empty input scan also removes listeners left by an unfinished scan.
+    fixture.innerHTML = '';
+    activities.isActivityAllowed.returns(true);
+    idImportLibrary.setConfig({ url, inputscan: true });
+    observers.forEach(observer => observer.disconnect());
+    fixture.remove();
+    sandbox.restore();
   });
 
-  describe('setConfig', function () {
-    beforeEach(function() {
-      sandbox = sinon.createSandbox();
-      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
-    });
+  function configure(options = {}) {
+    const settings = { url, ...options };
+    idImportLibrary.setConfig(settings);
+    return settings;
+  }
 
-    afterEach(function () {
-      sandbox.restore();
-      clock.restore();
-    });
+  function input(value = '', type = 'text', id) {
+    const element = document.createElement('input');
+    if (type !== null) element.type = type;
+    if (id) element.id = id;
+    element.value = value;
+    fixture.appendChild(element);
+    return element;
+  }
 
-    it('results when no config is set', function () {
-      idImportlibrary.setConfig();
-      sinon.assert.called(utils.logError);
-    });
-    it('results when config is empty', function () {
-      idImportlibrary.setConfig({});
-      sinon.assert.called(utils.logError);
-    });
-    it('results with config available with url and debounce', function () {
-      idImportlibrary.setConfig({ 'url': 'URL', 'debounce': 0 });
-      sinon.assert.called(utils.logInfo);
-    });
-    it('results with config debounce ', function () {
-      const config = { 'url': 'URL', 'debounce': 300 };
-      idImportlibrary.setConfig(config);
-      expect(config.debounce).to.be.equal(300);
-    });
+  function dispatch(element, type, value = 'test@example.com') {
+    element.value = value;
+    element.dispatchEvent(new Event(type));
+  }
 
-    it('results with config default debounce ', function () {
-      const config = { 'url': 'URL' };
-      idImportlibrary.setConfig(config);
-      expect(config.debounce).to.be.equal(250);
-    });
-    it('results with config default fullscan ', function () {
-      const config = { 'url': 'URL', 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(false);
-    });
-    it('results with config fullscan ', function () {
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(true);
-      expect(config.inputscan).to.be.equal(false);
-    });
-    it('results with config inputscan ', function () {
-      const config = { 'inputscan': true, 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-    });
-    it('results when activity is not allowed', function () {
-      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity) => {
-        return !(activity === ACTIVITY_ENRICH_UFPD);
-      });
-      const config = { 'url': 'URL', 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      sinon.assert.called(utils.logError);
-      expect(config.inputscan).to.be.not.equal(CONF_DEFAULT_INPUT_SCAN);
-      expect(config.fullscan).to.be.not.equal(CONF_DEFAULT_FULL_BODY_SCAN);
-    });
-  });
-  describe('Test with email is found', function () {
-    let mutationObserverStub;
-    let userId;
-    let refreshUserIdSpy;
-    beforeEach(function() {
-      const sandbox = sinon.createSandbox();
-      refreshUserIdSpy = sinon.stub(getGlobal(), 'refreshUserIds');
-      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
-      mutationObserverStub = sinon.stub(window, 'MutationObserver').returns(mockMutationObserver);
-      userId = sandbox.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } });
-      server.respondWith('POST', 'URL', [200,
-        {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        ''
-      ]);
-    });
-    afterEach(function () {
-      sandbox.restore();
-      clock.restore();
-      userId.restore();
-      refreshUserIdSpy.restore();
-      mutationObserverStub.restore();
-      document.body.innerHTML = '';
-    });
-
-    it('results with config fullscan with email found in html ', function () {
-      document.body.innerHTML = '<body><div>test@test.com</div></body>';
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(true);
-      expect(config.inputscan).to.be.equal(false);
-      expect(refreshUserIdSpy.calledOnce).to.equal(true);
-    });
-
-    it('results with config fullscan with no email found in html ', function () {
-      document.body.innerHTML = '<body><div>test</div></body>';
-      const config = { 'url': 'URL', 'fullscan': true, 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(true);
-      expect(config.inputscan).to.be.equal(false);
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-
-    it('results with config formElementId without listner ', function () {
-      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 };
-      document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.formElementId).to.be.equal('userid');
-      expect(refreshUserIdSpy.calledOnce).to.equal(true);
-    });
-
-    it('results with config formElementId with listner ', function () {
-      const config = { url: 'testUrl', 'formElementId': 'userid', 'debounce': 0 };
-      document.body.innerHTML = '<body><input type="text" id="userid" value=""></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.formElementId).to.be.equal('userid');
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-
-    it('results with config target without listner ', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
-      document.body.innerHTML = '<body><div id="userid">test@test.com<div></div></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.target).to.be.equal('userid');
-      expect(refreshUserIdSpy.calledOnce).to.equal(true);
-    });
-    it('results with config target with listner ', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
-      document.body.innerHTML = '<body><div id="userid"><div></div></body>';
-      idImportlibrary.setConfig(config);
-
-      expect(config.target).to.be.equal('userid');
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-
-    it('results with config target with listner', function () {
-      const config = { url: 'testUrl', 'target': 'userid', 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      document.body.innerHTML = '<body><div id="userid">test@test.com<div></div></body>';
-      expect(config.target).to.be.equal('userid');
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-    it('results with config fullscan ', function () {
-      const config = { url: 'testUrl', 'fullscan': true, 'debounce': 0 };
-      idImportlibrary.setConfig(config);
-      document.body.innerHTML = '<body><div id="userid"><div></div></body>';
-      expect(config.fullscan).to.be.equal(true);
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-    it('results with config inputscan with listner', function () {
-      const config = { url: 'testUrl', 'inputscan': true, 'debounce': 0 };
-      var input = document.createElement('input');
-      input.setAttribute('type', 'text');
-      document.body.appendChild(input);
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      input.setAttribute('value', 'text@text.com');
-      const inputEvent = new InputEvent('blur');
-      input.dispatchEvent(inputEvent);
-      expect(refreshUserIdSpy.calledOnce).to.equal(true);
-    });
-
-    it('results with config inputscan with listner and no user ids ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
-      document.body.innerHTML = '<body><input  id="userid" value=""></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-
-    it('results with config inputscan with listner ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
-      document.body.innerHTML = '<body><input  id="userid" type=text value=""></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      expect(refreshUserIdSpy.calledOnce).to.equal(false);
-    });
-
-    it('results with config inputscan without listner ', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
-      document.body.innerHTML = '<body><input  id="userid" value="test@test.com"></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      expect(refreshUserIdSpy.calledOnce).to.equal(true);
-    });
-  });
-  describe('normalizeEmail', function () {
-    it('trims and lowercases the address', function () {
-      expect(normalizeEmail('  Test.User@Example.COM ')).to.equal('test.user@example.com');
-    });
-    it('drops the dots and the + suffix of a gmail.com address, as UID2 does', function () {
-      expect(normalizeEmail('Test.User+promo@Gmail.com')).to.equal('testuser@gmail.com');
-    });
-    it('keeps the dots and the + suffix of another domain', function () {
-      expect(normalizeEmail('test.user+promo@example.com')).to.equal('test.user+promo@example.com');
-    });
-    ['', 'test', 'test@', '@example.com', 'a@b@example.com', 'te st@example.com', '+promo@gmail.com'].forEach(value => {
-      it(`rejects ${JSON.stringify(value)}`, function () {
-        expect(normalizeEmail(value)).to.equal(undefined);
+  describe('configuration', function () {
+    [undefined, {}, { inputscan: true }].forEach(settings => {
+      it(`rejects missing configuration or URL: ${JSON.stringify(settings)}`, function () {
+        idImportLibrary.setConfig(settings);
+        sinon.assert.calledOnce(utils.logError);
+        sinon.assert.notCalled(refreshUserIds);
+        sinon.assert.notCalled(observerStub);
       });
     });
+
+    it('sets defaults and preserves explicit options', function () {
+      expect(configure({ inputscan: true })).to.include({ debounce: 250, fullscan: false, inputscan: true });
+      expect(configure({ debounce: 0, fullscan: true, inputscan: false }))
+        .to.include({ debounce: 0, fullscan: true, inputscan: false });
+    });
+
+    it('does not scan when the activity is denied', function () {
+      activities.isActivityAllowed.returns(false);
+      input('test@example.com');
+      configure({ inputscan: true });
+      sinon.assert.calledWith(activities.isActivityAllowed, ACTIVITY_ENRICH_UFPD);
+      sinon.assert.calledOnce(utils.logError);
+      sinon.assert.notCalled(refreshUserIds);
+    });
   });
 
-  // Guard WebCrypto suite registration to avoid an empty suite in insecure contexts.
+  describe('input listeners', function () {
+    ['change', 'blur'].forEach(eventType => {
+      it(`stops all scanned inputs after the first valid ${eventType}`, function () {
+        const first = input();
+        const second = input('', 'email');
+        configure({ inputscan: true });
+        dispatch(first, eventType, 'invalid');
+        sinon.assert.notCalled(refreshUserIds);
+        dispatch(first, eventType);
+        dispatch(first, 'change');
+        dispatch(first, 'blur');
+        dispatch(second, 'change');
+        dispatch(second, 'blur');
+        sinon.assert.calledOnce(refreshUserIds);
+      });
+
+      [null, 'text', 'email', 'search'].forEach(type => {
+        it(`removes both listeners from a configured ${type || 'default-type'} input after ${eventType}`, function () {
+          const element = input('', type, 'id-import-email');
+          configure({ formElementId: element.id });
+          dispatch(element, eventType);
+          dispatch(element, 'change');
+          dispatch(element, 'blur');
+          sinon.assert.calledOnce(refreshUserIds);
+        });
+      });
+    });
+
+    it('cleans up the original elements after they are detached or their type changes', function () {
+      const detached = input();
+      const changed = input();
+      configure({ inputscan: true });
+      detached.remove();
+      changed.type = 'search';
+      dispatch(changed, 'change');
+      dispatch(detached, 'change');
+      dispatch(detached, 'blur');
+      dispatch(changed, 'blur');
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('removes old listeners when configuration changes', function () {
+      const oldInput = input('', 'text', 'id-import-old');
+      const newInput = input('', 'text', 'id-import-new');
+      configure({ formElementId: oldInput.id });
+      configure({ formElementId: newInput.id });
+      dispatch(oldInput, 'change');
+      sinon.assert.notCalled(refreshUserIds);
+      dispatch(newInput, 'blur');
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('does not duplicate listeners when configured repeatedly', function () {
+      const element = input();
+      configure({ inputscan: true });
+      configure({ inputscan: true });
+      dispatch(element, 'change');
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('accepts an already populated input without registering listeners', function () {
+      const element = input('test@example.com');
+      configure({ inputscan: true });
+      dispatch(element, 'change');
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('accepts an already populated configured form input', function () {
+      const element = input('test@example.com', 'email', 'id-import-email');
+      configure({ formElementId: element.id });
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('ignores a missing configured form input', function () {
+      expect(() => configure({ formElementId: 'id-import-missing' })).not.to.throw();
+      sinon.assert.notCalled(refreshUserIds);
+    });
+
+    it('does not post when user IDs are empty', function () {
+      getUserIds.returns({});
+      input('test@example.com');
+      configure({ inputscan: true });
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.notCalled(hashStub);
+      expect(server.requests).to.have.length(0);
+    });
+  });
+
+  describe('observers', function () {
+    it('scans the body once without installing a fullscan observer by default', function () {
+      fixture.textContent = 'test@example.com';
+      configure();
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.notCalled(observerStub);
+    });
+
+    it('debounces body mutations and disconnects after finding an email', function () {
+      const clock = sandbox.useFakeTimers();
+      configure({ fullscan: true, debounce: 250 });
+      const observer = observers[0];
+      fixture.textContent = 'test@example.com';
+      observer.callback([], observer);
+      clock.tick(100);
+      observer.callback([], observer);
+      clock.tick(249);
+      sinon.assert.notCalled(refreshUserIds);
+      clock.tick(1);
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.calledOnce(observer.disconnect);
+    });
+
+    it('filters unrelated attributes while observing value changes', async function () {
+      const clock = sandbox.useFakeTimers();
+      observerStub.callsFake(callback => {
+        const observer = new NativeMutationObserver(callback);
+        observers.push(observer);
+        return observer;
+      });
+      const element = input();
+      configure({ fullscan: true, debounce: 10 });
+      element.setAttribute('data-email', 'test@example.com');
+      await Promise.resolve();
+      clock.tick(10);
+      sinon.assert.notCalled(refreshUserIds);
+      element.setAttribute('value', 'test@example.com');
+      await Promise.resolve();
+      clock.tick(10);
+      sinon.assert.calledOnce(refreshUserIds);
+    });
+
+    it('disconnects the body observer if an input has already supplied an email', function () {
+      const clock = sandbox.useFakeTimers();
+      configure({ fullscan: true, debounce: 0 });
+      const observer = observers[0];
+      input('test@example.com');
+      configure({ inputscan: true });
+      observer.callback([], observer);
+      clock.tick(0);
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.calledOnce(observer.disconnect);
+    });
+
+    it('reads an existing target', function () {
+      fixture.innerHTML = '<div id="id-import-target">test@example.com</div>';
+      configure({ target: 'id-import-target' });
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.notCalled(observers[0].observe);
+    });
+
+    it('observes an empty target and disconnects after text is added', function () {
+      const clock = sandbox.useFakeTimers();
+      fixture.innerHTML = '<div id="id-import-target"></div>';
+      configure({ target: 'id-import-target', debounce: 0 });
+      const observer = observers[0];
+      sinon.assert.calledWith(observer.observe, fixture.firstChild, sinon.match({ attributeFilter: ['value'] }));
+      observer.callback([{ addedNodes: [document.createTextNode('test@example.com')] }], observer);
+      clock.tick(0);
+      sinon.assert.calledOnce(refreshUserIds);
+      sinon.assert.calledOnce(observer.disconnect);
+    });
+
+    it('ignores a missing target', function () {
+      configure({ target: 'id-import-missing' });
+      sinon.assert.notCalled(observers[0].observe);
+      sinon.assert.notCalled(refreshUserIds);
+    });
+  });
+
   if (window.isSecureContext) {
-    describe('hashed email', function () {
-      let stubs;
-      beforeEach(function () {
-        stubs = [
-          sinon.stub(getGlobal(), 'refreshUserIds'),
-          sinon.stub(getGlobal(), 'getUserIds').returns({ id: { 'MOCKID': '1111' } }),
-          sinon.stub(window, 'MutationObserver').returns(mockMutationObserver),
-        ];
-      });
-      afterEach(function () {
-        stubs.forEach(stub => stub.restore());
-        document.body.innerHTML = '';
-      });
+    describe('posted email hashes', function () {
+      // Resolve the real digest before teardown, including if assertions fail.
+      async function postedRequest(action) {
+        const requestsBefore = server.requests.length;
+        let hashing;
+        hashStub.callsFake(value => {
+          hashing = hashStub.wrappedMethod(value);
+          return hashing;
+        });
+        action();
+        expect(hashing).to.exist;
+        await hashing;
+        expect(server.requests).to.have.length(requestsBefore + 1);
+        return server.requests[requestsBefore];
+      }
 
-      it('sha256Base64 hashes as UID2 does: SHA-256, base64-encoded', async function () {
-        expect(await sha256Base64('testuser@gmail.com')).to.equal('2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=');
-      });
-
-      it('posts the hash of the address normalized as UID2 does', async function () {
-        document.body.innerHTML = '<body><input type="text" id="userid" value=" Test.User@Gmail.com "></body>';
-        idImportlibrary.setConfig({ url: 'URL', formElementId: 'userid', debounce: 0 });
-        let request;
-        for (let i = 0; i < 100 && !request; i++) {
-          await new Promise(resolve => setTimeout(resolve, 10));
-          request = server.requests.find(r => r.url.endsWith('/URL'));
-        }
-        expect(request.method).to.equal('POST');
-        expect(JSON.parse(request.requestBody)).to.deep.equal({
-          hid: '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4=',
-          uids: { id: { 'MOCKID': '1111' } },
+      [
+        ['Test.User+promo@Gmail.com', '2unHxVaXuhcNa0lMRYZJvUaa9SVSAoDQ3PyY100TsX4='],
+        ['test.user+promo@example.com', 'GW/KUA/us/8JCF3etL7dyk3ugEVUsnTAbNYHHJXVr0g='],
+        ['test%promo@example.com', '2lwHebR7ZNi+W2ihsvn3ohtJibznlAFbqCkg+jB59UY=']
+      ].forEach(([address, expectedHash]) => {
+        it(`extracts and posts the full address for ${address}`, async function () {
+          input(address);
+          const request = await postedRequest(() => configure({ inputscan: true }));
+          expect(request.method).to.equal('POST');
+          expect(JSON.parse(request.requestBody)).to.deep.equal({ hid: expectedHash, uids: userIds });
+          expect(request.withCredentials).to.equal(true);
         });
       });
 
-      it('posts to the URL configured when the hash started, even if setConfig changes it meanwhile', async function () {
-        document.body.innerHTML = '<body><input type="text" id="userid" value="test@test.com"></body>';
-        idImportlibrary.setConfig({ url: 'URL1', formElementId: 'userid', debounce: 0 });
-        idImportlibrary.setConfig({ url: 'URL2', formElementId: 'userid', debounce: 0 });
-        for (let i = 0; i < 100 && server.requests.filter(r => ['URL1', 'URL2'].includes(r.url.slice(-4))).length < 2; i++) {
-          await new Promise(resolve => setTimeout(resolve, 10));
-        }
-        expect(server.requests.map(r => r.url).map(url => url.slice(-4)).filter(url => ['URL1', 'URL2'].includes(url)).sort())
-          .to.deep.equal(['URL1', 'URL2']);
+      it('posts only once for subsequent change and blur events', async function () {
+        const element = input();
+        configure({ inputscan: true });
+        await postedRequest(() => {
+          dispatch(element, 'change');
+          dispatch(element, 'blur');
+          dispatch(element, 'change');
+        });
+        sinon.assert.calledOnce(refreshUserIds);
+        sinon.assert.calledOnce(hashStub);
+      });
+
+      it('keeps the configured URL while hashing is pending', async function () {
+        input('test@example.com');
+        const request = await postedRequest(() => {
+          configure({ inputscan: true });
+          configure({ url: `${url}/new`, target: 'id-import-missing' });
+        });
+        expect(request.url).to.equal(url);
       });
     });
   }
-
-  describe('Tests with no user ids', function () {
-    let mutationObserverStub;
-
-    let jsonSpy;
-    beforeEach(function() {
-      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
-      mutationObserverStub = sinon.stub(window, 'MutationObserver');
-      jsonSpy = sinon.spy(JSON, 'stringify');
-      server.respondWith('POST', 'URL', [200,
-        {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        ''
-      ]);
-    });
-    afterEach(function () {
-      sandbox.restore();
-      clock.restore();
-      jsonSpy.restore();
-      mutationObserverStub.restore();
-    });
-    it('results with config inputscan without listner with no user ids #1', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
-      document.body.innerHTML = '<body><input  id="userid" value="test@test.com"></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      expect(jsonSpy.calledOnce).to.equal(false);
-    });
-    it('results with config inputscan without listner with no user ids #2', function () {
-      const config = { 'url': 'testUrl', 'inputscan': true, 'debounce': 0 };
-      document.body.innerHTML = '<body><input  id="userid"></body>';
-      idImportlibrary.setConfig(config);
-      expect(config.inputscan).to.be.equal(true);
-      expect(jsonSpy.calledOnce).to.equal(false);
-    });
-  });
 });

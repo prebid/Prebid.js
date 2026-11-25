@@ -200,7 +200,7 @@ describe('GetIntent Adapter Tests:', function () {
 
   it('Verify bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
-    expect(spec.aliases[0]).to.equal('getintentAdapter');
+    expect(spec.aliases[0].code).to.equal('getintentAdapter');
   });
 
   it('Verify supported media types', function () {
@@ -216,5 +216,16 @@ describe('GetIntent Adapter Tests:', function () {
     expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { test: 123 } })).to.equal(false);
     expect(spec.isBidRequestValid({ params: { pid: 111, tid: 222 } })).to.equal(true);
+  });
+});
+
+describe('getintentBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(1215);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
+  it('declares the same Additional Consent provider ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'getintentAdapter')).to.have.property('acpId', 1215);
   });
 });

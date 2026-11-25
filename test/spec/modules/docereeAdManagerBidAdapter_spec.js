@@ -73,6 +73,10 @@ describe('docereeadmanager', function () {
     it('Returns valid URL', function () {
       expect(serverRequest.url).to.equal('https://dai.doceree.com/drs/quest');
     });
+    it('does not set a contentType, so no CORS preflight is triggered', function () {
+      expect(serverRequest.options?.contentType).to.be.undefined;
+      expect(serverRequest.options.withCredentials).to.equal(true);
+    });
   });
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
