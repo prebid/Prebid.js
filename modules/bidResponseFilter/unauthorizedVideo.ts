@@ -278,12 +278,21 @@ export function watchForVideo(doc: Document, duration: number, onVideo: () => vo
   }
 
   function watchFrame(frame: HTMLIFrameElement, depth: number) {
+    let frameCleanups: (() => void)[] = [];
+    const cleanupFrameDoc = () => {
+      frameCleanups.forEach(fn => fn());
+      frameCleanups = [];
+    };
     const onLoad = () => {
+      cleanupFrameDoc();
       const child = frameDocument(frame);
-      if (child) watchDoc(child, depth);
+      if (child) watchDoc(child, depth, frameCleanups);
     };
     frame.addEventListener('load', onLoad);
-    cleanups.push(() => frame.removeEventListener('load', onLoad));
+    cleanups.push(() => {
+      frame.removeEventListener('load', onLoad);
+      cleanupFrameDoc();
+    });
     onLoad();
   }
 
@@ -292,13 +301,17 @@ export function watchForVideo(doc: Document, duration: number, onVideo: () => vo
     root.querySelectorAll('iframe').forEach(frame => !done && watchFrame(frame, depth));
   }
 
-  function watchDoc(target: Document, depth: number) {
+  function watchDoc(target: Document, depth: number, localCleanups?: (() => void)[]) {
     if (done || watchedDocs.has(target)) return;
     watchedDocs.add(target);
     if (target.querySelector('video')) {
       finish(true);
       return;
     }
+    const registerCleanup = (fn: () => void) => {
+      cleanups.push(fn);
+      localCleanups?.push(fn);
+    };
     const view = target.defaultView as (Window & typeof globalThis) | null;
     const Observer = view?.MutationObserver ?? MutationObserver;
     const observer = new Observer((records) => {
@@ -319,7 +332,7 @@ export function watchForVideo(doc: Document, duration: number, onVideo: () => vo
       }
     });
     observer.observe(target.documentElement ?? target, { childList: true, subtree: true });
-    cleanups.push(() => observer.disconnect());
+    registerCleanup(() => observer.disconnect());
     watchFrames(target, depth + 1);
   }
 
