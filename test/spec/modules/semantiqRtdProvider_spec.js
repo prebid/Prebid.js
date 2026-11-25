@@ -47,6 +47,7 @@ describe('semantiqRtdProvider', () => {
 
       expect(server.requests[0].url).to.be.equal('https://api.adnz.co/api/ws-clickstream-collector/submit');
       expect(server.requests[0].method).to.be.equal('POST');
+      expect(server.requests[0].requestHeaders['Content-Type']).to.match(/^text\/plain/);
 
       expect(body.company_id).to.be.equal(5);
       expect(body.event_id).not.to.be.empty;

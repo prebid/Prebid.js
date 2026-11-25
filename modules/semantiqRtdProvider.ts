@@ -337,9 +337,6 @@ const dispatchPageImpressionEvent = (companyId: number) => {
   return fetch(EVENT_COLLECTOR_URL, {
     method: 'POST',
     body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-    },
     keepalive: true,
   });
 };
