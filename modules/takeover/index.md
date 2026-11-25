@@ -41,7 +41,7 @@ Modes:
 | `max` | As many ad units as the takeover wins, at least `min_slots` and the publisher's `minSlotsFloor`. |
 | `viewport` | Every ad unit at least `viewportPercent` in view when bids were requested; at least `min_slots`. |
 
-A winning takeover's bids are the only bids left on the ad units it won, and get the `hb_tko=1` targeting key. Bids of takeovers that lose are removed, so a takeover never wins only part of what it bid for.
+A winning takeover's bids are the only bids left on the ad units it won, and get the `hb_tko=1` targeting key. Every bid of a takeover that loses is removed, so a losing takeover can't still win some ad units as ordinary bids. In `max` and `viewport` modes a winning takeover can win only some of the ad units it bid on; use `all` mode when it must win every ad unit or none.
 
 # Configuration
 
