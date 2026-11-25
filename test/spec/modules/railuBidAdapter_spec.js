@@ -89,6 +89,46 @@ describe('railuBidAdapter', function () {
       expect(body.test).to.equal(1);
     });
 
+    it('never mixes test and live ad units in one request, in either order', function () {
+      const live = bidRequest({ bidId: 'live' }); const test = bidRequest({ bidId: 'tst', params: { test: true } });
+      for (const units of [[live, test], [test, live]]) {
+        const reqs = spec.buildRequests(units, bidderRequest);
+        expect(reqs.map((r) => [r.data.imp.map((i) => i.id), r.data.test])).to.have.deep.members([[['live'], undefined], [['tst'], 1]]);
+      }
+    });
+
+    it('sends text/plain so the request needs no CORS preflight', function () {
+      expect(spec.buildRequests([bidRequest()], bidderRequest)[0].options).to.deep.equal({ contentType: 'text/plain', withCredentials: false });
+    });
+
+    it('sends every declared format, in the order the ad unit declares them, or params.format first', function () {
+      const mediaTypes = { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 360]] }, native: {} };
+      const imp = spec.buildRequests([bidRequest({ mediaTypes })], bidderRequest)[0].data.imp[0];
+      expect(imp.banner).to.exist; expect(imp.video).to.exist; expect(imp.native).to.exist;
+      expect(imp.ext.railu.formats).to.deep.equal(['banner', 'video', 'native']);
+      const pref = spec.buildRequests([bidRequest({ mediaTypes, params: { format: 'native' } })], bidderRequest)[0].data.imp[0];
+      expect(pref.ext.railu.formats).to.deep.equal(['native', 'banner', 'video']);
+    });
+
+    it('forwards the publisher video settings as set', function () {
+      const v = { context: 'instream', playerSize: [[640, 360]], linearity: 2, playbackmethod: [2], battr: [1, 2], pos: 1, startdelay: 0 };
+      const video = spec.buildRequests([bidRequest({ mediaTypes: { video: v } })], bidderRequest)[0].data.imp[0].video;
+      expect(video).to.include({ linearity: 2, pos: 1, startdelay: 0 });
+      expect(video.playbackmethod).to.deep.equal([2]); expect(video.battr).to.deep.equal([1, 2]);
+    });
+
+    it('keeps a floor below one dollar', function () {
+      const imp = spec.buildRequests([bidRequest({ ortb2Imp: { bidfloor: 0.35 } })], bidderRequest)[0].data.imp[0];
+      expect(imp.bidfloor).to.equal(0.35); expect(imp.bidfloorcur).to.equal('USD');
+    });
+
+    it('forwards the publisher blocks and the device as Prebid describes it, with no guessed device type', function () {
+      const br = { ...bidderRequest, ortb2: { badv: ['blocked.example'], bcat: ['IAB25'], device: { ua: 'Mozilla/5.0 (iPhone)' } } };
+      const body = spec.buildRequests([bidRequest()], br)[0].data;
+      expect(body.badv).to.deep.equal(['blocked.example']); expect(body.bcat).to.deep.equal(['IAB25']);
+      expect(body.device.ua).to.equal('Mozilla/5.0 (iPhone)'); expect(body.device.devicetype).to.equal(undefined);
+    });
+
     it('sends nothing for ad units it does not serve', function () {
       expect(spec.buildRequests([bidRequest({ mediaTypes: {} })], bidderRequest)).to.deep.equal([]);
     });
@@ -130,6 +170,20 @@ describe('railuBidAdapter', function () {
       expect(bids[0].mediaType).to.equal('native');
       expect(bids[0].native.ortb.assets.map((a) => a.id)).to.deep.equal([7, 9]);
       expect(bids[0].native.ortb.link.url).to.equal('https://brand.example');
+    });
+
+    it('keeps native image ids the request asked for, so an icon and a main image do not swap', function () {
+      const nativeOrtbRequest = { ver: '1.2', assets: [{ id: 2, required: 1, img: { type: 3 } }, { id: 3, required: 1, img: { type: 1 } }] };
+      const req = spec.buildRequests([bidRequest({ bidId: 'n2', mediaTypes: { native: {} }, nativeOrtbRequest })], bidderRequest)[0];
+      const adm = JSON.stringify({ native: { assets: [{ id: 3, img: { url: 'https://img.example/icon.png' } }, { id: 2, img: { url: 'https://img.example/main.png' } }], link: { url: 'https://brand.example' } } });
+      const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{ impid: 'n2', price: 1, adm, mtype: 4 }] }] } }, req);
+      expect(bids[0].native.ortb.assets.map((a) => [a.id, a.img.url])).to.deep.equal([[3, 'https://img.example/icon.png'], [2, 'https://img.example/main.png']]);
+    });
+
+    it('reads the format from the bid mtype when the impression carries several', function () {
+      const req = spec.buildRequests([bidRequest({ mediaTypes: { banner: { sizes: [[300, 250]] }, video: { playerSize: [[640, 360]] } } })], bidderRequest)[0];
+      const bids = spec.interpretResponse({ body: { seatbid: [{ bid: [{ impid: 'b1', price: 1, adm: '<div>ad</div>', mtype: 1, w: 300, h: 250 }] }] } }, req);
+      expect(bids[0].mediaType).to.equal('banner'); expect(bids[0].ad).to.equal('<div>ad</div>');
     });
 
     it('returns no bids for an empty or no-fill answer', function () {
