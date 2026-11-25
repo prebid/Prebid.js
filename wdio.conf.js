@@ -57,7 +57,9 @@ function getCapabilities() {
     capabilities.push({
       browserName: browser.browserName,
       browserVersion: browser.browserVersion,
-      ...(exclude ? { exclude } : {}),
+      ...(exclude ? { 'wdio:exclude': exclude } : {}),
+      // test/helpers/testing-utils.js switches frames with `switchFrame`, which throws in a WebDriver BiDi session
+      'wdio:enforceWebDriverClassic': true,
       'bstack:options': {
         os: getPlatform(browser.os),
         osVersion: browser.osVersion,

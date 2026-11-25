@@ -25,6 +25,8 @@ exports.config = {
     {
       browserName: 'safari'
     }
-  ].filter((cap) => cap.browserName === (process.env.BROWSER ?? 'chrome')),
+  ].filter((cap) => cap.browserName === (process.env.BROWSER ?? 'chrome'))
+    // test/helpers/testing-utils.js switches frames with `switchFrame`, which throws in a WebDriver BiDi session
+    .map((cap) => ({ ...cap, 'wdio:enforceWebDriverClassic': true })),
   maxInstancesPerCapability: 1
 };
