@@ -492,7 +492,8 @@ const getCachedTargeting = (cacheKey) => {
  */
 const readUsableCache = (cacheKey) => {
   const cached = getCachedTargeting(cacheKey);
-  return (cached?.ortb2?.user?.eids?.length || cached?.split_test_assignment) ? cached : null;
+  const user = cached?.ortb2?.user;
+  return (user?.eids?.length || user?.ext?.eids?.length || cached?.split_test_assignment) ? cached : null;
 };
 
 /**

@@ -1500,6 +1500,17 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
     });
 
+    it('serves a cached response whose EIDs are only under user.ext.eids', async function () {
+      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
+      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { ext: { eids } } } }));
+      ajaxStub.callsFake(() => {});
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
     it('leaves the cache alone when the SDK loads before the direct response arrives', async function () {
       storage.getDataFromLocalStorage.returns(null);
       let respond;
