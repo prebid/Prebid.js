@@ -62,8 +62,9 @@ export type SmartxBidderParams = SmartxVideoParams & {
   /** Targeting segments, sent as `user.data` (first segment value per entry). */
   user?: {
     data?: {
+      id?: string;
       name: string;
-      segment: { value: string }[];
+      segment: { id?: string; name?: string; value: string }[];
     }[];
   };
   /** Overrides price and currency of a response bid whose `id` equals `deal_id`. */
@@ -72,6 +73,8 @@ export type SmartxBidderParams = SmartxVideoParams & {
     price: number;
     currency: string;
   }[];
+  /** Older docs listed params the adapter never read (`price_floor`, `min_duration`, ...); configs copied from them still compile. */
+  [key: string]: unknown;
 };
 
 declare module '../src/adUnits' {
