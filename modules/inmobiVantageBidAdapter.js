@@ -91,8 +91,6 @@ function request(buildRequest, imps, bidderRequest, context) {
   const siteId = context.bidRequests?.find(bidRequest => bidRequest.params?.siteID)?.params.siteID;
   if (siteId) {
     deepSetValue(request, 'ext.prebid.storedrequest.id', siteId);
-    // Prebid Server echoes passthrough in the response, so getUserSyncs can pass the account to /cookie_sync
-    deepSetValue(request, 'ext.prebid.passthrough.inmobiVantage.siteID', siteId);
   }
   deepSetValue(request, 'ext.prebid.channel.name', 'pbjs_Vantage');
   deepSetValue(request, 'ext.prebid.channel.pbjsversion', '$prebid.version$');
@@ -176,15 +174,11 @@ export const spec = {
     if (!bidders.length) {
       return [];
     }
-    // coop_sync is not sent: Prebid Server decides it from the account's cookie-sync config, else the host default
+    // coop_sync and account are not sent: Prebid Server applies its host default cookie-sync config
     const params = {
       bidders: bidders.join(','),
       image: syncOptions.pixelEnabled ? 1 : 0
     };
-    const account = accountFromResponses(responses);
-    if (account) {
-      params.account = account;
-    }
     if (gdprConsent) {
       params.gdpr = gdprConsent.gdprApplies ? 1 : 0;
       if (gdprConsent.gdprApplies !== false && typeof gdprConsent.consentString === 'string') {
@@ -266,25 +260,14 @@ export const spec = {
 
 /**
  * Collects every bidder Prebid Server called for this page, including the ones that lost or did not bid,
- * from ext.responsetimemillis. Falls back to the returned seats.
+ * from ext.responsetimemillis.
  */
 function biddersFromResponses(responses) {
   const bidders = new Set();
   (responses || []).forEach(resp => {
     Object.keys(resp?.body?.ext?.responsetimemillis || {}).forEach(bidder => bidders.add(bidder));
-    (resp?.body?.seatbid || []).forEach(seatbid => {
-      if (seatbid?.seat) {
-        bidders.add(seatbid.seat);
-      }
-    });
   });
   return [...bidders];
-}
-
-function accountFromResponses(responses) {
-  return (responses || [])
-    .map(resp => resp?.body?.ext?.prebid?.passthrough?.inmobiVantage?.siteID)
-    .find(Boolean);
 }
 
 registerBidder(spec);

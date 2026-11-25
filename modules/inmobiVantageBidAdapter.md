@@ -25,10 +25,7 @@ The adapter registers one iframe sync (`https://pbs.inmobi.com/static/load-cooki
 user sync queue, so `userSync` settings, activity controls and `syncDelay` apply. The page calls
 InMobi Vantage's `/cookie_sync` for every demand partner that ran in the auction and fires the sync of
 each one that doesn't have a user id yet; the partners redirect back to `/setuid`, which stores their ids
-in the `uids` cookie.
-
-Cooperative syncing (partners outside the auction) is decided by InMobi Vantage: the adapter sends the
-`siteID` as the account, and the account's cookie-sync config (or the host default) applies.
+in the `uids` cookie. Only partners that ran in the auction are synced; partners outside it are not.
 
 Iframe syncs are off in Prebid's default config, so enable them for this bidder:
 

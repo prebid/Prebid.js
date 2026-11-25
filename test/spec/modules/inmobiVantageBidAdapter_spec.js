@@ -161,7 +161,7 @@ describe('The inmobiVantage bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.ext.prebid.storedrequest.id).to.equal('site-1');
       expect(ortbRequest.ext.prebid.channel.name).to.equal('pbjs_Vantage');
-      expect(ortbRequest.ext.prebid.passthrough.inmobiVantage.siteID).to.equal('site-1');
+      expect(ortbRequest.ext.prebid.passthrough).to.be.undefined;
     });
 
     it('request should build with correct imp', async function () {
@@ -1145,10 +1145,16 @@ describe('The inmobiVantage bidding adapter', function () {
       expect(syncParams(syncs).get('bidders')).to.equal('inmobi,rubicon,pubmatic');
     });
 
-    it('should fall back to the response seats when responsetimemillis is missing', function () {
+    it('should ignore seats that are missing from responsetimemillis', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true },
-        [{ body: { seatbid: [{ seat: 'rubicon' }, { seat: 'rubicon' }] } }]);
-      expect(syncParams(syncs).get('bidders')).to.equal('rubicon');
+        [{ body: { seatbid: [{ seat: 'rubicon' }], ext: { responsetimemillis: { inmobi: 80 } } } }]);
+      expect(syncParams(syncs).get('bidders')).to.equal('inmobi');
+    });
+
+    it('should return no syncs when responsetimemillis is missing', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true },
+        [{ body: { seatbid: [{ seat: 'rubicon' }] } }]);
+      expect(syncs).to.deep.equal([]);
     });
 
     it('should pass privacy signals to the loader', function () {
@@ -1175,19 +1181,7 @@ describe('The inmobiVantage bidding adapter', function () {
       expect(syncParams(syncs).has('coop_sync')).to.equal(false);
     });
 
-    it('should send the account echoed back in the response passthrough', function () {
-      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [{
-        body: {
-          ext: {
-            responsetimemillis: { rubicon: 120 },
-            prebid: { passthrough: { inmobiVantage: { siteID: 'site-1' } } }
-          }
-        }
-      }]);
-      expect(syncParams(syncs).get('account')).to.equal('site-1');
-    });
-
-    it('should not send an account when the response has no passthrough', function () {
+    it('should not send an account so Prebid Server host defaults apply', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses);
       expect(syncParams(syncs).has('account')).to.equal(false);
     });

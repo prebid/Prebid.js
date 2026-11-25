@@ -1,0 +1,67 @@
+<!--
+  Test page for the inmobiVantage adapter: one banner slot, bids from InMobi Vantage (Prebid Server).
+  Open http://localhost:9999/integrationExamples/gpt/inmobiVantage_example.html after `npx gulp serve-fast`.
+  Set tagID / siteID to a stored impression / stored request id that exists on the server you are calling.
+-->
+<html>
+
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+        var PREBID_TIMEOUT = 2000;
+
+        var adUnits = [{
+            code: 'div-banner',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]]
+                }
+            },
+            bids: [{
+                bidder: 'inmobiVantage',
+                params: {
+                    tagID: '101-web',
+                    siteID: '50db8ac94b2c4c83a5153653b6cf00f4'
+                }
+            }]
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                userSync: {
+                    syncDelay: 3000,
+                    filterSettings: {
+                        iframe: {bidders: ['inmobiVantage'], filter: 'include'},
+                        image: {bidders: '*', filter: 'include'}
+                    }
+                }
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bids) {
+                    document.getElementById('bids').textContent = JSON.stringify(bids, null, 2);
+                    var winners = pbjs.getHighestCpmBids('div-banner');
+                    if (winners.length) {
+                        var frame = document.getElementById('ad-frame');
+                        pbjs.renderAd(frame.contentWindow.document, winners[0].adId);
+                    }
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+<h2>inmobiVantage test page</h2>
+<h4>Ad</h4>
+<iframe id="ad-frame" width="300" height="250" frameborder="0" scrolling="no"></iframe>
+<h4>Bid responses</h4>
+<pre id="bids">waiting for bids...</pre>
+</body>
+
+</html>
