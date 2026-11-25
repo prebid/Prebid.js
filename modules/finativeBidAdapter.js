@@ -121,7 +121,7 @@ export const spec = {
         page: url
       },
       device: {
-        ua: navigator.userAgent
+        ua: bidderRequest.ortb2?.device?.ua
       },
       cur,
       imp,

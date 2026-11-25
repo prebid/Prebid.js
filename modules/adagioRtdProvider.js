@@ -36,6 +36,7 @@ import { getGlobalVarName } from '../src/buildOptions.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
+ * @typedef {import('./adagioRtdProvider.d.ts').AdagioRtdProviderParams} AdagioRtdProviderParams
  */
 const SUBMODULE_NAME = 'adagio';
 const ADAGIO_BIDDER_CODE = 'adagio';

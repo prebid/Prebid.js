@@ -243,6 +243,17 @@ describe('PStudioAdapter', function () {
     const videoRequest = spec.buildRequests([videoBid], baseBidderRequest);
     const videoPayload = JSON.parse(videoRequest[0].data);
 
+    it('should send requests with text/plain content type', function () {
+      expect(bannerRequest[0].options).to.deep.equal({
+        contentType: 'text/plain',
+        withCredentials: true,
+      });
+      expect(videoRequest[0].options).to.deep.equal({
+        contentType: 'text/plain',
+        withCredentials: true,
+      });
+    });
+
     it('should properly map ids in request payload', function () {
       expect(bannerPayload.id).to.equal(bannerBid.bidId);
       expect(bannerPayload.adtagid).to.equal(bannerBid.params.adtagid);

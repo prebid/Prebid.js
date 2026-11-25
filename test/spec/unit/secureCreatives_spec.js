@@ -25,6 +25,7 @@ import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import { PUC_MIN_VERSION } from 'src/creativeRenderers.js';
 import { recordSlotTargeting } from 'src/utils/gptTargeting.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
+import { mockGptSlot } from '../../mocks/gpt.js';
 
 describe('secureCreatives', () => {
   let sandbox;
@@ -702,17 +703,10 @@ describe('secureCreatives', () => {
       window.googletag = origGpt;
     });
     function mockSlot(elementId, pathId) {
-      const targeting = {};
-      return {
+      return mockGptSlot({}, {
         getSlotElementId: sinon.stub().callsFake(() => elementId),
         getAdUnitPath: sinon.stub().callsFake(() => pathId),
-        setTargeting: sinon.stub().callsFake((key, value) => {
-          value = Array.isArray(value) ? value : [value];
-          targeting[key] = value;
-        }),
-        getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
-        getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
-      };
+      });
     }
     let slots;
     beforeEach(() => {
@@ -748,7 +742,7 @@ describe('secureCreatives', () => {
         width: 300,
         height: 250,
       });
-      slots[1].setTargeting('hb_adid', []);
+      slots[1].setConfig({ targeting: { hb_adid: [] } });
       document.getElementById.resetHistory();
 
       resizeRemoteCreative({
@@ -761,7 +755,7 @@ describe('secureCreatives', () => {
     });
 
     it('should find GPT slots that were not set up with setTargeting', () => {
-      slots[0].setTargeting('hb_adid', ['adId']);
+      slots[0].setConfig({ targeting: { hb_adid: ['adId'] } });
       resizeRemoteCreative({
         adId: 'adId',
         width: 300,
