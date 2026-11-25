@@ -21,9 +21,29 @@ Module that sends the auction to InMobi Vantage (InMobi's Prebid Server), which 
 
 # User Sync
 
-The adapter calls InMobi Vantage's `/cookie_sync` (`https://pbs.inmobi.com/cookie_sync`) and fires the
-sync of each demand partner that doesn't have a user id yet. The partners redirect back to `/setuid`,
-which stores their ids in the `uids` cookie.
+The adapter registers one iframe sync (`https://pbs.inmobi.com/static/load-cookie.html`) with Prebid's
+user sync queue, so `userSync` settings, activity controls and `syncDelay` apply. The page calls
+InMobi Vantage's `/cookie_sync` for every demand partner that ran in the auction and fires the sync of
+each one that doesn't have a user id yet; the partners redirect back to `/setuid`, which stores their ids
+in the `uids` cookie.
+
+Cooperative syncing (partners outside the auction) is decided by InMobi Vantage: the adapter sends the
+`siteID` as the account, and the account's cookie-sync config (or the host default) applies.
+
+Iframe syncs are off in Prebid's default config, so enable them for this bidder:
+
+```
+pbjs.setConfig({
+    userSync: {
+        filterSettings: {
+            iframe: {
+                bidders: ['inmobiVantage'],
+                filter: 'include'
+            }
+        }
+    }
+});
+```
 
 
 # Test Parameters

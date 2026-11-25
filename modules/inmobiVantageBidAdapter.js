@@ -1,11 +1,10 @@
-import { deepSetValue, logError, triggerPixel } from '../src/utils.js';
+import { deepSetValue, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { insertUserSyncIframe } from '../src/userSync.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
+import { extPrebidMediaType } from '../libraries/pbsExtensions/processors/mediaType.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,14 +17,8 @@ const GVLID = 333;
 export const ADAPTER_VERSION = 1.0;
 const BIDDER_CODE = 'inmobiVantage';
 const BID_ENDPOINT = 'https://pbs.inmobi.com/openrtb2/auction/pbjs';
-export const COOKIE_SYNC_ENDPOINT = 'https://pbs.inmobi.com/cookie_sync';
-
-// The build binds this module's imports to local copies, so tests stub these instead
-export const dep = {
-  ajax,
-  triggerPixel,
-  insertUserSyncIframe
-};
+// Prebid Server page that calls /cookie_sync and fires the sync of each partner without a user id
+export const COOKIE_SYNC_LOADER = 'https://pbs.inmobi.com/static/load-cookie.html';
 const TRANSLATOR = ortb25Translator();
 const CURRENCY = 'USD';
 const POST_METHOD = 'POST';
@@ -43,7 +36,15 @@ const CONVERTER = ortbConverter({
   imp,
   request,
   bidResponse,
-  response
+  response,
+  overrides: {
+    bidResponse: {
+      // PBS may send the media type in ext.prebid.type instead of the ORTB 2.6 mtype
+      mediaType(orig, bidResponse, bid, context) {
+        extPrebidMediaType(bidResponse, bid, context);
+      }
+    }
+  }
 });
 
 /**
@@ -88,6 +89,8 @@ function request(buildRequest, imps, bidderRequest, context) {
   const siteId = context.bidRequests?.find(bidRequest => bidRequest.params?.siteID)?.params.siteID;
   if (siteId) {
     deepSetValue(request, 'ext.prebid.storedrequest.id', siteId);
+    // Prebid Server echoes passthrough in the response, so getUserSyncs can pass the account to /cookie_sync
+    deepSetValue(request, 'ext.prebid.passthrough.inmobiVantage.siteID', siteId);
   }
   deepSetValue(request, 'ext.prebid.channel.name', 'pbjs_Vantage');
   deepSetValue(request, 'ext.prebid.channel.pbjsversion', '$prebid.version$');
@@ -106,10 +109,12 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @returns {Object} Formatted bid response.
  */
 function bidResponse(buildBidResponse, bid, context) {
-  context.mtype = bid?.mtype;
-  if (context.mtype === 4) {
-    const admJson = JSON.parse(bid.adm);
-    bid.adm = JSON.stringify(admJson.native);
+  if (isNativeBid(bid) && typeof bid.adm === 'string') {
+    const admJson = parseUntrustedJSON(bid.adm);
+    // unwrap the legacy {"native": {...}} envelope; Native 1.2 payloads with root-level assets stay as they are
+    if (isPlainObject(admJson?.native)) {
+      bid.adm = JSON.stringify(admJson.native);
+    }
   }
   const bidResponse = buildBidResponse(bid, context);
 
@@ -117,10 +122,16 @@ function bidResponse(buildBidResponse, bid, context) {
     deepSetValue(bidResponse, 'meta', {
       ...bidResponse.meta,
       ...bid.ext,
+      // PBS metadata (networkName, ...) goes to the top level, where core reads it (e.g. hb_dsp)
+      ...bid.ext?.prebid?.meta,
     });
   }
 
   return bidResponse;
+}
+
+function isNativeBid(bid) {
+  return bid?.mtype === 4 || (bid?.mtype == null && bid?.ext?.prebid?.type === NATIVE);
 }
 
 /**
@@ -155,13 +166,41 @@ export const spec = {
    * @returns {Array} List of user sync URLs.
    */
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
-    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+    // The loader page runs /cookie_sync and fires the partner syncs, so it can only be sent as an iframe
+    if (!syncOptions.iframeEnabled) {
       return [];
     }
-    runCookieSync(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
-    // Syncs are fired from the /cookie_sync response instead of Prebid's sync queue,
-    // because the per-bidder sync URLs are only known once Prebid Server answers.
-    return [];
+    const bidders = biddersFromResponses(responses);
+    if (!bidders.length) {
+      return [];
+    }
+    // coop_sync is not sent: Prebid Server decides it from the account's cookie-sync config, else the host default
+    const params = {
+      bidders: bidders.join(','),
+      image: syncOptions.pixelEnabled ? 1 : 0
+    };
+    const account = accountFromResponses(responses);
+    if (account) {
+      params.account = account;
+    }
+    if (gdprConsent) {
+      params.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+      if (gdprConsent.gdprApplies !== false && typeof gdprConsent.consentString === 'string') {
+        params.gdpr_consent = gdprConsent.consentString;
+      }
+    }
+    if (uspConsent) {
+      params.us_privacy = uspConsent;
+    }
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params.gpp = gppConsent.gppString;
+      params.gpp_sid = gppConsent.applicableSections.join(',');
+    }
+    // Returned to Prebid's sync queue, so syncEnabled, activity controls, syncDelay and limits apply
+    const qs = Object.entries(params)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+    return [{ type: 'iframe', url: `${COOKIE_SYNC_LOADER}?${qs}` }];
   },
 
   /**
@@ -224,11 +263,13 @@ export const spec = {
 };
 
 /**
- * Collects the bidders Prebid Server ran for this page, from the seats it returned.
+ * Collects every bidder Prebid Server called for this page, including the ones that lost or did not bid,
+ * from ext.responsetimemillis. Falls back to the returned seats.
  */
 function biddersFromResponses(responses) {
   const bidders = new Set();
   (responses || []).forEach(resp => {
+    Object.keys(resp?.body?.ext?.responsetimemillis || {}).forEach(bidder => bidders.add(bidder));
     (resp?.body?.seatbid || []).forEach(seatbid => {
       if (seatbid?.seat) {
         bidders.add(seatbid.seat);
@@ -238,62 +279,10 @@ function biddersFromResponses(responses) {
   return [...bidders];
 }
 
-/**
- * Calls Prebid Server's /cookie_sync and fires the sync URL of every bidder that has no id yet.
- * Each bidder redirects back to Prebid Server's /setuid, which stores the id in the uids cookie.
- */
-function runCookieSync(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
-  const payload = {
-    bidders: biddersFromResponses(responses),
-    coopSync: true,
-    filterSettings: {
-      iframe: { bidders: '*', filter: syncOptions.iframeEnabled ? 'include' : 'exclude' },
-      image: { bidders: '*', filter: syncOptions.pixelEnabled ? 'include' : 'exclude' }
-    }
-  };
-  if (gdprConsent) {
-    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-    if (gdprConsent.gdprApplies !== false && typeof gdprConsent.consentString === 'string') {
-      payload.gdpr_consent = gdprConsent.consentString;
-    }
-  }
-  if (uspConsent) {
-    payload.us_privacy = uspConsent;
-  }
-  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    payload.gpp = gppConsent.gppString;
-    payload.gpp_sid = gppConsent.applicableSections.join(',');
-  }
-
-  dep.ajax(COOKIE_SYNC_ENDPOINT, {
-    success: (body) => {
-      try {
-        fireSyncs(parseUntrustedJSON(body)?.bidder_status, syncOptions);
-      } catch (e) {
-        logError('inmobiVantage: invalid /cookie_sync response', e);
-      }
-    },
-    error: (e) => logError('inmobiVantage: /cookie_sync failed', e)
-  }, JSON.stringify(payload), {
-    method: POST_METHOD,
-    contentType: PLAIN_CONTENT_TYPE,
-    withCredentials: true
-  });
-}
-
-function fireSyncs(bidderStatus, syncOptions) {
-  (bidderStatus || []).forEach(status => {
-    const url = status?.usersync?.url;
-    if (!status?.no_cookie || !url) {
-      return;
-    }
-    const type = status.usersync.type;
-    if (type === 'iframe' && syncOptions.iframeEnabled) {
-      dep.insertUserSyncIframe(url);
-    } else if ((type === 'redirect' || type === 'image') && syncOptions.pixelEnabled) {
-      dep.triggerPixel(url);
-    }
-  });
+function accountFromResponses(responses) {
+  return (responses || [])
+    .map(resp => resp?.body?.ext?.prebid?.passthrough?.inmobiVantage?.siteID)
+    .find(Boolean);
 }
 
 registerBidder(spec);

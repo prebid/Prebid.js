@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import {
-  spec, dep,
+  spec, COOKIE_SYNC_LOADER,
 } from 'modules/inmobiVantageBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
@@ -14,19 +14,17 @@ import 'modules/priceFloors.js';
 import sinon from 'sinon';
 
 describe('The inmobiVantage bidding adapter', function () {
-  let utilsMock, sandbox, ajaxStub;
+  let utilsMock, sandbox;
 
   beforeEach(function () {
     // mock objects
     utilsMock = sinon.mock(utils);
     sandbox = sinon.createSandbox();
-    ajaxStub = sandbox.stub(dep, 'ajax');
   });
 
   afterEach(function () {
     utilsMock.restore();
     sandbox.restore();
-    ajaxStub.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -163,6 +161,7 @@ describe('The inmobiVantage bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
       expect(ortbRequest.ext.prebid.storedrequest.id).to.equal('site-1');
       expect(ortbRequest.ext.prebid.channel.name).to.equal('pbjs_Vantage');
+      expect(ortbRequest.ext.prebid.passthrough.inmobiVantage.siteID).to.equal('site-1');
     });
 
     it('request should build with correct imp', async function () {
@@ -1113,117 +1112,89 @@ describe('The inmobiVantage bidding adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const cookieSyncEndpoint = 'https://pbs.inmobi.com/cookie_sync';
-    let triggerPixelStub, insertIframeStub;
-
-    beforeEach(function () {
-      triggerPixelStub = sandbox.stub(dep, 'triggerPixel');
-      insertIframeStub = sandbox.stub(dep, 'insertUserSyncIframe');
-    });
-
-    const seatResponses = [{
+    const responses = [{
       body: {
-        seatbid: [{ seat: 'inmobi' }, { seat: 'rubicon' }, { seat: 'inmobi' }]
+        seatbid: [{ seat: 'inmobi' }, { seat: 'rubicon' }],
+        ext: { responsetimemillis: { inmobi: 80, rubicon: 120, pubmatic: 95 } }
       }
     }];
 
-    function cookieSyncCall() {
-      return ajaxStub.getCalls().find(call => call.args[0] === cookieSyncEndpoint);
+    function syncParams(syncs) {
+      return new URL(syncs[0].url).searchParams;
     }
 
-    function respondToCookieSync(bidderStatus) {
-      cookieSyncCall().args[1].success(JSON.stringify({ status: 'ok', bidder_status: bidderStatus }));
-    }
-
-    it('should not call /cookie_sync if iframe and pixel are both disabled', function () {
-      const res = spec.getUserSyncs({});
-      expect(res).to.deep.equal([]);
-      expect(cookieSyncCall()).to.be.undefined;
+    it('should return no syncs when iframes are disabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, responses);
+      expect(syncs).to.deep.equal([]);
     });
 
-    it('should return no syncs to the Prebid sync queue', function () {
-      const res = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      expect(res).to.deep.equal([]);
+    it('should return no syncs when Prebid Server called no bidders', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
     });
 
-    it('should POST to Prebid Server /cookie_sync with credentials', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      const call = cookieSyncCall();
-      expect(call).to.exist;
-      expect(call.args[3]).to.include({ method: 'POST', contentType: 'text/plain', withCredentials: true });
+    it('should return one loader iframe to the Prebid sync queue', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url.startsWith(`${COOKIE_SYNC_LOADER}?`)).to.equal(true);
     });
 
-    it('should send the bidders from the response seats, without duplicates', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      const payload = JSON.parse(cookieSyncCall().args[2]);
-      expect(payload.bidders).to.deep.equal(['inmobi', 'rubicon']);
-      expect(payload.coopSync).to.equal(true);
+    it('should sync every bidder Prebid Server called, including the ones without bids', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses);
+      expect(syncParams(syncs).get('bidders')).to.equal('inmobi,rubicon,pubmatic');
     });
 
-    it('should send an empty bidder list when there are no responses', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
-      expect(JSON.parse(cookieSyncCall().args[2]).bidders).to.deep.equal([]);
+    it('should fall back to the response seats when responsetimemillis is missing', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true },
+        [{ body: { seatbid: [{ seat: 'rubicon' }, { seat: 'rubicon' }] } }]);
+      expect(syncParams(syncs).get('bidders')).to.equal('rubicon');
     });
 
-    it('should pass privacy signals to /cookie_sync', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses,
+    it('should pass privacy signals to the loader', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses,
         { gdprApplies: true, consentString: 'GDPR_CONSENT' }, 'USP_CONSENT',
         { gppString: 'GPP_STRING', applicableSections: [32, 51] });
-      const payload = JSON.parse(cookieSyncCall().args[2]);
-      expect(payload).to.include({
-        gdpr: 1,
-        gdpr_consent: 'GDPR_CONSENT',
-        us_privacy: 'USP_CONSENT',
-        gpp: 'GPP_STRING',
-        gpp_sid: '32,51'
-      });
+      const params = syncParams(syncs);
+      expect(params.get('gdpr')).to.equal('1');
+      expect(params.get('gdpr_consent')).to.equal('GDPR_CONSENT');
+      expect(params.get('us_privacy')).to.equal('USP_CONSENT');
+      expect(params.get('gpp')).to.equal('GPP_STRING');
+      expect(params.get('gpp_sid')).to.equal('32,51');
     });
 
     it('should not send gdpr_consent when gdpr does not apply', function () {
-      spec.getUserSyncs({ iframeEnabled: true }, seatResponses, { gdprApplies: false, consentString: 'GDPR_CONSENT' });
-      const payload = JSON.parse(cookieSyncCall().args[2]);
-      expect(payload.gdpr).to.equal(0);
-      expect(payload.gdpr_consent).to.be.undefined;
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, responses,
+        { gdprApplies: false, consentString: 'GDPR_CONSENT' });
+      expect(syncParams(syncs).get('gdpr')).to.equal('0');
+      expect(syncParams(syncs).has('gdpr_consent')).to.equal(false);
     });
 
-    it('should exclude image syncs when pixels are disabled', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, seatResponses);
-      const payload = JSON.parse(cookieSyncCall().args[2]);
-      expect(payload.filterSettings.iframe.filter).to.equal('include');
-      expect(payload.filterSettings.image.filter).to.equal('exclude');
+    it('should not send coop_sync so Prebid Server config decides', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses);
+      expect(syncParams(syncs).has('coop_sync')).to.equal(false);
     });
 
-    it('should fire the sync of every bidder without a cookie', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      respondToCookieSync([
-        { bidder: 'rubicon', no_cookie: true, usersync: { url: 'https://rubicon.test/sync', type: 'redirect' } },
-        { bidder: 'appnexus', no_cookie: true, usersync: { url: 'https://appnexus.test/sync', type: 'iframe' } }
-      ]);
-      sinon.assert.calledOnceWithExactly(triggerPixelStub, 'https://rubicon.test/sync');
-      sinon.assert.calledOnceWithExactly(insertIframeStub, 'https://appnexus.test/sync');
+    it('should send the account echoed back in the response passthrough', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [{
+        body: {
+          ext: {
+            responsetimemillis: { rubicon: 120 },
+            prebid: { passthrough: { inmobiVantage: { siteID: 'site-1' } } }
+          }
+        }
+      }]);
+      expect(syncParams(syncs).get('account')).to.equal('site-1');
     });
 
-    it('should skip bidders that already have a cookie', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      respondToCookieSync([
-        { bidder: 'rubicon', no_cookie: false, usersync: { url: 'https://rubicon.test/sync', type: 'redirect' } }
-      ]);
-      sinon.assert.notCalled(triggerPixelStub);
+    it('should not send an account when the response has no passthrough', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, responses);
+      expect(syncParams(syncs).has('account')).to.equal(false);
     });
 
-    it('should not fire iframe syncs when iframes are disabled', function () {
-      spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true }, seatResponses);
-      respondToCookieSync([
-        { bidder: 'appnexus', no_cookie: true, usersync: { url: 'https://appnexus.test/sync', type: 'iframe' } }
-      ]);
-      sinon.assert.notCalled(insertIframeStub);
-    });
-
-    it('should ignore an invalid /cookie_sync response', function () {
-      spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, seatResponses);
-      cookieSyncCall().args[1].success('not json');
-      sinon.assert.notCalled(triggerPixelStub);
-      sinon.assert.notCalled(insertIframeStub);
+    it('should tell the loader to skip image syncs when pixels are disabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, responses);
+      expect(syncParams(syncs).get('image')).to.equal('0');
     });
   });
 
@@ -1630,6 +1601,53 @@ describe('The inmobiVantage bidding adapter', function () {
         expect(bids[0].creativeId).to.deep.equal('<adv>88b37efcd5f34d368e60317c706942a4<crid>ef6f6976eb394046958fd0e8a7b75301');
         expect(bids[0].meta.advertiserDomains[0]).to.deep.equal('advertiserDomain.sandbox.inmobi.com');
         expect(bids[0].meta.prebid.meta.networkName).to.deep.equal('inmobi');
+      });
+    }
+
+    it('should put PBS ext.prebid.meta at the top level of meta', async function () {
+      const bidRequests = [{
+        adUnitCode: 'impId',
+        bidId: 'bidId',
+        mediaTypes: { banner: { sizes: [[320, 50]] } },
+        params: { tagID: '124a', siteID: 'site-1' }
+      }];
+      const response = mockResponse('bidId', 1);
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const bids = spec.interpretResponse({ body: response }, request);
+      expect(bids[0].meta.networkName).to.equal('inmobi');
+    });
+
+    it('should read the media type from ext.prebid.type when mtype is absent', async function () {
+      const bidRequests = [{
+        adUnitCode: 'impId',
+        bidId: 'bidId',
+        mediaTypes: { banner: { sizes: [[320, 50]] } },
+        params: { tagID: '124a', siteID: 'site-1' }
+      }];
+      const response = mockResponse('bidId', undefined);
+      response.seatbid[0].bid[0].ext.prebid.type = 'banner';
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+      const bids = spec.interpretResponse({ body: response }, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].mediaType).to.equal('banner');
+    });
+
+    if (FEATURES.NATIVE) {
+      it('should keep a native adm that already has root-level assets', async function () {
+        const bidRequests = [{
+          adUnitCode: 'impId',
+          bidId: 'bidId',
+          params: { tagID: '123', siteID: 'site-1' },
+          bidder: 'inmobiVantage',
+          mediaTypes: { native: { image: { required: true, sizes: [120, 60] } } }
+        }];
+        const response = mockResponseNative('bidId', 4);
+        const nativeOrtb = JSON.parse(response.seatbid[0].bid[0].adm).native;
+        response.seatbid[0].bid[0].adm = JSON.stringify(nativeOrtb);
+        const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+        const bids = spec.interpretResponse({ body: response }, request);
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0].native.ortb).to.deep.equal(nativeOrtb);
       });
     }
   });
