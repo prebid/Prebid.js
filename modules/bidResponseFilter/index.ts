@@ -1,14 +1,27 @@
 import { auctionManager } from '../../src/auctionManager.js';
 import { config } from '../../src/config.js';
 import { getHook } from '../../src/hook.js';
+import {
+  BID_UNAUTHORIZED_VIDEO_REJECTION_REASON,
+  type BidResponseFilterConfig,
+  checkBidResponse,
+  configureUnauthorizedVideo,
+  resetUnauthorizedVideo
+} from './unauthorizedVideo.js';
 
 export const MODULE_NAME = 'bidResponseFilter';
 export const BID_CATEGORY_REJECTION_REASON = 'Category is not allowed';
 export const BID_ADV_DOMAINS_REJECTION_REASON = 'Adv domain is not allowed';
 export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
 export const BID_MEDIA_TYPE_REJECTION_REASON = `Media type is not allowed`;
+export { BID_UNAUTHORIZED_VIDEO_REJECTION_REASON };
+export type {
+  BidResponseFilterConfig,
+  UnauthorizedVideoConfig,
+  UnauthorizedVideoData
+} from './unauthorizedVideo.js';
 
-let moduleConfig;
+let moduleConfig: BidResponseFilterConfig;
 let enabled = false;
 
 function isIbvBannerOnMultiFormatAdUnit(metaMediaType, bidRequest) {
@@ -27,11 +40,15 @@ function init() {
       enabled = true;
       getHook('addBidResponse').before(addBidResponseHook);
     }
+    if (enabled) {
+      configureUnauthorizedVideo(moduleConfig.unauthorizedVideo, (bid) => getBattrLists(bid));
+    }
   });
 }
 
 export function reset() {
   enabled = false;
+  resetUnauthorizedVideo();
   getHook('addBidResponse').getHooks({ hook: addBidResponseHook }).remove();
 }
 
@@ -76,15 +93,23 @@ function getAttrRejection({ battr, attrConfig, metaAttr }) {
   }
 }
 
+function getRequestBattr(bid, index) {
+  return index.getBidRequest(bid)?.ortb2Imp?.[bid.mediaType]?.battr ??
+    index.getAdUnit(bid)?.ortb2Imp?.[bid.mediaType]?.battr ??
+    [];
+}
+
+function getBattrLists(bid, index = auctionManager.index) {
+  return [moduleConfig?.attr?.battr ?? [], getRequestBattr(bid, index)];
+}
+
 export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
   const catConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.cat || {}) };
   const advConfig = { enforce: true, blockUnknown: true, ...(moduleConfig?.adv || {}) };
   const attrConfig = { enforce: true, blockUnknown: false, ...(moduleConfig?.attr || {}) };
   const ortb2 = index.getOrtb2(bid) || {};
   const bidRequest = index.getBidRequest(bid);
-  const requestBattr = bidRequest?.ortb2Imp?.[bid.mediaType]?.battr ??
-    index.getAdUnit(bid)?.ortb2Imp?.[bid.mediaType]?.battr ??
-    [];
+  const requestBattr = getRequestBattr(bid, index);
   const mediaTypesConfig = {
     enforce: true,
     blockUnknown: true,
@@ -140,6 +165,8 @@ export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctio
   if ((mediaTypesConfig.enforce && (!allowedMediaTypes.includes(metaMediaType) || rejectIbvBannerOnMultiFormat)) ||
     (mediaTypesConfig.blockUnknown && !metaMediaType)) {
     reject(BID_MEDIA_TYPE_REJECTION_REASON);
+  } else if (checkBidResponse(adUnitCode, bid, [attrConfig.battr ?? [], requestBattr])) {
+    reject(BID_UNAUTHORIZED_VIDEO_REJECTION_REASON);
   } else {
     return next(adUnitCode, bid, reject);
   }
