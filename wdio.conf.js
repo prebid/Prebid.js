@@ -38,7 +38,7 @@ const browsers = Object.values(allBrowsers)
  */
 const SAME_TAB_CLICK = 'test/spec/e2e/modules/e2e_bidClick_same_tab.spec.js';
 const UNSUPPORTED_SPECS = {
-  'chrome@50.0': [SAME_TAB_CLICK],
+  'firefox@51.0': ['test/spec/e2e/triplelift_banner/**', SAME_TAB_CLICK],
   'firefox@65.0': ['test/spec/e2e/triplelift_banner/**', SAME_TAB_CLICK],
 };
 
