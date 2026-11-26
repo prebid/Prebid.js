@@ -103,6 +103,7 @@ export function consentHandler<T, M>(
   let enabled;
   let dirty;
   let df;
+  let waiting = false;
   let generatedTime;
   let consentData;
   let ready;
@@ -111,7 +112,20 @@ export function consentHandler<T, M>(
   let hasError;
   const listeners = [];
   function reset() {
-    df = defer();
+    if (waiting && !ready) {
+      // Reconfiguration can enable the handler again before this stack unwinds.
+      const pending = df;
+      Promise.resolve().then(() => {
+        if (!enabled && !ready && df === pending) {
+          df = defer();
+          waiting = false;
+          pending.resolve(null);
+        }
+      });
+    } else {
+      df = defer();
+      waiting = false;
+    }
     enabled = false;
     consentData = null;
     ready = false;
@@ -183,6 +197,7 @@ export function consentHandler<T, M>(
       if (!enabled) {
         resolve(null);
       }
+      waiting = !ready;
       return df.promise;
     },
     setConsentData(data: T, time = timestamp()) {
