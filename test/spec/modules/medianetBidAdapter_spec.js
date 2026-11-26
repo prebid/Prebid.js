@@ -2100,6 +2100,52 @@ describe('Media.net bid adapter', function () {
     });
   });
 
+  describe('trustedstack event logging', function () {
+    const TRUSTEDSTACK_LOG_URL = 'https://navvy.trustedstack.com/log';
+    let bid;
+
+    beforeEach(function () {
+      bid = {
+        bidder: 'trustedstack',
+        bidId: 'ts-4644-442a-b5e0-93f268cf8d19',
+        adUnitCode: 'adUnit-code',
+        timeout: 3000,
+        auctionId: '12a34b56c',
+        cpm: 12.24
+      };
+    });
+
+    it('should send timeout data to trustedstack endpoint', function () {
+      spec.onTimeout([bid]);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.TIMEOUT_EVENT_NAME);
+    });
+
+    it('should send winning bid data to trustedstack endpoint', function () {
+      spec.onBidWon(bid);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.BID_WON_EVENT_NAME);
+    });
+
+    it('should send targeting data to trustedstack endpoint', function () {
+      sandbox.stub(config, 'getConfig').withArgs('enableSendAllBids').returns(false);
+      spec.onSetTargeting(bid);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.SET_TARGETING);
+    });
+
+    it('should send bidderError data to trustedstack endpoint', function () {
+      const error = {
+        reason: { message: 'Failed to fetch', status: 500 },
+        timedOut: true,
+        status: 0
+      };
+      spec.onBidderError({ error, bidderRequest: { bids: [bid] } });
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.BIDDER_ERROR);
+    });
+  });
+
   it('context should be outstream', function () {
     const bids = spec.interpretResponse(SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID, []);
     expect(bids[0].context).to.equal('outstream');
