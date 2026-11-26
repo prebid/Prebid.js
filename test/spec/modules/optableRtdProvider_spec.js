@@ -27,7 +27,7 @@ import { EVENTS } from 'src/constants.js';
  */
 function captureLogs() {
   const logs = { WARNING: [], ERROR: [] };
-  const handler = ({ type, arguments: args }) => logs[type]?.push(args.join(' '));
+  const handler = ({ type, arguments: args }) => logs[type]?.push(Array.from(args).join(' '));
   events.on(EVENTS.AUCTION_DEBUG, handler);
   logs.stop = () => events.off(EVENTS.AUCTION_DEBUG, handler);
   return logs;
