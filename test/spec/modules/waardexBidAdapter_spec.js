@@ -4,6 +4,7 @@ import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 
 describe('waardexBidAdapter', () => {
+  it('declares the IAB Europe GVL vendor id', () => expect(spec.gvlid).to.equal(1592));
   describe('isBidRequestValid', () => {
     it('should return true. bidId and params such as placementId and zoneId are present', () => {
       const result = spec.isBidRequestValid({

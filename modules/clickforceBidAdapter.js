@@ -9,10 +9,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  */
 
 const BIDDER_CODE = 'clickforce';
+const ACP_ID = 135; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.

@@ -117,6 +117,8 @@ describe('ad2ictionBidAdapter', function () {
 
       expect(request.url).to.equal(API_ENDPOINT);
       expect(request.method).to.equal('POST');
+      expect(request.options?.contentType).to.be.undefined;
+      expect(request.options.withCredentials).to.equal(false);
     });
 
     it('should send bid request with API version', function () {
@@ -219,5 +221,16 @@ describe('ad2ictionBidAdapter', function () {
 
       expect(bidResponses).to.eql(exceptServerResponse);
     });
+  });
+});
+
+describe('ad2ictionBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(2008);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
+  it('declares the same Additional Consent provider ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'ad2')).to.have.property('acpId', 2008);
   });
 });

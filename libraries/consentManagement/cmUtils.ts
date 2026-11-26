@@ -269,8 +269,11 @@ export function configParser(
     } else {
       const { api, lookup } = cmpHandlers[cmpHandler];
       setupCmp = lookup;
-      let cmp;
-      findCmp = () => cmp ?? (cmp = cmpClient(api));
+      // handlers without an `api` read consent from the page directly, with no CMP to find
+      if (api != null) {
+        let cmp;
+        findCmp = () => cmp ?? (cmp = cmpClient(api));
+      }
     }
 
     const lookup = () => {

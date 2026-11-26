@@ -97,7 +97,7 @@ describe('anyclipBidAdapter', () => {
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT + '/bid');
-      expect(request.options).to.have.property('contentType').and.to.equal('application/json');
+      expect(request.options?.contentType).to.be.undefined;
       expect(request).to.have.property('data');
     });
 
@@ -445,5 +445,15 @@ describe('anyclipBidAdapter', () => {
       const result = getBidFloor(bid);
       expect(result).to.equal(5);
     });
+  });
+});
+
+describe('anyclipBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1400);
+  });
+
+  it('declares the same GVL ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'anyclip')).to.have.property('gvlid', 1400);
   });
 });

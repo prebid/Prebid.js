@@ -834,3 +834,9 @@ describe('TagorasBidAdapter', function () {
     });
   });
 });
+
+describe('tagorasBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(adapter.gvlid).to.equal(1450);
+  });
+});

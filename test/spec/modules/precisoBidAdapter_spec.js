@@ -30,10 +30,10 @@ describe('PrecisoAdapter', function () {
       region: 'IND'
 
     },
-    userId: {
-      pubcid: '12355454test'
-
-    },
+    userIdAsEids: [{
+      source: 'pubcid.org',
+      uids: [{ id: '12355454test', atype: 1 }]
+    }],
     user: {
       geo: {
         region: 'IND',
@@ -69,10 +69,10 @@ describe('PrecisoAdapter', function () {
       region: 'IND'
 
     },
-    userId: {
-      pubcid: '12355454test'
-
-    },
+    userIdAsEids: [{
+      source: 'pubcid.org',
+      uids: [{ id: '12355454test', atype: 1 }]
+    }],
     user: {
       geo: {
         region: 'IND',
@@ -168,6 +168,50 @@ describe('PrecisoAdapter', function () {
       serverRequest = spec.buildRequests([bid]);
       const data = serverRequest.data;
       expect(data.device).to.be.undefined;
+    });
+
+    describe('user.id (pubcid)', function () {
+      function bidWithout(...keys) {
+        const copy = JSON.parse(JSON.stringify(bid));
+        keys.forEach(k => delete copy[k]);
+        copy.ortb2.device = { w: 1920, h: 166 };
+        return copy;
+      }
+
+      it('should read user.id from the pubcid.org EID in userIdAsEids', function () {
+        const request = spec.buildRequests([bidWithout()]);
+        expect(request.data.user.id).to.equal('12355454test');
+      });
+
+      it('should not throw and should send an empty user.id when the bid has no user IDs', function () {
+        let request;
+        expect(() => { request = spec.buildRequests([bidWithout('userIdAsEids')], {}); }).to.not.throw();
+        expect(request.data.user.id).to.equal('');
+      });
+
+      it('should fall back to the pubcid.org EID in bidderRequest.ortb2.user.ext.eids', function () {
+        const bidderRequest = {
+          ortb2: {
+            user: {
+              ext: {
+                eids: [
+                  { source: 'example.com', uids: [{ id: 'other', atype: 1 }] },
+                  { source: 'pubcid.org', uids: [{ id: 'from-ortb2', atype: 1 }] }
+                ]
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests([bidWithout('userIdAsEids')], bidderRequest);
+        expect(request.data.user.id).to.equal('from-ortb2');
+      });
+
+      it('should ignore a raw bid.userId', function () {
+        const rawBid = bidWithout('userIdAsEids');
+        rawBid.userId = { pubcid: 'raw' };
+        const request = spec.buildRequests([rawBid], {});
+        expect(request.data.user.id).to.equal('');
+      });
     });
 
     let ServeNativeRequest = spec.buildRequests([nativeBid]);

@@ -1,13 +1,14 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, generateUUID, timestamp, deepAccess } from '../src/utils.js';
+import { deepSetValue, deepAccess } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'pangle';
+const ACP_ID = 3100; // Google Additional Consent provider ID
 const ENDPOINT = 'https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads';
 
 const OUTSTREAM_RENDERER_URL = 'https://sf16-static.i18n-pglstatp.com/obj/ad-pattern-sg/pangle/web/ads/video.js';
@@ -15,8 +16,6 @@ const OUTSTREAM_RENDERER_URL = 'https://sf16-static.i18n-pglstatp.com/obj/ad-pat
 const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
-const PANGLE_COOKIE = '_pangle_id';
-const COOKIE_EXP = 86400 * 1000 * 365 * 1; // 1 year
 const MEDIA_TYPES = {
   Banner: 1,
   Video: 2
@@ -30,25 +29,6 @@ export function isValidUuid(uuid) {
   );
 }
 
-function getPangleCookieId() {
-  let sid = storage.cookiesAreEnabled() && storage.getCookie(PANGLE_COOKIE);
-
-  if (!sid || !isValidUuid(sid)) {
-    sid = generateUUID();
-    setPangleCookieId(sid);
-  }
-
-  return sid;
-}
-
-function setPangleCookieId(sid) {
-  if (storage.cookiesAreEnabled()) {
-    const expires = new Date(timestamp() + COOKIE_EXP).toGMTString();
-
-    storage.setCookie(PANGLE_COOKIE, sid, expires);
-  }
-}
-
 function createRequest(bidRequests, bidderRequest, mediaType) {
   const data = converter.toORTB({
     bidRequests,
@@ -57,23 +37,6 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   });
   const devicetype = spec.getDeviceType(navigator.userAgent);
   deepSetValue(data, 'device.devicetype', devicetype);
-  if (bidderRequest.userId && typeof bidderRequest.userId === 'object') {
-    const pangleId = getPangleCookieId();
-    // add pangle cookie
-    const _eids = data.user?.ext?.eids ?? [];
-    deepSetValue(data, 'user.ext.eids', [
-      ..._eids,
-      {
-        source: document.location.host,
-        uids: [
-          {
-            id: pangleId,
-            atype: 1,
-          },
-        ],
-      },
-    ]);
-  }
   bidRequests.forEach((item, idx) => {
     deepSetValue(data.imp[idx], 'ext.networkids', item.params);
     deepSetValue(data.imp[idx], 'banner.api', [5]);
@@ -129,6 +92,7 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   getDeviceType: function (ua) {

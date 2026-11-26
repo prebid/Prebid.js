@@ -9,6 +9,7 @@ import {
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'krushmedia';
+const GVLID = 1315;
 const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
 const SYNC_URL = 'https://cs.krushmedia.com';
 
@@ -29,6 +30,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(['key']),

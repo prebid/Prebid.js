@@ -38,7 +38,6 @@ export const spec = {
         url: END_POINT,
         data: JSON.stringify(payload.data),
         options: {
-          contentType: 'application/json',
           withCredentials: true,
         },
       });

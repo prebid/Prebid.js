@@ -411,3 +411,14 @@ describe('buzzoolaBidAdapter', () => {
     });
   });
 });
+
+describe('buzzoolaBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3112);
+    expect(spec.gvlid).to.be.undefined;
+  });
+
+  it('declares the same Additional Consent provider ID on its aliases', function () {
+    expect(spec.aliases.find(alias => alias.code === 'buzzoolaAdapter')).to.have.property('acpId', 3112);
+  });
+});

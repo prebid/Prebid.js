@@ -16,6 +16,10 @@ import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDom
 
 import { getGlobalVarName } from '../src/buildOptions.js';
 
+/**
+ * @typedef {import('./amxIdSystem.d.ts').AmxIdParams} AmxIdParams
+ */
+
 const NAME = 'amxId';
 const GVL_ID = 737;
 const ID_KEY = NAME;

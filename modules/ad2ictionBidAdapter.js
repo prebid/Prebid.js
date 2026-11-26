@@ -3,6 +3,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 export const BIDDER_CODE = 'ad2iction';
+const ACP_ID = 2008; // Google Additional Consent provider ID
 export const SUPPORTED_AD_TYPES = [BANNER];
 export const API_ENDPOINT = 'https://ads.ad2iction.com/html/prebid/';
 export const API_VERSION_NUMBER = 3;
@@ -12,7 +13,8 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['ad2'],
+  acpId: ACP_ID,
+  aliases: [{ code: 'ad2', acpId: ACP_ID }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: (bid) => {
     return !!bid.params.id && typeof bid.params.id === 'string';
@@ -23,7 +25,6 @@ export const spec = {
     });
 
     const options = {
-      contentType: 'application/json',
       withCredentials: false,
     };
 

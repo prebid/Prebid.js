@@ -115,7 +115,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(buildRequestData(bid, bidderRequest)),
-      options: { contentType: 'application/json', withCredentials: true },
+      options: { contentType: 'text/plain', withCredentials: true },
     }));
   },
 

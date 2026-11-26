@@ -47,11 +47,14 @@ export interface FirstPartyDataConfig {
    */
   keywords?: {
     /**
-     * If true (the default), look for keywords in a keyword meta tag (<meta name="keywords">) and add them to first party data
+     * If true (the default), add keywords from every <meta name="keywords">, <meta name="news_keywords">
+     * and <meta property="article:tag"> to first party data.
      */
     meta?: boolean,
     /**
-     * If true (the default), look for keywords in a JSON-LD tag (<script type="application/ld+json">) and add themm to first party data.
+     * If true (the default), add keywords from JSON-LD tags (<script type="application/ld+json">) to first party data.
+     * `keywords` are collected at any nesting level (including `@graph`), as comma-separated strings, arrays of strings,
+     * or arrays of objects with a `name` (schema.org DefinedTerm).
      */
     json?: boolean
   }
@@ -172,54 +175,82 @@ const ENRICHMENTS = {
   }
 };
 
-/**
- * Detect keywords also from json/ld if this is present
- */
+const JSON_LD_MAX_DEPTH = 10;
+
+function collectJsonLdKeywords(node, keywords: string[], depth = 0) {
+  if (depth > JSON_LD_MAX_DEPTH || node == null || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    node.forEach(item => collectJsonLdKeywords(item, keywords, depth + 1));
+    return;
+  }
+  Object.entries(node).forEach(([key, value]) => {
+    if (key === 'keywords') {
+      (Array.isArray(value) ? value : [value]).forEach(kw => {
+        if (typeof kw === 'string') {
+          keywords.push(...kw.split(','));
+        } else if (typeof kw?.name === 'string') {
+          keywords.push(...kw.name.split(','));
+        }
+      });
+    } else {
+      collectJsonLdKeywords(value, keywords, depth + 1);
+    }
+  });
+}
+
 export const getJsonLdKeywords = memoize(() => {
   return winFallback((win) => {
-    const doc = win.document;
-    const scriptTags: any = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
-    let keywords = [];
-
-    for (const scriptTag of scriptTags) {
+    const keywords: string[] = [];
+    Array.from(win.document.querySelectorAll('script[type="application/ld+json"]')).forEach((scriptTag: HTMLScriptElement) => {
       try {
-        const jsonData = JSON.parse(scriptTag.textContent);
-        const jsonObjects = Array.isArray(jsonData) ? jsonData : [jsonData];
-
-        for (const obj of jsonObjects) {
-          if (typeof obj.keywords === 'string') {
-            const parts = obj.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
-            keywords.push(...parts);
-          }
-        }
-      } catch (error) {
+        collectJsonLdKeywords(JSON.parse(scriptTag.textContent), keywords);
+      } catch (e) {
         // silent
       }
-    }
+    });
     return keywords;
   });
 });
 
 export const getMetaTagKeywords = memoize(() => {
   return winFallback((win) => {
-    return win.document.querySelector('meta[name="keywords"]')?.content?.split(',').map(k => k.trim());
+    const keywords: string[] = [];
+    Array.from(win.document.querySelectorAll('meta[name="keywords"], meta[name="news_keywords"], meta[property="article:tag"]'))
+      .forEach((tag: HTMLMetaElement) => keywords.push(...tag.content.split(',')));
+    return keywords;
   });
 });
+
+const HTML_ENTITY = /&(#\d+|#x[0-9a-f]+|[a-z][a-z0-9]*);/gi;
+
+function filterKeywords(keywords: string[]): string[] {
+  const seen = new Set<string>();
+  return keywords
+    .map(kw => kw.trim())
+    .filter(kw => {
+      if (kw.length <= 1 || kw.length > 60 || /[:;|]/.test(kw.replace(HTML_ENTITY, '')) || kw.startsWith('_')) return false;
+      const key = kw.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
 
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
 function clientEnrichment(ortb2, ri) {
   const domain = parseDomain(ri.page, { noLeadingWww: true });
-  const keywords = new Set();
+  let keywords: string[] = [];
   if (config.getConfig('firstPartyData.keywords.meta') ?? true) {
-    (getMetaTagKeywords() ?? []).forEach(key => keywords.add(key));
+    keywords.push(...getMetaTagKeywords());
   }
   if (config.getConfig('firstPartyData.keywords.json') ?? true) {
-    (getJsonLdKeywords() ?? []).forEach(key => keywords.add(key));
+    keywords.push(...getJsonLdKeywords());
   }
+  keywords = filterKeywords(keywords);
   return removeUndef({
     domain,
-    keywords: keywords.size > 0 ? Array.from(keywords.keys()).join(',') : undefined,
+    keywords: keywords.length > 0 ? keywords.join(',') : undefined,
     publisher: removeUndef({
       domain: dep.findRootDomain(domain)
     })

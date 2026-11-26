@@ -1,6 +1,7 @@
 import analyticsAdapter from "modules/datawrkzAnalyticsAdapter.js";
 import adapterManager from "src/adapterManager.js";
 import { EVENTS } from "src/constants.js";
+import { server } from "test/mocks/xhr.js";
 
 const {
   AUCTION_INIT,
@@ -14,17 +15,11 @@ const {
 } = EVENTS;
 
 describe("DatawrkzAnalyticsAdapter", function () {
-  let sandbox;
-  let fetchStub;
-
   const auctionId = "auction_123";
   const adUnitCode = "div-gpt-ad-001";
   const bidder = "appnexus";
 
   beforeEach(function () {
-    sandbox = sinon.createSandbox();
-    fetchStub = sandbox.stub(window, "fetch");
-
     adapterManager.enableAnalytics({
       provider: "datawrkzanalytics",
       options: {
@@ -35,7 +30,6 @@ describe("DatawrkzAnalyticsAdapter", function () {
   });
 
   afterEach(function () {
-    sandbox.restore();
     analyticsAdapter.disableAnalytics();
   });
 
@@ -124,14 +118,14 @@ describe("DatawrkzAnalyticsAdapter", function () {
 
     clock.tick(2000); // Fast-forward time by 2 seconds
 
-    sinon.assert.calledOnce(fetchStub);
+    expect(server.requests.length).to.equal(1);
 
-    const [url, options] = fetchStub.firstCall.args;
+    const { url, method, requestHeaders, requestBody } = server.requests[0];
     expect(url).to.equal("https://prebid-api.highr.ai/analytics");
-    expect(options.method).to.equal("POST");
-    expect(options.headers["Content-Type"]).to.equal("application/json");
+    expect(method).to.equal("POST");
+    expect(requestHeaders["Content-Type"]).to.equal("application/json");
 
-    const body = JSON.parse(options.body);
+    const body = JSON.parse(requestBody);
     expect(body.publisherId).to.equal("testPublisher");
     expect(body.apiKey).to.equal("testApiKey");
     expect(body.auctionId).to.equal(auctionId);
@@ -151,9 +145,8 @@ describe("DatawrkzAnalyticsAdapter", function () {
       }
     });
 
-    sinon.assert.calledOnce(fetchStub);
-    const [, options] = fetchStub.firstCall.args;
-    const payload = JSON.parse(options.body);
+    expect(server.requests.length).to.equal(1);
+    const payload = JSON.parse(server.requests[0].requestBody);
 
     expect(payload.eventType).to.equal(AD_RENDER_SUCCEEDED);
     expect(payload.publisherId).to.equal("testPublisher");
@@ -175,9 +168,8 @@ describe("DatawrkzAnalyticsAdapter", function () {
       }
     });
 
-    sinon.assert.calledOnce(fetchStub);
-    const [, options] = fetchStub.firstCall.args;
-    const payload = JSON.parse(options.body);
+    expect(server.requests.length).to.equal(1);
+    const payload = JSON.parse(server.requests[0].requestBody);
 
     expect(payload.eventType).to.equal(AD_RENDER_FAILED);
     expect(payload.publisherId).to.equal("testPublisher");

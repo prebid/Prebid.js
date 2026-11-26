@@ -3824,6 +3824,36 @@ describe('User ID', function () {
       });
     });
 
+    it('should log, not throw, when a module with several IDs does not declare primaryIds', () => {
+      // a distinct name: the registry keeps the first module registered under a name
+      const withoutPrimaryIds = { ...mockIdSubmodule('mockId2', 'mockId3'), name: 'noPrimaryIdsModule' };
+      delete withoutPrimaryIds.primaryIds;
+      // logError emits AUCTION_DEBUG; listening there works whichever module calls it
+      const errors = [];
+      const onDebug = (event) => { if (event.type === 'ERROR') errors.push(event.arguments.join(' ')); };
+      events.on(EVENTS.AUCTION_DEBUG, onDebug);
+      setSubmoduleRegistry([mockIdSubmodule('mockId1'), withoutPrimaryIds]);
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: 'mockId1Module' },
+            { name: 'noPrimaryIdsModule' },
+          ]
+        }
+      });
+      return enrich()
+        .then(({ global }) => {
+          expect(global.user.ext.eids.map(eid => eid.source)).to.have.members(['mockId1.com', 'mockId2.com', 'mockId3.com']);
+          return getGlobal().refreshUserIds();
+        })
+        .then(() => {
+          const reports = errors.filter(message => message.includes("does not specify 'primaryIds'"));
+          expect(reports).to.have.length(1);
+          expect(reports[0]).to.include('noPrimaryIdsModule');
+        })
+        .finally(() => events.off(EVENTS.AUCTION_DEBUG, onDebug));
+    });
+
     it('should not choke if no id is available for a module', () => {
       idValues.mockId1 = [];
       config.setConfig({
