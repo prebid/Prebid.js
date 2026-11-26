@@ -182,6 +182,9 @@ export function consentHandler<T, M>(
       return generatedTime;
     },
     enable() {
+      if (!enabled && ready) {
+        reset();
+      }
       enabled = true;
     },
     get enabled() {
