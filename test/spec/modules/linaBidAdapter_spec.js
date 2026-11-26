@@ -804,6 +804,10 @@ describe('linaBidAdapter', function () {
       ...BID_REQUEST,
       mediaTypes: { banner: { sizes: [[300, 250], ['728', '90']] } },
     })).to.equal(false);
+    expect(spec.isBidRequestValid({
+      ...BID_REQUEST,
+      mediaTypes: { banner: { sizes: [300, [728, 90]] } },
+    })).to.equal(false);
   });
 
   it('builds a video request with player and VAST hints', function () {

@@ -6,7 +6,8 @@ import type { Size } from '../src/types/common.d.ts';
 import type { NativeRequest, NativeResponse } from '../src/types/ortb/native.d.ts';
 import { fillVideoImp } from '../libraries/ortbConverter/processors/video.js';
 import { fillNativeImp } from '../libraries/ortbConverter/processors/native.js';
-import { logWarn } from '../src/utils.js';
+import { logWarn, sizesToSizeTuples } from '../src/utils.js';
+import { isInteger, isPlainObject, isStr } from '../src/utils/objects.js';
 
 const BIDDER_CODE = 'lina' as const;
 const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
@@ -95,33 +96,32 @@ declare module '../src/adUnits' {
 function getBannerSizes(bid: BidRequest<typeof BIDDER_CODE>): Size[] {
   const sizes = bid.mediaTypes ? bid.mediaTypes.banner?.sizes : bid.sizes;
   if (!Array.isArray(sizes)) return [];
-  const normalizedSizes: unknown[] = Array.isArray(sizes[0]) ? sizes : [sizes];
-  return normalizedSizes.every(isValidBannerSize) ? normalizedSizes as Size[] : [];
+  const isSizeList = Array.isArray(sizes[0]);
+  if (isSizeList ? !sizes.every(Array.isArray) : sizes.some(Array.isArray)) return [];
+  const normalizedSizes = sizesToSizeTuples(sizes);
+  const expectedSizeCount = isSizeList ? sizes.length : 1;
+  return normalizedSizes.length === expectedSizeCount &&
+    normalizedSizes.every((size) => size.every((dimension) => isInteger(dimension) && dimension > 0))
+    ? normalizedSizes as Size[]
+    : [];
 }
 
 function getVideoSizes(bid: BidRequest<typeof BIDDER_CODE>): Size[] {
   const playerSize: unknown = bid.mediaTypes?.video?.playerSize;
   if (!Array.isArray(playerSize)) return [];
-  if (isValidBannerSize(playerSize)) return [playerSize];
-  const firstValidSize = playerSize.find(isValidBannerSize);
-  return firstValidSize ? [firstValidSize] : [];
-}
-
-function isPositiveInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0;
-}
-
-function isValidBannerSize(size: unknown): size is Size {
-  return Array.isArray(size) && size.length === 2 && size.every(isPositiveInteger);
+  const firstValidSize = sizesToSizeTuples(playerSize)
+    .find((size) => size.every((dimension) => isInteger(dimension) && dimension > 0));
+  return firstValidSize ? [firstValidSize as Size] : [];
 }
 
 function isValidBannerFormat(format: unknown): format is BannerFormat {
-  if (!isRecord(format)) return false;
-  const hasDimensions = isPositiveInteger(format.w) && isPositiveInteger(format.h);
-  const hasRatio = isPositiveInteger(format.wratio) && isPositiveInteger(format.hratio);
+  if (!isPlainObject(format)) return false;
+  const hasDimensions = isInteger(format.w) && format.w > 0 && isInteger(format.h) && format.h > 0;
+  const hasRatio = isInteger(format.wratio) && format.wratio > 0 &&
+    isInteger(format.hratio) && format.hratio > 0;
   if (hasDimensions && format.wratio === undefined && format.hratio === undefined) return true;
   if (hasRatio && format.w === undefined && format.h === undefined) {
-    return format.wmin === undefined || isPositiveInteger(format.wmin);
+    return format.wmin === undefined || (isInteger(format.wmin) && format.wmin > 0);
   }
   return false;
 }
@@ -166,10 +166,10 @@ function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | 
   if (floorCurrency === undefined) return { valid: false };
   try {
     const floor = bid.getFloor({ currency: floorCurrency, mediaType: '*', size: '*' });
-    if (floor === null || (isRecord(floor) && !('floor' in floor) && !('currency' in floor))) {
+    if (floor === null || (isPlainObject(floor) && !('floor' in floor) && !('currency' in floor))) {
       return { valid: true };
     }
-    if (!isRecord(floor) || typeof floor.floor !== 'number' || !Number.isFinite(floor.floor) ||
+    if (!isPlainObject(floor) || typeof floor.floor !== 'number' || !Number.isFinite(floor.floor) ||
       floor.floor < 0 || !isValidCurrency(floor.currency) || floor.currency !== floorCurrency) return { valid: false };
     return { valid: true, floor: { bidfloor: floor.floor, bidfloorcur: floor.currency } };
   } catch {
@@ -191,32 +191,24 @@ function getPrivacy(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): Lin
 }
 
 function isValidCurrency(value: unknown): value is string {
-  return typeof value === 'string' && /^[A-Z]{3}$/.test(value);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+  return isStr(value) && /^[A-Z]{3}$/.test(value);
 }
 
 function getVideoParameters(bid: BidRequest<typeof BIDDER_CODE>): Record<string, unknown> | undefined {
   const size = getVideoSizes(bid)[0];
   if (!size) return undefined;
-  const video = { ...(isRecord(bid.ortb2Imp?.video) ? bid.ortb2Imp.video : {}), ...bid.mediaTypes?.video };
+  const video = { ...(isPlainObject(bid.ortb2Imp?.video) ? bid.ortb2Imp.video : {}), ...bid.mediaTypes?.video };
   return { ...video, playerSize: [size] };
 }
 
 function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
   const video = getVideoParameters(bid);
   return video !== undefined && Array.isArray(video.mimes) && video.mimes.length > 0 &&
-    video.mimes.every((mime) => isNonEmptyString(mime)) &&
+    video.mimes.every((mime) => isStr(mime) && mime.trim().length > 0) &&
     (video.protocols === undefined || (Array.isArray(video.protocols) && video.protocols.length > 0 &&
-      video.protocols.every((protocol) => Number.isInteger(protocol) && protocol > 0))) &&
-    (video.minduration === undefined || (typeof video.minduration === 'number' && Number.isInteger(video.minduration) && video.minduration >= 0)) &&
-    (video.maxduration === undefined || (typeof video.maxduration === 'number' && Number.isInteger(video.maxduration) && video.maxduration >= 0 &&
+      video.protocols.every((protocol) => isInteger(protocol) && protocol > 0))) &&
+    (video.minduration === undefined || (isInteger(video.minduration) && video.minduration >= 0)) &&
+    (video.maxduration === undefined || (isInteger(video.maxduration) && video.maxduration >= 0 &&
       video.maxduration >= (typeof video.minduration === 'number' ? video.minduration : 0)));
 }
 
@@ -245,27 +237,27 @@ function buildImp(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null |
 }
 
 function isValidNativeRequest(request: unknown): request is NativeRequest {
-  if (!isRecord(request) || !Array.isArray(request.assets) || request.assets.length === 0 ||
-    (request.ver !== undefined && (typeof request.ver !== 'string' || request.ver.trim().length === 0))) return false;
+  if (!isPlainObject(request) || !Array.isArray(request.assets) || request.assets.length === 0 ||
+    (request.ver !== undefined && (!isStr(request.ver) || request.ver.trim().length === 0))) return false;
 
   const assetIds = new Set<number>();
   return request.assets.every((asset) => {
-    if (!isRecord(asset) || !Number.isInteger(asset.id) || (asset.id as number) < 0 ||
+    if (!isPlainObject(asset) || !isInteger(asset.id) || (asset.id as number) < 0 ||
       (asset.required !== undefined && asset.required !== 0 && asset.required !== 1)) return false;
     const assetTypes = ['title', 'img', 'video', 'data'].filter((type) => asset[type] !== undefined);
-    if (assetTypes.length !== 1 || !isRecord(asset[assetTypes[0]])) return false;
+    if (assetTypes.length !== 1 || !isPlainObject(asset[assetTypes[0]])) return false;
     const fields = asset[assetTypes[0]] as Record<string, unknown>;
-    if (assetTypes[0] === 'title' && (!Number.isInteger(fields.len) || (fields.len as number) <= 0)) return false;
+    if (assetTypes[0] === 'title' && (!isInteger(fields.len) || (fields.len as number) <= 0)) return false;
     if (assetTypes[0] === 'img' &&
-      !(['w', 'wmin'].some((key) => Number.isInteger(fields[key]) && (fields[key] as number) > 0))) return false;
+      !(['w', 'wmin'].some((key) => isInteger(fields[key]) && (fields[key] as number) > 0))) return false;
     if (assetTypes[0] === 'video' &&
       (!Array.isArray(fields.mimes) || fields.mimes.length === 0 ||
-        !fields.mimes.every((mime) => typeof mime === 'string' && mime.trim().length > 0) ||
+        !fields.mimes.every((mime) => isStr(mime) && mime.trim().length > 0) ||
         !Array.isArray(fields.protocols) || fields.protocols.length === 0 ||
-        !fields.protocols.every((protocol) => Number.isInteger(protocol) && protocol > 0) ||
-        !Number.isInteger(fields.minduration) || (fields.minduration as number) < 0 ||
-        !Number.isInteger(fields.maxduration) || (fields.maxduration as number) < (fields.minduration as number))) return false;
-    if (assetTypes[0] === 'data' && (!Number.isInteger(fields.type) || (fields.type as number) <= 0)) return false;
+        !fields.protocols.every((protocol) => isInteger(protocol) && protocol > 0) ||
+        !isInteger(fields.minduration) || (fields.minduration as number) < 0 ||
+        !isInteger(fields.maxduration) || (fields.maxduration as number) < (fields.minduration as number))) return false;
+    if (assetTypes[0] === 'data' && (!isInteger(fields.type) || (fields.type as number) <= 0)) return false;
     if (assetIds.has(asset.id as number)) return false;
     assetIds.add(asset.id as number);
     return true;
@@ -291,65 +283,65 @@ function getNativeRequest(bid: BidRequest<typeof BIDDER_CODE>): string | undefin
 function parseNativeMarkup(markup: string): NativeResponse | undefined {
   try {
     const parsed: unknown = JSON.parse(markup);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+    if (!isPlainObject(parsed)) return undefined;
     const nativeMarkup = 'native' in parsed ? parsed.native : parsed;
-    if (!nativeMarkup || typeof nativeMarkup !== 'object' || Array.isArray(nativeMarkup)) return undefined;
+    if (!isPlainObject(nativeMarkup)) return undefined;
     const candidate = nativeMarkup as { ver?: unknown; assets?: unknown };
-    return typeof candidate.ver === 'string' && candidate.ver.trim().length > 0 && Array.isArray(candidate.assets)
-      ? nativeMarkup as NativeResponse : undefined;
+    return isStr(candidate.ver) && candidate.ver.trim().length > 0 && Array.isArray(candidate.assets)
+      ? nativeMarkup as unknown as NativeResponse : undefined;
   } catch {
     return undefined;
   }
 }
 
 function parseLinaBid(bid: unknown, requestMediaTypes: Map<string, Set<LinaMediaType>>, currency: string): { bid: LinaBid; nativeMarkup?: NativeResponse } | undefined {
-  if (!isRecord(bid)) return undefined;
+  if (!isPlainObject(bid)) return undefined;
 
   const candidate = bid as LinaBid;
-  const nativeMarkup = FEATURES.NATIVE && candidate.mediaType === NATIVE && typeof candidate.ad === 'string' ? parseNativeMarkup(candidate.ad) : undefined;
+  const nativeMarkup = FEATURES.NATIVE && candidate.mediaType === NATIVE && isStr(candidate.ad) ? parseNativeMarkup(candidate.ad) : undefined;
   const advertiserDomains = candidate.meta?.advertiserDomains;
   const hasValidAdvertiserDomains = Array.isArray(advertiserDomains) && advertiserDomains.length > 0 &&
-    advertiserDomains.every((domain) => typeof domain === 'string' && domain.trim().length > 0);
+    advertiserDomains.every((domain) => isStr(domain) && domain.trim().length > 0);
   const hasValidDealId = candidate.dealId === undefined ||
-    (typeof candidate.dealId === 'string' && candidate.dealId.trim().length > 0);
-  const hasValidMarkup = typeof candidate.ad === 'string' && (candidate.mediaType === VIDEO
+    (isStr(candidate.dealId) && candidate.dealId.trim().length > 0);
+  const hasValidMarkup = isStr(candidate.ad) && (candidate.mediaType === VIDEO
     ? /<VAST(?:\s|>)[\s\S]*<\/VAST>/.test(candidate.ad)
     : FEATURES.NATIVE && candidate.mediaType === NATIVE ? nativeMarkup !== undefined : candidate.ad.length > 0);
-  const hasValidDimensions = Number.isInteger(candidate.width) && Number.isInteger(candidate.height) &&
+  const hasValidDimensions = isInteger(candidate.width) && isInteger(candidate.height) &&
     (FEATURES.NATIVE && candidate.mediaType === NATIVE
       ? candidate.width >= 0 && candidate.height >= 0
       : candidate.width > 0 && candidate.height > 0);
 
-  const valid = typeof candidate.requestId === 'string' && requestMediaTypes.get(candidate.requestId)?.has(candidate.mediaType) === true &&
+  const valid = isStr(candidate.requestId) && requestMediaTypes.get(candidate.requestId)?.has(candidate.mediaType) === true &&
     typeof candidate.cpm === 'number' && Number.isFinite(candidate.cpm) && candidate.cpm > 0 &&
     candidate.currency === currency &&
-    Number.isInteger(candidate.ttl) && candidate.ttl > 0 && candidate.ttl <= 3600 &&
+    isInteger(candidate.ttl) && candidate.ttl > 0 && candidate.ttl <= 3600 &&
     candidate.netRevenue === true &&
     (candidate.mediaType === BANNER || candidate.mediaType === VIDEO || (FEATURES.NATIVE && candidate.mediaType === NATIVE)) &&
     hasValidDimensions &&
-    typeof candidate.creativeId === 'string' && candidate.creativeId.length > 0 &&
-    typeof candidate.ad === 'string' && hasValidMarkup &&
+    isStr(candidate.creativeId) && candidate.creativeId.length > 0 &&
+    isStr(candidate.ad) && hasValidMarkup &&
     hasValidAdvertiserDomains && hasValidDealId;
   return valid ? { bid: candidate, nativeMarkup } : undefined;
 }
 
 function isValidLinaResponse(response: unknown): response is LinaResponse {
-  if (!response || typeof response !== 'object') return false;
+  if (!isPlainObject(response)) return false;
 
   const candidate = response as Partial<LinaResponse>;
-  return typeof candidate.requestId === 'string' && candidate.requestId.trim().length > 0 &&
+  return isStr(candidate.requestId) && candidate.requestId.trim().length > 0 &&
     isValidCurrency(candidate.currency) && Array.isArray(candidate.bids);
 }
 
 function getPublisherId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
   const publisherId = bid.params?.publisherId;
-  if (typeof publisherId !== 'string') return undefined;
+  if (!isStr(publisherId)) return undefined;
   const normalized = publisherId.trim();
   return normalized.length > 0 && normalized.length <= 200 && !/[\r\n]/.test(normalized) ? normalized : undefined;
 }
 
 function normalizePlacementId(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
+  if (!isStr(value)) return undefined;
   const normalized = value.trim();
   return normalized.length > 0 && normalized.length <= 100 && !/[\r\n]/.test(normalized) ? normalized : undefined;
 }
@@ -400,7 +392,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         const ortb2Imp = buildImp(bid, currency);
         return ortb2Imp === undefined ? [] : [{
           bidId: bid.bidId,
-          ...(isNonEmptyString(bid.transactionId) ? { transactionId: bid.transactionId } : {}),
+          ...(isStr(bid.transactionId) && bid.transactionId.trim().length > 0 ? { transactionId: bid.transactionId } : {}),
           adUnitCode: bid.adUnitCode,
           ortb2Imp,
         }];
@@ -410,7 +402,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         method: 'POST' as const,
         url: ENDPOINT_URL,
         data: {
-          ...(isNonEmptyString(auctionId) ? { auctionId } : {}),
+          ...(isStr(auctionId) && auctionId.trim().length > 0 ? { auctionId } : {}),
           publisherId,
           ...(timeoutMs === undefined ? {} : { timeoutMs }),
           ortb2: getRequestOrtb2(bidderRequest),
