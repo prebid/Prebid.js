@@ -298,6 +298,17 @@ describe('phaistosBidAdapter', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.deep.equal([]);
     });
 
+    it('returns no syncs when COPPA is enabled', function () {
+      expect(spec.getUserSyncs(
+        { iframeEnabled: true },
+        syncResponse,
+        undefined,
+        undefined,
+        undefined,
+        true
+      )).to.deep.equal([]);
+    });
+
     it('returns an iframe loader aimed at expand cookie_sync', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponse, {
         gdprApplies: true,

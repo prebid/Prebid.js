@@ -140,8 +140,8 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     }) as { bids: any[] }).bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-    if (!syncOptions.iframeEnabled || !serverResponses?.length) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent, coppa) {
+    if (coppa || !syncOptions.iframeEnabled || !serverResponses?.length) {
       return [];
     }
     const { gdprApplies, consentString } = gdprConsent || {};
