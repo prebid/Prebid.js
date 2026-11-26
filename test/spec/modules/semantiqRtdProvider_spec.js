@@ -1,7 +1,9 @@
-import { convertSemantiqKeywordToOrtb, getOrtbKeywords, semantiqRtdSubmodule, storage } from '../../../modules/semantiqRtdProvider.ts';
+import { convertSemantiqKeywordToOrtb, getOrtbKeywords, reset, semantiqRtdSubmodule, storage } from '../../../modules/semantiqRtdProvider.ts';
 import { expect } from 'chai';
 import { server } from '../../mocks/xhr.js';
 import * as utils from '../../../src/utils.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_REPORT_ANALYTICS } from '../../../src/activities/activities.js';
 
 const flushPromises = async () => {
   await Promise.resolve();
@@ -15,12 +17,15 @@ describe('semantiqRtdProvider', () => {
   let getDataFromSessionStorage;
   let setDataInSessionStorage;
   let getWindowLocationStub;
+  let runBackgroundTaskStub;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers();
     getDataFromSessionStorage = sinon.stub(storage, 'getDataFromSessionStorage').returns(null);
     setDataInSessionStorage = sinon.stub(storage, 'setDataInSessionStorage');
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns(new URL('https://example.com/article'));
+    runBackgroundTaskStub = sinon.stub(utils, 'runBackgroundTask');
+    reset();
   });
 
   afterEach(() => {
@@ -28,6 +33,7 @@ describe('semantiqRtdProvider', () => {
     getDataFromSessionStorage.restore();
     setDataInSessionStorage.restore();
     getWindowLocationStub.restore();
+    runBackgroundTaskStub.restore();
   });
 
   describe('init', () => {
@@ -38,16 +44,36 @@ describe('semantiqRtdProvider', () => {
   });
 
   describe('pageImpression event', () => {
-    it('dispatches an event on initialization', () => {
-      getWindowLocationStub.returns(new URL('https://example.com/article'));
+    const COLLECTOR_URL = 'https://api.adnz.co/api/ws-clickstream-collector/submit';
+    const SPA_PARAMS = { companyId: 5, trackSpaPages: true };
 
+    const startAuction = (params = { companyId: 5 }, adUnits = [{ bids: [{ bidder: 'appnexus' }] }]) => semantiqRtdSubmodule.getBidRequestData(
+      { adUnits, ortb2Fragments: { global: {} } },
+      () => undefined,
+      { params },
+      {}
+    );
+    const getCollectorRequests = () => server.requests.filter((request) => request.url === COLLECTOR_URL);
+    const getEvents = () => getCollectorRequests().map((request) => JSON.parse(request.requestBody));
+
+    beforeEach(() => {
+      runBackgroundTaskStub.callsFake((task) => task());
+    });
+
+    it('does not dispatch an event on initialization', () => {
       semantiqRtdSubmodule.init({ params: { companyId: 5 } });
 
-      const body = JSON.parse(server.requests[0].requestBody);
+      expect(getEvents()).to.have.lengthOf(0);
+    });
 
-      expect(server.requests[0].url).to.be.equal('https://api.adnz.co/api/ws-clickstream-collector/submit');
-      expect(server.requests[0].method).to.be.equal('POST');
-      expect(server.requests[0].requestHeaders['Content-Type']).to.match(/^text\/plain/);
+    it('dispatches an event on the first auction', () => {
+      startAuction();
+
+      const [request] = getCollectorRequests();
+      const body = JSON.parse(request.requestBody);
+
+      expect(request.method).to.be.equal('POST');
+      expect(request.requestHeaders['Content-Type']).to.match(/^text\/plain/);
 
       expect(body.company_id).to.be.equal(5);
       expect(body.event_id).not.to.be.empty;
@@ -58,24 +84,214 @@ describe('semantiqRtdProvider', () => {
       expect(body.page_url).to.be.equal('https://example.com/article');
     });
 
-    it('uses the correct company ID', () => {
-      semantiqRtdSubmodule.init({ params: { companyId: 555 } });
-      semantiqRtdSubmodule.init({ params: { companyId: [111, 222, 333] } });
+    it('dispatches the event as a background task', () => {
+      runBackgroundTaskStub.resetBehavior();
 
-      const body1 = JSON.parse(server.requests[0].requestBody);
-      const body2 = JSON.parse(server.requests[1].requestBody);
+      startAuction();
 
-      expect(body1.company_id).to.be.equal(555);
-      expect(body2.company_id).to.be.equal(111);
+      expect(runBackgroundTaskStub.calledOnce).to.be.true;
+      expect(getEvents()).to.have.lengthOf(0);
+
+      runBackgroundTaskStub.firstCall.args[0]();
+
+      expect(getEvents()).to.have.lengthOf(1);
     });
 
-    it('uses cached page impression ID if present', () => {
-      window.audienzz = { collectorPageImpressionId: 'cached-guid' };
-      semantiqRtdSubmodule.init({ params: { companyId: 5 } });
+    it('dispatches an event when the auction has no ad units', () => {
+      startAuction({ companyId: 5 }, []);
 
-      const body = JSON.parse(server.requests[0].requestBody);
+      expect(getEvents()).to.have.lengthOf(1);
+    });
 
-      expect(body.page_impression_id).to.be.equal('cached-guid');
+    it('uses the first company ID', () => {
+      startAuction({ companyId: [111, 222, 333] });
+
+      expect(getEvents()[0].company_id).to.be.equal(111);
+    });
+
+    it('does not dispatch an event again for the same page', () => {
+      startAuction();
+      startAuction();
+
+      expect(getEvents()).to.have.lengthOf(1);
+    });
+
+    [
+      'https://example.com/article#comments',
+      'https://example.com/article?utm_source=newsletter',
+    ].forEach((url) => {
+      it(`does not count ${url} as a new page`, () => {
+        startAuction(SPA_PARAMS);
+        getWindowLocationStub.returns(new URL(url));
+        startAuction(SPA_PARAMS);
+
+        expect(getEvents()).to.have.lengthOf(1);
+      });
+    });
+
+    it('dispatches one event per page load by default', () => {
+      startAuction();
+      getWindowLocationStub.returns(new URL('https://example.com/another-article'));
+      startAuction();
+
+      expect(getEvents()).to.have.lengthOf(1);
+    });
+
+    it('dispatches an event with a new page impression ID when the page changes and trackSpaPages is set', () => {
+      startAuction(SPA_PARAMS);
+      getWindowLocationStub.returns(new URL('https://example.com/another-article?utm_source=newsletter'));
+      startAuction(SPA_PARAMS);
+
+      const [first, second] = getEvents();
+
+      expect(second.page_url).to.be.equal('https://example.com/another-article');
+      expect(second.page_impression_id).not.to.be.equal(first.page_impression_id);
+    });
+
+    it('does not dispatch an event when reporting is not allowed', () => {
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', (params) =>
+        params.componentName === 'semantiq' ? { allow: false } : undefined);
+
+      try {
+        startAuction();
+
+        expect(getEvents()).to.have.lengthOf(0);
+      } finally {
+        unregister();
+      }
+    });
+
+    it('dispatches an event once reporting becomes allowed on the same page', () => {
+      const rule = sinon.stub().returns({ allow: false });
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', rule);
+
+      try {
+        startAuction();
+        rule.returns(undefined);
+        startAuction();
+        startAuction();
+
+        expect(getEvents()).to.have.lengthOf(1);
+      } finally {
+        unregister();
+      }
+    });
+
+    it('dispatches the single event for the page where reporting becomes allowed', () => {
+      const rule = sinon.stub().returns({ allow: false });
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', rule);
+
+      try {
+        startAuction();
+        getWindowLocationStub.returns(new URL('https://example.com/another-article'));
+        rule.returns(undefined);
+        startAuction();
+        startAuction();
+
+        const events = getEvents();
+
+        expect(events).to.have.lengthOf(1);
+        expect(events[0].page_url).to.be.equal('https://example.com/another-article');
+      } finally {
+        unregister();
+      }
+    });
+
+    it('counts a page as new again after a page where reporting was not allowed', () => {
+      const rule = sinon.stub().returns(undefined);
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', rule);
+
+      try {
+        startAuction(SPA_PARAMS);
+        getWindowLocationStub.returns(new URL('https://example.com/another-article'));
+        rule.returns({ allow: false });
+        startAuction(SPA_PARAMS);
+        getWindowLocationStub.returns(new URL('https://example.com/article'));
+        rule.returns(undefined);
+        startAuction(SPA_PARAMS);
+
+        expect(getEvents().map((event) => event.page_url)).to.deep.equal([
+          'https://example.com/article',
+          'https://example.com/article',
+        ]);
+      } finally {
+        unregister();
+      }
+    });
+
+    it('does not dispatch a queued event when reporting is no longer allowed', () => {
+      runBackgroundTaskStub.resetBehavior();
+      startAuction();
+
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', () => ({ allow: false }));
+
+      try {
+        runBackgroundTaskStub.firstCall.args[0]();
+
+        expect(getEvents()).to.have.lengthOf(0);
+      } finally {
+        unregister();
+      }
+    });
+
+    it('dispatches the event on a later auction after a queued event was skipped for consent', () => {
+      runBackgroundTaskStub.resetBehavior();
+      startAuction();
+
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', () => ({ allow: false }));
+
+      try {
+        runBackgroundTaskStub.firstCall.args[0]();
+      } finally {
+        unregister();
+      }
+
+      runBackgroundTaskStub.callsFake((task) => task());
+      startAuction();
+
+      expect(getEvents()).to.have.lengthOf(1);
+    });
+
+    it('does not release a later visit to the same page when an earlier queued event is skipped', () => {
+      runBackgroundTaskStub.resetBehavior();
+      startAuction(SPA_PARAMS);
+      getWindowLocationStub.returns(new URL('https://example.com/another-article'));
+      startAuction(SPA_PARAMS);
+      getWindowLocationStub.returns(new URL('https://example.com/article'));
+      startAuction(SPA_PARAMS);
+
+      const [firstVisit, otherPage, secondVisit] = runBackgroundTaskStub.getCalls().map((call) => call.args[0]);
+      const unregister = registerActivityControl(ACTIVITY_REPORT_ANALYTICS, 'test', () => ({ allow: false }));
+
+      try {
+        firstVisit();
+      } finally {
+        unregister();
+      }
+
+      otherPage();
+      secondVisit();
+      runBackgroundTaskStub.callsFake((task) => task());
+      startAuction(SPA_PARAMS);
+
+      expect(getEvents().map((event) => event.page_url)).to.deep.equal([
+        'https://example.com/another-article',
+        'https://example.com/article',
+      ]);
+    });
+
+    it('logs a failed event instead of rejecting', async () => {
+      const logWarnStub = sinon.stub(utils, 'logWarn');
+
+      try {
+        startAuction();
+        getCollectorRequests()[0].error();
+        await flushPromises();
+
+        expect(logWarnStub.calledWith(sinon.match.string, 'Failed to send the page impression')).to.be.true;
+      } finally {
+        logWarnStub.restore();
+      }
     });
   });
 
@@ -129,6 +345,29 @@ describe('semantiqRtdProvider', () => {
       expect(requestUrl.host).to.be.equal('api.adnz.co');
       expect(requestUrl.searchParams.get('url')).to.be.equal('https://example.com/article');
       expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('1');
+    });
+
+    it('requests keywords for the page without its query and fragment', () => {
+      getWindowLocationStub.returns(new URL('https://example.com/article?utm_source=newsletter#comments'));
+
+      semantiqRtdSubmodule.getBidRequestData({ adUnits: [{ bids: [{ bidder: 'appnexus' }] }] }, () => undefined, { params: {} }, {});
+
+      expect(new URL(server.requests[0].url).searchParams.get('url')).to.be.equal('https://example.com/article');
+    });
+
+    it('gets keywords from the cache when only the query changes', async () => {
+      getDataFromSessionStorage.returns(JSON.stringify({ url: 'https://example.com/article', keywords: { sentiment: 'negative' } }));
+      getWindowLocationStub.returns(new URL('https://example.com/article?utm_source=newsletter'));
+
+      const reqBidsConfigObj = {
+        adUnits: [{ bids: [{ bidder: 'appnexus' }] }],
+        ortb2Fragments: { global: {} },
+      };
+
+      await new Promise((resolve) => semantiqRtdSubmodule.getBidRequestData(reqBidsConfigObj, resolve, { params: {} }, {}));
+
+      expect(server.requests).to.have.lengthOf(0);
+      expect(reqBidsConfigObj.ortb2Fragments.global.site.keywords).to.be.equal('sentiment=negative');
     });
 
     it('allows to specify company ID as a parameter', async () => {
