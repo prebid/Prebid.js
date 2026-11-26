@@ -592,6 +592,42 @@ describe('linaBidAdapter', function () {
     expect(invalidFloorRequest).to.deep.equal([]);
   });
 
+  it('defaults the Price Floors lookup to USD and retains the bid when currency is absent', function () {
+    const getFloor = sandbox.stub().returns({ floor: 1.25, currency: 'USD' });
+    const request = spec.buildRequests([{ ...BID_REQUEST, getFloor }], BIDDER_REQUEST);
+
+    expect(getFloor.calledOnceWithExactly({ currency: 'USD', mediaType: '*', size: '*' })).to.equal(true);
+    expect(request.data.bids).to.have.lengthOf(1);
+    expect(request.data.bids[0].bidId).to.equal(BID_REQUEST.bidId);
+    expect(request.data.bids[0].ortb2Imp).to.include({ bidfloor: 1.25, bidfloorcur: 'USD' });
+    expect(request.data.ortb2).not.to.have.property('cur');
+  });
+
+  it('uses an existing static floor currency before the USD fallback', function () {
+    const getFloor = sandbox.stub().returns({ floor: 1000, currency: 'KRW' });
+    const request = spec.buildRequests([{
+      ...BID_REQUEST,
+      ortb2Imp: { ...BID_REQUEST.ortb2Imp, bidfloor: 900, bidfloorcur: 'KRW' },
+      getFloor,
+    }], BIDDER_REQUEST);
+
+    expect(getFloor.calledOnceWithExactly({ currency: 'KRW', mediaType: '*', size: '*' })).to.equal(true);
+    expect(request.data.bids[0].ortb2Imp).to.include({ bidfloor: 1000, bidfloorcur: 'KRW' });
+    expect(request.data.ortb2).not.to.have.property('cur');
+  });
+
+  it('skips a floor-enabled bid with an invalid static floor currency', function () {
+    const getFloor = sandbox.stub().returns({ floor: 1, currency: 'USD' });
+    const request = spec.buildRequests([{
+      ...BID_REQUEST,
+      ortb2Imp: { ...BID_REQUEST.ortb2Imp, bidfloorcur: 'usd' },
+      getFloor,
+    }], BIDDER_REQUEST);
+
+    expect(getFloor.called).to.equal(false);
+    expect(request).to.deep.equal([]);
+  });
+
   it('skips bids with unusable client floor module results', function () {
     [
       () => ({ floor: -1, currency: 'USD' }),

@@ -30,13 +30,16 @@ The adapter passes OpenRTB request fields through without duplicating server
 field-removal policies. It only maps LINA identifiers and selected media formats.
 LINA SSP determines which fields to use and applies inventory, pricing,
 supply-chain, and privacy policies. The adapter calls `bid.getFloor()` with the
-resolved publisher currency and wildcard media type and size, then sends a valid,
+resolved request currency and wildcard media type and size, then sends a valid,
 finite, nonnegative result as
 `ortb2Imp.bidfloor` and `ortb2Imp.bidfloorcur`, including an explicit zero.
-An unavailable request currency, failed `getFloor()` call, malformed result, or
-currency mismatch skips that bid rather than sending an unverified floor. A null
-or empty result is a valid "no matching rule" result and preserves any existing
-static OpenRTB floor.
+When the currency resolver cannot find a configured request currency, the
+adapter uses a valid existing `ortb2Imp.bidfloorcur` or defaults the floor
+lookup to USD, matching Prebid Core. This lookup default does not synthesize a
+top-level OpenRTB request currency. An explicitly configured but unresolvable currency, failed
+`getFloor()` call, malformed result, or currency mismatch skips that bid rather
+than sending an unverified floor. A null or empty result is a valid "no matching
+rule" result and preserves any existing static OpenRTB floor.
 The SSP uses `max(placement floor, client floor)` as the publisher Net CPM
 floor and converts that value to DSP Gross CPM using the publisher fee. Floor
 currency, request currency, response currency, and the registered publisher

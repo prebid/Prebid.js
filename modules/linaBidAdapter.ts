@@ -11,6 +11,7 @@ import { logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'lina' as const;
 const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
+const DEFAULT_FLOOR_CURRENCY = 'USD';
 
 export interface LinaBidParams {
   publisherId: string;
@@ -141,36 +142,43 @@ function getBannerFormats(bid: BidRequest<typeof BIDDER_CODE>): BannerFormat[] {
   return bannerSizes.map((size) => findMatchingBannerFormat(size, formats) ?? { w: size[0], h: size[1] });
 }
 
-function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): string | undefined {
+function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): string | null | undefined {
   const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   const requestCurrencies = bidderRequest.ortb2?.cur;
   const requestCurrency = Array.isArray(requestCurrencies) && requestCurrencies.length === 1 &&
     isValidCurrency(requestCurrencies[0]) ? requestCurrencies[0] : undefined;
   if (isValidCurrency(adServerCurrency) && requestCurrency !== undefined) {
-    return adServerCurrency === requestCurrency ? adServerCurrency : undefined;
+    return adServerCurrency === requestCurrency ? adServerCurrency : null;
   }
-  return isValidCurrency(adServerCurrency) ? adServerCurrency : requestCurrency;
+  if (isValidCurrency(adServerCurrency)) return adServerCurrency;
+  if (requestCurrency !== undefined) return requestCurrency;
+  return adServerCurrency !== undefined || requestCurrencies !== undefined ? null : undefined;
 }
 
-function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>, currency: string | undefined): Record<string, unknown> {
+function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>, currency: string | null | undefined): Record<string, unknown> {
   const ortb2 = bidderRequest.ortb2 ?? {};
-  return currency !== undefined && ortb2.cur === undefined ? { ...ortb2, cur: [currency] } : ortb2;
+  return typeof currency === 'string' && ortb2.cur === undefined ? { ...ortb2, cur: [currency] } : ortb2;
 }
 
 type ClientFloorResult =
   | { valid: true; floor?: { bidfloor: number; bidfloorcur: string } }
   | { valid: false };
 
-function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | undefined): ClientFloorResult {
+function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null | undefined): ClientFloorResult {
   if (typeof bid.getFloor !== 'function') return { valid: true };
-  if (currency === undefined) return { valid: false };
+  if (currency === null) return { valid: false };
+  const bidCurrency = bid.ortb2Imp?.bidfloorcur;
+  const floorCurrency = currency ?? (bidCurrency === undefined
+    ? DEFAULT_FLOOR_CURRENCY
+    : isValidCurrency(bidCurrency) ? bidCurrency : undefined);
+  if (floorCurrency === undefined) return { valid: false };
   try {
-    const floor = bid.getFloor({ currency, mediaType: '*', size: '*' });
+    const floor = bid.getFloor({ currency: floorCurrency, mediaType: '*', size: '*' });
     if (floor === null || (isRecord(floor) && !('floor' in floor) && !('currency' in floor))) {
       return { valid: true };
     }
     if (!isRecord(floor) || typeof floor.floor !== 'number' || !Number.isFinite(floor.floor) ||
-      floor.floor < 0 || !isValidCurrency(floor.currency) || floor.currency !== currency) return { valid: false };
+      floor.floor < 0 || !isValidCurrency(floor.currency) || floor.currency !== floorCurrency) return { valid: false };
     return { valid: true, floor: { bidfloor: floor.floor, bidfloorcur: floor.currency } };
   } catch {
     return { valid: false };
@@ -220,14 +228,14 @@ function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
       video.maxduration >= (typeof video.minduration === 'number' ? video.minduration : 0)));
 }
 
-function buildImp(bid: BidRequest<typeof BIDDER_CODE>, currency: string | undefined): LinaImp | undefined {
+function buildImp(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null | undefined): LinaImp | undefined {
   const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
   const bannerFormats = getBannerFormats(bid);
   const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
   const nativeOrtbRequest = getNativeOrtbRequest(bid);
   const clientFloor = getClientFloor(bid, currency);
   if (!clientFloor.valid) {
-    logWarn(`LINA: skipped bid ${bid.bidId} because the Price Floors Module did not return a usable floor in the request currency`);
+    logWarn(`LINA: skipped bid ${bid.bidId} because the Price Floors Module did not return a usable floor in the expected currency`);
     return undefined;
   }
   const generated: Pick<LinaImp, 'video' | 'native'> = {};
