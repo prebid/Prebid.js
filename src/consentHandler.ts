@@ -333,12 +333,10 @@ export function gvlidRegistry<T = GVLID>() {
     register(moduleType: ModuleType, moduleName: string, gvlid: T) {
       gvlid = normalizeGvlid(gvlid) as T;
       if (gvlid) {
-        (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
-        if (flat.hasOwnProperty(moduleName)) {
-          if (!deepEqual(flat[moduleName], gvlid)) flat[moduleName] = none;
-        } else {
-          flat[moduleName] = gvlid;
-        }
+        const moduleMap = (registry[moduleName] = registry[moduleName] || {});
+        moduleMap[moduleType] = gvlid;
+        const values = Object.values(moduleMap);
+        flat[moduleName] = values.every((value) => deepEqual(value, values[0])) ? values[0] : none;
       }
     },
 
