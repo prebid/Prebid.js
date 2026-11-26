@@ -201,7 +201,7 @@ function collectJsonLdKeywords(node, keywords: string[], depth = 0) {
 export const getJsonLdKeywords = memoize(() => {
   return winFallback((win) => {
     const keywords: string[] = [];
-    win.document.querySelectorAll('script[type="application/ld+json"]').forEach(scriptTag => {
+    Array.from(win.document.querySelectorAll('script[type="application/ld+json"]')).forEach((scriptTag: HTMLScriptElement) => {
       try {
         collectJsonLdKeywords(JSON.parse(scriptTag.textContent), keywords);
       } catch (e) {
@@ -215,8 +215,8 @@ export const getJsonLdKeywords = memoize(() => {
 export const getMetaTagKeywords = memoize(() => {
   return winFallback((win) => {
     const keywords: string[] = [];
-    win.document.querySelectorAll('meta[name="keywords"], meta[name="news_keywords"], meta[property="article:tag"]')
-      .forEach(tag => keywords.push(...tag.content.split(',')));
+    Array.from(win.document.querySelectorAll('meta[name="keywords"], meta[name="news_keywords"], meta[property="article:tag"]'))
+      .forEach((tag: HTMLMetaElement) => keywords.push(...tag.content.split(',')));
     return keywords;
   });
 });

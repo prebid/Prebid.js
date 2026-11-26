@@ -138,6 +138,13 @@ describe('FPD enrichment', () => {
             });
           });
 
+          it('sets keywords in browsers without NodeList.prototype.forEach (Chrome 50)', () => {
+            sandbox.stub(NodeList.prototype, 'forEach').value(undefined);
+            addMetaKeywords(['kw1']);
+            addJsonKeywords(['kw2']);
+            return expectKeywords('kw1,kw2');
+          });
+
           it('should not use meta tag if firstPartyData.keywords.meta is false', () => {
             config.setConfig({
               firstPartyData: {
