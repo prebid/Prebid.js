@@ -312,7 +312,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     },
     user: {
       id: getUid(storage),
-      buyeruid: bidderRequest.userId || '', // User ID or Buyer ID
+      buyeruid: bidderRequest.ortb2?.user?.buyeruid || '', // Buyer ID from first party data
       yob,
       gender,
       keywords,

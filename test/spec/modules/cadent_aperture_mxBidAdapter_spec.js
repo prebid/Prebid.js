@@ -405,7 +405,7 @@ describe('cadent_aperture_mx Adapter', function () {
       it('should add liveramp identitylink id to request', () => {
         const idl_env = '123';
         const bidRequestWithID = utils.deepClone(bidderRequest);
-        bidRequestWithID.userId = { idl_env };
+        bidRequestWithID.ortb2 = { user: { ext: { eids: [{ source: 'liveramp.com', uids: [{ id: idl_env, atype: 3 }] }] } } };
         let requestWithID = spec.buildRequests(bidRequestWithID.bids, bidRequestWithID);
         requestWithID = JSON.parse(requestWithID.data);
         expect(requestWithID.user.ext.eids[0]).to.deep.equal({
@@ -449,7 +449,7 @@ describe('cadent_aperture_mx Adapter', function () {
       it('should add UID 2.0 to request', () => {
         const uid2 = { id: '456' };
         const bidRequestWithUID = utils.deepClone(bidderRequest);
-        bidRequestWithUID.userId = { uid2 };
+        bidRequestWithUID.bids = bidRequestWithUID.bids.map(bid => ({ ...bid, userIdAsEids: [{ source: 'uidapi.com', uids: [{ id: uid2.id, atype: 3 }] }] }));
         let requestWithUID = spec.buildRequests(bidRequestWithUID.bids, bidRequestWithUID);
         requestWithUID = JSON.parse(requestWithUID.data);
         expect(requestWithUID.user.ext.eids[0]).to.deep.equal({
@@ -461,6 +461,14 @@ describe('cadent_aperture_mx Adapter', function () {
             }
           }]
         });
+      });
+
+      it('should only send supported EID sources', () => {
+        const bidRequestWithEids = utils.deepClone(bidderRequest);
+        bidRequestWithEids.ortb2 = { user: { ext: { eids: [{ source: 'example.com', uids: [{ id: 'other', atype: 1 }] }] } } };
+        let request = spec.buildRequests(bidRequestWithEids.bids, bidRequestWithEids);
+        request = JSON.parse(request.data);
+        expect(request.user?.ext?.eids).to.equal(undefined);
       });
     });
 
