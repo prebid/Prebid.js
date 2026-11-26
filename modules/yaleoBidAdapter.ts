@@ -19,6 +19,10 @@ interface YaleoBidParams {
    * Maximum CPM value. Bids with a CPM higher than the specified value will be rejected.
    */
   maxCpm?: number;
+  /**
+   * Renders the ad unit in the dark theme.
+   */
+  forceDarkTheme?: boolean;
 }
 
 interface YaleoConfig {
@@ -46,6 +50,7 @@ const AUDIENZZ_VENDOR_ID = 783;
 const DEFAULT_ENDPOINT = 'https://bidder.yaleo.com/prebid';
 const ALLOWED_ENDPOINTS = new Set([DEFAULT_ENDPOINT, 'https://dev-bidder.yaleo.com/prebid']);
 const DEFAULT_TTL = 300;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
@@ -67,12 +72,35 @@ const resolveEndpoint = (): string => {
   return customEndpoint;
 };
 
+const getInvalidParamMessages = ({ placementId, memberId, maxCpm, forceDarkTheme }: YaleoBidParams): string[] => {
+  const messages: string[] = [];
+  if (!UUID_PATTERN.test(placementId)) {
+    messages.push(`placementId must be a UUID, got "${placementId}"`);
+  }
+  if (memberId !== undefined && !(Number.isInteger(memberId) && memberId >= 1)) {
+    messages.push(`memberId must be a positive integer, got "${memberId}"`);
+  }
+  if (maxCpm !== undefined && !(Number.isFinite(maxCpm) && maxCpm >= 0)) {
+    messages.push(`maxCpm must be a number greater than or equal to 0, got "${maxCpm}"`);
+  }
+  if (forceDarkTheme !== undefined && typeof forceDarkTheme !== 'boolean') {
+    messages.push(`forceDarkTheme must be a boolean, got "${forceDarkTheme}"`);
+  }
+  return messages;
+};
+
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (request) => {
-  if (!request.params || typeof request.params.placementId !== 'string') {
+  const { params } = request;
+  if (!params || typeof params.placementId !== 'string' || !params.placementId) {
     return false;
   }
 
-  return !!request.params.placementId;
+  // Warn only: rejecting previously accepted values is a breaking change.
+  getInvalidParamMessages(params).forEach((message) => {
+    logWarn(`${BIDDER_CODE}: ${message}. The bid is still sent, but a future major Prebid.js release will reject it.`);
+  });
+
+  return true;
 };
 
 const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {
