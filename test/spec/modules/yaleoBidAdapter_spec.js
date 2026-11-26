@@ -1,5 +1,7 @@
 import { cloneDeep } from "lodash";
+import sinon from 'sinon';
 import { config } from "src/config.js";
+import * as utils from "src/utils.js";
 import { spec } from "../../../modules/yaleoBidAdapter.ts";
 
 const bannerBidRequestBase = {
@@ -208,6 +210,68 @@ describe('Yaleo bid adapter', () => {
       const request = spec.buildRequests([bannerBidRequest], bidderRequest);
 
       expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
+    });
+
+    describe('test mode', () => {
+      let getParameterByNameStub;
+
+      const buildRequest = (ortb2) => spec.buildRequests([bannerBidRequest], {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+        ortb2,
+      });
+
+      const setTestQueryParam = (value) => {
+        getParameterByNameStub = sinon.stub(utils, 'getParameterByName')
+          .callsFake((name) => (name === 'yaleo_test' ? value : ''));
+      };
+
+      afterEach(() => {
+        getParameterByNameStub?.restore();
+        getParameterByNameStub = undefined;
+      });
+
+      ['true', 'TRUE', 'True'].forEach((value) => {
+        it(`sets test: 1 when the page URL has yaleo_test=${value}`, () => {
+          setTestQueryParam(value);
+
+          expect(buildRequest().data.test).to.equal(1);
+        });
+      });
+
+      ['', 'false', '1'].forEach((value) => {
+        it(`does not flag the request as a test when yaleo_test is "${value}"`, () => {
+          setTestQueryParam(value);
+
+          expect(buildRequest().data.test).to.not.equal(1);
+        });
+      });
+
+      it('does not flag the request as a test in Prebid.js debug mode', () => {
+        config.setConfig({ debug: true });
+
+        const request = buildRequest();
+
+        expect(request.data.test).to.not.equal(1);
+        expect(request.data.ext.prebid.debug).to.be.true;
+      });
+
+      it('keeps test: 1 set through ortb2', () => {
+        expect(buildRequest({ test: 1 }).data.test).to.equal(1);
+      });
+
+      it('keeps test: 1 set through ortb2 when yaleo_test=false', () => {
+        setTestQueryParam('false');
+
+        expect(buildRequest({ test: 1 }).data.test).to.equal(1);
+      });
+
+      it('sets test: 1 when yaleo_test=true and ortb2 sets test: 0', () => {
+        setTestQueryParam('true');
+
+        expect(buildRequest({ test: 0 }).data.test).to.equal(1);
+      });
     });
 
     it('checks that all params are passed to the request', () => {

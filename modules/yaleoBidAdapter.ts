@@ -3,7 +3,7 @@ import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { logWarn } from '../src/utils.js';
+import { getParameterByName, logWarn } from '../src/utils.js';
 
 interface YaleoBidParams {
   /**
@@ -53,6 +53,13 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     ttl: DEFAULT_TTL,
   },
   processors: pbsExtensions,
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    if (getParameterByName('yaleo_test').toUpperCase() === 'TRUE') {
+      request.test = 1;
+    }
+    return request;
+  },
 });
 
 const resolveEndpoint = (): string => {
