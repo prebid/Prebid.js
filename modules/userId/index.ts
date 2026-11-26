@@ -869,12 +869,17 @@ function initSubmodules(priorityMaps, submodules, forceRefresh = false, forceNew
      *  - are not allowed to perform the `enrichEids` activity
      */
     submodules = submodules.filter((submod) => {
-      return (!submod.config.storage || canUseStorage(submod)) &&
-        dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, submod.config.name));
+      if (submod.config.storage && !canUseStorage(submod)) {
+        // an ID read before storage access was lost must not outlive it
+        submod.idObj = submod.callback = submod.handle = undefined;
+        return false;
+      }
+      return dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, submod.config.name));
     });
 
     if (!submodules.length) {
       logWarn(`${MODULE_NAME} - no ID module configured`);
+      priorityMaps.refresh();
       return [];
     }
 
