@@ -1,6 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import { findRootDomain } from '../src/fpd/rootDomain.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepSetValue } from '../src/utils.js';
 
@@ -12,9 +13,10 @@ const COOKIE_SYNC_IFRAME = 'https://pbs.phaistos.eu/static/cookie_sync.html';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_TTL = 300;
 const MAX_SYNC_COUNT = 8;
+const MAX_TRACKED_ACCOUNTS = 20;
 
-/** Account used on the last auction request — passed into getUserSyncs. */
-let lastSyncAccount = '';
+/** OpenRTB request id → publisher account, so sync can match the auction it belongs to. */
+const accountByRequestId = new Map<string, string>();
 
 export type PhaistosBidParams = {
   /** Phaistos Grxchange ad unit id. */
@@ -35,16 +37,14 @@ declare module '../src/adUnits' {
 }
 
 /**
- * eTLD+1 of a hostname — matches the account id used previously via
- * s2sConfig.accountId for Phaistos expand.
+ * Registrable domain (eTLD+1) for a hostname — matches the account id used
+ * previously via s2sConfig.accountId for Phaistos expand. Uses Prebid's
+ * cookie-probe findRootDomain so multi-part public suffixes (e.g. co.uk)
+ * resolve correctly.
  */
 export function getTopDomain(hostname: string): string {
   const host = String(hostname || '').split(':')[0];
-  const parts = host.split('.').filter(Boolean);
-  if (parts.length <= 2) {
-    return parts.join('.');
-  }
-  return parts.slice(-2).join('.');
+  return host ? findRootDomain(host) : '';
 }
 
 function hasPlacementId(params: PhaistosBidParams | undefined): boolean {
@@ -108,8 +108,17 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
     if (!validBidRequests?.length || !bidderRequest) {
       return [];
     }
-    lastSyncAccount = resolveAccountId(validBidRequests, bidderRequest);
+    const account = resolveAccountId(validBidRequests, bidderRequest);
     const data = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+    if (data?.id && account) {
+      if (accountByRequestId.size >= MAX_TRACKED_ACCOUNTS) {
+        const oldest = accountByRequestId.keys().next().value;
+        if (oldest != null) {
+          accountByRequestId.delete(oldest);
+        }
+      }
+      accountByRequestId.set(data.id, account);
+    }
     return [{
       method: 'POST',
       url: ENDPOINT,
@@ -154,9 +163,21 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
         qs.set('gpp_sid', gppConsent.applicableSections.toString());
       }
     }
-    const account = lastSyncAccount || getTopDomain(
-      (typeof window !== 'undefined' && window.location?.hostname) || '',
-    );
+    let account = '';
+    for (const resp of serverResponses) {
+      const requestId = resp?.body?.id;
+      if (!requestId || !accountByRequestId.has(requestId)) {
+        continue;
+      }
+      account = accountByRequestId.get(requestId) || '';
+      accountByRequestId.delete(requestId);
+      break;
+    }
+    if (!account) {
+      account = getTopDomain(
+        (typeof window !== 'undefined' && window.location?.hostname) || '',
+      );
+    }
     if (account) {
       qs.set('account', account);
     }

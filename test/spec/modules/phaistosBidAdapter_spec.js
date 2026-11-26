@@ -1,9 +1,41 @@
 import { expect } from 'chai';
 import { getTopDomain, spec } from 'modules/phaistosBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { findRootDomain, coreStorage } from 'src/fpd/rootDomain.js';
+import { canSetCookie } from 'src/storageManager.js';
 import { parseUrl } from 'src/utils.js';
 
 describe('phaistosBidAdapter', function () {
+  let sandbox;
+  let cookies;
+  // Domains the stub treats as public suffixes (browser would reject Domain=…).
+  const publicSuffixes = new Set(['com', 'uk', 'co.uk', 'org.uk', 'com.au']);
+
+  beforeEach(function () {
+    findRootDomain.clear();
+    canSetCookie.clear();
+    cookies = {};
+    sandbox = sinon.createSandbox();
+    sandbox.stub(coreStorage, 'cookiesAreEnabled').returns(true);
+    sandbox.stub(coreStorage, 'setCookie').callsFake((cookie, value, expiration, sameSite, domain) => {
+      if (publicSuffixes.has(domain)) {
+        return;
+      }
+      if (new Date(expiration) <= Date.now()) {
+        delete cookies[cookie];
+      } else {
+        cookies[cookie] = value;
+      }
+    });
+    sandbox.stub(coreStorage, 'getCookie').callsFake((cookie) => cookies[cookie]);
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    findRootDomain.clear();
+    canSetCookie.clear();
+  });
+
   const bannerBid = {
     bidder: 'phaistos',
     params: { id: 42551, host: 'https://x.grxchange.gr' },
@@ -58,6 +90,11 @@ describe('phaistosBidAdapter', function () {
     it('returns eTLD+1 for longer hostnames', function () {
       expect(getTopDomain('www.example.com')).to.equal('example.com');
       expect(getTopDomain('a.b.example.com')).to.equal('example.com');
+    });
+
+    it('handles multi-part public suffixes', function () {
+      expect(getTopDomain('www.example.co.uk')).to.equal('example.co.uk');
+      expect(getTopDomain('a.b.example.co.uk')).to.equal('example.co.uk');
     });
 
     it('strips a port before deriving the domain', function () {
@@ -240,11 +277,17 @@ describe('phaistosBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const syncResponse = [{ body: { ext: { responsetimemillis: { phaistos: 12 } } } }];
+    let auctionRequest;
+    let syncResponse;
 
     beforeEach(function () {
-      // Sets lastSyncAccount from the auction request.
-      spec.buildRequests([bannerBid], bidderRequest);
+      auctionRequest = spec.buildRequests([bannerBid], bidderRequest)[0];
+      syncResponse = [{
+        body: {
+          id: auctionRequest.data.id,
+          ext: { responsetimemillis: { phaistos: 12 } }
+        }
+      }];
     });
 
     it('returns no syncs when iframe sync is disabled', function () {
@@ -275,11 +318,31 @@ describe('phaistosBidAdapter', function () {
 
     it('uses params.accountId for the sync account when set', function () {
       const bid = Object.assign({}, bannerBid, {
-        params: { id: 4003, accountId: 'custom-account' }
+        params: { id: 42551, accountId: 'custom-account' }
       });
-      spec.buildRequests([bid], bidderRequest);
-      const syncs = spec.getUserSyncs({ iframeEnabled: true }, syncResponse);
+      const request = spec.buildRequests([bid], bidderRequest)[0];
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{
+        body: { id: request.data.id }
+      }]);
       expect(parseUrl(syncs[0].url).search.account).to.equal('custom-account');
+    });
+
+    it('keeps each auction account tied to its response id', function () {
+      const bidA = Object.assign({}, bannerBid, {
+        params: { id: 42551, accountId: 'account-a' }
+      });
+      const bidB = Object.assign({}, bannerBid, {
+        bidId: 'bid-b',
+        params: { id: 42552, accountId: 'account-b' }
+      });
+      const requestA = spec.buildRequests([bidA], bidderRequest)[0];
+      const requestB = spec.buildRequests([bidB], bidderRequest)[0];
+      // Later auction B must not overwrite A's sync account.
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [{
+        body: { id: requestA.data.id }
+      }]);
+      expect(parseUrl(syncs[0].url).search.account).to.equal('account-a');
+      expect(requestB.data.id).to.not.equal(requestA.data.id);
     });
   });
 

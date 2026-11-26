@@ -45,7 +45,7 @@ publisher `ortb2` / consent modules via ortbConverter.
 | Name        | Scope    | Description                                                                                      | Type              |
 | ----------- | -------- | ------------------------------------------------------------------------------------------------ | ----------------- |
 | `id`        | required | ad unit id                                                                                       | `string`/`number` |
-| `host`      | optional | the grxchange origin. When omitted, Phaistos prebid server fallbacks to `https://x.grxchange.gr` | `string`          |
+| `host`      | optional | the grxchange origin. When omitted, Phaistos prebid server falls back to `https://x.grxchange.gr` | `string`          |
 | `accountId` | optional | Override for `site.publisher.id`. Defaults to eTLD+1 of the page domain.                         | `string`          |
 
 # Test Parameters
