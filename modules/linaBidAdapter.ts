@@ -6,7 +6,6 @@ import type { Size } from '../src/types/common.d.ts';
 import type { NativeRequest, NativeResponse } from '../src/types/ortb/native.d.ts';
 import { fillVideoImp } from '../libraries/ortbConverter/processors/video.js';
 import { fillNativeImp } from '../libraries/ortbConverter/processors/native.js';
-import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'lina' as const;
@@ -143,21 +142,14 @@ function getBannerFormats(bid: BidRequest<typeof BIDDER_CODE>): BannerFormat[] {
 }
 
 function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): string | null | undefined {
-  const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
   const requestCurrencies = bidderRequest.ortb2?.cur;
-  const requestCurrency = Array.isArray(requestCurrencies) && requestCurrencies.length === 1 &&
-    isValidCurrency(requestCurrencies[0]) ? requestCurrencies[0] : undefined;
-  if (isValidCurrency(adServerCurrency) && requestCurrency !== undefined) {
-    return adServerCurrency === requestCurrency ? adServerCurrency : null;
-  }
-  if (isValidCurrency(adServerCurrency)) return adServerCurrency;
-  if (requestCurrency !== undefined) return requestCurrency;
-  return adServerCurrency !== undefined || requestCurrencies !== undefined ? null : undefined;
+  if (requestCurrencies === undefined) return undefined;
+  return Array.isArray(requestCurrencies) && requestCurrencies.length === 1 &&
+    isValidCurrency(requestCurrencies[0]) ? requestCurrencies[0] : null;
 }
 
-function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>, currency: string | null | undefined): Record<string, unknown> {
-  const ortb2 = bidderRequest.ortb2 ?? {};
-  return typeof currency === 'string' && ortb2.cur === undefined ? { ...ortb2, cur: [currency] } : ortb2;
+function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): Record<string, unknown> {
+  return bidderRequest.ortb2 ?? {};
 }
 
 type ClientFloorResult =
@@ -165,8 +157,8 @@ type ClientFloorResult =
   | { valid: false };
 
 function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null | undefined): ClientFloorResult {
-  if (typeof bid.getFloor !== 'function') return { valid: true };
   if (currency === null) return { valid: false };
+  if (typeof bid.getFloor !== 'function') return { valid: true };
   const bidCurrency = bid.ortb2Imp?.bidfloorcur;
   const floorCurrency = currency ?? (bidCurrency === undefined
     ? DEFAULT_FLOOR_CURRENCY
@@ -421,7 +413,7 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           ...(isNonEmptyString(auctionId) ? { auctionId } : {}),
           publisherId,
           ...(timeoutMs === undefined ? {} : { timeoutMs }),
-          ortb2: getRequestOrtb2(bidderRequest, currency),
+          ortb2: getRequestOrtb2(bidderRequest),
           bids: mappedBids,
           privacy: getPrivacy(bidderRequest),
         },

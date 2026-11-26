@@ -30,16 +30,20 @@ The adapter passes OpenRTB request fields through without duplicating server
 field-removal policies. It only maps LINA identifiers and selected media formats.
 LINA SSP determines which fields to use and applies inventory, pricing,
 supply-chain, and privacy policies. The adapter calls `bid.getFloor()` with the
-resolved request currency and wildcard media type and size, then sends a valid,
-finite, nonnegative result as
+single valid `ortb2.cur` currency and wildcard media type and size, then sends a
+valid, finite, nonnegative result as
 `ortb2Imp.bidfloor` and `ortb2Imp.bidfloorcur`, including an explicit zero.
-When the currency resolver cannot find a configured request currency, the
-adapter uses a valid existing `ortb2Imp.bidfloorcur` or defaults the floor
-lookup to USD, matching Prebid Core. This lookup default does not synthesize a
-top-level OpenRTB request currency. An explicitly configured but unresolvable currency, failed
-`getFloor()` call, malformed result, or currency mismatch skips that bid rather
-than sending an unverified floor. A null or empty result is a valid "no matching
-rule" result and preserves any existing static OpenRTB floor.
+Bid and floor signaling currency is independent of
+`ortb2.ext.prebid.adServerCurrency`: the adapter does not use the ad-server
+currency for `getFloor()` and never synthesizes `ortb2.cur` from it. When
+`ortb2.cur` is absent, the adapter uses a valid existing
+`ortb2Imp.bidfloorcur`; if that field is also absent, the floor lookup defaults
+to USD. A present but invalid floor currency is not replaced with a fallback.
+This lookup default does not add top-level `ortb2.cur`. An invalid or multiple
+`ortb2.cur`, failed `getFloor()` call, malformed
+result, or currency mismatch skips that bid rather than sending an unverified
+floor. A null or empty result is a valid "no matching rule" result and preserves
+any existing static OpenRTB floor.
 The SSP uses `max(placement floor, client floor)` as the publisher Net CPM
 floor and converts that value to DSP Gross CPM using the publisher fee. Floor
 currency, request currency, response currency, and the registered publisher

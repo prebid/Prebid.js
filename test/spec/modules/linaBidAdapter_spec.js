@@ -546,13 +546,30 @@ describe('linaBidAdapter', function () {
     expect(requestWithoutCurrency.data).not.to.have.property('currency');
   });
 
-  it('synthesizes one request currency from the Prebid ad server currency', function () {
-    const request = spec.buildRequests([BID_REQUEST], {
+  it('does not synthesize cur from the ad server currency and keeps the floor fallback', function () {
+    const bidderRequest = {
       ...BIDDER_REQUEST,
-      ortb2: { ext: { prebid: { adServerCurrency: 'JPY' } } },
+      ortb2: { ...BIDDER_REQUEST.ortb2, ext: { prebid: { adServerCurrency: 'JPY' } } },
+    };
+    [
+      { bidfloorcur: undefined, currency: 'USD' },
+      { bidfloorcur: 'EUR', currency: 'EUR' },
+    ].forEach(({ bidfloorcur, currency }) => {
+      const getFloor = sandbox.stub().returns({ floor: 1.25, currency });
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        ortb2Imp: {
+          ...BID_REQUEST.ortb2Imp,
+          ...(bidfloorcur === undefined ? {} : { bidfloorcur }),
+        },
+        getFloor,
+      }], bidderRequest);
+
+      expect(getFloor.calledOnceWithExactly({ currency, mediaType: '*', size: '*' })).to.equal(true);
+      expect(request.data.bids[0].ortb2Imp).to.include({ bidfloor: 1.25, bidfloorcur: currency });
+      expect(request.data.ortb2).not.to.have.property('cur');
+      expect(request.data.ortb2.ext).to.deep.equal({ prebid: { adServerCurrency: 'JPY' } });
     });
-    expect(request.data.ortb2.cur).to.deep.equal(['JPY']);
-    expect(request.data.ortb2.ext).to.deep.equal({ prebid: { adServerCurrency: 'JPY' } });
   });
 
   it('leaves OpenRTB timeout policy to the SSP without modifying the input', function () {
@@ -628,6 +645,30 @@ describe('linaBidAdapter', function () {
     expect(request).to.deep.equal([]);
   });
 
+  it('skips floor-enabled bids with invalid or multiple request currencies', function () {
+    [['usd'], ['USD', 'EUR']].forEach((cur) => {
+      const getFloor = sandbox.stub().returns({ floor: 1, currency: 'USD' });
+      const request = spec.buildRequests([{ ...BID_REQUEST, getFloor }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur },
+      });
+
+      expect(getFloor.called).to.equal(false);
+      expect(request).to.deep.equal([]);
+    });
+  });
+
+  it('skips bids with invalid or multiple request currencies when the Floors Module is absent', function () {
+    [['usd'], ['USD', 'EUR']].forEach((cur) => {
+      const request = spec.buildRequests([BID_REQUEST], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur },
+      });
+
+      expect(request).to.deep.equal([]);
+    });
+  });
+
   it('skips bids with unusable client floor module results', function () {
     [
       () => ({ floor: -1, currency: 'USD' }),
@@ -655,25 +696,34 @@ describe('linaBidAdapter', function () {
     expect(request).to.deep.equal([]);
   });
 
-  it('does not synthesize a floor when ad server and request currencies conflict', function () {
-    let getFloorCalled = false;
-    const request = spec.buildRequests([{
-      ...BID_REQUEST,
-      getFloor: () => {
-        getFloorCalled = true;
-        return { floor: 1000, currency: 'KRW' };
-      },
-    }], {
-      ...BIDDER_REQUEST,
-      ortb2: {
-        ...BIDDER_REQUEST.ortb2,
-        cur: ['KRW'],
-        ext: { prebid: { adServerCurrency: 'USD' } },
-      },
-    });
+  it('uses the explicit request currency independently of the ad server currency', function () {
+    [
+      { requestCurrency: 'USD', adServerCurrency: 'EUR' },
+      { requestCurrency: 'EUR', adServerCurrency: 'USD' },
+      { requestCurrency: 'USD', adServerCurrency: 'USD' },
+    ].forEach(({ requestCurrency, adServerCurrency }) => {
+      const getFloor = sandbox.stub().returns({ floor: 1.5, currency: requestCurrency });
+      const request = spec.buildRequests([{ ...BID_REQUEST, getFloor }], {
+        ...BIDDER_REQUEST,
+        ortb2: {
+          ...BIDDER_REQUEST.ortb2,
+          cur: [requestCurrency],
+          ext: { prebid: { adServerCurrency } },
+        },
+      });
 
-    expect(getFloorCalled).to.equal(false);
-    expect(request).to.deep.equal([]);
+      expect(getFloor.calledOnceWithExactly({
+        currency: requestCurrency,
+        mediaType: '*',
+        size: '*',
+      })).to.equal(true);
+      expect(request.data.ortb2.cur).to.deep.equal([requestCurrency]);
+      expect(request.data.ortb2.ext).to.deep.equal({ prebid: { adServerCurrency } });
+      expect(request.data.bids[0].ortb2Imp).to.include({
+        bidfloor: 1.5,
+        bidfloorcur: requestCurrency,
+      });
+    });
   });
 
   it('keeps a static floor when the Floors Module has no matching rule', function () {
