@@ -23,6 +23,9 @@ on:
 permissions:
   contents: read
 
+env:
+  VITEST_COVERAGE: '0'
+
 jobs:
 
   define:
