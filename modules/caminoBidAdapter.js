@@ -15,6 +15,7 @@ import {
 } from "../src/utils.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { getStorageManager } from "../src/storageManager.js";
+import { parseDomain } from "../src/refererDetection.js";
 import { BANNER, VIDEO } from "../src/mediaTypes.js";
 import { isSlotMatchingAdUnitCode } from "../libraries/gptUtils/gptUtils.js";
 import { getBoundingClientRect } from "../libraries/boundingClientRect/boundingClientRect.js";
@@ -74,7 +75,7 @@ export const spec = {
       return false;
     }
     const banner = deepAccess(bid, "mediaTypes.banner");
-    if (banner && !isArray(banner.sizes)) {
+    if (banner && (!isArray(banner.sizes) || !bannerFormats(bid).length)) {
       return false;
     }
     const video = deepAccess(bid, "mediaTypes.video");
@@ -89,68 +90,17 @@ export const spec = {
    * @param {CaminoBidRequest[]} bidRequests
    */
   buildRequests(bidRequests, bidderRequest) {
-    const ortb = {
-      id: bidderRequest?.bidderRequestId,
-      imp: bidRequests.map(buildImp),
-      site: buildSite(bidRequests, bidderRequest),
-      device: deepAccess(bidderRequest, "ortb2.device"),
-      tmax: bidderRequest?.timeout,
-      ext: { session: buildSession() },
-    };
-
-    // The publisher's block lists, forwarded as set.
-    ["bcat", "badv", "bapp"].forEach((field) => {
-      const value = deepAccess(bidderRequest, `ortb2.${field}`);
-      if (value) {
-        ortb[field] = value;
-      }
+    // One request per Camino account: the endpoint keys floors, revenue share
+    // and the schain on site.publisher.id, which holds a single account.
+    const accounts = new Map();
+    bidRequests.forEach((bid) => {
+      const publisherId = String(bid.params.publisherId);
+      accounts.set(publisherId, [...(accounts.get(publisherId) || []), bid]);
     });
-
-    const gdpr = bidderRequest?.gdprConsent;
-    if (gdpr) {
-      deepSetValue(ortb, "regs.ext.gdpr", gdpr.gdprApplies ? 1 : 0);
-    }
-    if (bidderRequest?.uspConsent) {
-      deepSetValue(ortb, "regs.ext.us_privacy", bidderRequest.uspConsent);
-    }
-    const gpp =
-      deepAccess(bidderRequest, "gppConsent.gppString") ||
-      deepAccess(bidderRequest, "ortb2.regs.gpp");
-    if (gpp) {
-      deepSetValue(ortb, "regs.ext.gpp", gpp);
-      const sid =
-        deepAccess(bidderRequest, "gppConsent.applicableSections") ||
-        deepAccess(bidderRequest, "ortb2.regs.gpp_sid");
-      if (sid) {
-        deepSetValue(ortb, "regs.ext.gpp_sid", sid);
-      }
-    }
-    if (deepAccess(bidderRequest, "ortb2.regs.coppa")) {
-      deepSetValue(ortb, "regs.coppa", 1);
-    }
-
-    const user = { ...deepAccess(bidderRequest, "ortb2.user") };
-    if (gdpr?.consentString) {
-      deepSetValue(user, "ext.consent", gdpr.consentString);
-    }
-    const eids = bidRequests[0].userIdAsEids;
-    if (isArray(eids) && eids.length) {
-      deepSetValue(user, "ext.eids", eids);
-    }
-    if (Object.keys(user).length) {
-      ortb.user = user;
-    }
-
-    const schain = deepAccess(bidRequests[0], "ortb2.source.ext.schain");
-    if (schain) {
-      deepSetValue(ortb, "source.ext.schain", schain);
-    }
-
-    return {
-      method: "POST",
-      url: BID_URL,
-      data: JSON.stringify(ortb),
-    };
+    const session = buildSession();
+    return [...accounts.values()].map((bids) =>
+      buildRequest(bids, bidderRequest, session),
+    );
   },
 
   interpretResponse(serverResponse) {
@@ -199,6 +149,75 @@ export const spec = {
     return [];
   },
 };
+
+// buildRequest builds the request for the bids of one Camino account.
+function buildRequest(bidRequests, bidderRequest, session) {
+  const ortb = {
+    id: bidderRequest?.bidderRequestId,
+    imp: bidRequests.map(buildImp),
+    site: buildSite(bidRequests, bidderRequest),
+    device: deepAccess(bidderRequest, "ortb2.device"),
+    tmax: bidderRequest?.timeout,
+    ext: { session },
+  };
+
+  // The publisher's block lists, forwarded as set.
+  ["bcat", "badv", "bapp"].forEach((field) => {
+    const value = deepAccess(bidderRequest, `ortb2.${field}`);
+    if (value) {
+      ortb[field] = value;
+    }
+  });
+
+  // Starts from the publisher's ortb2.regs (coppa, ext.gpc, ext.dsa, ...),
+  // with the consent modules' values set on top.
+  const regs = deepClone(deepAccess(bidderRequest, "ortb2.regs") || {});
+  const gdpr = bidderRequest?.gdprConsent;
+  if (gdpr) {
+    deepSetValue(regs, "ext.gdpr", gdpr.gdprApplies ? 1 : 0);
+  }
+  if (bidderRequest?.uspConsent) {
+    deepSetValue(regs, "ext.us_privacy", bidderRequest.uspConsent);
+  }
+  const gpp =
+    deepAccess(bidderRequest, "gppConsent.gppString") ||
+    deepAccess(bidderRequest, "ortb2.regs.gpp");
+  if (gpp) {
+    deepSetValue(regs, "ext.gpp", gpp);
+    const sid =
+      deepAccess(bidderRequest, "gppConsent.applicableSections") ||
+      deepAccess(bidderRequest, "ortb2.regs.gpp_sid");
+    if (sid) {
+      deepSetValue(regs, "ext.gpp_sid", sid);
+    }
+  }
+  if (Object.keys(regs).length) {
+    ortb.regs = regs;
+  }
+
+  const user = { ...deepAccess(bidderRequest, "ortb2.user") };
+  if (gdpr?.consentString) {
+    deepSetValue(user, "ext.consent", gdpr.consentString);
+  }
+  const eids = bidRequests[0].userIdAsEids;
+  if (isArray(eids) && eids.length) {
+    deepSetValue(user, "ext.eids", eids);
+  }
+  if (Object.keys(user).length) {
+    ortb.user = user;
+  }
+
+  const schain = deepAccess(bidRequests[0], "ortb2.source.ext.schain");
+  if (schain) {
+    deepSetValue(ortb, "source.ext.schain", schain);
+  }
+
+  return {
+    method: "POST",
+    url: BID_URL,
+    data: JSON.stringify(ortb),
+  };
+}
 
 function buildImp(bidRequest) {
   // Starts from the publisher's impression-level OpenRTB data (gpid, battr,
@@ -329,12 +348,13 @@ function buildSite(bidRequests, bidderRequest) {
   // Starts from the publisher's ortb2.site (content, cat, keywords, ...). The
   // publisherId param replaces only publisher.id: it is the Camino-issued
   // account id, not the id other platforms put in ortb2.site.publisher.id.
+  // The publisher's site.page wins over the detected one. The domain is that
+  // page's host with any www. kept, as in refererInfo.domain: the endpoint keys
+  // domain config on it, while Prebid's ortb2.site.domain drops the www.
   const referer = bidderRequest?.refererInfo || {};
-  const site = {
-    ...deepClone(deepAccess(bidderRequest, "ortb2.site") || {}),
-    domain: referer.domain,
-    page: referer.page,
-  };
+  const site = deepClone(deepAccess(bidderRequest, "ortb2.site") || {});
+  site.page = site.page || referer.page;
+  site.domain = (site.page && parseDomain(site.page)) || referer.domain;
   const publisherId = deepAccess(bidRequests[0], "params.publisherId");
   if (publisherId) {
     site.publisher = { ...site.publisher, id: String(publisherId) };
@@ -342,7 +362,14 @@ function buildSite(bidRequests, bidderRequest) {
   return site;
 }
 
+// The banner's fixed sizes. The publisher's ortb2Imp.banner.format wins when
+// set; its ratio-only entries are dropped, since Prebid stands in placeholder
+// sizes such as [[16, 9]] for them and the endpoint serves fixed sizes only.
 function bannerFormats(bidRequest) {
+  const format = deepAccess(bidRequest, "ortb2Imp.banner.format");
+  if (isArray(format)) {
+    return format.filter((f) => f.w > 0 && f.h > 0);
+  }
   const sizes =
     deepAccess(bidRequest, "mediaTypes.banner.sizes") || bidRequest.sizes;
   return parseSizesInput(sizes).map((size) => {

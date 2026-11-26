@@ -39,6 +39,13 @@ describe('caminoBidAdapter', function () {
     ortb2: { regs: { coppa: 1 } }
   };
 
+  // The single request built for bids of one Camino account.
+  function buildRequest(bids, request) {
+    const requests = spec.buildRequests(bids, request);
+    expect(requests).to.have.lengthOf(1);
+    return requests[0];
+  }
+
   it('declares the IAB Europe GVL vendor ID', function () {
     expect(spec.gvlid).to.equal(1670);
   });
@@ -76,6 +83,15 @@ describe('caminoBidAdapter', function () {
       expect(spec.isBidRequestValid(noProtocols)).to.equal(false);
     });
 
+    it('returns false for a banner with only ratio formats', function () {
+      const bid = {
+        ...bannerBid,
+        mediaTypes: { banner: { sizes: [[16, 9]] } },
+        ortb2Imp: { banner: { format: [{ wratio: 16, hratio: 9, wmin: 300 }] } }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('accepts a banner+video ad unit with incomplete video, for its banner part', function () {
       const bid = {
         params: { placementId: '12345', publisherId: '987' },
@@ -87,7 +103,7 @@ describe('caminoBidAdapter', function () {
 
   describe('buildRequests', function () {
     it('sends a single POST with all imps batched', function () {
-      const request = spec.buildRequests([bannerBid, videoBid], bidderRequest);
+      const request = buildRequest([bannerBid, videoBid], bidderRequest);
       expect(request.method).to.equal('POST');
       expect(request.url).to.be.a('string');
       const data = JSON.parse(request.data);
@@ -96,12 +112,12 @@ describe('caminoBidAdapter', function () {
     });
 
     it('sends with Prebid default options', function () {
-      const request = spec.buildRequests([bannerBid], bidderRequest);
+      const request = buildRequest([bannerBid], bidderRequest);
       expect(request.options).to.equal(undefined);
     });
 
     it('builds banner format from sizes', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.imp[0].id).to.equal('bid-banner-1');
       expect(data.imp[0].tagid).to.equal('banner-div');
       expect(data.imp[0].ext.placementId).to.equal('12345');
@@ -113,12 +129,12 @@ describe('caminoBidAdapter', function () {
 
     it('omits imp.ext.placementId when the placementId param is not set', function () {
       const bid = { ...bannerBid, params: { publisherId: '987' } };
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].ext).to.not.have.property('placementId');
     });
 
     it('reports viewability and scroll offset as "na" when the slot element is missing', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.imp[0].banner.ext.viewability).to.equal('na');
       expect(data.imp[0].banner.ext.scrollOffset).to.equal('na');
     });
@@ -128,7 +144,7 @@ describe('caminoBidAdapter', function () {
       element.id = 'banner-div';
       document.body.appendChild(element);
       try {
-        const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+        const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
         expect(data.imp[0].banner.ext.viewability).to.be.a('number');
         expect(data.imp[0].banner.ext.scrollOffset).to.be.a('number');
         expect(data.imp[0].banner.ext.scrollOffset).to.be.at.least(0);
@@ -138,7 +154,7 @@ describe('caminoBidAdapter', function () {
     });
 
     it('builds an OpenRTB video imp from mediaTypes.video', function () {
-      const data = JSON.parse(spec.buildRequests([videoBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([videoBid], bidderRequest).data);
       const video = data.imp[0].video;
       expect(video.mimes).to.deep.equal(['video/mp4']);
       expect(video.protocols).to.deep.equal([2, 3]);
@@ -163,31 +179,69 @@ describe('caminoBidAdapter', function () {
       };
 
       it('sends only the banner', function () {
-        const imp = JSON.parse(spec.buildRequests([multiBid], bidderRequest).data).imp[0];
+        const imp = JSON.parse(buildRequest([multiBid], bidderRequest).data).imp[0];
         expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
         expect(imp.video).to.be.undefined;
       });
 
       it('sends only the banner when the video part is incomplete', function () {
         const bid = { ...multiBid, mediaTypes: { ...multiBid.mediaTypes, video: { context: 'instream', playerSize: [[640, 480]] } } };
-        const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+        const imp = JSON.parse(buildRequest([bid], bidderRequest).data).imp[0];
         expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
         expect(imp.video).to.be.undefined;
       });
 
       it('takes from ortb2Imp only the media object of the format sent', function () {
         const bid = { ...multiBid, ortb2Imp: { banner: { battr: [1] }, video: { battr: [2] } } };
-        const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+        const imp = JSON.parse(buildRequest([bid], bidderRequest).data).imp[0];
         expect(imp.banner.battr).to.deep.equal([1]);
         expect(imp.video).to.be.undefined;
       });
     });
 
     it('populates site from refererInfo and publisher param', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.site.domain).to.equal('example.com');
       expect(data.site.page).to.equal('https://example.com/article');
       expect(data.site.publisher.id).to.equal('987');
+    });
+
+    it('prefers the publisher site.page and takes the domain from its host, www. kept', function () {
+      const site = { page: 'https://www.example.com/article', domain: 'example.com' };
+      const data = JSON.parse(buildRequest([bannerBid], {
+        ...bidderRequest,
+        refererInfo: { domain: 'www.example.com', page: 'https://www.example.com/article?utm_source=x' },
+        ortb2: { site }
+      }).data);
+      expect(data.site.page).to.equal('https://www.example.com/article');
+      expect(data.site.domain).to.equal('www.example.com');
+    });
+
+    it('falls back to refererInfo when the publisher sets no site.page', function () {
+      const data = JSON.parse(buildRequest([bannerBid], { ...bidderRequest, ortb2: { site: {} } }).data);
+      expect(data.site.page).to.equal('https://example.com/article');
+      expect(data.site.domain).to.equal('example.com');
+    });
+
+    it('sends one request per publisherId', function () {
+      const other = { ...bannerBid, bidId: 'bid-banner-2', params: { publisherId: '555' } };
+      const requests = spec.buildRequests([bannerBid, videoBid, other], bidderRequest).map((r) => JSON.parse(r.data));
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].site.publisher.id).to.equal('987');
+      expect(requests[0].imp.map((imp) => imp.id)).to.deep.equal(['bid-banner-1', 'bid-video-1']);
+      expect(requests[1].site.publisher.id).to.equal('555');
+      expect(requests[1].imp.map((imp) => imp.id)).to.deep.equal(['bid-banner-2']);
+      expect(requests[1].ext.session).to.deep.equal(requests[0].ext.session);
+    });
+
+    it('sends the fixed sizes of the publisher ortb2Imp.banner.format, without its ratio entries', function () {
+      const bid = {
+        ...bannerBid,
+        mediaTypes: { banner: { sizes: [[300, 250], [16, 9]] } },
+        ortb2Imp: { banner: { format: [{ w: 300, h: 250 }, { wratio: 16, hratio: 9, wmin: 300 }] } }
+      };
+      const imp = JSON.parse(buildRequest([bid], bidderRequest).data).imp[0];
+      expect(imp.banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
     it('keeps the publisher ortb2.site and replaces only publisher.id with the param', function () {
@@ -197,7 +251,7 @@ describe('caminoBidAdapter', function () {
         content: { title: 'Article' },
         publisher: { id: 'other-platform-id', name: 'Example Media' }
       };
-      const request = spec.buildRequests([bannerBid], { ...bidderRequest, ortb2: { site } });
+      const request = buildRequest([bannerBid], { ...bidderRequest, ortb2: { site } });
       const data = JSON.parse(request.data);
       expect(data.site.cat).to.deep.equal(['IAB1']);
       expect(data.site.keywords).to.equal('news');
@@ -208,14 +262,14 @@ describe('caminoBidAdapter', function () {
 
     it('forwards the publisher bcat, badv and bapp', function () {
       const ortb2 = { bcat: ['IAB25'], badv: ['blocked.com'], bapp: ['com.blocked.app'] };
-      const data = JSON.parse(spec.buildRequests([bannerBid], { ...bidderRequest, ortb2 }).data);
+      const data = JSON.parse(buildRequest([bannerBid], { ...bidderRequest, ortb2 }).data);
       expect(data.bcat).to.deep.equal(['IAB25']);
       expect(data.badv).to.deep.equal(['blocked.com']);
       expect(data.bapp).to.deep.equal(['com.blocked.app']);
     });
 
     it('omits bcat, badv and bapp when the publisher sets none', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data).to.not.have.any.keys('bcat', 'badv', 'bapp');
     });
 
@@ -224,7 +278,7 @@ describe('caminoBidAdapter', function () {
         ...bannerBid,
         ortb2Imp: { instl: 1, ext: { gpid: '/123/banner', data: { pbadslot: 'slot' } }, banner: { battr: [1, 3], pos: 1 } }
       };
-      const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+      const imp = JSON.parse(buildRequest([bid], bidderRequest).data).imp[0];
       expect(imp.instl).to.equal(1);
       expect(imp.ext.gpid).to.equal('/123/banner');
       expect(imp.ext.data).to.deep.equal({ pbadslot: 'slot' });
@@ -237,14 +291,14 @@ describe('caminoBidAdapter', function () {
 
     it('keeps the publisher ortb2Imp.video fields on a video imp', function () {
       const bid = { ...videoBid, ortb2Imp: { video: { battr: [6], w: 1, h: 1 } } };
-      const imp = JSON.parse(spec.buildRequests([bid], bidderRequest).data).imp[0];
+      const imp = JSON.parse(buildRequest([bid], bidderRequest).data).imp[0];
       expect(imp.video.battr).to.deep.equal([6]);
       expect(imp.video.w).to.equal(640);
       expect(imp.video.h).to.equal(480);
     });
 
     it('forwards tmax', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.tmax).to.equal(3000);
     });
 
@@ -257,33 +311,44 @@ describe('caminoBidAdapter', function () {
         sua: { platform: { brand: 'macOS' }, mobile: 0 },
         ext: { vpw: 1280, vph: 800 }
       };
-      const request = spec.buildRequests([bannerBid], Object.assign({}, bidderRequest, { ortb2: { device } }));
+      const request = buildRequest([bannerBid], Object.assign({}, bidderRequest, { ortb2: { device } }));
       expect(JSON.parse(request.data).device).to.deep.equal(device);
     });
 
     it('builds regs with gdpr, us_privacy and coppa', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.regs.ext.us_privacy).to.equal('1YNN');
       expect(data.regs.coppa).to.equal(1);
     });
 
+    it('keeps the publisher ortb2.regs, such as ext.gpc and ext.dsa', function () {
+      const dsa = { dsarequired: 2, pubrender: 0 };
+      const ortb2 = { regs: { coppa: 1, ext: { gpc: '1', dsa } } };
+      const data = JSON.parse(buildRequest([bannerBid], { ...bidderRequest, ortb2 }).data);
+      expect(data.regs.ext.gpc).to.equal('1');
+      expect(data.regs.ext.dsa).to.deep.equal(dsa);
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(ortb2.regs.ext.gdpr).to.be.undefined;
+    });
+
     it('builds user consent from gdpr', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.user.ext.consent).to.equal('CONSENT_STR');
     });
 
     it('includes user eids when present', function () {
       const eids = [{ source: 'example.com', uids: [{ id: 'abc' }] }];
       const bid = Object.assign({}, bannerBid, { userIdAsEids: eids });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.user.ext.eids).to.deep.equal(eids);
     });
 
     it('includes schain when present', function () {
       const schain = { ver: '1.0', complete: 1, nodes: [] };
       const bid = Object.assign({}, bannerBid, { ortb2: { source: { ext: { schain } } } });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.source.ext.schain).to.deep.equal(schain);
     });
 
@@ -293,7 +358,7 @@ describe('caminoBidAdapter', function () {
         bidderRequestsCount: 2,
         bidderWinsCount: 1
       });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].ext.bidRequestCount).to.equal(3);
       expect(data.imp[0].ext.bidderRequestCount).to.equal(2);
       expect(data.imp[0].ext.bidderWinCount).to.equal(1);
@@ -302,8 +367,8 @@ describe('caminoBidAdapter', function () {
     it('sends a persistent session id and an incrementing refresh count', function () {
       getGlobal().bidderSettings = { camino: { storageAllowed: true } };
       try {
-        const first = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
-        const second = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+        const first = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
+        const second = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
         expect(first.ext.session.id).to.be.a('string');
         expect(second.ext.session.id).to.equal(first.ext.session.id);
         expect(second.ext.session.refreshCount).to.equal(first.ext.session.refreshCount + 1);
@@ -313,7 +378,7 @@ describe('caminoBidAdapter', function () {
     });
 
     it('omits the session id when storage is not allowed', function () {
-      const data = JSON.parse(spec.buildRequests([bannerBid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bannerBid], bidderRequest).data);
       expect(data.ext.session.id).to.be.undefined;
       expect(data.ext.session.refreshCount).to.be.a('number');
     });
@@ -322,7 +387,7 @@ describe('caminoBidAdapter', function () {
       const bid = Object.assign({}, bannerBid, {
         getFloor: () => ({ currency: 'USD', floor: 1.25 })
       });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].bidfloor).to.equal(1.25);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
     });
@@ -331,7 +396,7 @@ describe('caminoBidAdapter', function () {
       const bid = Object.assign({}, bannerBid, {
         getFloor: ({ size }) => ({ currency: 'USD', floor: size[1] === 250 ? 2.0 : 1.5 })
       });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].bidfloor).to.equal(1.5);
     });
 
@@ -343,7 +408,7 @@ describe('caminoBidAdapter', function () {
           return { currency: 'USD', floor: 3 };
         }
       });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].bidfloor).to.equal(3);
       expect(calls).to.deep.equal([{ currency: 'USD', mediaType: 'video', size: [640, 480] }]);
     });
@@ -352,7 +417,7 @@ describe('caminoBidAdapter', function () {
       const bid = Object.assign({}, bannerBid, {
         getFloor: () => ({ currency: 'EUR', floor: 1.25 })
       });
-      const data = JSON.parse(spec.buildRequests([bid], bidderRequest).data);
+      const data = JSON.parse(buildRequest([bid], bidderRequest).data);
       expect(data.imp[0].bidfloor).to.be.undefined;
       expect(data.imp[0].bidfloorcur).to.be.undefined;
     });
