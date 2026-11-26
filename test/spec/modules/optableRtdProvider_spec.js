@@ -359,10 +359,15 @@ describe('Optable RTD Submodule', function () {
 
     it('strips cache-only _-prefixed metadata from cached EIDs', function () {
       sandbox.stub(storage, 'getDataFromLocalStorage').returns(JSON.stringify({
-        ortb2: { user: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }], _ref: { refreshToken: 'secret' }, _id5: { signature: 'sig' } }] } }
+        ortb2: {
+          user: {
+            eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }], _ref: { refreshToken: 'secret' }, _id5: { signature: 'sig' } }],
+            ext: { eids: [{ source: 'id5-sync.com', uids: [{ id: 'def' }], _id5: { signature: 'sig' } }] }
+          }
+        }
       }));
       expect(readCachedTargeting()).to.deep.equal({
-        user: { ext: { eids: [{ source: 'uidapi.com', uids: [{ id: 'abc' }] }] } }
+        user: { ext: { eids: [{ source: 'id5-sync.com', uids: [{ id: 'def' }] }, { source: 'uidapi.com', uids: [{ id: 'abc' }] }] } }
       });
     });
   });
@@ -1148,7 +1153,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.firstCall.args[3].withCredentials).to.be.false;
     });
 
-    it('follows TCF Purpose 1 for credentials when GDPR applies', async function () {
+    it('follows TCF Purpose 1 when GDPR applies, and the global deviceAccess setting, for credentials', async function () {
       storage.getDataFromLocalStorage.returns(null);
       ajaxStub.callsFake((url, options) => options.success('{}'));
 
@@ -1165,6 +1170,11 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       resetTargetingRequest();
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, consentWith(true, undefined));
       expect(ajaxStub.secondCall.args[3].withCredentials).to.be.true;
+
+      resetTargetingRequest();
+      sandbox.stub(config, 'getConfig').callThrough().withArgs('deviceAccess').returns(false);
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, consentWith(true, undefined));
+      expect(ajaxStub.thirdCall.args[3].withCredentials).to.be.false;
     });
 
     it('adds default __passport__ ID when no IDs configured', async function () {

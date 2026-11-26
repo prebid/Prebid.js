@@ -171,7 +171,7 @@ pbjs.setConfig({
 - **UID2 refresh data:** `ext.optable.ref` pointers are stripped from EIDs before they reach bid requests, and `refs` are stored keyed by EID source, matching the Web SDK cache format.
 - **Passport:** Stored under the Web SDK's `OPTABLE_PASSPORT_*` key, and removed from the response before merging.
 - **Split tests:** `splitTestAssignment` comes from the DCN's `split_test_assignment` (`test` or `production`). The DCN enforces its holdout by returning no EIDs to `test` visitors, so direct mode uses the DCN split; the Web SDK's client-side `setupAB` (`OPTABLE_SPLIT_TEST`) is not read.
-- **Consent:** GPP and TCF strings come from Prebid's consent modules. When GDPR applies, credentials are only sent when TCF Purpose 1 is granted. The module has no GVL ID, so when the `tcfControl` module enforces GDPR, Prebid blocks its storage, credentials and EID enrichment unless `optable` is listed in the `softVendorExceptions` of the `storage` rule. Purpose 1 consent is still required:
+- **Consent:** GPP and TCF strings come from Prebid's consent modules. Credentials are never sent when Prebid's `deviceAccess` is `false`, and when GDPR applies, only when TCF Purpose 1 is granted. The module has no GVL ID, so when the `tcfControl` module enforces GDPR, Prebid blocks its storage, credentials and EID enrichment unless `optable` is listed in the `softVendorExceptions` of the `storage` rule. Purpose 1 consent is still required:
 
   ```javascript
   pbjs.setConfig({
