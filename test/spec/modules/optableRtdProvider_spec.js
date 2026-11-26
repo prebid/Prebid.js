@@ -912,6 +912,35 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal([{ source: 'existing.com' }]);
     });
 
+    it('merges EIDs from both user.eids and user.ext.eids in the response', function () {
+      const targetingData = {
+        ortb2: {
+          user: {
+            eids: [{ source: 'optable.co', uids: [{ id: 'a' }] }],
+            ext: { foo: 'bar', eids: [{ source: 'id5-sync.com', _id5: { signature: 'sig' }, uids: [{ id: 'b', ext: { optable: { ref: 'r1' } } }] }] }
+          }
+        }
+      };
+
+      targetingHandleRtd(reqBidsConfigObj, targetingData, mergeFn);
+      expect(mergeFn.firstCall.args[1].user).to.deep.equal({
+        ext: {
+          foo: 'bar',
+          eids: [
+            { source: 'optable.co', uids: [{ id: 'a' }] },
+            { source: 'id5-sync.com', uids: [{ id: 'b' }] }
+          ]
+        }
+      });
+    });
+
+    it('keeps EIDs that are only under user.ext.eids when user.eids is empty', function () {
+      const targetingData = { ortb2: { user: { eids: [], ext: { eids: [{ source: 'optable.co', uids: [{ id: 'a' }] }] } } } };
+
+      targetingHandleRtd(reqBidsConfigObj, targetingData, mergeFn);
+      expect(mergeFn.firstCall.args[1].user.ext.eids).to.deep.equal([{ source: 'optable.co', uids: [{ id: 'a' }] }]);
+    });
+
     it('skips Optable UID2 EIDs when user.ext.eids already has one', function () {
       reqBidsConfigObj.ortb2Fragments.global = { user: { ext: { eids: [{ source: 'uidapi.com', uids: [{ id: 'pub-uid2' }] }] } } };
       const targetingData = {
@@ -1309,6 +1338,21 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledOnce).to.be.true;
     });
 
+    it('caches but does not merge an API response when the auction is not delayed', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      const handleRtd = sinon.spy();
+      moduleConfig.params.handleRtd = handleRtd;
+      ajaxStub.callsFake((url, options) => {
+        setTimeout(() => options.success('{"ortb2":{"user":{"eids":[{"source":"late.com"}]}}}'), 0);
+      });
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 0);
+
+      expect(handleRtd.called).to.be.false;
+      expect(callback.calledOnce).to.be.true;
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.true;
+    });
+
     it('caches a response that arrives after auctionDelay without merging it', async function () {
       storage.getDataFromLocalStorage.returns(null);
       const handleRtd = sinon.spy();
@@ -1351,29 +1395,18 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(ajaxStub.calledTwice).to.be.true;
     });
 
-    it('uses the bundle cache instead of calling the DCN when the bundle is loading', async function () {
-      window.optable = { cmd: [] };
-      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
-      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: { user: { eids } } }));
+    it('calls the DCN directly when the page set up window.optable but the SDK has not loaded', async function () {
+      window.optable = { cmd: [], site: 'my-site' };
+      storage.getDataFromLocalStorage.returns(null);
+      const eids = [{ source: 'optable.co', uids: [{ id: 'direct-id' }] }];
+      ajaxStub.callsFake((url, options) => options.success(JSON.stringify({ ortb2: { user: { eids } } })));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
-      expect(ajaxStub.called).to.be.false;
-      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(window.optable.cmd).to.have.length(0);
       expect(callback.calledOnce).to.be.true;
       expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
-      delete window.optable;
-    });
-
-    it('waits for the loading bundle when its cache is empty', async function () {
-      window.optable = { cmd: [] };
-      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
-
-      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
-
-      expect(window.optable.cmd).to.have.length(1);
-      expect(ajaxStub.called).to.be.false;
-      expect(callback.called).to.be.false;
       delete window.optable;
     });
 
@@ -1415,7 +1448,7 @@ describe('Optable RTD Submodule - enableTargeting', function () {
     });
 
     it('waits for an async handleRtd before releasing the auction', async function () {
-      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [] } } }));
+      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { eids: [{ source: 'cached.com', uids: [{ id: 'x' }] }] } } }));
       ajaxStub.callsFake(() => {});
       let handled = false;
       moduleConfig.params.handleRtd = () => new Promise(resolve => setTimeout(() => {
@@ -1443,13 +1476,54 @@ describe('Optable RTD Submodule - enableTargeting', function () {
       expect(callback.calledOnce).to.be.true;
     });
 
-    it('handles invalid config gracefully', async function () {
+    it('uses the cached SDK targeting for a partial direct API configuration', async function () {
       moduleConfig.params.host = null;
+      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ ortb2: { user: { eids } } }));
 
-      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
 
       expect(ajaxStub.called).to.be.false;
       expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('waits for the API instead of serving the empty cache placeholder a bundle wrote', async function () {
+      const eids = [{ source: 'optable.co', uids: [{ id: 'fresh-id' }] }];
+      storage.getDataFromLocalStorage.withArgs(OPTABLE_RESOLVED_KEY).returns(JSON.stringify({ refs: {} }));
+      ajaxStub.callsFake((url, options) => options.success(JSON.stringify({ ortb2: { user: { eids } } })));
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('serves a cached response whose EIDs are only under user.ext.eids', async function () {
+      const eids = [{ source: 'optable.co', uids: [{ id: 'cached-id' }] }];
+      storage.getDataFromLocalStorage.returns(JSON.stringify({ ortb2: { user: { ext: { eids } } } }));
+      ajaxStub.callsFake(() => {});
+
+      await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+
+      expect(callback.calledOnce).to.be.true;
+      expect(reqBidsConfigObj.ortb2Fragments.global.user.ext.eids).to.deep.equal(eids);
+    });
+
+    it('leaves the cache alone when the SDK loads before the direct response arrives', async function () {
+      storage.getDataFromLocalStorage.returns(null);
+      let respond;
+      ajaxStub.callsFake((url, options) => { respond = options.success; });
+
+      const pending = getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {}, 1000);
+      window.optable = { instance: { targeting: sinon.stub() } };
+      respond('{"ortb2":{"user":{"eids":[]}}}');
+      await pending;
+
+      expect(storage.setDataInLocalStorage.calledWith(OPTABLE_RESOLVED_KEY)).to.be.false;
+      expect(storage.setDataInLocalStorage.calledWith(sinon.match(/^OPTABLE_TARGETING_/))).to.be.false;
+      delete window.optable;
     });
 
     it('updates SDK-compatible targeting cache after successful API call', async function () {

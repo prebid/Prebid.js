@@ -1870,6 +1870,21 @@ describe('User ID', function () {
           allConsent.reset();
           gdprDataHandler.enable();
         });
+        it('finishes pending ID initialization with the replacement consent', async () => {
+          mockIdCallback.callsFake(cb => cb(MOCK_ID));
+          startInit();
+          const ids = getGlobal().getUserIdsAsync();
+          await clearStack();
+          sinon.assert.notCalled(mockIdSystem.getId);
+          gdprDataHandler.reset();
+          gdprDataHandler.enable();
+          gdprDataHandler.setConsentData({ consentString: 'replacement' });
+          expect(await ids).to.deep.equal(getGlobal().getUserIds());
+          sinon.assert.calledWith(mockIdSystem.getId, sinon.match.any, sinon.match({
+            gdpr: { consentString: 'replacement' }
+          }));
+        });
+
         it('should not trigger if consent changes before first init', async () => {
           gdprDataHandler.setConsentData({ 'consentString': 'first' });
           startInit();

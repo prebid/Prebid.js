@@ -232,6 +232,15 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
     });
 
+    it('should not set a contentType, so no CORS preflight is triggered', function () {
+      const validBidRequests = [createValidBidRequest()];
+      const bidderRequest = createBidderRequest();
+
+      const result = spec.buildRequests(validBidRequests, bidderRequest);
+
+      expect(result.options?.contentType).to.be.undefined;
+    });
+
     it('should handle missing consent from bidder request', function () {
       const testUrl = 'kobler.no';
       const auctionId = 'f3d41a92-104a-4ff7-8164-29197cfbf4af';
