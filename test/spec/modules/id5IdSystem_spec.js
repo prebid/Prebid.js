@@ -16,9 +16,32 @@ import '../../../src/prebid.js';
 import { hook } from '../../../src/hook.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import { server } from '../../mocks/xhr.js';
+import * as refererDetection from '../../../src/refererDetection.js';
 import { expect } from 'chai';
 import { PbPromise } from '../../../src/utils/promise.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
+
+const PAGE_URL = 'https://www.publisher.com/article/secret-path?token=secret-query#secret-frag';
+const FULL_URLS_REFERER_INFO = {
+  reachedTop: true,
+  isAmp: false,
+  numIframes: 1,
+  stack: [PAGE_URL, 'https://frame.com/secret-frame?q=secret-frame-query'],
+  topmostLocation: PAGE_URL,
+  location: PAGE_URL,
+  canonicalUrl: 'https://www.publisher.com/secret-canonical',
+  page: 'https://www.publisher.com/secret-canonical',
+  domain: 'www.publisher.com',
+  ref: 'https://referer.com/search?q=secret-ref',
+  legacy: {
+    reachedTop: true,
+    isAmp: false,
+    numIframes: 1,
+    stack: [PAGE_URL, 'https://frame.com/secret-frame?q=secret-frame-query'],
+    referer: PAGE_URL,
+    canonicalUrl: 'https://www.publisher.com/secret-canonical'
+  }
+};
 
 describe('ID5 ID System', function () {
   let logInfoStub;
@@ -491,6 +514,38 @@ describe('ID5 ID System', function () {
       expect(submoduleResponse).is.eql(id5PrebidResponse(ID5_JSON_RESPONSE, config));
     });
 
+    describe('with full page URLs in referer info', function () {
+      let sandbox;
+
+      beforeEach(function () {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(refererDetection, 'getRefererInfo').returns(FULL_URLS_REFERER_INFO);
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+      });
+
+      it('should call the ID5 server with page origins only', async function () {
+        const xhrServerMock = new XhrServerMock(server);
+        const config = getId5FetchConfig();
+
+        // Trigger the fetch but we await on it later
+        const submoduleResponsePromise = callSubmoduleGetId(config, undefined, undefined);
+
+        const fetchRequest = await xhrServerMock.expectFetchRequest();
+        expect(fetchRequest.requestBody).to.not.include('secret');
+        const requestBody = JSON.parse(fetchRequest.requestBody);
+        expect(requestBody.u).to.eq('https://www.publisher.com');
+        expect(requestBody.tml).to.eq('https://www.publisher.com');
+        expect(requestBody.ref).to.eq('https://referer.com');
+        expect(requestBody).to.not.have.property('cu');
+
+        fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+        await submoduleResponsePromise;
+      });
+    });
+
     it('should call the ID5 server with gdpr data ', async function () {
       const xhrServerMock = new XhrServerMock(server);
       const consentData = {
@@ -940,6 +995,32 @@ describe('ID5 ID System', function () {
         const submoduleResponse = await submoduleResponsePromise;
         expect(submoduleResponse).to.eql(id5PrebidResponse(MOCK_RESPONSE, config));
         expect(mockId5ExternalModule.calledOnce);
+      });
+
+      it('should pass only used referer info fields, with origins only, to the external module', async function () {
+        const sandbox = sinon.createSandbox();
+        sandbox.stub(refererDetection, 'getRefererInfo').returns(FULL_URLS_REFERER_INFO);
+        try {
+          const xhrServerMock = new XhrServerMock(server);
+          const config = getId5FetchConfig();
+          config.params.externalModuleUrl = 'https://test-me.test';
+
+          const submoduleResponsePromise = callSubmoduleGetId(config, undefined, undefined);
+
+          const configRequest = await xhrServerMock.expectConfigRequest();
+          configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_API_CONFIG));
+          await submoduleResponsePromise;
+
+          expect(mockId5ExternalModule.firstCall.args[2]).to.eql({
+            topmostLocation: 'https://www.publisher.com',
+            ref: 'https://referer.com',
+            reachedTop: true,
+            numIframes: 1,
+            stack: ['https://www.publisher.com', 'https://frame.com']
+          });
+        } finally {
+          sandbox.restore();
+        }
       });
     });
 
@@ -1838,6 +1919,45 @@ describe('ID5 ID System', function () {
             linkType: 0
           }
         }]
+      });
+    });
+  });
+  describe('externalModuleRefererInfo', function () {
+    it('should keep only fields used by the external module, with URLs reduced to origins', function () {
+      const fullUrl = 'https://www.example.com/article/secret?token=secret#secret';
+      expect(id5System.externalModuleRefererInfo({
+        reachedTop: true,
+        isAmp: false,
+        numIframes: 1,
+        stack: [fullUrl, 'https://frame.com/secret', null],
+        topmostLocation: fullUrl,
+        location: fullUrl,
+        canonicalUrl: 'https://canonical.com/secret',
+        page: fullUrl,
+        domain: 'www.example.com',
+        ref: 'https://referer.com/search?q=secret',
+        legacy: {
+          stack: [fullUrl],
+          referer: fullUrl,
+          canonicalUrl: 'https://canonical.com/secret'
+        }
+      })).to.eql({
+        topmostLocation: 'https://www.example.com',
+        ref: 'https://referer.com',
+        reachedTop: true,
+        numIframes: 1,
+        stack: ['https://www.example.com', 'https://frame.com', null]
+      });
+    });
+
+    it('should tolerate missing data', function () {
+      expect(id5System.externalModuleRefererInfo(undefined)).to.be.undefined;
+      expect(id5System.externalModuleRefererInfo({ reachedTop: false })).to.eql({
+        topmostLocation: null,
+        ref: null,
+        reachedTop: false,
+        numIframes: undefined,
+        stack: []
       });
     });
   });

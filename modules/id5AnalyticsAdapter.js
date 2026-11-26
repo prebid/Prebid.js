@@ -4,6 +4,7 @@ import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { compressDataWithGZip, isGzipCompressionSupported, logError, logInfo } from '../src/utils.js';
 import * as events from '../src/events.js';
+import { toOrigin } from '../libraries/getOrigin/index.js';
 
 const {
   AUCTION_END,
@@ -215,6 +216,11 @@ function erase(obj, key) {
   delete obj[key];
 }
 
+// Reduces a URL to its origin (scheme + host + port), dropping path, query and fragment
+function origin(obj, key) {
+  obj[key] = toOrigin(obj[key]);
+}
+
 // The transform function matches against a path and applies
 // required transformation if match is found.
 function deepTransformingClone(obj, transform, currentPath = []) {
@@ -263,6 +269,28 @@ cleanupRules[AUCTION_END] = [{
 }, {
   match: ['noBids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
   apply: 'redact'
+}, {
+  // only origins of page URLs are sent - full URLs (path, query, fragment) are never sent
+  match: ['bidderRequests', '*', 'refererInfo', ['topmostLocation', 'location', 'canonicalUrl', 'page', 'ref']],
+  apply: 'origin'
+}, {
+  match: ['bidderRequests', '*', 'refererInfo', 'stack', '*'],
+  apply: 'origin'
+}, {
+  match: ['bidderRequests', '*', 'refererInfo', 'legacy', ['referer', 'canonicalUrl']],
+  apply: 'origin'
+}, {
+  match: ['bidderRequests', '*', 'refererInfo', 'legacy', 'stack', '*'],
+  apply: 'origin'
+}, {
+  match: ['bidderRequests', '*', 'ortb2', 'site', ['page', 'ref']],
+  apply: 'origin'
+}, {
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'ortb2', 'site', ['page', 'ref']],
+  apply: 'origin'
+}, {
+  match: [['noBids', 'timedOutRequests'], '*', 'ortb2', 'site', ['page', 'ref']],
+  apply: 'origin'
 }];
 
 cleanupRules[BID_WON] = [{
@@ -273,6 +301,7 @@ cleanupRules[BID_WON] = [{
 const TRANSFORM_FUNCTIONS = {
   'redact': redact,
   'erase': erase,
+  'origin': origin,
 };
 
 // Builds a rule function depending on the event type

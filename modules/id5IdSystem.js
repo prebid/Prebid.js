@@ -24,6 +24,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { PbPromise } from '../src/utils/promise.js';
 import { loadExternalScript } from '../src/adloader.js';
+import { toOrigin } from '../libraries/getOrigin/index.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -384,7 +385,7 @@ export class IdFetchFlow {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
 
-    return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
+    return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, externalModuleRefererInfo(getRefererInfo()), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
   #getExternalIntegration() {
@@ -462,11 +463,11 @@ export class IdFetchFlow {
       'gdpr': hasGdpr,
       'nbPage': nbPage,
       'o': 'pbjs',
-      'tml': referer.topmostLocation,
-      'ref': referer.ref,
-      'cu': referer.canonicalUrl,
+      // only origins are sent - full page URLs (path, query, fragment) are never sent
+      'tml': toOrigin(referer.topmostLocation),
+      'ref': toOrigin(referer.ref),
       'top': referer.reachedTop ? 1 : 0,
-      'u': referer.stack[0] || window.location.href,
+      'u': toOrigin(referer.stack[0]) || toOrigin(window.location.href),
       'v': '$prebid.version$',
       'storage': this.submoduleConfig.storage,
       'localStorage': storage.localStorageIsEnabled() ? 1 : 0,
@@ -516,6 +517,25 @@ export class IdFetchFlow {
     }
     return fetchCallResponse;
   }
+}
+
+/**
+ * Builds the referer info passed to the ID5 external module: only the fields it uses, with all URLs reduced
+ * to origins, so that full page URLs never reach ID5.
+ * @param {Object} refererInfo Prebid's refererInfo
+ * @returns {{topmostLocation: (string|null), ref: (string|null), reachedTop: boolean, numIframes: number, stack: Array<string|null>}|undefined}
+ */
+export function externalModuleRefererInfo(refererInfo) {
+  if (!refererInfo) {
+    return undefined;
+  }
+  return {
+    topmostLocation: toOrigin(refererInfo.topmostLocation),
+    ref: toOrigin(refererInfo.ref),
+    reachedTop: refererInfo.reachedTop,
+    numIframes: refererInfo.numIframes,
+    stack: Array.isArray(refererInfo.stack) ? refererInfo.stack.map(toOrigin) : []
+  };
 }
 
 async function loadExternalModule(url) {
