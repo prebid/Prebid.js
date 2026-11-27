@@ -1,3 +1,7 @@
+import { loadExternalScript, loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
+import * as hook from '../../../src/hook.js';
+import * as activityRules from '../../../src/activities/rules.js';
+import { __TEST__ as panxo } from '../../../modules/panxoRtdProvider.js';
 import * as rtdModule from 'modules/rtdModule/index.js';
 import { config } from 'src/config.js';
 import * as sinon from 'sinon';
@@ -1071,5 +1075,90 @@ describe('Real time module', function () {
       attached.push(provider);
       expect(rtdModule.subModules).to.include(provider);
     });
+  });
+});
+
+describe('Panxo enrichment at the RTD core release boundary', () => {
+  let sandbox;
+  let clock;
+  let provider;
+  let deliver;
+  let previous;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    clock = sandbox.useFakeTimers();
+    const wnd = { panxo_release: { connect: (_api, callback) => { deliver = callback; } } };
+    sandbox.stub(utils, 'getWindowSelf').returns(wnd);
+    sandbox.stub(utils, 'generateUUID').returns('release');
+    sandbox.stub(activityRules, 'isActivityAllowed').returns(true);
+    loadExternalScriptStub.callsFake(loadExternalScript);
+    const registration = sandbox.stub(hook, 'submodule');
+    panxo.main();
+    provider = registration.lastCall.args[1];
+    provider.init({ params: { siteId: 'a1b2c3d4e5f67890' } }, {});
+    clock.tick(0);
+    panxo.onImplLoaded();
+    previous = rtdModule.subModules.splice(0);
+  });
+
+  afterEach(() => {
+    provider.onDataDeletionRequest();
+    rtdModule.subModules.splice(0, rtdModule.subModules.length, ...previous);
+    sandbox.restore();
+  });
+
+  function start(preceding, panxoWait = false) {
+    // A waiting preceding provider gives core a 100ms budget. It spends 20ms
+    // synchronously before Panxo receives the request and the same timeout.
+    let listener;
+    rtdModule.init({ getConfig: (_key, callback) => { listener = callback; return () => {}; } });
+    listener({ realTimeData: { auctionDelay: 100, dataProviders: [] } });
+    rtdModule.subModules.push({ name: 'slow', config: { waitForIt: true }, getBidRequestData: preceding },
+      { ...provider, config: { waitForIt: panxoWait } });
+    const req = { ortb2Fragments: { global: {}, bidder: {} } };
+    const released = sandbox.spy();
+    rtdModule.setBidRequestsData(released, req);
+    return { req, released };
+  }
+
+  it('never enriches at 110ms after core releases at 100ms, with a slower preceding provider', () => {
+    const { req, released } = start(() => clock.tick(20));
+    clock.tick(80);
+    expect(released.calledOnce).to.be.true;
+    // Deliver at 110ms, before the old Panxo-relative timer at 120ms.
+    clock.tick(10);
+    deliver({ type: 'signal', data: { site: { ai: true } } });
+    expect(req.ortb2Fragments.global).to.deep.equal({});
+    clock.tick(100);
+    expect(released.calledOnce).to.be.true;
+  });
+
+  it('never enriches after early release when Panxo is not a waiting provider', () => {
+    const { req, released } = start((_req, done) => { clock.tick(20); done(); });
+    clock.tick(1);
+    expect(released.calledOnce).to.be.true;
+    deliver({ type: 'signal', data: { site: { ai: true } } });
+    expect(req.ortb2Fragments.global).to.deep.equal({});
+  });
+
+  it('does not write asynchronously when an older core supplies no lifecycle state', () => {
+    const req = { ortb2Fragments: { global: {}, bidder: {} } };
+    const done = sandbox.spy();
+    provider.getBidRequestData(req, done, {}, {}, 100);
+    deliver({ type: 'signal', data: { site: { ai: true } } });
+    expect(done.calledOnce).to.be.true;
+    expect(req.ortb2Fragments.global).to.deep.equal({});
+    const cached = { ortb2Fragments: { global: {}, bidder: {} } };
+    provider.getBidRequestData(cached, sandbox.spy(), {}, {}, 100);
+    expect(cached.ortb2Fragments.global.site.ext.data.panxo).to.deep.equal({ ai: true });
+  });
+
+  it('still enriches while the same core auction is waiting', () => {
+    const { req, released } = start(() => clock.tick(20), true);
+    clock.tick(50);
+    deliver({ type: 'signal', data: { site: { ai: true } } });
+    expect(released.notCalled).to.be.true;
+    expect(req.ortb2Fragments.global.site.ext.data.panxo).to.deep.equal({ ai: true });
   });
 });
