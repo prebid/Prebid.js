@@ -17,7 +17,7 @@ import { ACTIVITY_SYNC_USER } from '../src/activities/activities.js';
 import { ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL } from '../src/activities/params.js';
 
 import type { AllConsentData } from '../src/consentHandler.ts';
-import type { IdProviderSpec } from './userId/spec.ts';
+import type { IdHandle, IdProviderSpec } from './userId/spec.ts';
 
 const MODULE_NAME = 'sevioId' as const;
 const GVLID = 1393;
@@ -26,8 +26,10 @@ const EID_SOURCE = 'adx.ws';
 const LOG_PREFIX = 'sevioId: ';
 const RECOMMENDED_STORAGE_TYPES = ['cookie', 'html5'];
 const EMAIL_HASH_PATTERN = /^[0-9a-f]{64}$/;
-// Stored in place of the ID when the Identity service refuses a request. The userId core ignores an
-// empty callback, which would leave a previously stored ID in place; `decode` maps this to no ID.
+// Stored in place of the ID when the Identity service refuses a request. Deleting the ID instead would
+// leave nothing stored, and the userId core calls getId, and so asks the service again, on every page
+// view without a stored value. The marker holds the refusal until consent changes, `refreshInSeconds`
+// elapses or it expires; `decode` maps it to no ID.
 const REVOKED = { revoked: true };
 
 // Generation of the most recent ID request. The core starts a new request when consent changes
@@ -134,7 +136,7 @@ function fireSyncs(syncs) {
   });
 }
 
-function fetchId(callback: (id?: string | typeof REVOKED) => void, params: SevioIdParams, consentData, storedId) {
+function fetchId(callback: (id?: string) => void, params: SevioIdParams, consentData, storedId, handle: IdHandle) {
   const ids = buildIds(storedId, params.emailHash);
   const body = {
     client_id: params.clientId,
@@ -169,7 +171,8 @@ function fetchId(callback: (id?: string | typeof REVOKED) => void, params: Sevio
       } else if (id === null) {
         // The Identity service answers null when the privacy signals or its agent check refuse the call.
         logInfo(`${LOG_PREFIX}the Identity service provided no ID for this request; revoking any stored ID`);
-        callback(REVOKED);
+        handle.set(REVOKED);
+        callback();
       } else {
         logError(`${LOG_PREFIX}the ID response has no valid 'sevio_id'`, response);
         callback();
@@ -198,7 +201,7 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
     }
     return isSevioId(value) ? { sevioId: value } : undefined;
   },
-  getId(config, consentData, storedId) {
+  getId(config, consentData, storedId, handle) {
     if (consentData?.coppa) {
       logInfo(`${LOG_PREFIX}IDs are not provided for COPPA requests`);
       // Supersede any request still in flight: no new request will replace it.
@@ -217,7 +220,7 @@ export const sevioIdSubmodule: IdProviderSpec<typeof MODULE_NAME> = {
     if (!isRecommendedStorageType(String(config.storage.type))) {
       logWarn(`${LOG_PREFIX}storage type '${config.storage.type}' is not recommended; use 'cookie&html5'`);
     }
-    return { callback: (cb) => fetchId(cb, params, consentData, storedId) };
+    return { callback: (cb) => fetchId(cb, params, consentData, storedId, handle) };
   },
   eids: {
     sevioId: (values) => ({
