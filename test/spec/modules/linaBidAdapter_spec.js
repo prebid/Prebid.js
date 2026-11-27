@@ -443,6 +443,28 @@ describe('linaBidAdapter', function () {
       });
     }
 
+    it('removes media sections filtered out by bidder media filtering', function () {
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: { banner: { sizes: [[300, 250]] } },
+        nativeOrtbRequest: NATIVE_REQUEST,
+        ortb2Imp: {
+          ext: { gpid: '/1234/lina-banner' },
+          video: {
+            w: 640,
+            h: 360,
+            mimes: ['video/mp4'],
+          },
+        },
+        sizes: [[300, 250]],
+      }], BIDDER_REQUEST);
+
+      expect(request.data.imp[0]).not.to.have.property('video');
+      if (FEATURES.NATIVE) {
+        expect(request.data.imp[0]).not.to.have.property('native');
+      }
+    });
+
     it('keeps one multi-format imp and one wildcard client floor lookup', function () {
       const getFloor = sandbox.stub().returns({ floor: 0, currency: 'KRW' });
       const request = spec.buildRequests([{

@@ -146,6 +146,9 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = getPlacementId(bidRequest);
+    if (bidRequest.mediaTypes?.banner == null) delete imp.banner;
+    if (bidRequest.mediaTypes?.video == null) delete imp.video;
+    if (bidRequest.mediaTypes?.native == null) delete imp.native;
     if (!FEATURES.VIDEO) delete imp.video;
     if (!FEATURES.NATIVE) delete imp.native;
     delete imp.audio;
