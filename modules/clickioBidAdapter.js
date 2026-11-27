@@ -40,7 +40,10 @@ export const spec = {
     const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     return bids;
   },
-  getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent, coppa) {
+    if (coppa) {
+      return [];
+    }
     const query = formatQS(getUserSyncParams(gdprConsent, uspConsent, gppConsent));
     if (syncOptions.iframeEnabled) {
       return [{ type: 'iframe', url: `${SYNC_HOST}/cookie_sync_html${query ? '?' + query : ''}` }];

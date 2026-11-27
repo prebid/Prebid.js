@@ -167,6 +167,15 @@ describe('clickioBidAdapter', function () {
       expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })).to.be.empty;
     });
 
+    it('should return no syncs when COPPA applies', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [], null, null, null, true)).to.be.empty;
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, true)).to.be.empty;
+    });
+
+    it('should sync when COPPA does not apply', () => {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, [], null, null, null, false)).to.have.lengthOf(5);
+    });
+
     it('should pass the consent to the iframe sync', () => {
       const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, '1YNN', gppConsent);
       const query = queryOf(sync.url);

@@ -36,7 +36,7 @@ The adapter syncs user IDs with Clickio's demand partners through `o.clickiocdn.
 - When iframe syncs are allowed for `clickio`, the adapter registers one iframe that syncs all demand partners.
 - Otherwise, when image syncs are allowed (Prebid's default), it registers up to five images. Each image serves its own share of the demand partners: it redirects to one the user is not synced with yet, or returns an empty pixel, which the browser caches, when there is none.
 
-The adapter does not use device storage.
+No user sync is registered when COPPA applies. The adapter does not use device storage.
 
 ### Test Parameters
 
