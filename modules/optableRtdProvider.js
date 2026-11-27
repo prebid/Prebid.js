@@ -3,7 +3,7 @@ import { loadExternalScript } from '../src/adloader.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
+import { deepAccess, hasDeviceAccess, mergeDeep, prefixLog } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 /**
@@ -237,7 +237,11 @@ const readResolvedCache = () => {
     if (!ortb2?.user?.eids?.length) {
       return null;
     }
-    return { ...ortb2, user: { ...ortb2.user, eids: ortb2.user.eids.map(withoutPrivateKeys) } };
+    const user = { ...ortb2.user, eids: ortb2.user.eids.map(withoutPrivateKeys) };
+    if (Array.isArray(user.ext?.eids)) {
+      user.ext = { ...user.ext, eids: user.ext.eids.map(withoutPrivateKeys) };
+    }
+    return { ...ortb2, user };
   } catch (error) {
     logWarn('Could not read cached targeting data', error);
     return null;
@@ -617,7 +621,7 @@ const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn, options, in
  */
 const extractConsent = (userConsent) => {
   const consent = {
-    deviceAccess: true,
+    deviceAccess: hasDeviceAccess(),
     gpp: null,
     gppSectionIDs: null,
     gdpr: null,
@@ -633,9 +637,9 @@ const extractConsent = (userConsent) => {
     consent.gdprApplies = userConsent.gdpr.gdprApplies;
     consent.gdpr = userConsent.gdpr.consentString || null;
 
-    // deviceAccess follows TCF Purpose 1 when GDPR applies
+    // deviceAccess also follows TCF Purpose 1 when GDPR applies
     if (userConsent.gdpr.gdprApplies) {
-      consent.deviceAccess = userConsent.gdpr.vendorData?.purpose?.consents?.[1] === true;
+      consent.deviceAccess = consent.deviceAccess && userConsent.gdpr.vendorData?.purpose?.consents?.[1] === true;
     }
   }
 
