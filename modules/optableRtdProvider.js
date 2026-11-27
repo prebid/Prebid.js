@@ -1,9 +1,12 @@
+import { ACTIVITY_ACCESS_DEVICE } from '../src/activities/activities.js';
+import { activityParams } from '../src/activities/activityParams.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepAccess, hasDeviceAccess, mergeDeep, prefixLog } from '../src/utils.js';
+import { deepAccess, mergeDeep, prefixLog } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 /**
@@ -621,7 +624,8 @@ const handleSDKMode = async (handleRtdFn, reqBidsConfigObj, mergeFn, options, in
  */
 const extractConsent = (userConsent) => {
   const consent = {
-    deviceAccess: hasDeviceAccess(),
+    // Covers the deviceAccess setting and, with tcfControl, Purpose 1 and vendor consent for this module
+    deviceAccess: isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_RTD, MODULE_NAME)),
     gpp: null,
     gppSectionIDs: null,
     gdpr: null,
@@ -711,14 +715,13 @@ const buildTargetingURL = (params) => {
 };
 
 /**
- * Call the targeting API and return the response in cache format
+ * Call the targeting API and return the response in cache format, with the passport apart
  * @param {Object} params Configuration parameters
- * @returns {Promise<Object|null>} Targeting response or null
+ * @returns {Promise<{data: Object, passport: string|undefined}|null>} Targeting response or null
  */
 const callTargetingAPI = (params) => {
   return new Promise((resolve) => {
     const url = buildTargetingURL(params);
-    const { host, node } = params;
 
     logMessage(`Calling targeting API: ${url.split('?')[0]}`);
 
@@ -730,12 +733,10 @@ const callTargetingAPI = (params) => {
           logMessage(`Targeting API returned ${eidCount} EIDs`);
 
           // The passport must not reach bid requests
-          if (response.passport) {
-            setPassport(host, node, response.passport);
-            delete response.passport;
-          }
+          const passport = response.passport;
+          delete response.passport;
 
-          resolve(toCacheFormat(response));
+          resolve({ data: toCacheFormat(response), passport });
         } catch (e) {
           logError('Failed to parse targeting API response', e);
           resolve(null);
@@ -792,14 +793,20 @@ const fetchTargeting = (apiParams) => {
         targetingRequests.delete(key);
       }
     };
-    entry.request = callTargetingAPI(apiParams).then(data => {
-      if (data) {
-        entry.data = data;
-        storeTargeting(apiParams, data);
-      } else {
+    entry.request = callTargetingAPI(apiParams).then(result => {
+      if (!result) {
         forget();
+        return null;
       }
-      return data;
+      // A data deletion request while the call was out dropped the entry; storing would undo it
+      if (targetingRequests.get(key) === entry) {
+        entry.data = result.data;
+        if (result.passport) {
+          setPassport(apiParams.host, apiParams.node, result.passport);
+        }
+        storeTargeting(apiParams, result.data);
+      }
+      return result.data;
     }).catch(err => {
       logError('Targeting request failed', err);
       forget();
@@ -1099,6 +1106,26 @@ const init = (config, userConsent) => {
   return true;
 }
 
+/**
+ * Remove what the targeting flow stored: the passport, both targeting caches and this page's responses
+ * @param {OptableRtdProviderConfig} config Module configuration
+ */
+export const onDataDeletionRequest = (config) => {
+  resetTargetingRequest();
+  if (!isTargetingEnabled(config)) {
+    return;
+  }
+  const params = parseTargetingConfig(config);
+  if (!params) {
+    return;
+  }
+  storage.removeDataFromLocalStorage(params.cacheKey);
+  if (params.host && params.node) {
+    storage.removeDataFromLocalStorage(generatePassportKey(params.host, params.node));
+    storage.removeDataFromLocalStorage(generateSDKTargetingKey(params.host, params.node));
+  }
+};
+
 // Optable RTD submodule
 export const optableSubmodule = {
   name: MODULE_NAME,
@@ -1106,6 +1133,7 @@ export const optableSubmodule = {
   init,
   getBidRequestData,
   getTargetingData,
+  onDataDeletionRequest,
 }
 
 // Register the Optable RTD submodule
