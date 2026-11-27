@@ -95,7 +95,7 @@ describe('adhouseBidAdapter', function () {
       const r = reqs[0];
       expect(r.method).to.equal('POST');
       expect(r.url).to.equal('https://bid.adhouse.pro/openrtb2/auction');
-      expect(r.options.withCredentials).to.equal(false);
+      expect(r.options.withCredentials).to.equal(true);
       expect(r.options.contentType).to.equal(undefined);
       expect(r.data).to.be.an('object');
       expect(r.data.imp).to.be.an('array').with.lengthOf(1);
@@ -222,8 +222,37 @@ describe('adhouseBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    it('returns an empty array', function () {
+    const SYNC_URL = 'https://bid.adhouse.pro/asp/usersync';
+
+    it('returns nothing when iframe syncs are not allowed', function () {
       expect(spec.getUserSyncs({}, [])).to.deep.equal([]);
+      expect(spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [])).to.deep.equal([]);
+    });
+
+    it('returns the sync iframe without consent parameters when there are none', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, [])).to.deep.equal([
+        { type: 'iframe', url: SYNC_URL }
+      ]);
+    });
+
+    it('passes GDPR, US Privacy and GPP signals on to the sync iframe', function () {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        { gdprApplies: true, consentString: 'CO&x=1' },
+        '1YNN',
+        { gppString: 'DBABMA~1', applicableSections: [7, 8] }
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal(
+        SYNC_URL + '?gdpr=1&gdpr_consent=CO%26x%3D1&us_privacy=1YNN&gpp=DBABMA~1&gpp_sid=7%2C8'
+      );
+    });
+
+    it('sends gdpr=0 when GDPR does not apply', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], { gdprApplies: false, consentString: '' });
+      expect(syncs[0].url).to.equal(SYNC_URL + '?gdpr=0&gdpr_consent=');
     });
   });
 });
