@@ -304,6 +304,9 @@ describe('Seedtag Adapter', function () {
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
         });
+        it('should give the st alias the same gvlid', function () {
+          expect(spec.aliases).to.deep.include({ code: 'st', gvlid: 157 });
+        });
         it('should handle uspConsent', function () {
           const uspConsent = '1---';
 

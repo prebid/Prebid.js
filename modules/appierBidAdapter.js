@@ -23,7 +23,11 @@ const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 export const spec = {
   code: 'appier',
   gvlid: GVLID,
-  aliases: ['appierBR', 'appierExt', 'appierGM'],
+  aliases: [
+    { code: 'appierBR', gvlid: GVLID },
+    { code: 'appierExt', gvlid: GVLID },
+    { code: 'appierGM', gvlid: GVLID }
+  ],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**

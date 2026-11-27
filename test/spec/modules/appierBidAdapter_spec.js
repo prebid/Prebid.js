@@ -176,3 +176,12 @@ describe('AppierAdapter', function () {
     });
   });
 });
+
+describe('Appier alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(728);
+    expect(spec.aliases).to.deep.include({ code: 'appierBR', gvlid: 728 });
+    expect(spec.aliases).to.deep.include({ code: 'appierExt', gvlid: 728 });
+    expect(spec.aliases).to.deep.include({ code: 'appierGM', gvlid: 728 });
+  });
+});

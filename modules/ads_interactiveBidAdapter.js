@@ -11,7 +11,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: [
-    'adsinteractive'
+    { code: 'adsinteractive', gvlid: GVLID }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

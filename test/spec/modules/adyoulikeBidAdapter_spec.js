@@ -825,6 +825,10 @@ describe('Adyoulike Adapter', function () {
     it('should expose gvlid', function() {
       expect(spec.gvlid).to.equal(259);
     });
+
+    it('should give the ayl alias the same gvlid', function() {
+      expect(spec.aliases).to.deep.include({ code: 'ayl', gvlid: 259 });
+    });
   });
 
   describe('getUserSyncs', function () {

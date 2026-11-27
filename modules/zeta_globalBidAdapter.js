@@ -24,7 +24,7 @@ const NET_REV = true;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['zeta'],
+  aliases: [{ code: 'zeta', gvlid: GVLID }],
   supportedMediaTypes: [BANNER],
 
   /**

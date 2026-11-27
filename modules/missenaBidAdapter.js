@@ -29,6 +29,7 @@ import { getViewportSize } from '../libraries/viewport/viewport.js';
  */
 
 const BIDDER_CODE = 'missena';
+const GVLID = 687;
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
@@ -129,9 +130,9 @@ function toPayload(bidRequest, bidderRequest) {
 }
 
 export const spec = {
-  aliases: ['msna'],
+  aliases: [{ code: 'msna', gvlid: GVLID }],
   code: BIDDER_CODE,
-  gvlid: 687,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   /**

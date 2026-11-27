@@ -1341,3 +1341,10 @@ describe('Improve Digital Adapter Tests', function () {
     });
   });
 });
+
+describe('Improve Digital alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(253);
+    expect(spec.aliases).to.deep.include({ code: 'id', gvlid: 253 });
+  });
+});

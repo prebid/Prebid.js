@@ -44,7 +44,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
-  aliases: ['ayl'], // short code
+  aliases: [{ code: 'ayl', gvlid: GVLID }], // short code
   /**
    * Determines whether or not the given bid request is valid.
    *

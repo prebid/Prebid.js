@@ -149,7 +149,7 @@ function response(buildResponse, bidResponses, ortbResponse, context) {
 export const spec = {
   reportEventsEnabled: false,
   code: BIDDER_CODE,
-  aliases: ['bridgeupp'],
+  aliases: [{ code: 'bridgeupp', gvlid: GVLID }],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 

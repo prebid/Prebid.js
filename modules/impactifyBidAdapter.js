@@ -15,7 +15,6 @@ import { isViewabilityMeasurable, getViewability } from '../libraries/percentInV
  */
 
 const BIDDER_CODE = 'impactify';
-const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
@@ -334,7 +333,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: ['video', 'banner'],
-  aliases: BIDDER_ALIAS,
+  aliases: [{ code: 'imp', gvlid: GVL_ID }],
   storageAllowed: true,
 
   /**

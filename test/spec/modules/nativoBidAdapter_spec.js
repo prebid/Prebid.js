@@ -917,3 +917,10 @@ describe('Prebid Native', function () {
     expect(isValid).to.be.true;
   });
 });
+
+describe('Nativo alias GVL IDs', function () {
+  it('gives the same-company aliases the parent GVL ID', function () {
+    expect(spec.gvlid).to.equal(263);
+    expect(spec.aliases).to.deep.include({ code: 'ntv', gvlid: 263 });
+  });
+});

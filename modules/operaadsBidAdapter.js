@@ -28,6 +28,7 @@ import { coppaDataHandler } from '../src/consentHandler.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 const BIDDER_CODE = 'operaads';
+const GVLID = 1135;
 
 const ENDPOINT = 'https://s.oa.opera.com/ortb/v2/';
 const USER_SYNC_ENDPOINT = 'https://s.oa.opera.com/usersync/page';
@@ -79,9 +80,9 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1135,
+  gvlid: GVLID,
   // short code
-  aliases: ['opera'],
+  aliases: [{ code: 'opera', gvlid: GVLID }],
 
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

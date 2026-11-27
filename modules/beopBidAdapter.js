@@ -54,7 +54,7 @@ export const __storage = storage;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: TCF_VENDOR_ID,
-  aliases: ['bp'],
+  aliases: [{ code: 'bp', gvlid: TCF_VENDOR_ID }],
   /**
    * Test if the bid request is valid.
    *
