@@ -12,6 +12,9 @@ import { OUTSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'adhouse';
 const ENDPOINT = 'https://bid.adhouse.pro/openrtb2/auction';
+// Iframe that syncs the browser with the SSPs Adhouse resells through its
+// Prebid Server; the ids end up in a cookie on adhouse.pro.
+const USER_SYNC_URL = 'https://bid.adhouse.pro/asp/usersync';
 // Line-item CPMs may be stored in TRY. bidMotor converts them and always
 // responds with cur=USD. This constant is only the Prebid-side fallback.
 const DEFAULT_CURRENCY = 'USD';
@@ -110,9 +113,10 @@ export const spec = {
       // Content-Type stays at the ajax default (text/plain). The body is still
       // JSON; bidMotor parses it regardless of the header. text/plain keeps the
       // cross-origin POST a simple request, so the browser skips the preflight.
-      // No cookies: bidMotor neither reads nor sets any.
+      // Credentials carry the user sync cookie that the sync iframe (see
+      // getUserSyncs) leaves on adhouse.pro; bidMotor sets no cookies itself.
       options: {
-        withCredentials: false,
+        withCredentials: true,
       },
     }];
   },
@@ -124,8 +128,26 @@ export const spec = {
     return converter.fromORTB({ response: response.body, request: request.data }).bids;
   },
 
-  getUserSyncs() {
-    return [];
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions || !syncOptions.iframeEnabled) {
+      return [];
+    }
+    const params = [];
+    if (gdprConsent) {
+      params.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+      params.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+    }
+    if (uspConsent) {
+      params.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+    if (gppConsent && gppConsent.gppString) {
+      params.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+      params.push('gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
+    }
+    return [{
+      type: 'iframe',
+      url: USER_SYNC_URL + (params.length ? '?' + params.join('&') : ''),
+    }];
   },
 };
 

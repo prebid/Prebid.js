@@ -19,9 +19,27 @@ currency module if the ad server currency is not USD.
 
 First-party data, the supply chain, COPPA and the US Privacy string are taken
 from `bidderRequest.ortb2` by ortbConverter. There is no GVL ID, so this adapter
-does not participate in TCF auctions in the EU. There is no user-sync pixel,
-and bid requests are sent without credentials: the adapter neither reads nor
-sets cookies or other device storage.
+does not participate in TCF auctions in the EU. The adapter itself neither
+reads nor writes cookies or other device storage.
+
+# User Sync
+
+Adhouse also passes on demand from SSPs it works with through its own Prebid
+Server. To let those SSPs recognise the user, the adapter offers an iframe sync
+(`https://bid.adhouse.pro/asp/usersync`, with the GDPR, US Privacy and GPP
+signals). The ids it collects are kept in a cookie on `adhouse.pro`, which is
+why bid requests are sent with credentials. Iframe syncs are off by default in
+Prebid.js; enable them for this bidder with:
+
+```js
+pbjs.setConfig({
+  userSync: {
+    filterSettings: {
+      iframe: { bidders: ['adhouse'], filter: 'include' }
+    }
+  }
+});
+```
 
 Only instream video is supported. A video-only ad unit with
 `context: 'outstream'` is skipped. A mixed banner and outstream unit still
