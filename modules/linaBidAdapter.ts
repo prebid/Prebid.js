@@ -158,6 +158,8 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (isStr(requestId) && requestId.trim().length > 0) request.id = requestId;
     if (isValidCurrency(context.currency)) {
       request.cur = [context.currency];
+    } else {
+      delete request.cur;
     }
     if (isStr(context.linaPublisherId)) {
       deepSetValue(request, 'ext.lina.publisherId', context.linaPublisherId);

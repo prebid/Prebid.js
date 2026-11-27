@@ -3,6 +3,8 @@ import { spec } from 'modules/linaBidAdapter';
 import { config } from 'src/config';
 import { toFetchRequest } from 'src/ajax';
 import sinon from 'sinon';
+import 'src/prebid.js';
+import 'modules/currency.js';
 
 const BID_REQUEST = {
   bidder: 'lina',
@@ -480,6 +482,26 @@ describe('linaBidAdapter', function () {
   });
 
   describe('floors and currency', function () {
+    it('does not propagate an implicit adServerCurrency into request cur', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'JPY',
+          rates: { JPY: { JPY: 1 } },
+        },
+      });
+      const bidderRequest = {
+        ...BIDDER_REQUEST,
+        ortb2: {
+          ...BIDDER_REQUEST.ortb2,
+          ext: { prebid: { adServerCurrency: 'JPY' } },
+        },
+      };
+      const request = spec.buildRequests([BID_REQUEST], bidderRequest);
+
+      expect(request.data).not.to.have.property('cur');
+      expect(request.data.ext.prebid.adServerCurrency).to.equal('JPY');
+    });
+
     it('preserves an explicit zero floor in standard imp fields', function () {
       const request = spec.buildRequests([{
         ...BID_REQUEST,
