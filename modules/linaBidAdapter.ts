@@ -1,13 +1,18 @@
-import { type AdapterRequest, type ServerResponse, type BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  type AdapterRequest,
+  type ExtendedResponse,
+  type ServerResponse,
+  type BidderSpec,
+  registerBidder,
+} from '../src/adapters/bidderFactory.js';
 import type { ClientBidderRequest, BidRequest } from '../src/adapterManager.js';
-import { coppaDataHandler } from '../src/consentHandler.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import type { Size } from '../src/types/common.d.ts';
-import type { NativeRequest, NativeResponse } from '../src/types/ortb/native.d.ts';
-import { fillVideoImp } from '../libraries/ortbConverter/processors/video.js';
-import { fillNativeImp } from '../libraries/ortbConverter/processors/native.js';
-import { logWarn, sizesToSizeTuples } from '../src/utils.js';
+import type { ORTBImp, ORTBRequest } from '../src/types/ortb/request.d.ts';
+import type { ORTBResponse } from '../src/types/ortb/response.d.ts';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { deepSetValue, logWarn, mergeDeep, safeJSONParse } from '../src/utils.js';
 import { isInteger, isPlainObject, isStr } from '../src/utils/objects.js';
+import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 const BIDDER_CODE = 'lina' as const;
 const ENDPOINT_URL = 'https://ssp-api.qa.web3lge.com/v1/prebid/bids';
@@ -18,74 +23,7 @@ export interface LinaBidParams {
   placementId?: string;
 }
 
-type LinaMediaType = typeof BANNER | typeof VIDEO | typeof NATIVE;
-type BannerFormat = {
-  w?: number;
-  h?: number;
-  wratio?: number;
-  hratio?: number;
-  wmin?: number;
-  [key: string]: unknown;
-};
-
-type LinaRequest = {
-  auctionId?: string;
-  publisherId: string;
-  timeoutMs?: number;
-  ortb2: Record<string, unknown>;
-  bids: LinaBidRequest[];
-  privacy: {
-    gdprApplies?: boolean;
-    consentString: string | null;
-    gppString: string | null;
-    gppSections: number[];
-    coppa: boolean;
-  };
-};
-
-type LinaImp = Record<string, unknown> & {
-  id: string;
-  tagid: string;
-  banner?: { format: BannerFormat[] };
-  video?: {
-    w: number;
-    h: number;
-    mimes?: string[];
-    protocols?: number[];
-    minduration?: number;
-    maxduration?: number;
-  };
-  native?: { request?: string };
-  ext?: Record<string, unknown>;
-};
-
-type LinaBidRequest = {
-  bidId: string;
-  transactionId?: string;
-  adUnitCode: string;
-  ortb2Imp: LinaImp;
-};
-
-type LinaBid = {
-  requestId: string;
-  cpm: number;
-  currency: string;
-  creativeId: string;
-  ttl: number;
-  netRevenue: boolean;
-  mediaType: LinaMediaType;
-  width: number;
-  height: number;
-  ad: string;
-  dealId?: string;
-  meta?: { advertiserDomains?: string[] };
-};
-
-type LinaResponse = {
-  requestId: string;
-  currency: string;
-  bids: unknown[];
-};
+type LinaFloor = { bidfloor?: number; bidfloorcur?: string };
 
 declare module '../src/adUnits' {
   interface BidderParams {
@@ -93,52 +31,8 @@ declare module '../src/adUnits' {
   }
 }
 
-function getBannerSizes(bid: BidRequest<typeof BIDDER_CODE>): Size[] {
-  const sizes = bid.mediaTypes ? bid.mediaTypes.banner?.sizes : bid.sizes;
-  if (!Array.isArray(sizes)) return [];
-  const isSizeList = Array.isArray(sizes[0]);
-  if (isSizeList ? !sizes.every(Array.isArray) : sizes.some(Array.isArray)) return [];
-  const normalizedSizes = sizesToSizeTuples(sizes);
-  const expectedSizeCount = isSizeList ? sizes.length : 1;
-  return normalizedSizes.length === expectedSizeCount &&
-    normalizedSizes.every((size) => size.every((dimension) => isInteger(dimension) && dimension > 0))
-    ? normalizedSizes as Size[]
-    : [];
-}
-
-function getVideoSizes(bid: BidRequest<typeof BIDDER_CODE>): Size[] {
-  const playerSize: unknown = bid.mediaTypes?.video?.playerSize;
-  if (!Array.isArray(playerSize)) return [];
-  const firstValidSize = sizesToSizeTuples(playerSize)
-    .find((size) => size.every((dimension) => isInteger(dimension) && dimension > 0));
-  return firstValidSize ? [firstValidSize as Size] : [];
-}
-
-function isValidBannerFormat(format: unknown): format is BannerFormat {
-  if (!isPlainObject(format)) return false;
-  const hasDimensions = isInteger(format.w) && format.w > 0 && isInteger(format.h) && format.h > 0;
-  const hasRatio = isInteger(format.wratio) && format.wratio > 0 &&
-    isInteger(format.hratio) && format.hratio > 0;
-  if (hasDimensions && format.wratio === undefined && format.hratio === undefined) return true;
-  if (hasRatio && format.w === undefined && format.h === undefined) {
-    return format.wmin === undefined || (isInteger(format.wmin) && format.wmin > 0);
-  }
-  return false;
-}
-
-function findMatchingBannerFormat([w, h]: Size, formats: unknown): BannerFormat | undefined {
-  if (!Array.isArray(formats)) return undefined;
-  return formats.find((format): format is BannerFormat => {
-    if (!isValidBannerFormat(format)) return false;
-    return (format.w === w && format.h === h) || (format.wratio === w && format.hratio === h);
-  });
-}
-
-function getBannerFormats(bid: BidRequest<typeof BIDDER_CODE>): BannerFormat[] {
-  const bannerSizes = getBannerSizes(bid);
-  if (bannerSizes.length === 0) return [];
-  const formats = bid.mediaTypes?.banner?.format ?? bid.ortb2Imp?.banner?.format;
-  return bannerSizes.map((size) => findMatchingBannerFormat(size, formats) ?? { w: size[0], h: size[1] });
+function isValidCurrency(value: unknown): value is string {
+  return isStr(value) && /^[A-Z]{3}$/.test(value);
 }
 
 function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): string | null | undefined {
@@ -148,307 +42,244 @@ function getRequestCurrency(bidderRequest: ClientBidderRequest<typeof BIDDER_COD
     isValidCurrency(requestCurrencies[0]) ? requestCurrencies[0] : null;
 }
 
-function getRequestOrtb2(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): Record<string, unknown> {
-  return bidderRequest.ortb2 ?? {};
-}
-
-type ClientFloorResult =
-  | { valid: true; floor?: { bidfloor: number; bidfloorcur: string } }
-  | { valid: false };
-
-function getClientFloor(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null | undefined): ClientFloorResult {
-  if (currency === null) return { valid: false };
-  if (typeof bid.getFloor !== 'function') return { valid: true };
-  const bidCurrency = bid.ortb2Imp?.bidfloorcur;
-  const floorCurrency = currency ?? (bidCurrency === undefined
-    ? DEFAULT_FLOOR_CURRENCY
-    : isValidCurrency(bidCurrency) ? bidCurrency : undefined);
-  if (floorCurrency === undefined) return { valid: false };
-  try {
-    const floor = bid.getFloor({ currency: floorCurrency, mediaType: '*', size: '*' });
-    if (floor === null || (isPlainObject(floor) && !('floor' in floor) && !('currency' in floor))) {
-      return { valid: true };
-    }
-    if (!isPlainObject(floor) || typeof floor.floor !== 'number' || !Number.isFinite(floor.floor) ||
-      floor.floor < 0 || !isValidCurrency(floor.currency) || floor.currency !== floorCurrency) return { valid: false };
-    return { valid: true, floor: { bidfloor: floor.floor, bidfloorcur: floor.currency } };
-  } catch {
-    return { valid: false };
-  }
-}
-
-function getPrivacy(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): LinaRequest['privacy'] {
-  const gdprConsent = bidderRequest.gdprConsent;
-  const gppConsent = bidderRequest.gppConsent;
-  const coppa = bidderRequest.ortb2?.regs?.coppa;
-  return {
-    ...(typeof gdprConsent?.gdprApplies === 'boolean' ? { gdprApplies: gdprConsent.gdprApplies } : {}),
-    consentString: gdprConsent?.consentString ?? null,
-    gppString: gppConsent?.gppString ?? null,
-    gppSections: gppConsent?.applicableSections ?? [],
-    coppa: coppa === 0 || coppa === 1 ? coppa === 1 : coppaDataHandler.getCoppa(),
-  };
-}
-
-function isValidCurrency(value: unknown): value is string {
-  return isStr(value) && /^[A-Z]{3}$/.test(value);
-}
-
-function getVideoParameters(bid: BidRequest<typeof BIDDER_CODE>): Record<string, unknown> | undefined {
-  const size = getVideoSizes(bid)[0];
-  if (!size) return undefined;
-  const video = { ...(isPlainObject(bid.ortb2Imp?.video) ? bid.ortb2Imp.video : {}), ...bid.mediaTypes?.video };
-  return { ...video, playerSize: [size] };
-}
-
-function isValidVideo(bid: BidRequest<typeof BIDDER_CODE>): boolean {
-  const video = getVideoParameters(bid);
-  return video !== undefined && Array.isArray(video.mimes) && video.mimes.length > 0 &&
-    video.mimes.every((mime) => isStr(mime) && mime.trim().length > 0) &&
-    (video.protocols === undefined || (Array.isArray(video.protocols) && video.protocols.length > 0 &&
-      video.protocols.every((protocol) => isInteger(protocol) && protocol > 0))) &&
-    (video.minduration === undefined || (isInteger(video.minduration) && video.minduration >= 0)) &&
-    (video.maxduration === undefined || (isInteger(video.maxduration) && video.maxduration >= 0 &&
-      video.maxduration >= (typeof video.minduration === 'number' ? video.minduration : 0)));
-}
-
-function buildImp(bid: BidRequest<typeof BIDDER_CODE>, currency: string | null | undefined): LinaImp | undefined {
-  const { banner, video: originalVideo, native, ...original } = bid.ortb2Imp ?? {};
-  const bannerFormats = getBannerFormats(bid);
-  const video = isValidVideo(bid) ? getVideoParameters(bid) : undefined;
-  const nativeOrtbRequest = getNativeOrtbRequest(bid);
-  const clientFloor = getClientFloor(bid, currency);
-  if (!clientFloor.valid) {
-    logWarn(`LINA: skipped bid ${bid.bidId} because the Price Floors Module did not return a usable floor in the expected currency`);
-    return undefined;
-  }
-  const generated: Pick<LinaImp, 'video' | 'native'> = {};
-  if (video) fillVideoImp(generated, { mediaTypes: { video } }, {});
-  if (nativeOrtbRequest) fillNativeImp(generated, { nativeOrtbRequest }, {});
-  return {
-    ...original,
-    id: bid.bidId,
-    tagid: getPlacementId(bid)!,
-    ...(bannerFormats.length > 0 ? { banner: { ...banner, format: bannerFormats } } : {}),
-    ...(generated.video ? { video: { ...originalVideo, ...generated.video } } : {}),
-    ...(generated.native ? { native: { ...native, ...generated.native } } : {}),
-    ...clientFloor.floor,
-  };
-}
-
-function isValidNativeRequest(request: unknown): request is NativeRequest {
-  if (!isPlainObject(request) || !Array.isArray(request.assets) || request.assets.length === 0 ||
-    (request.ver !== undefined && (!isStr(request.ver) || request.ver.trim().length === 0))) return false;
-
-  const assetIds = new Set<number>();
-  return request.assets.every((asset) => {
-    if (!isPlainObject(asset) || !isInteger(asset.id) || (asset.id as number) < 0 ||
-      (asset.required !== undefined && asset.required !== 0 && asset.required !== 1)) return false;
-    const assetTypes = ['title', 'img', 'video', 'data'].filter((type) => asset[type] !== undefined);
-    if (assetTypes.length !== 1 || !isPlainObject(asset[assetTypes[0]])) return false;
-    const fields = asset[assetTypes[0]] as Record<string, unknown>;
-    if (assetTypes[0] === 'title' && (!isInteger(fields.len) || (fields.len as number) <= 0)) return false;
-    if (assetTypes[0] === 'img' &&
-      !(['w', 'wmin'].some((key) => isInteger(fields[key]) && (fields[key] as number) > 0))) return false;
-    if (assetTypes[0] === 'video' &&
-      (!Array.isArray(fields.mimes) || fields.mimes.length === 0 ||
-        !fields.mimes.every((mime) => isStr(mime) && mime.trim().length > 0) ||
-        !Array.isArray(fields.protocols) || fields.protocols.length === 0 ||
-        !fields.protocols.every((protocol) => isInteger(protocol) && protocol > 0) ||
-        !isInteger(fields.minduration) || (fields.minduration as number) < 0 ||
-        !isInteger(fields.maxduration) || (fields.maxduration as number) < (fields.minduration as number))) return false;
-    if (assetTypes[0] === 'data' && (!isInteger(fields.type) || (fields.type as number) <= 0)) return false;
-    if (assetIds.has(asset.id as number)) return false;
-    assetIds.add(asset.id as number);
-    return true;
-  });
-}
-
-function getNativeOrtbRequest(bid: BidRequest<typeof BIDDER_CODE>): NativeRequest | undefined {
-  if (!FEATURES.NATIVE || !bid.mediaTypes?.native) return undefined;
-  const request = bid.nativeOrtbRequest ?? bid.mediaTypes.native.ortb;
-  return isValidNativeRequest(request) ? request : undefined;
-}
-
-function getNativeRequest(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
-  const request = getNativeOrtbRequest(bid);
-  if (!request) return undefined;
-  try {
-    return JSON.stringify(request);
-  } catch {
-    return undefined;
-  }
-}
-
-function parseNativeMarkup(markup: string): NativeResponse | undefined {
-  try {
-    const parsed: unknown = JSON.parse(markup);
-    if (!isPlainObject(parsed)) return undefined;
-    const nativeMarkup = 'native' in parsed ? parsed.native : parsed;
-    if (!isPlainObject(nativeMarkup)) return undefined;
-    const candidate = nativeMarkup as { ver?: unknown; assets?: unknown };
-    return isStr(candidate.ver) && candidate.ver.trim().length > 0 && Array.isArray(candidate.assets)
-      ? nativeMarkup as unknown as NativeResponse : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseLinaBid(bid: unknown, requestMediaTypes: Map<string, Set<LinaMediaType>>, currency: string): { bid: LinaBid; nativeMarkup?: NativeResponse } | undefined {
-  if (!isPlainObject(bid)) return undefined;
-
-  const candidate = bid as LinaBid;
-  const nativeMarkup = FEATURES.NATIVE && candidate.mediaType === NATIVE && isStr(candidate.ad) ? parseNativeMarkup(candidate.ad) : undefined;
-  const advertiserDomains = candidate.meta?.advertiserDomains;
-  const hasValidAdvertiserDomains = Array.isArray(advertiserDomains) && advertiserDomains.length > 0 &&
-    advertiserDomains.every((domain) => isStr(domain) && domain.trim().length > 0);
-  const hasValidDealId = candidate.dealId === undefined ||
-    (isStr(candidate.dealId) && candidate.dealId.trim().length > 0);
-  const hasValidMarkup = isStr(candidate.ad) && (candidate.mediaType === VIDEO
-    ? /<VAST(?:\s|>)[\s\S]*<\/VAST>/.test(candidate.ad)
-    : FEATURES.NATIVE && candidate.mediaType === NATIVE ? nativeMarkup !== undefined : candidate.ad.length > 0);
-  const hasValidDimensions = isInteger(candidate.width) && isInteger(candidate.height) &&
-    (FEATURES.NATIVE && candidate.mediaType === NATIVE
-      ? candidate.width >= 0 && candidate.height >= 0
-      : candidate.width > 0 && candidate.height > 0);
-
-  const valid = isStr(candidate.requestId) && requestMediaTypes.get(candidate.requestId)?.has(candidate.mediaType) === true &&
-    typeof candidate.cpm === 'number' && Number.isFinite(candidate.cpm) && candidate.cpm > 0 &&
-    candidate.currency === currency &&
-    isInteger(candidate.ttl) && candidate.ttl > 0 && candidate.ttl <= 3600 &&
-    candidate.netRevenue === true &&
-    (candidate.mediaType === BANNER || candidate.mediaType === VIDEO || (FEATURES.NATIVE && candidate.mediaType === NATIVE)) &&
-    hasValidDimensions &&
-    isStr(candidate.creativeId) && candidate.creativeId.length > 0 &&
-    isStr(candidate.ad) && hasValidMarkup &&
-    hasValidAdvertiserDomains && hasValidDealId;
-  return valid ? { bid: candidate, nativeMarkup } : undefined;
-}
-
-function isValidLinaResponse(response: unknown): response is LinaResponse {
-  if (!isPlainObject(response)) return false;
-
-  const candidate = response as Partial<LinaResponse>;
-  return isStr(candidate.requestId) && candidate.requestId.trim().length > 0 &&
-    isValidCurrency(candidate.currency) && Array.isArray(candidate.bids);
+function normalizeIdentifier(value: unknown): string | undefined {
+  if (!isStr(value)) return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 && !/[\r\n]/.test(normalized)
+    ? normalized
+    : undefined;
 }
 
 function getPublisherId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
-  const publisherId = bid.params?.publisherId;
-  if (!isStr(publisherId)) return undefined;
-  const normalized = publisherId.trim();
-  return normalized.length > 0 && normalized.length <= 200 && !/[\r\n]/.test(normalized) ? normalized : undefined;
-}
-
-function normalizePlacementId(value: unknown): string | undefined {
-  if (!isStr(value)) return undefined;
-  const normalized = value.trim();
-  return normalized.length > 0 && normalized.length <= 100 && !/[\r\n]/.test(normalized) ? normalized : undefined;
+  return normalizeIdentifier(bid.params?.publisherId);
 }
 
 function getPlacementId(bid: BidRequest<typeof BIDDER_CODE>): string | undefined {
-  if (bid.params?.placementId !== undefined) {
-    return normalizePlacementId(bid.params.placementId);
-  }
-  return normalizePlacementId(bid.ortb2Imp?.tagid);
+  return normalizeIdentifier(
+    bid.params?.placementId !== undefined ? bid.params.placementId : bid.ortb2Imp?.tagid,
+  );
 }
 
-function getTimeout(bidderRequest: ClientBidderRequest<typeof BIDDER_CODE>): number | undefined {
-  if (typeof bidderRequest.timeout !== 'number' || !Number.isFinite(bidderRequest.timeout)) return undefined;
-  return bidderRequest.timeout;
+function getClientFloor(
+  bid: BidRequest<typeof BIDDER_CODE>,
+  requestCurrency: string | undefined,
+): LinaFloor | undefined {
+  const staticValue = bid.ortb2Imp?.bidfloor;
+  const staticCurrency = bid.ortb2Imp?.bidfloorcur;
+  if ((staticValue !== undefined &&
+      (typeof staticValue !== 'number' || !Number.isFinite(staticValue) || staticValue < 0)) ||
+    (staticCurrency !== undefined && !isValidCurrency(staticCurrency))) {
+    return undefined;
+  }
+
+  const currency = requestCurrency ?? staticCurrency ?? DEFAULT_FLOOR_CURRENCY;
+  const staticCurrencyMatches = requestCurrency === undefined || staticCurrency === undefined ||
+    staticCurrency === requestCurrency;
+  const staticFloor = staticValue === undefined ? {} : {
+    bidfloor: staticValue,
+    bidfloorcur: staticCurrency ?? currency,
+  };
+  if (typeof bid.getFloor !== 'function') return staticCurrencyMatches ? staticFloor : undefined;
+
+  let result: unknown;
+  try {
+    result = bid.getFloor({ currency, mediaType: '*', size: '*' });
+  } catch {
+    return undefined;
+  }
+  if (result == null || (isPlainObject(result) && Object.keys(result).length === 0)) {
+    return staticCurrencyMatches ? staticFloor : undefined;
+  }
+  if (!isPlainObject(result) || typeof result.floor !== 'number' || !Number.isFinite(result.floor) ||
+    result.floor < 0 || (result.currency != null && !isValidCurrency(result.currency))) return undefined;
+
+  const resultCurrency = result.currency == null ? currency : result.currency;
+  return resultCurrency === currency
+    ? { bidfloor: result.floor, bidfloorcur: resultCurrency }
+    : undefined;
 }
+
+function hasUsableMedia(imp: ORTBImp): boolean {
+  const hasSize = (value: unknown) => isPlainObject(value) &&
+    isInteger(value.w) && value.w > 0 && isInteger(value.h) && value.h > 0;
+  const banner = hasSize(imp.banner) || (isPlainObject(imp.banner) &&
+    Array.isArray(imp.banner.format) && imp.banner.format.length > 0 &&
+    imp.banner.format.every((format) => hasSize(format) || (isPlainObject(format) &&
+      isInteger(format.wratio) && format.wratio > 0 &&
+      isInteger(format.hratio) && format.hratio > 0)));
+  const minDuration = imp.video?.minduration ?? 0;
+  const maxDuration = imp.video?.maxduration ?? 0;
+  const video = isPlainObject(imp.video) && hasSize(imp.video) &&
+    Array.isArray(imp.video.mimes) && imp.video.mimes.length > 0 &&
+    imp.video.mimes.every((mime) => isStr(mime) && mime.trim().length > 0) &&
+    isInteger(minDuration) && minDuration >= 0 &&
+    isInteger(maxDuration) && maxDuration >= 0 &&
+    (maxDuration === 0 || maxDuration >= minDuration);
+  const native = isPlainObject(imp.native) && isStr(imp.native.request)
+    ? safeJSONParse(imp.native.request)
+    : undefined;
+  const hasNative = isPlainObject(native) && Array.isArray(native.assets) &&
+    native.assets.length > 0 && (native.ver == null ||
+      (isStr(native.ver) && native.ver.trim().length > 0)) &&
+    native.assets.every((asset) => isPlainObject(asset) &&
+      isInteger(asset.id) && asset.id >= 0 &&
+      ['title', 'img', 'video', 'data'].filter((type) =>
+        isPlainObject(asset[type])).length === 1);
+  if ((imp.video != null && !video) || (imp.native != null && !hasNative)) return false;
+  return Boolean(banner || video || hasNative);
+}
+
+function normalizeResponse(body: unknown, request: ORTBRequest): ORTBResponse | undefined {
+  if (!isPlainObject(request) || !isPlainObject(body) ||
+    !isStr(body.id) || body.id.trim().length === 0 || body.id !== request.id ||
+    !isValidCurrency(body.cur)) return undefined;
+  const requestCurrency = Array.isArray(request.cur) && request.cur.length === 1
+    ? request.cur[0]
+    : undefined;
+  if (isValidCurrency(requestCurrency) && body.cur !== requestCurrency) return undefined;
+  return body as unknown as ORTBResponse;
+}
+
+const converter = ortbConverter<typeof BIDDER_CODE>({
+  context: { netRevenue: true },
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = getPlacementId(bidRequest);
+    if (!FEATURES.VIDEO) delete imp.video;
+    if (!FEATURES.NATIVE) delete imp.native;
+    delete imp.audio;
+    return imp;
+  },
+
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const requestId = bidderRequest.bidderRequestId ?? context.bidRequests[0]?.bidderRequestId;
+    if (isStr(requestId) && requestId.trim().length > 0) request.id = requestId;
+    if (isValidCurrency(context.currency)) {
+      request.cur = [context.currency];
+    }
+    if (isStr(context.linaPublisherId)) {
+      deepSetValue(request, 'ext.lina.publisherId', context.linaPublisherId);
+    }
+    return request;
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    if (bid.mtype === 4 && isStr(bid.adm)) {
+      const parsed = parseUntrustedJSON(bid.adm);
+      // The standard Native processor expects assets at the root, not the OpenRTB wire wrapper.
+      if (isPlainObject(parsed) && isPlainObject(parsed.native)) {
+        return buildBidResponse({ ...bid, adm: JSON.stringify(parsed.native) }, context);
+      }
+    }
+    return buildBidResponse(bid, context);
+  },
+
+  overrides: {
+    imp: {
+      video(original, imp, bidRequest, context) {
+        const generated: Partial<ORTBImp> = {};
+        original(generated, bidRequest, context);
+        if (generated.video) {
+          const merged = mergeDeep({}, imp.video, generated.video);
+          // mergeDeep combines arrays; active mediaTypes.video arrays must replace stale ortb2Imp arrays.
+          Object.entries(generated.video).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              (merged as Record<string, unknown>)[key] = [...value];
+            }
+          });
+          imp.video = merged as NonNullable<ORTBImp['video']>;
+        }
+      },
+
+      bidfloor() {},
+      extBidfloor() {},
+    },
+  },
+});
 
 export const spec: BidderSpec<typeof BIDDER_CODE> = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] as const : [])],
 
   isBidRequestValid(bid) {
-    const hasValidBanner = getBannerFormats(bid).length > 0;
-    const hasValidVideo = isValidVideo(bid);
-    const hasValidNative = getNativeRequest(bid) !== undefined;
-    return (hasValidBanner || hasValidVideo || hasValidNative) &&
-      getPublisherId(bid) !== undefined &&
-      getPlacementId(bid) !== undefined;
+    return getPublisherId(bid) !== undefined &&
+      getPlacementId(bid) !== undefined &&
+      converter.toORTB({
+        bidRequests: [bid],
+        bidderRequest: { bids: [bid] } as ClientBidderRequest<typeof BIDDER_CODE>,
+      }).imp.some(hasUsableMedia);
   },
 
   buildRequests(validBidRequests, bidderRequest): AdapterRequest | AdapterRequest[] {
     const currency = getRequestCurrency(bidderRequest);
-    const requestsByPublisher = new Map<string, {
-      publisherId: string;
-      bids: BidRequest<typeof BIDDER_CODE>[];
-    }>();
-    validBidRequests.forEach((bid) => {
+    if (currency === null) {
+      logWarn('LINA: skipped request because OpenRTB currency must be a single valid ISO 4217 code');
+      return [];
+    }
+
+    const requestsByPublisher = new Map<string, BidRequest<typeof BIDDER_CODE>[]>();
+    validBidRequests.forEach(bid => {
       const publisherId = getPublisherId(bid);
       if (!publisherId) return;
-      const batch = requestsByPublisher.get(publisherId) ?? { publisherId, bids: [] };
-      batch.bids.push(bid);
-      requestsByPublisher.set(publisherId, batch);
+      const bids = requestsByPublisher.get(publisherId) ?? [];
+      bids.push(bid);
+      requestsByPublisher.set(publisherId, bids);
     });
 
-    const requests = [...requestsByPublisher.values()].flatMap(({ publisherId, bids }) => {
-      const auctionId = bidderRequest.auctionId;
-      const timeoutMs = getTimeout(bidderRequest);
-      const mappedBids = bids.flatMap((bid) => {
-        const ortb2Imp = buildImp(bid, currency);
-        return ortb2Imp === undefined ? [] : [{
-          bidId: bid.bidId,
-          ...(isStr(bid.transactionId) && bid.transactionId.trim().length > 0 ? { transactionId: bid.transactionId } : {}),
-          adUnitCode: bid.adUnitCode,
-          ortb2Imp,
-        }];
+    const requests = [...requestsByPublisher.entries()].flatMap(([publisherId, bids]) => {
+      const eligibleBids = bids.flatMap(bid => {
+        if (getPlacementId(bid) === undefined) return [];
+
+        const floor = getClientFloor(bid, currency);
+        if (!floor) {
+          logWarn(`LINA: skipped bid ${bid.bidId} because the publisher floor or currency is invalid`);
+          return [];
+        }
+
+        const ortb2Imp = { ...bid.ortb2Imp };
+        delete ortb2Imp.bidfloor;
+        delete ortb2Imp.bidfloorcur;
+        Object.assign(ortb2Imp, floor);
+        return [{ ...bid, ortb2Imp }];
       });
-      if (mappedBids.length === 0) return [];
-      return {
+      if (eligibleBids.length === 0) return [];
+
+      const data = converter.toORTB({
+        bidRequests: eligibleBids,
+        bidderRequest,
+        context: {
+          linaPublisherId: publisherId,
+          ...(currency === undefined ? {} : { currency }),
+        },
+      });
+      if (!Array.isArray(data.imp) || data.imp.length === 0) return [];
+      data.imp = data.imp.filter(hasUsableMedia);
+      if (data.imp.length === 0) return [];
+
+      return [{
         method: 'POST' as const,
         url: ENDPOINT_URL,
-        data: {
-          ...(isStr(auctionId) && auctionId.trim().length > 0 ? { auctionId } : {}),
-          publisherId,
-          ...(timeoutMs === undefined ? {} : { timeoutMs }),
-          ortb2: getRequestOrtb2(bidderRequest),
-          bids: mappedBids,
-          privacy: getPrivacy(bidderRequest),
+        data,
+        options: {
+          contentType: 'text/plain',
+          withCredentials: false,
         },
-      };
+      }];
     });
-
     return requests.length === 1 ? requests[0] : requests;
   },
 
   interpretResponse(serverResponse: ServerResponse, request: AdapterRequest) {
-    const response = serverResponse.body;
-    if (!isValidLinaResponse(response) || response.bids.length === 0) return [];
-
-    const requestMediaTypes = new Map((request.data as LinaRequest).bids.map((bid) => {
-      const mediaTypes = new Set<LinaMediaType>();
-      if (bid.ortb2Imp.banner) mediaTypes.add(BANNER);
-      if (bid.ortb2Imp.video) mediaTypes.add(VIDEO);
-      if (FEATURES.NATIVE && bid.ortb2Imp.native) mediaTypes.add(NATIVE);
-      return [bid.bidId, mediaTypes];
-    }));
-    const bids = response.bids.map((bid) => parseLinaBid(bid, requestMediaTypes, response.currency)).filter((bid) => bid !== undefined);
-    return bids.map(({ bid, nativeMarkup }) => {
-      const common = {
-        requestId: bid.requestId,
-        cpm: bid.cpm,
-        currency: bid.currency,
-        creativeId: bid.creativeId,
-        ttl: bid.ttl,
-        netRevenue: bid.netRevenue,
-        width: bid.width,
-        height: bid.height,
-        desirability: 0,
-        ...(bid.dealId === undefined ? {} : { dealId: bid.dealId }),
-        meta: { advertiserDomains: bid.meta?.advertiserDomains },
-      };
-      if (bid.mediaType === VIDEO) {
-        return { ...common, mediaType: VIDEO, vastXml: bid.ad };
-      }
-      if (FEATURES.NATIVE && nativeMarkup) {
-        return { ...common, mediaType: NATIVE, native: { ortb: nativeMarkup } };
-      }
-      return { ...common, mediaType: BANNER, ad: bid.ad };
-    });
+    const ortbRequest = request.data as ORTBRequest;
+    const response = normalizeResponse(serverResponse?.body, ortbRequest);
+    if (!response) return [];
+    try {
+      return (converter.fromORTB({ response, request: ortbRequest }) as ExtendedResponse).bids ?? [];
+    } catch {
+      return [];
+    }
   },
 
   getUserSyncs() {

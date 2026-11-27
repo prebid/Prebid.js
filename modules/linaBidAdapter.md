@@ -20,73 +20,113 @@ override is configured.
 login password. `placementId` is the UUID of the registered placement, independent
 of its media types. A valid LINA placement identifier is always required; when
 `params.placementId` and `ortb2Imp.tagid` are both present, the bidder parameter
-takes precedence.
+takes precedence. The integration key is sent in `request.ext.lina.publisherId`.
 
 LINA supports Multi-format Ad Units and returns one winning format per bid
 request. The publisher currency is fixed by LINA SSP registration. Returned CPM
-is publisher Net CPM with `netRevenue: true`.
+is publisher Net CPM. `netRevenue: true` is adapter response configuration and
+does not appear in the OpenRTB wire response.
 
-The adapter passes OpenRTB request fields through without duplicating server
-field-removal policies. It only maps LINA identifiers and selected media formats.
-LINA SSP determines which fields to use and applies inventory, pricing,
-supply-chain, and privacy policies. The adapter calls `bid.getFloor()` with the
-single valid `ortb2.cur` currency and wildcard media type and size, then sends a
-valid, finite, nonnegative result as
-`ortb2Imp.bidfloor` and `ortb2Imp.bidfloorcur`, including an explicit zero.
-Bid and floor signaling currency is independent of
-`ortb2.ext.prebid.adServerCurrency`: the adapter does not use the ad-server
-currency for `getFloor()` and never synthesizes `ortb2.cur` from it. When
-`ortb2.cur` is absent, the adapter uses a valid existing
-`ortb2Imp.bidfloorcur`; if that field is also absent, the floor lookup defaults
-to USD. A present but invalid floor currency is not replaced with a fallback.
-This lookup default does not add top-level `ortb2.cur`. An invalid or multiple
-`ortb2.cur`, failed `getFloor()` call, malformed
-result, or currency mismatch skips that bid rather than sending an unverified
-floor. A null or empty result is a valid "no matching rule" result and preserves
-any existing static OpenRTB floor.
+The adapter uses Prebid.js `ortbConverter` for standard request and response
+mapping. Banner, Video, and Native sizing, fields, and extensions are passed
+through the converter's standard processors without LINA-specific reshaping.
+The wire request is a direct OpenRTB BidRequest: the top-level
+`id` is the Prebid bidder request ID, `tmax` is the Prebid request budget, and
+each Prebid bid becomes one `imp`. The Prebid bid ID is `imp.id`, the LINA
+placement is `imp.tagid`, and standard `source`, `site`, `device`, `user`,
+`regs`, and media fields remain in their OpenRTB locations. Transaction IDs
+remain in the standard `source.tid` and `imp.ext.tid` fields when Prebid Core
+provides them; the adapter does not backfill unshared IDs.
+
+LINA SSP determines inventory authorization, pricing, supply-chain, deal,
+creative, and privacy policy. The adapter sends the Publisher floor as standard
+`imp.bidfloor` and `imp.bidfloorcur`. It calls `bid.getFloor()` with wildcard
+media type and size. The only request currency is a single valid explicit
+`ortb2.cur`; that currency is also used for floor lookup. Without it, floor
+lookup falls back to a valid existing `imp.bidfloorcur`, then USD, without
+promoting either fallback to request `cur`. `ortb2.ext.prebid.adServerCurrency`
+is independent: the converter may preserve it in the extension, but the
+adapter never uses it for floor lookup and never synthesizes request `cur` or
+an impression-floor currency from it; it is not a clearing-currency source.
+It accepts a finite, nonnegative floor
+result, including an explicit zero. A missing floor-result currency follows
+the effective lookup currency. The adapter performs no FX conversion. Invalid
+or multiple request currencies, failed `getFloor()` calls, malformed results,
+invalid floor currencies, and currency mismatches skip the affected request
+or bid. A null or empty result is a valid "no matching rule" result and
+preserves any existing static OpenRTB floor. Request and clearing currency
+remain subject to LINA SSP's registered-publisher currency policy.
+
 The SSP uses `max(placement floor, client floor)` as the publisher Net CPM
 floor and converts that value to DSP Gross CPM using the publisher fee. Floor
-currency, request currency, response currency, and the registered publisher
-currency must align; LINA does not perform FX conversion in the Prebid client
-path. A missing floor remains distinct from a configured zero.
+currency, response currency, and the registered publisher currency must align.
+SSP floor policy is authoritative: the adapter never chooses the final
+billing floor or price. A missing floor remains distinct from a configured
+zero.
 
-The adapter does not access cookies or local storage and does not register
-user syncs.
+The adapter does not access cookies or local storage, does not register user
+syncs, and sends the auction request without browser credentials.
 
 ## SSP endpoint
 
 Requests use the fixed HTTPS QA endpoint
 `https://ssp-api.qa.web3lge.com/v1/prebid/bids`.
 
-Requests send a JSON body with `Content-Type: text/plain`. The `publisherId`
-body field contains the publisher integration key. Responses use JSON.
-Configure LINA SSP CORS to allow the page origin and return
-`Access-Control-Allow-Credentials: true`.
+Requests are direct OpenRTB JSON bodies sent with `Content-Type: text/plain`.
+The adapter omits `X-App-Key` and other custom headers to keep cross-origin
+POSTs CORS-simple and avoid a preflight round trip within the auction budget.
+The public integration key is exposed in `ext.lina.publisherId`. The old
+`auctionId`, `publisherId`, `timeoutMs`, `ortb2`, `bids[]`, and `privacy`
+envelope is not supported. CORS must allow the publisher origin and
+`Content-Type`.
 
-Transaction ID sharing is optional. The adapter preserves shared
-`ortb2.source.tid` and `ortb2Imp.ext.tid` values and leaves missing TIDs unset.
-LINA SSP accepts requests without TIDs and generates its own request ID for
-request tracking. Publishers do not need to enable TID sharing to use LINA.
+Responses use the standard OpenRTB shape:
+
+```json
+{
+  "id": "bidder-request-id",
+  "cur": "USD",
+  "seatbid": [{
+    "bid": [{
+      "id": "ssp-bid-id",
+      "impid": "prebid-bid-id",
+      "price": 2.5,
+      "crid": "creative-id",
+      "adm": "<div>creative</div>",
+      "w": 300,
+      "h": 250,
+      "mtype": 1,
+      "exp": 300,
+      "adomain": ["advertiser.example"]
+    }]
+  }]
+}
+```
+
+The response `id` must echo the request `id`, and an explicitly supplied
+request currency must match the response currency. The converter maps `exp` to
+Prebid `ttl`, `cur` to `currency`, and `mtype` to Banner (`1`), Video (`2`), or
+Native (`4`). Standard Prebid response processing handles creative fields,
+native markup, dimensions, and no-bid/malformed shapes. SSP creative and
+advertiser-domain validation remains authoritative. Banner and Video may use
+`nurl`; Native width and height are optional. HTTP 204 and an empty `seatbid`
+are No Bid.
 
 ## Privacy
 
-The adapter forwards GDPR, GPP, and COPPA signals to LINA SSP. For
-`privacy.coppa`, an explicit OpenRTB `ortb2.regs.coppa` value of `1` maps to
-`true`, and `0` maps to `false`, taking precedence over Prebid's global
-`coppa` setting. If the request value is absent or is not `0` or `1`, the
-adapter falls back to the global setting. The original OpenRTB fields are
-preserved.
+Prebid Core and the configured consent modules place privacy signals in
+standard OpenRTB locations. The converter preserves that `ortb2` data unchanged;
+the adapter adds no separate privacy wrapper and does not add user sync,
+cookie, local-storage, or external JavaScript behavior.
 
 ## Timeout
 
-The adapter forwards Prebid Core's `bidderRequest.timeout` as `timeoutMs`.
-LINA uses this request budget first. If it is absent or null, the SSP uses
-`BID_DEFAULT_TMAX_MS`, or 1000ms when that environment variable is unset.
-The total budget is capped at 5000ms, then 200ms is reserved once for network
-and SSP processing. The remainder is sent to ADEx as `tmax`. Explicit budgets
-of 200ms or less are rejected. SDK requests follow the same policy using their
-OpenRTB `tmax` as the client budget. Prebid's `ortb2.tmax` is not a replacement
-for `timeoutMs`.
+Prebid Core's `bidderRequest.timeout` is forwarded in standard OpenRTB `tmax`;
+there is no separate `timeoutMs`. LINA uses this budget first. If it is absent
+or null, the SSP uses `BID_DEFAULT_TMAX_MS`, or 1000ms when that environment
+variable is unset. The total budget is capped at 5000ms, then 200ms is reserved
+once for network and SSP processing. The remainder is sent to ADEx as `tmax`.
+Explicit budgets of 200ms or less are rejected.
 
 # Test Parameters
 
