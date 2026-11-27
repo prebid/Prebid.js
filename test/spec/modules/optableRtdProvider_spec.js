@@ -1329,10 +1329,10 @@ describe('Optable RTD Submodule - enableTargeting', function () {
     it('clears its storage on a data deletion request, and does not store a response still in flight', async function () {
       storage.getDataFromLocalStorage.returns(null);
       sandbox.stub(storage, 'removeDataFromLocalStorage');
-      ajaxStub.callsFake((url, options) => {
+      ajaxStub.callsFake((url, options) => Promise.resolve().then(() => {
         optableSubmodule.onDataDeletionRequest(moduleConfig);
         options.success('{"ortb2":{"user":{"eids":[]}},"passport":"new-passport-value"}');
-      });
+      }));
 
       await getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
 
