@@ -1,10 +1,13 @@
-import { deepSetValue } from '../src/utils.js';
+import { deepSetValue, formatQS } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { getUserSyncParams } from '../libraries/userSyncUtils/userSyncUtils.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'clickio';
 const IAB_GVL_ID = 1500;
+const SYNC_HOST = 'https://o.clickiocdn.com';
+const PIXEL_SYNCS = 5;
 
 export const converter = ortbConverter({
   context: {
@@ -37,37 +40,20 @@ export const spec = {
     const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
     return bids;
   },
-  getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
-    const { gppString = '', applicableSections = [] } = gppConsent;
-    const queryParams = [];
-
-    if (gdprConsent) {
-      if (gdprConsent.gdprApplies !== undefined) {
-        queryParams.push(`gdpr=${gdprConsent.gdprApplies ? 1 : 0}`);
-      }
-      if (gdprConsent.consentString) {
-        queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
-      }
-    }
-    if (uspConsent) {
-      queryParams.push(`us_privacy=${uspConsent}`);
-    }
-    queryParams.push(`gpp=${gppString}`);
-    if (Array.isArray(applicableSections)) {
-      for (const applicableSection of applicableSections) {
-        queryParams.push(`gpp_sid=${applicableSection}`);
-      }
-    }
+  getUserSyncs(syncOptions, _, gdprConsent, uspConsent, gppConsent) {
+    const query = formatQS(getUserSyncParams(gdprConsent, uspConsent, gppConsent));
     if (syncOptions.iframeEnabled) {
-      return [
-        {
-          type: 'iframe',
-          url: `https://o.clickiocdn.com/cookie_sync_html?${queryParams.join('&')}`
-        }
-      ];
-    } else {
+      return [{ type: 'iframe', url: `${SYNC_HOST}/cookie_sync_html${query ? '?' + query : ''}` }];
+    }
+    if (!syncOptions.pixelEnabled) {
       return [];
     }
+    // Image i: the sync server redirects it to the i-th demand partner without a user ID (1x1 GIF if none).
+    const syncs = [];
+    for (let i = 0; i < PIXEL_SYNCS; i++) {
+      syncs.push({ type: 'image', url: `${SYNC_HOST}/cookie_sync_img?i=${i}${query ? '&' + query : ''}` });
+    }
+    return syncs;
   }
 };
 

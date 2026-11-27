@@ -132,46 +132,71 @@ describe('clickioBidAdapter', function () {
   });
 
   describe('getUserSyncs', () => {
-    it('should return iframe user sync', () => {
-      const syncOptions = { iframeEnabled: true };
-      const syncs = spec.getUserSyncs(syncOptions);
+    const gdprConsent = {
+      gdprApplies: true,
+      consentString: 'test-consent-string'
+    };
+    const gppConsent = {
+      gppString: 'DBACNYA~CPXxRfAPXxR',
+      applicableSections: [7, 8]
+    };
 
-      expect(syncs).to.be.an('array');
-      expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.include('https://o.clickiocdn.com/cookie_sync_html');
+    function queryOf(url) {
+      return new URL(url).searchParams;
+    }
+
+    it('should return a single iframe sync when iframes are allowed', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+
+      expect(syncs).to.deep.equal([
+        { type: 'iframe', url: 'https://o.clickiocdn.com/cookie_sync_html' }
+      ]);
     });
 
-    it('should include GDPR parameters when gdprConsent is provided', () => {
-      const syncOptions = { iframeEnabled: true };
-      const gdprConsent = {
-        gdprApplies: true,
-        consentString: 'test-consent-string'
-      };
-      const syncs = spec.getUserSyncs(syncOptions, null, gdprConsent);
+    it('should return five image syncs when only pixels are allowed', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
 
-      expect(syncs[0].url).to.include('gdpr=1');
-      expect(syncs[0].url).to.include('gdpr_consent=test-consent-string');
+      expect(syncs).to.have.lengthOf(5);
+      syncs.forEach((sync, i) => {
+        expect(sync.type).to.equal('image');
+        expect(sync.url).to.equal(`https://o.clickiocdn.com/cookie_sync_img?i=${i}`);
+      });
     });
 
-    it('should include USP consent when uspConsent is provided', () => {
-      const syncOptions = { iframeEnabled: true };
-      const uspConsent = '1YNN';
-      const syncs = spec.getUserSyncs(syncOptions, null, null, uspConsent);
-
-      expect(syncs[0].url).to.include('us_privacy=1YNN');
+    it('should return no syncs when neither iframes nor pixels are allowed', () => {
+      expect(spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false })).to.be.empty;
     });
 
-    it('should include GPP parameters when gppConsent is provided', () => {
-      const syncOptions = { iframeEnabled: true };
-      const gppConsent = {
-        gppString: 'DBACNYA~CPXxRfAPXxR',
-        applicableSections: [7, 8]
-      };
-      const syncs = spec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+    it('should pass the consent to the iframe sync', () => {
+      const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, '1YNN', gppConsent);
+      const query = queryOf(sync.url);
 
-      expect(syncs[0].url).to.include('gpp=DBACNYA~CPXxRfAPXxR');
-      expect(syncs[0].url).to.include('gpp_sid=7');
-      expect(syncs[0].url).to.include('gpp_sid=8');
+      expect(query.get('gdpr')).to.equal('1');
+      expect(query.get('gdpr_consent')).to.equal('test-consent-string');
+      expect(query.get('us_privacy')).to.equal('1YNN');
+      expect(query.get('gpp')).to.equal('DBACNYA~CPXxRfAPXxR');
+      expect(query.get('gpp_sid')).to.equal('7,8');
+    });
+
+    it('should pass the consent to every image sync', () => {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [], gdprConsent, '1YNN', gppConsent);
+
+      syncs.forEach((sync, i) => {
+        const query = queryOf(sync.url);
+        expect(query.get('i')).to.equal(String(i));
+        expect(query.get('gdpr')).to.equal('1');
+        expect(query.get('gdpr_consent')).to.equal('test-consent-string');
+        expect(query.get('us_privacy')).to.equal('1YNN');
+        expect(query.get('gpp')).to.equal('DBACNYA~CPXxRfAPXxR');
+        expect(query.get('gpp_sid')).to.equal('7,8');
+      });
+    });
+
+    it('should send gdpr=0 when GDPR does not apply', () => {
+      const [sync] = spec.getUserSyncs({ pixelEnabled: true }, [], { gdprApplies: false });
+
+      expect(queryOf(sync.url).get('gdpr')).to.equal('0');
+      expect(queryOf(sync.url).has('gdpr_consent')).to.equal(false);
     });
   });
 });
