@@ -79,33 +79,29 @@ const resolveEndpoint = (): string => {
   return customEndpoint;
 };
 
-const getInvalidParamMessages = ({ placementId, memberId, maxCpm, forceDarkTheme }: YaleoBidParams): string[] => {
-  const messages: string[] = [];
-  if (!UUID_PATTERN.test(placementId)) {
-    messages.push(`placementId must be a UUID, got "${placementId}"`);
-  }
+const getOptionalParamWarnings = ({ memberId, maxCpm, forceDarkTheme }: YaleoBidParams): string[] => {
+  const warnings: string[] = [];
   if (memberId !== undefined && !(Number.isInteger(memberId) && memberId >= 1)) {
-    messages.push(`memberId must be a positive integer, got "${memberId}"`);
+    warnings.push(`memberId must be a positive integer, got "${memberId}"`);
   }
   if (maxCpm !== undefined && !(Number.isFinite(maxCpm) && maxCpm >= 0)) {
-    messages.push(`maxCpm must be a number greater than or equal to 0, got "${maxCpm}"`);
+    warnings.push(`maxCpm must be a number greater than or equal to 0, got "${maxCpm}"`);
   }
   if (forceDarkTheme !== undefined && typeof forceDarkTheme !== 'boolean') {
-    messages.push(`forceDarkTheme must be a boolean, got "${forceDarkTheme}"`);
+    warnings.push(`forceDarkTheme must be a boolean, got "${forceDarkTheme}"`);
   }
-  return messages;
+  return warnings;
 };
 
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (request) => {
   const { params } = request;
-  if (!params || typeof params.placementId !== 'string' || !params.placementId) {
+  if (typeof params?.placementId !== 'string' || !UUID_PATTERN.test(params.placementId.trim())) {
+    logWarn(`${BIDDER_CODE}: placementId must be a UUID, got "${params?.placementId}"`);
     return false;
   }
 
-  // Warn only: rejecting previously accepted values is a breaking change.
-  getInvalidParamMessages(params).forEach((message) => {
-    logWarn(`${BIDDER_CODE}: ${message}. The bid is still sent, but a future major Prebid.js release will reject it.`);
-  });
+  // Only warn: rejecting would drop bids the endpoint accepts, e.g. with memberId '3927'.
+  getOptionalParamWarnings(params).forEach((warning) => logWarn(`${BIDDER_CODE}: ${warning}`));
 
   return true;
 };
