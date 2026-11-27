@@ -140,7 +140,8 @@
       "weboramaRtdProvider",
       "wurflRtdProvider",
       "encypherRtdProvider",
-      "stackupRtdProvider"
+      "stackupRtdProvider",
+      "vanegraphRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
