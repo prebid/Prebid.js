@@ -11,10 +11,12 @@ import { getViewportSize } from '../libraries/viewport/viewport.js';
  */
 
 const BIDDER_CODE = 'ablida';
+const ACP_ID = 3272; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**

@@ -808,9 +808,6 @@ const VALID_PAYLOAD_WITH_USERID = {
     'customer_id': 'customer_id',
     'prebid_version': 'v' + '$prebid.version$',
     'gdpr_applies': false,
-    'user_id': {
-      britepoolid: '82efd5e1-816b-4f87-97f8-044f407e2911'
-    },
     'usp_applies': false,
     'coppa_applies': false,
     'screen': {
@@ -1819,7 +1816,7 @@ describe('Media.net bid adapter', function () {
       expect(actual).to.deep.equal(VALID_BID_REQUEST[0].ortb2Imp);
     });
 
-    it('should have userid in bid request', function () {
+    it('should not send a raw bid.userId as user_id', function () {
       const bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_USERID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERID);
     });
@@ -2100,6 +2097,52 @@ describe('Media.net bid adapter', function () {
       assert.equal(reqBody.get('event'), EVENTS.BIDDER_ERROR);
       assert.equal(reqBody.get('rd'), `timedOut:${error.timedOut}|status:${error.status}|message:${error.reason.message}`);
       assert.equal(reqBody.get('acid[]'), bids[0].auctionId);
+    });
+  });
+
+  describe('trustedstack event logging', function () {
+    const TRUSTEDSTACK_LOG_URL = 'https://navvy.trustedstack.com/log';
+    let bid;
+
+    beforeEach(function () {
+      bid = {
+        bidder: 'trustedstack',
+        bidId: 'ts-4644-442a-b5e0-93f268cf8d19',
+        adUnitCode: 'adUnit-code',
+        timeout: 3000,
+        auctionId: '12a34b56c',
+        cpm: 12.24
+      };
+    });
+
+    it('should send timeout data to trustedstack endpoint', function () {
+      spec.onTimeout([bid]);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.TIMEOUT_EVENT_NAME);
+    });
+
+    it('should send winning bid data to trustedstack endpoint', function () {
+      spec.onBidWon(bid);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.BID_WON_EVENT_NAME);
+    });
+
+    it('should send targeting data to trustedstack endpoint', function () {
+      sandbox.stub(config, 'getConfig').withArgs('enableSendAllBids').returns(false);
+      spec.onSetTargeting(bid);
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.SET_TARGETING);
+    });
+
+    it('should send bidderError data to trustedstack endpoint', function () {
+      const error = {
+        reason: { message: 'Failed to fetch', status: 500 },
+        timedOut: true,
+        status: 0
+      };
+      spec.onBidderError({ error, bidderRequest: { bids: [bid] } });
+      assert.equal(server.requests[0].url, TRUSTEDSTACK_LOG_URL);
+      assert.equal(new URLSearchParams(server.requests[0].requestBody).get('event'), EVENTS.BIDDER_ERROR);
     });
   });
 

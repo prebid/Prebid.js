@@ -78,6 +78,10 @@ describe('resetdigitalBidAdapter', function () {
     });
   });
 
+  it('should declare the Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3163);
+  });
+
   describe('buildRequests', function () {
     const req = spec.buildRequests([bannerRequest], { refererInfo: { } });
     let rdata;
@@ -88,6 +92,16 @@ describe('resetdigitalBidAdapter', function () {
 
     it('should build request data', function () {
       expect(req.data).to.not.be.null;
+    });
+
+    it('should post to the default endpoint', function () {
+      expect(req.method).to.equal('POST');
+      expect(req.url).to.equal('https://adsreq.resetdigital.co/HB');
+    });
+
+    it('should post to params.endpoint when provided', function () {
+      const customReq = spec.buildRequests([{ ...bannerRequest, params: { ...bannerRequest.params, endpoint: 'https://example.com/custom' } }], { refererInfo: { } });
+      expect(customReq.url).to.equal('https://example.com/custom');
     });
 
     it('should include one request', function () {

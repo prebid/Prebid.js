@@ -1,6 +1,10 @@
 import { cloneDeep } from "lodash";
+import sinon from 'sinon';
 import { config } from "src/config.js";
+import * as utils from "src/utils.js";
 import { spec } from "../../../modules/yaleoBidAdapter.ts";
+
+const PLACEMENT_ID = '9c752583-d856-4b44-a227-c0ce6c7a8cfa';
 
 const bannerBidRequestBase = {
   adUnitCode: 'banner-ad-unit-code',
@@ -9,7 +13,7 @@ const bannerBidRequestBase = {
   bidder: 'yaleo',
   bidderRequestId: 'banner-bidder-request-id',
   mediaTypes: { banner: [[300, 250]] },
-  params: { placementId: '12345' },
+  params: { placementId: PLACEMENT_ID },
 };
 
 const bannerServerResponseBase = {
@@ -62,15 +66,16 @@ describe('Yaleo bid adapter', () => {
   describe('isBidRequestValid', () => {
     it('returns true when all params are specified', () => {
       bannerBidRequest.params = {
-        placementId: '12345',
+        placementId: PLACEMENT_ID,
         maxCpm: 5.00,
         memberId: 12345,
+        forceDarkTheme: true,
       };
       expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
     });
 
     it('returns true when required params are specified', () => {
-      bannerBidRequest.params = { placementId: '12345' };
+      bannerBidRequest.params = { placementId: PLACEMENT_ID };
       expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
     });
 
@@ -117,6 +122,73 @@ describe('Yaleo bid adapter', () => {
     it('returns false when placementId is null', () => {
       bannerBidRequest.params = { placementId: null };
       expect(spec.isBidRequestValid(bannerBidRequest)).to.be.false;
+    });
+
+    it('returns false when placementId is an empty string', () => {
+      bannerBidRequest.params = { placementId: '' };
+      expect(spec.isBidRequestValid(bannerBidRequest)).to.be.false;
+    });
+
+    describe('invalid params', () => {
+      const describeValue = (value) => (typeof value === 'string' ? `"${value}"` : String(value));
+      let logWarnStub;
+
+      beforeEach(() => {
+        logWarnStub = sinon.stub(utils, 'logWarn');
+      });
+
+      afterEach(() => {
+        logWarnStub.restore();
+      });
+
+      [
+        { placementId: PLACEMENT_ID },
+        { placementId: PLACEMENT_ID.toUpperCase() },
+        { placementId: ` ${PLACEMENT_ID} ` },
+        { placementId: PLACEMENT_ID, memberId: 1, maxCpm: 0, forceDarkTheme: false },
+        { placementId: PLACEMENT_ID, memberId: 3927, maxCpm: 5.5, forceDarkTheme: true },
+      ].forEach((params) => {
+        it(`accepts the bid without a warning: ${JSON.stringify(params)}`, () => {
+          bannerBidRequest.params = params;
+          expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
+          sinon.assert.notCalled(logWarnStub);
+        });
+      });
+
+      ['', ' ', '12345', `${PLACEMENT_ID}0`, PLACEMENT_ID.replace(/-/g, ''), 'zz752583-d856-4b44-a227-c0ce6c7a8cfa'].forEach((placementId) => {
+        it(`rejects the bid and warns when placementId is not a UUID: "${placementId}"`, () => {
+          bannerBidRequest.params = { placementId };
+          expect(spec.isBidRequestValid(bannerBidRequest)).to.be.false;
+          sinon.assert.calledOnceWithExactly(logWarnStub, `yaleo: placementId must be a UUID, got "${placementId}"`);
+        });
+      });
+
+      [
+        ['memberId', [0, -1, 1.5, NaN, '3927', null, true]],
+        ['maxCpm', [-0.01, NaN, Infinity, '5', null]],
+        ['forceDarkTheme', ['true', 1, null]],
+      ].forEach(([param, values]) => {
+        values.forEach((value) => {
+          it(`accepts the bid but warns when ${param} is ${describeValue(value)}`, () => {
+            bannerBidRequest.params = { placementId: PLACEMENT_ID, [param]: value };
+            expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
+            sinon.assert.calledOnce(logWarnStub);
+            expect(logWarnStub.firstCall.args[0]).to.include(`yaleo: ${param} must be`);
+          });
+        });
+      });
+
+      it('warns only about the invalid value', () => {
+        bannerBidRequest.params = { placementId: PLACEMENT_ID, memberId: 0 };
+        expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
+        sinon.assert.calledOnceWithExactly(logWarnStub, 'yaleo: memberId must be a positive integer, got "0"');
+      });
+
+      it('warns once per invalid optional param', () => {
+        bannerBidRequest.params = { placementId: PLACEMENT_ID, memberId: 0, maxCpm: -1, forceDarkTheme: 'true' };
+        expect(spec.isBidRequestValid(bannerBidRequest)).to.be.true;
+        sinon.assert.callCount(logWarnStub, 3);
+      });
     });
   });
 
@@ -210,11 +282,74 @@ describe('Yaleo bid adapter', () => {
       expect(request.url).to.equal('https://bidder.yaleo.com/prebid');
     });
 
+    describe('test mode', () => {
+      let getParameterByNameStub;
+
+      const buildRequest = (ortb2) => spec.buildRequests([bannerBidRequest], {
+        bids: [bannerBidRequest],
+        auctionId: bannerBidRequest.auctionId,
+        bidderRequestId: bannerBidRequest.bidderRequestId,
+        ortb2,
+      });
+
+      const setTestQueryParam = (value) => {
+        getParameterByNameStub = sinon.stub(utils, 'getParameterByName')
+          .callsFake((name) => (name === 'yaleo_test' ? value : ''));
+      };
+
+      afterEach(() => {
+        getParameterByNameStub?.restore();
+        getParameterByNameStub = undefined;
+      });
+
+      ['true', 'TRUE', 'True'].forEach((value) => {
+        it(`sets test: 1 when the page URL has yaleo_test=${value}`, () => {
+          setTestQueryParam(value);
+
+          expect(buildRequest().data.test).to.equal(1);
+        });
+      });
+
+      ['', 'false', '1'].forEach((value) => {
+        it(`does not flag the request as a test when yaleo_test is "${value}"`, () => {
+          setTestQueryParam(value);
+
+          expect(buildRequest().data.test).to.not.equal(1);
+        });
+      });
+
+      it('does not flag the request as a test in Prebid.js debug mode', () => {
+        config.setConfig({ debug: true });
+
+        const request = buildRequest();
+
+        expect(request.data.test).to.not.equal(1);
+        expect(request.data.ext.prebid.debug).to.be.true;
+      });
+
+      it('keeps test: 1 set through ortb2', () => {
+        expect(buildRequest({ test: 1 }).data.test).to.equal(1);
+      });
+
+      it('keeps test: 1 set through ortb2 when yaleo_test=false', () => {
+        setTestQueryParam('false');
+
+        expect(buildRequest({ test: 1 }).data.test).to.equal(1);
+      });
+
+      it('sets test: 1 when yaleo_test=true and ortb2 sets test: 0', () => {
+        setTestQueryParam('true');
+
+        expect(buildRequest({ test: 0 }).data.test).to.equal(1);
+      });
+    });
+
     it('checks that all params are passed to the request', () => {
       bannerBidRequest.params = {
-        placementId: '12345',
+        placementId: PLACEMENT_ID,
         maxCpm: 5.00,
         memberId: 12345,
+        forceDarkTheme: true,
       };
       const bidderRequest = {
         bids: [bannerBidRequest],
@@ -225,15 +360,16 @@ describe('Yaleo bid adapter', () => {
       const request = spec.buildRequests([bannerBidRequest], bidderRequest);
       const yaleoParams = request.data.imp[0].ext.prebid.bidder.yaleo;
 
-      expect(yaleoParams.placementId).to.equal('12345');
+      expect(yaleoParams.placementId).to.equal(PLACEMENT_ID);
       expect(yaleoParams.maxCpm).to.equal(5.00);
       expect(yaleoParams.memberId).to.equal(12345);
+      expect(yaleoParams.forceDarkTheme).to.be.true;
     });
   });
 
   it('checks that only specified params are passed to the request', () => {
     bannerBidRequest.params = {
-      placementId: '12345',
+      placementId: PLACEMENT_ID,
     };
 
     const bidderRequest = {
@@ -245,7 +381,7 @@ describe('Yaleo bid adapter', () => {
     const request = spec.buildRequests([bannerBidRequest], bidderRequest);
     const yaleoParams = request.data.imp[0].ext.prebid.bidder.yaleo;
 
-    expect(yaleoParams).to.deep.equal({ placementId: '12345' });
+    expect(yaleoParams).to.deep.equal({ placementId: PLACEMENT_ID });
   });
 
   describe('interpretResponse', () => {

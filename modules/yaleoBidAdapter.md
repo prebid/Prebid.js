@@ -16,7 +16,7 @@ Module that connects to Yaleo's demand sources.
 
 # Test parameters
 
-**Note:** to receive bids when testing without proper integration with the demand source, enable Prebid.js debug mode. See [how to enable debug mode](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#debugging) for details.
+**Note:** to receive test bids without proper integration with the demand source, add `yaleo_test=true` to the page URL (e.g. `https://example.com/page?yaleo_test=true`). The adapter then sends the bid request with the OpenRTB `test: 1` flag, and the endpoint answers with test bids. Setting `test: 1` in the first party data with `pbjs.setConfig({ ortb2: { test: 1 } })` works too, but marks the request as test traffic for every bidder.
 
 ```js
 const adUnits = [
@@ -30,7 +30,7 @@ const adUnits = [
     bids: [{
       bidder: "yaleo",
       params: {
-        placementId: "95a09f24-afb8-441c-977b-08b4039cb88e",
+        placementId: "9c752583-d856-4b44-a227-c0ce6c7a8cfa",
       }
     }]
   }

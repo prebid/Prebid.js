@@ -150,3 +150,10 @@ describe('ablidaBidAdapter', function () {
     });
   });
 });
+
+describe('ablidaBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3272);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

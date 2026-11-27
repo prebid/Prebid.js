@@ -150,13 +150,7 @@ const bidReqUserIds = [{
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
-  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  userId: {
-    idl_env: '1111',
-    tdid: '123456',
-    digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
-    id5id: { uid: '1111' }
-  }
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 },
 {
   bidder: BIDDER_CODE,
@@ -489,15 +483,34 @@ describe('Undertone Adapter', () => {
       expect(bidVideo2.video.plcmt).to.equal(null);
       expect(bidVideo2.gpid).to.equal('/1111/pbadslot#728x90');
     });
-    it('should send all userIds data to server', function () {
-      const request = spec.buildRequests(bidReqUserIds, bidderReq);
+    it('should send ortb2 user eids as uids', function () {
+      const eids = [
+        { source: 'adserver.org', uids: [{ id: '123456', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+        { source: 'pubcid.org', uids: [{ id: 'pubcid-1', atype: 1 }] }
+      ];
+      const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2: { user: { ext: { eids } } } });
       const bidCommons = JSON.parse(request.data)['commons'];
-      expect(bidCommons).to.be.an('object');
-      expect(bidCommons.uids).to.be.an('object');
-      expect(bidCommons.uids.tdid).to.equal('123456');
-      expect(bidCommons.uids.idl_env).to.equal('1111');
-      expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
-      expect(bidCommons.uids.id5id.uid).to.equal('1111');
+      expect(bidCommons.uids).to.deep.equal(eids);
+    });
+    it('should send ortb 2.6 user.eids as uids', function () {
+      const eids = [{ source: '51d.es', uids: [{ id: '51d-1', atype: 1 }] }];
+      const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2: { user: { eids } } });
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons.uids).to.deep.equal(eids);
+    });
+    it('should send eids from both user.ext.eids and user.eids, ext first', function () {
+      const extEids = [{ source: 'pubcid.org', uids: [{ id: 'pubcid-1', atype: 1 }] }];
+      const eids = [{ source: '51d.es', uids: [{ id: '51d-1', atype: 1 }] }];
+      const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2: { user: { eids, ext: { eids: extEids } } } });
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons.uids).to.deep.equal([...extEids, ...eids]);
+    });
+    it('should not send uids when there are no eids', function () {
+      [undefined, { user: { ext: { eids: [] } } }, { user: { eids: [] } }].forEach(ortb2 => {
+        const request = spec.buildRequests(bidReqUserIds, { ...bidderReq, ortb2 });
+        const bidCommons = JSON.parse(request.data)['commons'];
+        expect(bidCommons).to.not.have.property('uids');
+      });
     });
     it('should send page sizes sizes correctly', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);

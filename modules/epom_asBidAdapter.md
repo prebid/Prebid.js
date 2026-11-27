@@ -52,6 +52,21 @@ Bids default to a **25-second** TTL — short, because the ad server stops accep
 
 The ad server stamps `dealid` on the bids it returns for a deal-backed line item; the adapter surfaces it as `bid.dealId`, which Prebid exposes as the `hb_deal_epom_as` targeting key. A Google Ad Manager Sponsorship line item keyed on that value is the supported way to have an Epom direct bid outrank the rest of the stack rather than compete with it on price alone.
 
+## Campaign priority
+
+A bid with a `dealid` also carries the campaign's delivery priority in `ext.prebid.deal`, which Prebid surfaces as `bid.meta.deal`: Premium `4` (sponsorship), Standard High / Medium / Low `6` / `8` / `10` (reservation), Non-guaranteed `12` (non-reservation). House ads and programmatic partner wins carry no deal.
+
+The priority tiers are a fallback from `meta.deal.priorityAdjustedCpm`, the value Prebid ranks a trusted bidder's bids on in place of `cpm`. That value is meant to carry pacing adjustments, so a reservation campaign behind schedule bids up within the Non-guaranteed tier instead of jumping a tier. The ad server does not send a priority-adjusted CPM yet, so a trusted Epom bid ranks on its CPM within its tier. Use the tiers only where that is not enough, such as a sponsorship that must take the slot whatever the other bidders offer. Prebid compares tiers before price, so a reservation campaign meant to compete on price belongs in the Non-guaranteed tier. Both count only once the publisher allows priority bids from the bidder (under its alias, if it runs under one):
+
+```javascript
+pbjs.bidderSettings = pbjs.bidderSettings || {};
+pbjs.bidderSettings.epom_as = Object.assign({}, pbjs.bidderSettings.epom_as, {
+  allowPriorityBids: true
+});
+```
+
+See [bidderSettings `allowPriorityBids`](https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html#212-allowprioritybids).
+
 ## Advertiser domains
 
 The ad server sends `seatbid[].bid[].adomain` when the advertiser behind the bid has a domain set, and the adapter forwards it as `bid.meta.advertiserDomains`. A bid whose advertiser has none is left without the field rather than given a placeholder, so brand-safety line items and analytics that key on advertiser domain will not match that bid.

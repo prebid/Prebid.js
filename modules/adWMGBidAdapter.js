@@ -7,12 +7,14 @@ import { parseUserAgentDetailed } from '../libraries/userAgentUtils/detailed.js'
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'adWMG';
+const GVLID = 959;
 const ENDPOINT = 'https://hb.adwmg.com/hb';
 let SYNC_ENDPOINT = 'https://hb.adwmg.com/cphb.html?';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['wmg'],
+  gvlid: GVLID,
+  aliases: [{ code: 'wmg', gvlid: GVLID }],
   supportedMediaTypes: [BANNER],
   isBidRequestValid: (bid) => {
     if (!(bid.params.publisherId)) {
@@ -83,12 +85,6 @@ export const spec = {
         request.uspConsent = bidderRequest.uspConsent;
       }
  */
-      if (bidRequest.userId && bidRequest.userId.pubcid) {
-        request.userId = {
-          pubcid: bidRequest.userId.pubcid
-        };
-      }
-
       if (debug) {
         request.debug = debug;
       }

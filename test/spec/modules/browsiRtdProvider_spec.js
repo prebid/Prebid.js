@@ -68,10 +68,9 @@ describe('browsi Real time data sub module', function () {
   it('should return correct macro values', function () {
     const slot = mockGpt.makeSlot({ code: '/123/abc', divId: 'browsiAd_1' });
 
-    slot.setTargeting('test', ['test', 'value']);
-    // slot getTargeting doesn't act like GPT so we can't expect real value
+    slot.setConfig({ targeting: { test: ['test', 'value'] } });
     const macroResult = browsiUtils.getMacroId({ p: '<AD_UNIT>/<KEY_test>' }, slot);
-    expect(macroResult).to.equal('/123/abc/NA');
+    expect(macroResult).to.equal('/123/abc/test_value');
 
     const macroResultB = browsiUtils.getMacroId({}, slot);
     expect(macroResultB).to.equal('browsiAd_1');
@@ -373,13 +372,12 @@ describe('browsi Real time data sub module', function () {
     const random = Math.floor(Math.random() * 10) + 1;
     before(() => {
       mockGpt.reset();
-      window.googletag.pubads().clearTargeting();
       mockGpt.makeSlot({ code: '/123/split', divId: 'split' });
       browsiUtils.setKeyValue(splitKey, random);
       window.googletag.cmd.forEach(cmd => cmd());
     });
     it('should place numeric key value on all slots', function () {
-      const targetingValue = window.googletag.pubads().getTargeting(splitKey);
+      const targetingValue = window.googletag.getConfig('targeting').targeting[splitKey];
       expect(targetingValue).to.be.an('array').that.is.not.empty;
       expect(targetingValue[0]).to.be.a('string');
     });

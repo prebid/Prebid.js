@@ -42,102 +42,71 @@ describe('getId', function () {
     storage.removeDataFromLocalStorage('nvggid');
   });
 
+  /**
+   * Runs getId's callback with the ajax call answered by `handler`, which receives the
+   * `{success, error}` callbacks the module passed to ajax.
+   */
+  function respondWith(handler) {
+    ajaxStub.callsFake((url, callbacks) => handler(callbacks));
+    const callback = sinon.spy();
+    naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback(callback);
+    return callback;
+  }
+
+  const noIdFromApi = ({ success }) => success(JSON.stringify(MOCK_RESPONSE_NULL));
+
   it('should get the value from the existing localstorage', function() {
     setLocalStorage();
-
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
-
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
-      }
-    });
-    apiCallback(callback);
-
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith('localstorage_value')).to.be.true;
+    sinon.assert.calledOnceWithExactly(respondWith(noIdFromApi), 'localstorage_value');
   });
 
   it('should get the value from a nid cookie', function() {
     storage.setCookie('nid', 'old_nid_cookie', storage.expires);
-
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
-
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
-      }
-    });
-    apiCallback(callback);
-
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith('old_nid_cookie')).to.be.true;
+    sinon.assert.calledOnceWithExactly(respondWith(noIdFromApi), 'old_nid_cookie');
   });
 
   it('should get the value from a nav cookie', function() {
     storage.setCookie('navId', 'old_nav_cookie', storage.expires);
-
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
-
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
-      }
-    });
-    apiCallback(callback);
-
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith('old_nav_cookie')).to.be.true;
+    sinon.assert.calledOnceWithExactly(respondWith(noIdFromApi), 'old_nav_cookie');
   });
 
   it('should get the value from an old nvg cookie', function() {
     storage.setCookie('nvgid', 'old_nvg_cookie', storage.expires);
-
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
-
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
-      }
-    });
-    apiCallback(callback);
-
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith('old_nvg_cookie')).to.be.true;
+    sinon.assert.calledOnceWithExactly(respondWith(noIdFromApi), 'old_nvg_cookie');
   });
 
-  it('should return correct value from API response', function(done) {
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
-
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE));
-      }
-    });
-    apiCallback(callback);
-
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith('test_nvggid')).to.be.true;
-    done();
+  it('should return correct value from API response', function() {
+    const callback = respondWith(({ success }) => success(JSON.stringify(MOCK_RESPONSE)));
+    sinon.assert.calledOnceWithExactly(callback, 'test_nvggid');
   });
 
-  it('should return no value from API response', function(done) {
-    const callback = sinon.spy();
-    const apiCallback = naveggIdSubmodule.getId(NAVEGGID_CONFIG_COOKIE_HTML5).callback;
+  it('should return no value from API response', function() {
+    sinon.assert.calledOnceWithExactly(respondWith(noIdFromApi), undefined);
+  });
 
-    ajaxStub.callsFake((url, successCallbacks, errorCallback, options) => {
-      if (successCallbacks && typeof successCallbacks === 'function') {
-        successCallbacks(JSON.stringify(MOCK_RESPONSE_NULL));
-      }
-    });
-    apiCallback(callback);
-    expect(callback.calledOnce).to.be.true;
-    expect(callback.calledWith(undefined)).to.be.true;
-    done();
+  it('should send a GET with no data', function() {
+    respondWith(() => {});
+    sinon.assert.calledOnce(ajaxStub);
+    const [, , data, options] = ajaxStub.firstCall.args;
+    expect(data).to.be.undefined;
+    expect(options).to.include({ method: 'GET', withCredentials: false });
+  });
+
+  it('should fall back to the stored id when the request fails', function() {
+    setLocalStorage();
+    const callback = respondWith(({ error }) => error('network error'));
+    sinon.assert.calledOnceWithExactly(callback, 'localstorage_value');
+  });
+
+  it('should call back once, with the stored id, when the response is not JSON', function() {
+    setLocalStorage();
+    const callback = respondWith(({ success }) => success('<html>not json</html>'));
+    sinon.assert.calledOnceWithExactly(callback, 'localstorage_value');
+  });
+
+  it('should fall back to the stored id when the response is empty', function() {
+    setLocalStorage();
+    const callback = respondWith(({ success }) => success(''));
+    sinon.assert.calledOnceWithExactly(callback, 'localstorage_value');
   });
 });

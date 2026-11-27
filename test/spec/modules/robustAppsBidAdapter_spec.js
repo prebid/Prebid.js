@@ -90,7 +90,7 @@ describe('robustAppsBidAdapter', () => {
       const request = spec.buildRequests([defaultRequest], {});
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT + '/bid');
-      expect(request.options).to.have.property('contentType').and.to.equal('application/json');
+      expect(request.options?.contentType).to.be.undefined;
       expect(request).to.have.property('data');
     });
 
@@ -437,5 +437,11 @@ describe('robustAppsBidAdapter', () => {
       const result = getBidFloor(bid);
       expect(result).to.equal(5);
     });
+  });
+});
+
+describe('robustAppsBidAdapter consent IDs', function () {
+  it('declares its GVL ID', function () {
+    expect(spec.gvlid).to.equal(1484);
   });
 });

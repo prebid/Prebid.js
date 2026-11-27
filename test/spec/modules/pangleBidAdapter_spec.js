@@ -47,17 +47,15 @@ const REQUEST = [{
 }];
 
 const DEFAULT_OPTIONS = {
-  userId: {
-    britepoolid: 'pangle-britepool',
-    criteoId: 'pangle-criteo',
-    digitrustid: { data: { id: 'pangle-digitrust' } },
-    id5id: { uid: 'pangle-id5' },
-    idl_env: 'pangle-idl-env',
-    lipb: { lipbid: 'pangle-liveintent' },
-    netId: 'pangle-netid',
-    parrableId: { eid: 'pangle-parrable' },
-    pubcid: 'pangle-pubcid',
-    tdid: 'pangle-ttd',
+  ortb2: {
+    user: {
+      ext: {
+        eids: [
+          { source: 'criteo.com', uids: [{ id: 'pangle-criteo', atype: 1 }] },
+          { source: 'pubcid.org', uids: [{ id: 'pangle-pubcid', atype: 1 }] },
+        ]
+      }
+    }
   }
 };
 
@@ -136,6 +134,16 @@ describe('pangle bid adapter', function () {
       expect(request2).to.exist.and.to.be.a('object');
       const payload2 = request2.data;
       expect(payload2.imp[0]).to.have.property('id', REQUEST[1].bidId);
+    });
+
+    it('passes user ID EIDs through without adding a pangle id EID', function () {
+      const payload = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0].data;
+      expect(payload.user.ext.eids).to.deep.equal(DEFAULT_OPTIONS.ortb2.user.ext.eids);
+    });
+
+    it('does not add a pangle id EID for a raw bidderRequest.userId', function () {
+      const payload = spec.buildRequests(REQUEST, { userId: { pubcid: 'raw' } })[0].data;
+      expect(payload.user?.ext?.eids).to.equal(undefined);
     });
   });
 
@@ -387,5 +395,12 @@ describe('pangle multi-format ads', function () {
     const interpretedResponse = spec.interpretResponse(videoResponse, request);
     const bid = interpretedResponse[0];
     expect(bid.mediaType).to.equal('video');
+  });
+});
+
+describe('pangleBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(3100);
+    expect(spec.gvlid).to.be.undefined;
   });
 });

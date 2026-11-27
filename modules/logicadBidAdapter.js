@@ -4,10 +4,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'logicad';
+const ACP_ID = 445; // Google Additional Consent provider ID
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
+  acpId: ACP_ID,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.tid);

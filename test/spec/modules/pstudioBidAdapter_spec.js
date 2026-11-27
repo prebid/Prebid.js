@@ -243,6 +243,17 @@ describe('PStudioAdapter', function () {
     const videoRequest = spec.buildRequests([videoBid], baseBidderRequest);
     const videoPayload = JSON.parse(videoRequest[0].data);
 
+    it('should send requests with text/plain content type', function () {
+      expect(bannerRequest[0].options).to.deep.equal({
+        contentType: 'text/plain',
+        withCredentials: true,
+      });
+      expect(videoRequest[0].options).to.deep.equal({
+        contentType: 'text/plain',
+        withCredentials: true,
+      });
+    });
+
     it('should properly map ids in request payload', function () {
       expect(bannerPayload.id).to.equal(bannerBid.bidId);
       expect(bannerPayload.adtagid).to.equal(bannerBid.params.adtagid);
@@ -308,30 +319,11 @@ describe('PStudioAdapter', function () {
       expect(payload.bapp).to.deep.equal(['com.foo.mygame']);
     });
 
-    it('should properly set optional user_ids', function () {
-      const request = spec.buildRequests(
-        [bidWithOptionalParams],
-        baseBidderRequest
-      );
-      const {
-        user: { uid2_token },
-      } = JSON.parse(request[0].data);
-      const expectedUID = '7505e78e-4a9b-4011-8901-0e00c3f55ea9';
-
-      expect(uid2_token).to.equal(expectedUID);
-    });
-
-    it('should properly set optional user_ids when no first party data is provided', function () {
-      const request = spec.buildRequests(
-        [bidWithOptionalParams],
-        emptyOrtb2BidderRequest
-      );
-      const {
-        user: { uid2_token },
-      } = JSON.parse(request[0].data);
-      const expectedUID = '7505e78e-4a9b-4011-8901-0e00c3f55ea9';
-
-      expect(uid2_token).to.equal(expectedUID);
+    it('should not read uid2_token from a raw bid.userId', function () {
+      [baseBidderRequest, emptyOrtb2BidderRequest].forEach((bidderRequest) => {
+        const request = spec.buildRequests([bidWithOptionalParams], bidderRequest);
+        expect(JSON.parse(request[0].data).user?.uid2_token).to.equal(undefined);
+      });
     });
 
     it('should properly handle first-party data', function () {

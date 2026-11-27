@@ -189,6 +189,19 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     if (!request.cur || request.cur.length === 0) {
       request.cur = [DEFAULT_CURRENCY];
     }
+    // Trust comes only from the flag core computed for this bidder request, never
+    // from `ext.prebid.as` in the publisher's first-party data. The ad server sends
+    // its campaign priority either way; the signal tells it the page will honour it.
+    const publisherPrebid = request.ext?.prebid;
+    if (isPlainObject(publisherPrebid) || bidderRequest.allowPriorityBids === true) {
+      const prebid: Record<string, unknown> = isPlainObject(publisherPrebid)
+        ? { ...(publisherPrebid as Record<string, unknown>) } : {};
+      delete prebid.as;
+      if (bidderRequest.allowPriorityBids === true) {
+        prebid.as = { ap: true, apb: [bidderRequest.bidderCode] };
+      }
+      deepSetValue(request, 'ext.prebid', prebid);
+    }
     return request;
   },
 });

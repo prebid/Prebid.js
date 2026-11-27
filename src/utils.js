@@ -69,6 +69,9 @@ export function getUniqueIdentifierStr() {
  * https://gist.github.com/jed/982883 via node-uuid
  */
 export function generateUUID(placeholder) {
+  if (!placeholder && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
   return placeholder
     ? (placeholder ^ _getRandomData() >> placeholder / 4).toString(16)
     : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, generateUUID);
@@ -366,6 +369,7 @@ export function waitForElementToLoad(element, timeout) {
 
 export function politeTriggerPixel(url, credentials = 'include', immediate = false) {
   const triggerSync = () => {
+    // eslint-disable-next-line no-restricted-properties
     if (window.fetch && window.Request) {
       try {
         const request = new Request(url, {
@@ -374,6 +378,7 @@ export function politeTriggerPixel(url, credentials = 'include', immediate = fal
           credentials,
           keepalive: true
         });
+        // eslint-disable-next-line no-restricted-properties
         window.fetch(request).catch(() => { if (credentials !== 'omit') triggerPixel(url); });
         return;
       } catch (e) {}

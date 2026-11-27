@@ -11,6 +11,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'madsense';
+const GVLID = 1659;
 const DEFAULT_BID_TTL = 55;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
@@ -84,6 +85,7 @@ const converter = ortbConverter({
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
   ENDPOINT: MS_EXCHANGE_BASE_URL,

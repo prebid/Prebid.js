@@ -135,12 +135,11 @@ describe('Adtrgtme Bid Adapter:', () => {
       expect(requests[0].method).to.equal('POST');
     });
 
-    it('should attach content-type and withCredentials when purpose-1 consent is granted', () => {
+    it('should attach withCredentials and no content-type when purpose-1 consent is granted', () => {
       const { validBR, bidderRequest } = createRequestMock();
       bidderRequest.gdprConsent.gdprApplies = false;
       const { options } = buildFirst(validBR, bidderRequest);
       expect(options).to.deep.equal({
-        contentType: 'application/json',
         withCredentials: true,
       });
     });

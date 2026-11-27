@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './rtdModule/spec.js';
+
 /**
  * Publisher-provided configuration for the Optimera RTD submodule.
  * Passed via `pbjs.setConfig({ realTimeData: { dataProviders: [{ name: 'optimeraRTD', params }] } })`.
@@ -17,7 +20,8 @@ export interface OptimeraRtdParams {
    */
   device?: string;
   /**
-   * Optimera scores API version to use. One of `v0` or `v1`. Defaults to `v0`.
+   * Optimera scores API version to use. Defaults to `v0`.
+   * @deprecated `v1` is no longer supported; using it logs a warning and falls back to `v0`.
    */
   apiVersion?: 'v0' | 'v1';
   /**
@@ -30,4 +34,15 @@ export interface OptimeraRtdParams {
    * script and appends it to the document body. Defaults to `false`.
    */
   callOPS?: boolean | string;
+}
+
+declare module './rtdModule/spec' {
+  interface ProviderConfig {
+    optimeraRTD: {
+      /**
+       * Optimera RTD parameters. Required: the module does not initialize without `clientID`.
+       */
+      params: OptimeraRtdParams;
+    }
+  }
 }

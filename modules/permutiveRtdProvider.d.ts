@@ -1,3 +1,6 @@
+// the augmentation in this file only applies where the spec is part of the program
+import type {} from './rtdModule/spec.js';
+
 /**
  * Source for custom cohorts.
  *
@@ -74,7 +77,24 @@ export interface PermutiveRtdProviderParams {
    * to the ortb2 payload.
    */
   transformations?: PermutiveTransformationConfig[];
+  /**
+   * Legacy per-bidder custom functions, keyed by bidder code. For every bid of a matching bidder
+   * the function is called with the bid, the Permutive segment data, whether the Audience
+   * Connector is enabled for that bidder, a set of Prebid utilities and an identity function.
+   */
+  overwrites?: Record<string, PermutiveOverwriteFn>;
 }
+
+/**
+ * Custom per-bidder function configured under `params.overwrites`.
+ */
+export type PermutiveOverwriteFn = (
+  bid: Record<string, unknown>,
+  segmentData: Record<string, unknown>,
+  acEnabled: boolean,
+  utils: Record<string, (...args: unknown[]) => unknown>,
+  bidIdentity: <T>(bid: T) => T
+) => void;
 
 export interface PermutiveRtdProviderConfig {
   /**
@@ -86,4 +106,15 @@ export interface PermutiveRtdProviderConfig {
    * Module-specific parameters.
    */
   params?: PermutiveRtdProviderParams;
+}
+
+declare module './rtdModule/spec' {
+  interface ProviderConfig {
+    permutive: {
+      /**
+       * Permutive RTD parameters. All are optional; defaults are merged in by the module.
+       */
+      params?: PermutiveRtdProviderParams;
+    }
+  }
 }

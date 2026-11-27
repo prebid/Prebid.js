@@ -419,20 +419,20 @@ describe('ssp_genieeBidAdapter', function () {
 
       it('should include only imuid in extuid query when only imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
-        const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid } }]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [{ source: 'intimatemerger.com', uids: [{ id: imuid, atype: 1 }] }] }]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
 
       it('should include only id5id in extuid query when only id5id exists', function () {
         const id5id = 'id5id';
-        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id } } }]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [{ source: 'id5-sync.com', uids: [{ id: id5id, atype: 1 }] }] }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}`);
       });
 
       it('should include id5id and imuid in extuid query when id5id and imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
         const id5id = 'id5id';
-        const request = spec.buildRequests([{ ...BANNER_BID, userId: { id5id: { uid: id5id }, imuid: imuid } }]);
+        const request = spec.buildRequests([{ ...BANNER_BID, userIdAsEids: [{ source: 'id5-sync.com', uids: [{ id: id5id, atype: 1 }] }, { source: 'intimatemerger.com', uids: [{ id: imuid, atype: 1 }] }] }]);
         expect(request[0].data.extuid).to.deep.equal(`id5:${id5id}\tim:${imuid}`);
       });
 
@@ -469,9 +469,9 @@ describe('ssp_genieeBidAdapter', function () {
           expect(request[0].data.extuid).to.equal(`im:${IMUID}`);
         });
 
-        it('should fall back to legacy bid.userId when userIdAsEids has no usable source', function () {
+        it('should ignore a raw bid.userId when userIdAsEids has no usable source', function () {
           const request = spec.buildRequests([{ ...BANNER_BID, userId: { imuid: 'legacy-imuid' }, userIdAsEids: [EID_PUBCID] }]);
-          expect(request[0].data.extuid).to.equal('im:legacy-imuid');
+          expect(request[0].data).to.not.have.property('extuid');
         });
 
         it('should not include extuid when userIdAsEids has no id5/imuid source or is malformed', function () {
@@ -489,9 +489,9 @@ describe('ssp_genieeBidAdapter', function () {
           expect(getUidFromEids([{ source: EID_SOURCE_IMUID, uids: [{ id: 123 }] }], EID_SOURCE_IMUID)).to.be.undefined;
         });
 
-        it('should read eids first and fall back to bid.userId per id', function () {
+        it('should read eids only and ignore a raw bid.userId', function () {
           const bid = { userId: { imuid: 'legacy-imu', id5id: { uid: 'legacy-id5' } }, userIdAsEids: [{ source: EID_SOURCE_IMUID, uids: [{ id: 'eid-imu' }] }] };
-          expect(getExtuidIds(bid)).to.deep.equal({ id5: 'legacy-id5', imuId: 'eid-imu' });
+          expect(getExtuidIds(bid)).to.deep.equal({ id5: undefined, imuId: 'eid-imu' });
           expect(getExtuidIds({})).to.deep.equal({ id5: undefined, imuId: undefined });
         });
 

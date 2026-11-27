@@ -182,7 +182,10 @@ describe('ucfunnel Adapter', function () {
       expect(data.adid).to.equal('ad-34BBD2AA24B678BBFD4E7B9EE3B872D');
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
-      expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888!verizonMediaId,4567');
+      // a raw bid.userId is ignored
+      expect(data.eids).to.equal('');
+      expect(data.tdid).to.equal('');
+      expect(data).to.not.have.any.keys('id5id_uid', 'parrableId_eid', 'criteoId', 'pubcid');
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
@@ -371,5 +374,12 @@ describe('ucfunnel Adapter', function () {
         expect(result[0].url).to.equal('https://sync.aralego.com/idSync?gdpr=1&euconsent-v2=CO9rhBTO9rhBTAcABBENBCCsAP_AAH_AACiQHItf_X_fb3_j-_59_9t0eY1f9_7_v20zjgeds-8Nyd_X_L8X42M7vB36pq4KuR4Eu3LBIQdlHOHcTUmw6IkVqTPsbk2Mr7NKJ7PEinMbe2dYGH9_n9XTuZKY79_s___z__-__v__7_f_r-3_3_vp9V---3YHIgEmGpfARZiWOBJNGlUKIEIVxIdACACihGFomsICVwU7K4CP0EDABAagIwIgQYgoxZBAAAAAElEQEgB4IBEARAIAAQAqQEIACNAEFgBIGAQACgGhYARQBCBIQZHBUcpgQESLRQTyVgCUXexhhCGUUANAg4AA.YAAAAAAAAAAA&');
       });
     });
+  });
+});
+
+describe('ucfunnelBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(1626);
+    expect(spec.gvlid).to.be.undefined;
   });
 });

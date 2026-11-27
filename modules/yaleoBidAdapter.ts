@@ -3,7 +3,7 @@ import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
 import { BidderSpec, registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { logWarn } from '../src/utils.js';
+import { getParameterByName, logWarn } from '../src/utils.js';
 
 interface YaleoBidParams {
   /**
@@ -19,6 +19,10 @@ interface YaleoBidParams {
    * Maximum CPM value. Bids with a CPM higher than the specified value will be rejected.
    */
   maxCpm?: number;
+  /**
+   * Renders the ad unit in the dark theme.
+   */
+  forceDarkTheme?: boolean;
 }
 
 interface YaleoConfig {
@@ -46,6 +50,7 @@ const AUDIENZZ_VENDOR_ID = 783;
 const DEFAULT_ENDPOINT = 'https://bidder.yaleo.com/prebid';
 const ALLOWED_ENDPOINTS = new Set([DEFAULT_ENDPOINT, 'https://dev-bidder.yaleo.com/prebid']);
 const DEFAULT_TTL = 300;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: {
@@ -53,6 +58,13 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
     ttl: DEFAULT_TTL,
   },
   processors: pbsExtensions,
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    if (getParameterByName('yaleo_test').toUpperCase() === 'TRUE') {
+      request.test = 1;
+    }
+    return request;
+  },
 });
 
 const resolveEndpoint = (): string => {
@@ -67,12 +79,31 @@ const resolveEndpoint = (): string => {
   return customEndpoint;
 };
 
+const getOptionalParamWarnings = ({ memberId, maxCpm, forceDarkTheme }: YaleoBidParams): string[] => {
+  const warnings: string[] = [];
+  if (memberId !== undefined && !(Number.isInteger(memberId) && memberId >= 1)) {
+    warnings.push(`memberId must be a positive integer, got "${memberId}"`);
+  }
+  if (maxCpm !== undefined && !(Number.isFinite(maxCpm) && maxCpm >= 0)) {
+    warnings.push(`maxCpm must be a number greater than or equal to 0, got "${maxCpm}"`);
+  }
+  if (forceDarkTheme !== undefined && typeof forceDarkTheme !== 'boolean') {
+    warnings.push(`forceDarkTheme must be a boolean, got "${forceDarkTheme}"`);
+  }
+  return warnings;
+};
+
 const isBidRequestValid: BidderSpec<typeof BIDDER_CODE>['isBidRequestValid'] = (request) => {
-  if (!request.params || typeof request.params.placementId !== 'string') {
+  const { params } = request;
+  if (typeof params?.placementId !== 'string' || !UUID_PATTERN.test(params.placementId.trim())) {
+    logWarn(`${BIDDER_CODE}: placementId must be a UUID, got "${params?.placementId}"`);
     return false;
   }
 
-  return !!request.params.placementId;
+  // Only warn: rejecting would drop bids the endpoint accepts, e.g. with memberId '3927'.
+  getOptionalParamWarnings(params).forEach((warning) => logWarn(`${BIDDER_CODE}: ${warning}`));
+
+  return true;
 };
 
 const buildRequests: BidderSpec<typeof BIDDER_CODE>['buildRequests'] = (validBidRequests, bidderRequest) => {

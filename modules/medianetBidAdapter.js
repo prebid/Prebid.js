@@ -21,7 +21,7 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import { filterBidsListByFilters, getTopWindowReferrer } from '../libraries/medianetUtils/utils.js';
 import { errorLogger } from '../libraries/medianetUtils/logger.js';
-import { GLOBAL_VENDOR_ID, MEDIANET } from '../libraries/medianetUtils/constants.js';
+import { GLOBAL_VENDOR_ID, MEDIANET, POST_ENDPOINT } from '../libraries/medianetUtils/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import { getMinSize } from '../libraries/sizeUtils/sizeUtils.js';
@@ -38,6 +38,7 @@ const BIDDER_CODE = MEDIANET;
 const TRUSTEDSTACK_CODE = 'trustedstack';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
 const TRUSTEDSTACK_URL = 'https://prebid.trustedstack.com/rtb/trustedstack';
+const TRUSTEDSTACK_LOG_URL = 'https://navvy.trustedstack.com/log';
 const PLAYER_URL = 'https://prebid.media.net/video/bundle.js';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
@@ -166,7 +167,6 @@ function extParams(bidRequest, bidderRequests) {
   const params = deepAccess(bidRequest, 'params');
   const gdpr = deepAccess(bidderRequests, 'gdprConsent');
   const uspConsent = deepAccess(bidderRequests, 'uspConsent');
-  const userId = deepAccess(bidRequest, 'userId');
   const sChain = deepAccess(bidRequest, 'ortb2.source.ext.schain') || {};
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
@@ -182,7 +182,6 @@ function extParams(bidRequest, bidderRequests) {
     uspApplies && { usp_consent_string: uspConsent || '' },
     { coppa_applies: coppaApplies },
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
-    userId && { user_id: userId },
     getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && { schain: sChain },
     {
@@ -394,10 +393,16 @@ function getLoggingData(bids) {
   return logData;
 }
 
+function getLoggingEndpoint(bidder) {
+  return bidder === TRUSTEDSTACK_CODE ? TRUSTEDSTACK_LOG_URL : POST_ENDPOINT;
+}
+
 function logEvent(event, data) {
   const logData = getLoggingData(data);
   event.cid = customerId;
-  errorLogger(event, logData, false).send();
+  const bidder = data?.[0]?.bidder;
+  const loggingEndpoint = getLoggingEndpoint(bidder);
+  errorLogger(event, logData, false, loggingEndpoint).send();
 }
 
 function clearPageMeta() {

@@ -1016,3 +1016,10 @@ describe('contxtful bid adapter', function () {
     });
   });
 });
+
+describe('contxtfulBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(2963);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});

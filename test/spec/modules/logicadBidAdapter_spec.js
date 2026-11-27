@@ -390,3 +390,10 @@ describe('LogicadAdapter', function () {
     });
   });
 });
+
+describe('logicadBidAdapter consent IDs', function () {
+  it('declares its Google Additional Consent provider ID', function () {
+    expect(spec.acpId).to.equal(445);
+    expect(spec.gvlid).to.be.undefined;
+  });
+});
