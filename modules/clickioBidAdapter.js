@@ -48,10 +48,10 @@ export const spec = {
     if (!syncOptions.pixelEnabled) {
       return [];
     }
-    // Image i: the sync server redirects it to the i-th demand partner without a user ID (1x1 GIF if none).
+    // Image i of n: the sync server redirects it to one of its own demand partners without a user ID (1x1 GIF if none).
     const syncs = [];
     for (let i = 0; i < PIXEL_SYNCS; i++) {
-      syncs.push({ type: 'image', url: `${SYNC_HOST}/cookie_sync_img?i=${i}${query ? '&' + query : ''}` });
+      syncs.push({ type: 'image', url: `${SYNC_HOST}/cookie_sync_img?i=${i}&n=${PIXEL_SYNCS}${query ? '&' + query : ''}` });
     }
     return syncs;
   }

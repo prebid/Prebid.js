@@ -34,7 +34,7 @@ To get started, simply replace the ``said`` with the ID assigned to you.
 The adapter syncs user IDs with Clickio's demand partners through `o.clickiocdn.com`, passing the GDPR, US Privacy and GPP consent to it.
 
 - When iframe syncs are allowed for `clickio`, the adapter registers one iframe that syncs all demand partners.
-- Otherwise, when image syncs are allowed (Prebid's default), it registers up to five images. Each image redirects to one demand partner the user is not synced with yet, or returns an empty pixel when there is none.
+- Otherwise, when image syncs are allowed (Prebid's default), it registers up to five images. Each image serves its own share of the demand partners: it redirects to one the user is not synced with yet, or returns an empty pixel, which the browser caches, when there is none.
 
 The adapter does not use device storage.
 

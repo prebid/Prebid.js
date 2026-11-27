@@ -159,7 +159,7 @@ describe('clickioBidAdapter', function () {
       expect(syncs).to.have.lengthOf(5);
       syncs.forEach((sync, i) => {
         expect(sync.type).to.equal('image');
-        expect(sync.url).to.equal(`https://o.clickiocdn.com/cookie_sync_img?i=${i}`);
+        expect(sync.url).to.equal(`https://o.clickiocdn.com/cookie_sync_img?i=${i}&n=5`);
       });
     });
 
@@ -184,6 +184,7 @@ describe('clickioBidAdapter', function () {
       syncs.forEach((sync, i) => {
         const query = queryOf(sync.url);
         expect(query.get('i')).to.equal(String(i));
+        expect(query.get('n')).to.equal('5');
         expect(query.get('gdpr')).to.equal('1');
         expect(query.get('gdpr_consent')).to.equal('test-consent-string');
         expect(query.get('us_privacy')).to.equal('1YNN');
