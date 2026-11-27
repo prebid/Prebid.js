@@ -4,6 +4,7 @@ import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { compressDataWithGZip, isGzipCompressionSupported, logError, logInfo } from '../src/utils.js';
 import * as events from '../src/events.js';
+import { toOrigin } from '../libraries/getOrigin/index.js';
 
 const {
   AUCTION_END,
@@ -215,6 +216,24 @@ function erase(obj, key) {
   delete obj[key];
 }
 
+function origin(obj, key) {
+  obj[key] = toOrigin(obj[key]);
+}
+
+// Not part of cleanupRules, so server config cannot bypass it; suffix-matched to cover any event's payload.
+const PAGE_URL_PATH_SUFFIXES = [
+  ['refererInfo', ['topmostLocation', 'location', 'canonicalUrl', 'page', 'ref']],
+  ['refererInfo', 'stack', '*'],
+  ['refererInfo', 'legacy', ['referer', 'canonicalUrl']],
+  ['refererInfo', 'legacy', 'stack', '*'],
+  ['ortb2', 'site', ['page', 'ref']],
+];
+
+function isPageUrlPath(path) {
+  return PAGE_URL_PATH_SUFFIXES.some((suffix) =>
+    path.length >= suffix.length && pathMatches(suffix, path.slice(path.length - suffix.length)));
+}
+
 // The transform function matches against a path and applies
 // required transformation if match is found.
 function deepTransformingClone(obj, transform, currentPath = []) {
@@ -273,26 +292,20 @@ cleanupRules[BID_WON] = [{
 const TRANSFORM_FUNCTIONS = {
   'redact': redact,
   'erase': erase,
+  'origin': origin,
 };
 
 // Builds a rule function depending on the event type
 function transformFnFromCleanupRules(eventType) {
   const rules = cleanupRules[eventType] || [];
   return (path, obj, key) => {
+    if (isPageUrlPath(path)) {
+      origin(obj, key);
+    }
     for (let i = 0; i < rules.length; i++) {
-      let match = true;
       const ruleMatcher = rules[i].match;
       const transformation = rules[i].apply;
-      if (ruleMatcher.length !== path.length) {
-        continue;
-      }
-      for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
-        const choices = makeSureArray(ruleMatcher[fragment]);
-        match = !choices.every((choice) => choice !== '*' &&
-          (choice.charAt(0) === '!'
-            ? path[fragment] === choice.substring(1)
-            : path[fragment] !== choice));
-      }
+      const match = ruleMatcher.length === path.length && pathMatches(ruleMatcher, path);
       if (match) {
         const transformfn = TRANSFORM_FUNCTIONS[transformation];
         transformfn(obj, key);
@@ -300,6 +313,14 @@ function transformFnFromCleanupRules(eventType) {
       }
     }
   };
+}
+
+function pathMatches(matcher, path) {
+  return matcher.every((part, i) =>
+    !makeSureArray(part).every((choice) => choice !== '*' &&
+      (choice.charAt(0) === '!'
+        ? path[i] === choice.substring(1)
+        : path[i] !== choice)));
 }
 
 function makeSureArray(object) {

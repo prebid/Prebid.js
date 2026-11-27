@@ -402,6 +402,70 @@ describe('ID5 analytics adapter', () => {
       expect(body.payload.bidsReceived[0].requestId).to.equal('21e0b32208ee9a');
     });
 
+    it('reduces page URLs in auction end events to origins', () => {
+      const fullUrl = 'https://www.blog.com:8443/article/secret-path?token=secret-query#secret-frag';
+      const site = { page: fullUrl, ref: 'https://referer.com/search?q=secret-ref', domain: 'www.blog.com' };
+      auction.adUnits[0].bids = [{ bidder: 'appnexus', ortb2: { site: { ...site } } }];
+      auction.noBids = [{ bidder: 'appnexus', ortb2: { site: { ...site } } }];
+      auction.timedOutRequests = [{ bidder: 'appnexus', ortb2: { site: { ...site } } }];
+      auction.bidderRequests = [{
+        bidderCode: 'appnexus',
+        bids: [{ bidder: 'appnexus', ortb2: { site: { ...site } } }],
+        ortb2: { site: { ...site } },
+        refererInfo: {
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 1,
+          stack: [fullUrl, 'https://frame.com/secret-frame', null],
+          topmostLocation: fullUrl,
+          location: fullUrl,
+          canonicalUrl: 'https://www.blog.com/secret-canonical',
+          page: fullUrl,
+          domain: 'www.blog.com',
+          ref: 'https://referer.com/search?q=secret-ref',
+          legacy: {
+            reachedTop: true,
+            stack: [fullUrl],
+            referer: fullUrl,
+            canonicalUrl: 'https://www.blog.com/secret-canonical'
+          }
+        }
+      }];
+
+      id5AnalyticsAdapter.enableAnalytics(config);
+      server.respond();
+      events.emit(EVENTS.AUCTION_END, auction);
+      server.respond();
+
+      expect(server.requests).to.have.length(3);
+      expect(server.requests[2].requestBody).to.not.include('secret');
+      const body = JSON.parse(server.requests[2].requestBody);
+      const expectedSite = { page: 'https://www.blog.com:8443', ref: 'https://referer.com', domain: 'www.blog.com' };
+      expect(body.payload.adUnits[0].bids[0].ortb2.site).to.eql(expectedSite);
+      expect(body.payload.bidderRequests[0].bids[0].ortb2.site).to.eql(expectedSite);
+      expect(body.payload.bidderRequests[0].ortb2.site).to.eql(expectedSite);
+      expect(body.payload.noBids[0].ortb2.site).to.eql(expectedSite);
+      expect(body.payload.timedOutRequests[0].ortb2.site).to.eql(expectedSite);
+      expect(body.payload.bidderRequests[0].refererInfo).to.eql({
+        reachedTop: true,
+        isAmp: false,
+        numIframes: 1,
+        stack: ['https://www.blog.com:8443', 'https://frame.com', null],
+        topmostLocation: 'https://www.blog.com:8443',
+        location: 'https://www.blog.com:8443',
+        canonicalUrl: 'https://www.blog.com',
+        page: 'https://www.blog.com:8443',
+        domain: 'www.blog.com',
+        ref: 'https://referer.com',
+        legacy: {
+          reachedTop: true,
+          stack: ['https://www.blog.com:8443'],
+          referer: 'https://www.blog.com:8443',
+          canonicalUrl: 'https://www.blog.com'
+        }
+      });
+    });
+
     it('can override events to collect if configured to do so', () => {
       server.respondWith('GET', CONFIG_URL, [200,
         {
@@ -535,6 +599,75 @@ describe('ID5 analytics adapter', () => {
       expect(body.event).to.equal('auctionEnd');
       expect(body.payload.bidsReceived[0].meta).to.equal(undefined);    // new rule
       expect(body.payload.adUnits[0].bids[0].userId.id5id.uid).to.equal(auction.adUnits[0].bids[0].userId.id5id.uid); // old, overridden rule
+    });
+
+    describe('page URL minimization cannot be bypassed by server config', () => {
+      const fullUrl = 'https://www.blog.com/article/secret-path?token=secret-query#secret-frag';
+      const pageUrlFields = () => ({
+        refererInfo: {
+          domain: 'www.blog.com',
+          page: fullUrl,
+          ref: 'https://referer.com/search?q=secret-ref',
+          stack: [fullUrl],
+          legacy: { referer: fullUrl, stack: [fullUrl] }
+        },
+        ortb2: { site: { page: fullUrl, ref: 'https://referer.com/search?q=secret-ref' } }
+      });
+
+      function respondConfig(extra) {
+        server.respondWith('GET', CONFIG_URL, [200,
+          { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          JSON.stringify({ sampling: 1, ingestUrl: INGEST_URL, ...extra })
+        ]);
+      }
+
+      function expectMinimized(fields) {
+        expect(fields.refererInfo).to.eql({
+          domain: 'www.blog.com',
+          page: 'https://www.blog.com',
+          ref: 'https://referer.com',
+          stack: ['https://www.blog.com'],
+          legacy: { referer: 'https://www.blog.com', stack: ['https://www.blog.com'] }
+        });
+        expect(fields.ortb2.site).to.eql({ page: 'https://www.blog.com', ref: 'https://referer.com' });
+      }
+
+      it('still reduces page URLs to origins on events without cleanup rules', () => {
+        respondConfig({ eventsToTrack: [EVENTS.AUCTION_INIT, EVENTS.BID_REQUESTED] });
+        auction.bidderRequests = [{ bidderCode: 'appnexus', ...pageUrlFields() }];
+        id5AnalyticsAdapter.enableAnalytics(config);
+        server.respond();
+        events.emit(EVENTS.AUCTION_INIT, auction);
+        events.emit(EVENTS.BID_REQUESTED, { bidderCode: 'appnexus', ...pageUrlFields() });
+        server.respond();
+
+        expect(server.requests).to.have.length(3);
+        server.requests.slice(1).forEach((req) => expect(req.requestBody).to.not.include('secret'));
+        const initBody = JSON.parse(server.requests[1].requestBody);
+        expect(initBody.event).to.equal(EVENTS.AUCTION_INIT);
+        expectMinimized(initBody.payload.bidderRequests[0]);
+        const requestedBody = JSON.parse(server.requests[2].requestBody);
+        expect(requestedBody.event).to.equal(EVENTS.BID_REQUESTED);
+        expectMinimized(requestedBody.payload);
+      });
+
+      it('still reduces page URLs to origins when cleanup rules are replaced', () => {
+        respondConfig({
+          replaceCleanupRules: true,
+          additionalCleanupRules: { auctionEnd: [{ match: ['bidderRequests', '*', 'refererInfo', 'page'], apply: 'erase' }] }
+        });
+        auction.bidderRequests = [{ bidderCode: 'appnexus', ...pageUrlFields() }];
+        id5AnalyticsAdapter.enableAnalytics(config);
+        server.respond();
+        events.emit(EVENTS.AUCTION_END, auction);
+        server.respond();
+
+        expect(server.requests).to.have.length(3);
+        expect(server.requests[2].requestBody).to.not.include('secret');
+        const { refererInfo, ortb2 } = JSON.parse(server.requests[2].requestBody).payload.bidderRequests[0];
+        expect(refererInfo).to.not.have.property('page');
+        expectMinimized({ refererInfo: { ...refererInfo, page: 'https://www.blog.com' }, ortb2 });
+      });
     });
 
     // helper to wait until server has received at least `expected` requests
