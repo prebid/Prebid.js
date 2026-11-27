@@ -1,11 +1,13 @@
+import { ACTIVITY_REPORT_ANALYTICS } from '../src/activities/activities.js';
+import { activityParams } from '../src/activities/activityParams.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
 import { ajax, fetch } from '../src/ajax.js';
 import type { XHR } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep, uniques } from '../src/utils.js';
+import { generateUUID, getWindowLocation, logError, logInfo, logWarn, mergeDeep, runBackgroundTask, uniques } from '../src/utils.js';
 import { isPlainObject } from '../src/utils/objects.ts';
-import type { AllConsentData } from '../src/consentHandler.ts';
 import type { StartAuctionOptions } from '../src/prebid.ts';
 import type { ORTBRequest } from '../src/types/ortb/request.d.ts';
 import type { RTDProviderConfig, RtdProviderSpec } from './rtdModule/spec.ts';
@@ -64,20 +66,17 @@ export interface SemantiqRtdParams {
    * The maximum time to wait for a response, in milliseconds.
    */
   timeout?: number;
+  /**
+   * Send a page impression for every page that a single-page app opens without a reload,
+   * not only for the first page of each page load.
+   */
+  trackSpaPages?: boolean;
 }
 
 declare module './rtdModule/spec.ts' {
   interface ProviderConfig {
     semantiq: {
       params?: SemantiqRtdParams;
-    };
-  }
-}
-
-declare global {
-  interface Window {
-    audienzz?: {
-      collectorPageImpressionId?: string;
     };
   }
 }
@@ -148,9 +147,28 @@ const getStorageKeywords = (pageUrl: string): SemantiqKeywords | null => {
 };
 
 /**
- * Gets URL of the current page.
+ * Gets URL of the current page, without its query and fragment.
+ * SemantIQ ignores them when it looks up a page, so they aren't sent.
  */
-const getPageUrl = (): string => getWindowLocation().href;
+const getPageUrl = (): string => {
+  const { origin, pathname } = getWindowLocation();
+
+  return origin + pathname;
+};
+
+let currentPage: string | null = null;
+let currentPageVisit = 0;
+let isCurrentPageTracked = false;
+let isAnyPageTracked = false;
+let isAnyPageSent = false;
+
+export function reset() {
+  currentPage = null;
+  currentPageVisit = 0;
+  isCurrentPageTracked = false;
+  isAnyPageTracked = false;
+  isAnyPageSent = false;
+}
 
 function toCompanyIds(companyIdOrIds: number | number[] | undefined): number[] {
   if (Array.isArray(companyIdOrIds)) {
@@ -316,41 +334,78 @@ const getOrtbSiteCategories = (keywords: SemantiqKeywords, site: OrtbSite = {}):
 };
 
 /**
+ * Checks whether the publisher's consent and activity rules allow the page impression.
+ */
+const isReportingAllowed = (): boolean => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_RTD, SUBMODULE_NAME));
+
+/**
  * Dispatches a page impression event to the SemantIQ service.
  */
-const dispatchPageImpressionEvent = (companyId: number) => {
-  window.audienzz = window.audienzz || {};
-  window.audienzz.collectorPageImpressionId = window.audienzz.collectorPageImpressionId || generateUUID();
-  const pageImpressionId = window.audienzz.collectorPageImpressionId;
-  const pageUrl = getPageUrl();
-
+const dispatchPageImpressionEvent = (companyId: number, pageUrl: string) => {
   const payload = {
     company_id: companyId,
     event_id: generateUUID(),
     event_timestamp: new Date().toISOString(),
     event_type: 'pageImpression',
-    page_impression_id: pageImpressionId,
+    page_impression_id: generateUUID(),
     source: 'semantiqPrebidModule',
     page_url: pageUrl,
   };
 
-  return fetch(EVENT_COLLECTOR_URL, {
+  fetch(EVENT_COLLECTOR_URL, {
     method: 'POST',
     body: JSON.stringify(payload),
     keepalive: true,
+  }).catch((error) => {
+    logWarn(LOG_PREFIX, 'Failed to send the page impression', error);
   });
 };
 
 /**
  * Module init.
  */
-const init = (config: RTDProviderConfig<'semantiq'>, userConsent: AllConsentData): boolean => {
-  const { params = {} } = config;
+const init = (): boolean => true;
+
+/**
+ * Sends a page impression once per page load, or once per page with `trackSpaPages`.
+ */
+const trackPageImpression = (params: SemantiqRtdParams) => {
+  const page = getPageUrl();
+
+  if (page !== currentPage) {
+    currentPage = page;
+    currentPageVisit += 1;
+    isCurrentPageTracked = false;
+  }
+
+  if (isCurrentPageTracked || (isAnyPageTracked && !params.trackSpaPages)) {
+    return;
+  }
+
+  if (!isReportingAllowed()) {
+    return;
+  }
+
+  isCurrentPageTracked = true;
+  isAnyPageTracked = true;
+
   const [mainCompanyId] = getTenantIds(params);
+  const pageVisit = currentPageVisit;
 
-  dispatchPageImpressionEvent(mainCompanyId);
+  runBackgroundTask(() => {
+    // Consent can change before the background task runs; a skipped page can then be tracked again.
+    if (!isReportingAllowed()) {
+      if (currentPageVisit === pageVisit) {
+        isCurrentPageTracked = false;
+      }
 
-  return true;
+      isAnyPageTracked = isAnyPageSent;
+      return;
+    }
+
+    isAnyPageSent = true;
+    dispatchPageImpressionEvent(mainCompanyId, page);
+  });
 };
 
 /**
@@ -368,6 +423,8 @@ const getBidRequestData = (
 
   try {
     logInfo(LOG_PREFIX, { reqBidsConfigObj });
+    // Per auction, so consent is known and SPA pages can be tracked.
+    trackPageImpression(params);
 
     const { adUnits = [] } = reqBidsConfigObj;
 

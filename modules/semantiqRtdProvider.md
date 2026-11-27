@@ -44,6 +44,7 @@ You need to obtain a company ID from [Audienzz](https://audienzz.com) for the mo
 | ---------- | -------- | ----------------------------------------------------------------- | ------------------ | ------------- | --------------------- |
 | companyId  | No       | Company ID or IDs obtained from [Audienzz](https://audienzz.com). | number \| number[] | -             | 12345                 |
 | timeout    | No       | The maximum time to wait for a response in milliseconds.          | number             | 1000          | 3000                  |
+| trackSpaPages | No    | Send a page impression for every page that a single-page app opens without a reload. | boolean | false | true |
 
 ## ORTB data
 
@@ -82,3 +83,7 @@ Check these before you set `site.cattax`:
 - Only the global `site` is read. `site.cattax` set for a single bidder in `ortb2Fragments.bidder` is not taken into account.
 
 `site.content.data` is not affected by any of these.
+
+## Page impressions
+
+At the start of the first auction on each page load, the module sends a page impression to Audienzz. With `trackSpaPages`, it also sends one for every page that a single-page app opens without a reload. Prebid's consent enforcement applies to it as analytics reporting (TCF purpose 7).
