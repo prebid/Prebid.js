@@ -40,8 +40,13 @@ provides them; the adapter does not backfill unshared IDs.
 
 LINA SSP determines inventory authorization, pricing, supply-chain, deal,
 creative, and privacy policy. The adapter sends the Publisher floor as standard
-`imp.bidfloor` and `imp.bidfloorcur`. It calls `bid.getFloor()` with wildcard
-media type and size. The only request currency is a single valid explicit
+`imp.bidfloor` and `imp.bidfloorcur`, and a Publisher floor for each present
+media type and each `imp.banner.format` entry in the standard
+`imp.<mediatype>.ext.bidfloor` / `ext.bidfloorcur` fields when it differs from
+the impression floor. It calls `bid.getFloor()` with wildcard media type and
+size for the impression floor, and with each present media type (and each
+banner format size) for those granular floors. The only request currency is
+a single valid explicit
 `ortb2.cur`; that currency is also used for floor lookup. Without it, floor
 lookup falls back to a valid existing `imp.bidfloorcur`, then USD, without
 promoting either fallback to request `cur`. `ortb2.ext.prebid.adServerCurrency`
@@ -53,8 +58,11 @@ result, including an explicit zero. A missing floor-result currency follows
 the effective lookup currency. The adapter performs no FX conversion. Invalid
 or multiple request currencies, failed `getFloor()` calls, malformed results,
 invalid floor currencies, and currency mismatches skip the affected request
-or bid. A null or empty result is a valid "no matching rule" result and
-preserves any existing static OpenRTB floor. Request and clearing currency
+or bid. A null or empty result is a valid "no matching rule" result: it
+preserves a static `ortb2Imp.bidfloor` / `bidfloorcur`, while a static
+granular floor supplied in `ortb2Imp.<mediatype>.ext` or
+`ortb2Imp.banner.format[].ext` is replaced, so a stale per-format floor is
+never sent without a matching lookup. Request and clearing currency
 remain subject to LINA SSP's registered-publisher currency policy.
 
 The SSP uses `max(placement floor, client floor)` as the publisher Net CPM

@@ -11,7 +11,7 @@ import type { ORTBImp, ORTBRequest } from '../src/types/ortb/request.d.ts';
 import type { ORTBResponse } from '../src/types/ortb/response.d.ts';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepSetValue, logWarn, mergeDeep, safeJSONParse } from '../src/utils.js';
-import { isInteger, isPlainObject, isStr } from '../src/utils/objects.js';
+import { deepClone, isInteger, isPlainObject, isStr } from '../src/utils/objects.js';
 import { parseUntrustedJSON } from '../src/utils/untrustedJson.js';
 
 const BIDDER_CODE = 'lina' as const;
@@ -140,6 +140,58 @@ function normalizeResponse(body: unknown, request: ORTBRequest): ORTBResponse | 
   return body as unknown as ORTBResponse;
 }
 
+function clearGranularFloor(target: unknown): void {
+  if (!isPlainObject(target) || !isPlainObject(target.ext)) return;
+  delete target.ext.bidfloor;
+  delete target.ext.bidfloorcur;
+}
+
+function getGranularFloor(
+  bidRequest: BidRequest<typeof BIDDER_CODE>,
+  currency: string,
+  mediaType: 'banner' | 'video' | 'native',
+  size: '*' | [number, number],
+): LinaFloor | undefined {
+  if (typeof bidRequest.getFloor !== 'function') return undefined;
+
+  let result: unknown;
+  try {
+    result = bidRequest.getFloor({ currency, mediaType, size });
+  } catch {
+    return undefined;
+  }
+  if (!isPlainObject(result) ||
+      typeof result.floor !== 'number' ||
+      !Number.isFinite(result.floor) ||
+      result.floor < 0) {
+    return undefined;
+  }
+
+  const resultCurrency = result.currency == null ? currency : result.currency;
+  if (!isValidCurrency(resultCurrency) || resultCurrency !== currency) {
+    return undefined;
+  }
+  return { bidfloor: result.floor, bidfloorcur: resultCurrency };
+}
+
+function setGranularFloor(
+  imp: Partial<ORTBImp>,
+  target: unknown,
+  bidRequest: BidRequest<typeof BIDDER_CODE>,
+  currency: string,
+  mediaType: 'banner' | 'video' | 'native',
+  size: '*' | [number, number],
+): void {
+  if (!isPlainObject(target)) return;
+  clearGranularFloor(target);
+  const floor = getGranularFloor(bidRequest, currency, mediaType, size);
+  if (!floor) return;
+  if (floor.bidfloor === imp.bidfloor &&
+      floor.bidfloorcur === imp.bidfloorcur) return;
+  deepSetValue(target, 'ext.bidfloor', floor.bidfloor);
+  deepSetValue(target, 'ext.bidfloorcur', floor.bidfloorcur);
+}
+
 const converter = ortbConverter<typeof BIDDER_CODE>({
   context: { netRevenue: true },
 
@@ -199,7 +251,35 @@ const converter = ortbConverter<typeof BIDDER_CODE>({
       },
 
       bidfloor() {},
-      extBidfloor() {},
+      extBidfloor(_original, imp, bidRequest, context) {
+        clearGranularFloor(imp.banner);
+        imp.banner?.format?.forEach(clearGranularFloor);
+        clearGranularFloor(imp.video);
+        clearGranularFloor(imp.native);
+
+        const currency = imp.bidfloorcur ??
+          (isValidCurrency(context.currency) ? context.currency : DEFAULT_FLOOR_CURRENCY);
+
+        if (imp.banner) {
+          setGranularFloor(
+            imp, imp.banner, bidRequest, currency, 'banner', '*');
+          imp.banner.format?.forEach(format => {
+            if (isInteger(format.w) && format.w > 0 &&
+                isInteger(format.h) && format.h > 0) {
+              setGranularFloor(
+                imp, format, bidRequest, currency, 'banner', [format.w, format.h]);
+            }
+          });
+        }
+        if (imp.video) {
+          setGranularFloor(
+            imp, imp.video, bidRequest, currency, 'video', '*');
+        }
+        if (imp.native) {
+          setGranularFloor(
+            imp, imp.native, bidRequest, currency, 'native', '*');
+        }
+      },
     },
   },
 });
@@ -209,11 +289,14 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
   supportedMediaTypes: [BANNER, VIDEO, ...(FEATURES.NATIVE ? [NATIVE] as const : [])],
 
   isBidRequestValid(bid) {
+    // The converter merges `ortb2Imp` by reference for array members, so validation must not be
+    // able to reach the ad unit's own objects; the granular floor override clears floor extensions.
+    const bidForValidation = { ...bid, ortb2Imp: deepClone(bid.ortb2Imp ?? {}), getFloor: undefined };
     return getPublisherId(bid) !== undefined &&
       getPlacementId(bid) !== undefined &&
       converter.toORTB({
-        bidRequests: [bid],
-        bidderRequest: { bids: [bid] } as ClientBidderRequest<typeof BIDDER_CODE>,
+        bidRequests: [bidForValidation],
+        bidderRequest: { bids: [bidForValidation] } as ClientBidderRequest<typeof BIDDER_CODE>,
       }).imp.some(hasUsableMedia);
   },
 
@@ -243,7 +326,9 @@ export const spec: BidderSpec<typeof BIDDER_CODE> = {
           return [];
         }
 
-        const ortb2Imp = { ...bid.ortb2Imp };
+        // Deep copied: the granular floor override deletes `ext.bidfloor` on `banner.format`
+        // members, which the ad unit and every other bidder share by reference.
+        const ortb2Imp = deepClone(bid.ortb2Imp ?? {});
         delete ortb2Imp.bidfloor;
         delete ortb2Imp.bidfloorcur;
         Object.assign(ortb2Imp, floor);

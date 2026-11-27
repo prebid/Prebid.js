@@ -5,6 +5,7 @@ import { toFetchRequest } from 'src/ajax';
 import sinon from 'sinon';
 import 'src/prebid.js';
 import 'modules/currency.js';
+import 'modules/priceFloors.js';
 
 const BID_REQUEST = {
   bidder: 'lina',
@@ -82,6 +83,7 @@ describe('linaBidAdapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    config.resetConfig();
   });
 
   describe('endpoint and identifiers', function () {
@@ -259,6 +261,12 @@ describe('linaBidAdapter', function () {
         .to.deep.equal(['banner', 'video', ...(FEATURES.NATIVE ? ['native'] : [])]);
     });
 
+    it('does not call getFloor while validating a bid', function () {
+      const getFloor = sandbox.stub().returns({ floor: 1, currency: 'USD' });
+      expect(spec.isBidRequestValid({ ...BID_REQUEST, getFloor })).to.equal(true);
+      expect(getFloor.called).to.equal(false);
+    });
+
     it('rejects malformed or empty video-only inputs', function () {
       [
         {
@@ -317,72 +325,74 @@ describe('linaBidAdapter', function () {
       expect(request.data.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
     });
 
-    it('maps standard video parameters and leaves no banner in a video-only imp', function () {
-      const request = spec.buildRequests([{
-        ...BID_REQUEST,
-        mediaTypes: {
-          video: {
-            playerSize: [[640, 360]],
-            mimes: ['video/mp4', 'application/x-mpegURL'],
-            protocols: [2, 3],
-            minduration: 5,
-            maxduration: 30,
-            skip: 0,
+    if (FEATURES.VIDEO) {
+      it('maps standard video parameters and leaves no banner in a video-only imp', function () {
+        const request = spec.buildRequests([{
+          ...BID_REQUEST,
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4', 'application/x-mpegURL'],
+              protocols: [2, 3],
+              minduration: 5,
+              maxduration: 30,
+              skip: 0,
+            },
           },
-        },
-        sizes: undefined,
-      }], BIDDER_REQUEST);
+          sizes: undefined,
+        }], BIDDER_REQUEST);
 
-      expect(request.data.imp[0].video).to.deep.include({
-        w: 640,
-        h: 360,
-        mimes: ['video/mp4', 'application/x-mpegURL'],
-        protocols: [2, 3],
-        minduration: 5,
-        maxduration: 30,
-        skip: 0,
+        expect(request.data.imp[0].video).to.deep.include({
+          w: 640,
+          h: 360,
+          mimes: ['video/mp4', 'application/x-mpegURL'],
+          protocols: [2, 3],
+          minduration: 5,
+          maxduration: 30,
+          skip: 0,
+        });
+        expect(request.data.imp[0]).not.to.have.property('banner');
       });
-      expect(request.data.imp[0]).not.to.have.property('banner');
-    });
 
-    it('lets active video arrays replace stale FPD arrays while retaining extensions', function () {
-      const bid = {
-        ...BID_REQUEST,
-        mediaTypes: {
-          video: {
-            playerSize: [[640, 360]],
-            mimes: ['video/webm'],
-            protocols: [3],
-            minduration: 10,
-            maxduration: 20,
+      it('lets active video arrays replace stale FPD arrays while retaining extensions', function () {
+        const bid = {
+          ...BID_REQUEST,
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/webm'],
+              protocols: [3],
+              minduration: 10,
+              maxduration: 20,
+            },
           },
-        },
-        sizes: undefined,
-        ortb2Imp: {
-          ...BID_REQUEST.ortb2Imp,
-          video: {
-            w: 1280,
-            h: 720,
-            mimes: ['video/mp4'],
-            protocols: [2],
-            ext: { custom: true },
+          sizes: undefined,
+          ortb2Imp: {
+            ...BID_REQUEST.ortb2Imp,
+            video: {
+              w: 1280,
+              h: 720,
+              mimes: ['video/mp4'],
+              protocols: [2],
+              ext: { custom: true },
+            },
           },
-        },
-      };
-      const before = JSON.stringify(bid);
-      const request = spec.buildRequests([bid], BIDDER_REQUEST);
+        };
+        const before = JSON.stringify(bid);
+        const request = spec.buildRequests([bid], BIDDER_REQUEST);
 
-      expect(request.data.imp[0].video).to.deep.include({
-        w: 640,
-        h: 360,
-        mimes: ['video/webm'],
-        protocols: [3],
-        minduration: 10,
-        maxduration: 20,
-        ext: { custom: true },
+        expect(request.data.imp[0].video).to.deep.include({
+          w: 640,
+          h: 360,
+          mimes: ['video/webm'],
+          protocols: [3],
+          minduration: 10,
+          maxduration: 20,
+          ext: { custom: true },
+        });
+        expect(JSON.stringify(bid)).to.equal(before);
       });
-      expect(JSON.stringify(bid)).to.equal(before);
-    });
+    }
 
     it('filters unusable converter imps without dropping a valid batch member', function () {
       const unusable = [
@@ -471,11 +481,13 @@ describe('linaBidAdapter', function () {
         ...BID_REQUEST,
         mediaTypes: {
           banner: { sizes: [[300, 250]] },
-          video: {
-            playerSize: [[640, 360]],
-            mimes: ['video/mp4'],
-            protocols: [3],
-          },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+              protocols: [3],
+            }
+          } : {}),
           ...(FEATURES.NATIVE ? {
             native: { title: { required: true, len: 80 } },
           } : {}),
@@ -488,18 +500,298 @@ describe('linaBidAdapter', function () {
         ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['KRW'] },
       });
 
-      expect(getFloor.calledOnceWithExactly({
+      expect(getFloor.calledWithExactly({
         currency: 'KRW',
         mediaType: '*',
         size: '*',
       })).to.equal(true);
       expect(request.data.imp).to.have.lengthOf(1);
       expect(request.data.imp[0].banner.format).to.deep.equal([{ w: 300, h: 250 }]);
-      expect(request.data.imp[0].video).to.deep.include({ w: 640, h: 360 });
+      if (FEATURES.VIDEO) {
+        expect(request.data.imp[0].video).to.deep.include({ w: 640, h: 360 });
+      }
       if (FEATURES.NATIVE) {
         expect(JSON.parse(request.data.imp[0].native.request)).to.deep.equal(NATIVE_REQUEST);
       }
       expect(request.data.imp[0]).to.include({ bidfloor: 0, bidfloorcur: 'KRW' });
+    });
+
+    it('preserves per-format and per-size publisher floors', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType, size }) => {
+        if (mediaType === '*') return { floor: 0.5, currency: 'USD' };
+        if (mediaType === 'banner' && size === '*') return { floor: 1, currency: 'USD' };
+        if (mediaType === 'banner' && Array.isArray(size)) return { floor: 1.5, currency: 'USD' };
+        if (mediaType === 'video') return { floor: 5, currency: 'USD' };
+        if (mediaType === 'native') return { floor: 2, currency: 'USD' };
+        return null;
+      });
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: { title: { required: true, len: 80 } },
+          } : {}),
+        },
+        ...(FEATURES.NATIVE ? { nativeOrtbRequest: NATIVE_REQUEST } : {}),
+        sizes: undefined,
+        getFloor,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+
+      const imp = request.data.imp[0];
+      expect(imp).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      expect(imp.banner.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'USD' });
+      expect(imp.banner.format[0].ext).to.deep.equal({ bidfloor: 1.5, bidfloorcur: 'USD' });
+      if (FEATURES.VIDEO) {
+        expect(imp.video.ext).to.deep.equal({ bidfloor: 5, bidfloorcur: 'USD' });
+      }
+      if (FEATURES.NATIVE) {
+        expect(imp.native.ext).to.deep.equal({ bidfloor: 2, bidfloorcur: 'USD' });
+      }
+    });
+
+    it('defaults missing granular currencies to the effective currency', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType, size }) => {
+        if (mediaType === '*') return { floor: 0.5 };
+        if (mediaType === 'banner' && size === '*') return { floor: 1 };
+        if (mediaType === 'banner' && Array.isArray(size)) return { floor: 1.5 };
+        if (mediaType === 'video') return { floor: 5 };
+        if (mediaType === 'native') return { floor: 2 };
+        return null;
+      });
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: { title: { required: true, len: 80 } },
+          } : {}),
+        },
+        ...(FEATURES.NATIVE ? { nativeOrtbRequest: NATIVE_REQUEST } : {}),
+        sizes: undefined,
+        getFloor,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+
+      const imp = request.data.imp[0];
+      expect(imp).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      expect(imp.banner.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'USD' });
+      expect(imp.banner.format[0].ext).to.deep.equal({ bidfloor: 1.5, bidfloorcur: 'USD' });
+      if (FEATURES.VIDEO) {
+        expect(imp.video.ext).to.deep.equal({ bidfloor: 5, bidfloorcur: 'USD' });
+      }
+      if (FEATURES.NATIVE) {
+        expect(imp.native.ext).to.deep.equal({ bidfloor: 2, bidfloorcur: 'USD' });
+      }
+    });
+
+    it('drops granular floors that conflict with the request currency', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType, size }) => {
+        if (mediaType === '*') return { floor: 0.5, currency: 'USD' };
+        if (Array.isArray(size)) return { floor: 1.5, currency: 'EUR' };
+        return { floor: 1, currency: 'EUR' };
+      });
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: { title: { required: true, len: 80 } },
+          } : {}),
+        },
+        ...(FEATURES.NATIVE ? { nativeOrtbRequest: NATIVE_REQUEST } : {}),
+        sizes: undefined,
+        getFloor,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+
+      const imp = request.data.imp[0];
+      expect(imp).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      expect(imp.banner).not.to.have.nested.property('ext.bidfloor');
+      imp.banner.format.forEach(format =>
+        expect(format).not.to.have.nested.property('ext.bidfloor'));
+      if (FEATURES.VIDEO) {
+        expect(imp.video).not.to.have.nested.property('ext.bidfloor');
+      }
+      if (FEATURES.NATIVE) {
+        expect(imp.native).not.to.have.nested.property('ext.bidfloor');
+      }
+    });
+
+    it('preserves a per-format zero floor that differs from the top-level floor', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType }) => {
+        if (mediaType === '*') return { floor: 0.5, currency: 'USD' };
+        return { floor: 0, currency: 'USD' };
+      });
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: { title: { required: true, len: 80 } },
+          } : {}),
+        },
+        ...(FEATURES.NATIVE ? { nativeOrtbRequest: NATIVE_REQUEST } : {}),
+        sizes: undefined,
+        getFloor,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+
+      const imp = request.data.imp[0];
+      expect(imp).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      expect(imp.banner.ext).to.deep.equal({ bidfloor: 0, bidfloorcur: 'USD' });
+      expect(imp.banner.format[0].ext).to.deep.equal({ bidfloor: 0, bidfloorcur: 'USD' });
+      if (FEATURES.VIDEO) {
+        expect(imp.video.ext).to.deep.equal({ bidfloor: 0, bidfloorcur: 'USD' });
+      }
+      if (FEATURES.NATIVE) {
+        expect(imp.native.ext).to.deep.equal({ bidfloor: 0, bidfloorcur: 'USD' });
+      }
+    });
+
+    it('removes stale granular floors when no new match is returned', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType }) =>
+        mediaType === '*' ? { floor: 0.5, currency: 'USD' } : null);
+      const request = spec.buildRequests([{
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: { title: { required: true, len: 80 } },
+          } : {}),
+        },
+        ...(FEATURES.NATIVE ? { nativeOrtbRequest: NATIVE_REQUEST } : {}),
+        ortb2Imp: {
+          ext: { gpid: '/1234/lina-mixed' },
+          banner: {
+            ext: { bidfloor: 10, bidfloorcur: 'USD' },
+            format: [{
+              w: 300,
+              h: 250,
+              ext: { bidfloor: 20, bidfloorcur: 'USD' },
+            }],
+          },
+          ...(FEATURES.VIDEO ? {
+            video: {
+              w: 640,
+              h: 360,
+              mimes: ['video/mp4'],
+              ext: { bidfloor: 30, bidfloorcur: 'USD' },
+            }
+          } : {}),
+          ...(FEATURES.NATIVE ? {
+            native: {
+              ext: { bidfloor: 40, bidfloorcur: 'USD' },
+            },
+          } : {}),
+        },
+        sizes: undefined,
+        getFloor,
+      }], {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      });
+
+      const imp = request.data.imp[0];
+      expect(imp).to.include({ bidfloor: 0.5, bidfloorcur: 'USD' });
+      expect(imp.banner).not.to.have.nested.property('ext.bidfloor');
+      imp.banner.format.forEach(format =>
+        expect(format).not.to.have.nested.property('ext.bidfloor'));
+      if (FEATURES.VIDEO) {
+        expect(imp.video).not.to.have.nested.property('ext.bidfloor');
+      }
+      if (FEATURES.NATIVE) {
+        expect(imp.native).not.to.have.nested.property('ext.bidfloor');
+      }
+    });
+
+    it('clears granular floors without mutating the ad unit ortb2Imp', function () {
+      const getFloor = sandbox.stub().callsFake(({ mediaType }) =>
+        mediaType === '*' ? { floor: 0.5, currency: 'USD' } : null);
+      const ortb2Imp = {
+        ext: { gpid: '/1234/lina-mixed' },
+        banner: {
+          ext: { bidfloor: 10, bidfloorcur: 'USD' },
+          format: [{ w: 300, h: 250, ext: { bidfloor: 20, bidfloorcur: 'USD' } }],
+        },
+        video: {
+          w: 640,
+          h: 360,
+          mimes: ['video/mp4'],
+          ext: { bidfloor: 30, bidfloorcur: 'USD' },
+        },
+      };
+      const before = JSON.parse(JSON.stringify(ortb2Imp));
+      const bid = {
+        ...BID_REQUEST,
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          ...(FEATURES.VIDEO ? {
+            video: { playerSize: [[640, 360]], mimes: ['video/mp4'] },
+          } : {}),
+        },
+        ortb2Imp: FEATURES.VIDEO ? ortb2Imp : {
+          ...ortb2Imp,
+          video: undefined,
+        },
+        sizes: undefined,
+        getFloor,
+      };
+      const bidderRequest = {
+        ...BIDDER_REQUEST,
+        ortb2: { ...BIDDER_REQUEST.ortb2, cur: ['USD'] },
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(ortb2Imp).to.deep.equal(before);
+
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(ortb2Imp).to.deep.equal(before);
+
+      const imp = request.data.imp[0];
+      expect(imp.banner.format[0]).not.to.have.nested.property('ext.bidfloor');
+      if (FEATURES.VIDEO) {
+        expect(imp.video).not.to.have.nested.property('ext.bidfloor');
+      }
     });
   });
 
@@ -562,7 +854,7 @@ describe('linaBidAdapter', function () {
         };
         const request = spec.buildRequests([bid], bidderRequest);
 
-        expect(getFloor.calledOnceWithExactly({
+        expect(getFloor.calledWithExactly({
           currency: expected,
           mediaType: '*',
           size: '*',
@@ -668,7 +960,7 @@ describe('linaBidAdapter', function () {
           },
         });
 
-        expect(getFloor.calledOnceWithExactly({
+        expect(getFloor.calledWithExactly({
           currency: expected,
           mediaType: '*',
           size: '*',
@@ -693,7 +985,7 @@ describe('linaBidAdapter', function () {
         },
       });
 
-      expect(getFloor.calledOnceWithExactly({
+      expect(getFloor.calledWithExactly({
         currency: 'KRW',
         mediaType: '*',
         size: '*',
@@ -800,87 +1092,89 @@ describe('linaBidAdapter', function () {
       expect(bids[0]).not.to.have.any.keys('ad', 'adm', 'mtype', 'reward', 'ext');
     });
 
-    it('maps standard video mtype and markup through the converter', function () {
-      const request = spec.buildRequests([{
-        ...BID_REQUEST,
-        mediaTypes: {
-          video: {
-            playerSize: [[640, 360]],
-            mimes: ['video/mp4'],
-            protocols: [3],
+    if (FEATURES.VIDEO) {
+      it('maps standard video mtype and markup through the converter', function () {
+        const request = spec.buildRequests([{
+          ...BID_REQUEST,
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+              protocols: [3],
+            },
           },
-        },
-        sizes: undefined,
-      }], BIDDER_REQUEST);
-      const bids = spec.interpretResponse({
-        body: responseFor(request, [{
+          sizes: undefined,
+        }], BIDDER_REQUEST);
+        const bids = spec.interpretResponse({
+          body: responseFor(request, [{
+            ...VALID_BID,
+            mtype: 2,
+            w: 640,
+            h: 360,
+            adm: '<VAST version="3.0"></VAST>',
+          }]),
+        }, request);
+
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0]).to.include({
+          mediaType: 'video',
+          width: 640,
+          height: 360,
+          playerWidth: 640,
+          playerHeight: 360,
+          vastXml: '<VAST version="3.0"></VAST>',
+        });
+        expect(bids[0]).not.to.have.property('ad');
+      });
+
+      it('maps an nurl-only Video response to vastUrl without propagating custom reward ext data', function () {
+        const request = spec.buildRequests([{
+          ...BID_REQUEST,
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 360]],
+              mimes: ['video/mp4'],
+              protocols: [3],
+            },
+          },
+          sizes: undefined,
+        }], BIDDER_REQUEST);
+        const nurl = 'https://tracker.example/vast.xml?auction=1';
+        const response = responseFor(request, [{
           ...VALID_BID,
           mtype: 2,
           w: 640,
           h: 360,
-          adm: '<VAST version="3.0"></VAST>',
-        }]),
-      }, request);
+          adm: undefined,
+          nurl,
+          reward: 'custom-reward',
+          ext: { reward: { amount: 3 }, custom: true },
+        }]);
 
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0]).to.include({
-        mediaType: 'video',
-        width: 640,
-        height: 360,
-        playerWidth: 640,
-        playerHeight: 360,
-        vastXml: '<VAST version="3.0"></VAST>',
+        const bids = spec.interpretResponse({ body: response }, request);
+
+        expect(bids).to.have.lengthOf(1);
+        expect(bids[0]).to.deep.include({
+          requestId: BID_REQUEST.bidId,
+          seatBidId: VALID_BID.id,
+          cpm: VALID_BID.price,
+          currency: response.cur,
+          creativeId: VALID_BID.crid,
+          ttl: VALID_BID.exp,
+          netRevenue: true,
+          mediaType: 'video',
+          width: 640,
+          height: 360,
+          playerWidth: 640,
+          playerHeight: 360,
+          vastUrl: nurl,
+        });
+        expect(bids[0].meta).to.deep.equal({
+          advertiserDomains: VALID_BID.adomain,
+        });
+        expect(bids[0]).not.to.have.any.keys('adm', 'mtype', 'vastXml', 'reward', 'ext');
       });
-      expect(bids[0]).not.to.have.property('ad');
-    });
-
-    it('maps an nurl-only Video response to vastUrl without propagating custom reward ext data', function () {
-      const request = spec.buildRequests([{
-        ...BID_REQUEST,
-        mediaTypes: {
-          video: {
-            playerSize: [[640, 360]],
-            mimes: ['video/mp4'],
-            protocols: [3],
-          },
-        },
-        sizes: undefined,
-      }], BIDDER_REQUEST);
-      const nurl = 'https://tracker.example/vast.xml?auction=1';
-      const response = responseFor(request, [{
-        ...VALID_BID,
-        mtype: 2,
-        w: 640,
-        h: 360,
-        adm: undefined,
-        nurl,
-        reward: 'custom-reward',
-        ext: { reward: { amount: 3 }, custom: true },
-      }]);
-
-      const bids = spec.interpretResponse({ body: response }, request);
-
-      expect(bids).to.have.lengthOf(1);
-      expect(bids[0]).to.deep.include({
-        requestId: BID_REQUEST.bidId,
-        seatBidId: VALID_BID.id,
-        cpm: VALID_BID.price,
-        currency: response.cur,
-        creativeId: VALID_BID.crid,
-        ttl: VALID_BID.exp,
-        netRevenue: true,
-        mediaType: 'video',
-        width: 640,
-        height: 360,
-        playerWidth: 640,
-        playerHeight: 360,
-        vastUrl: nurl,
-      });
-      expect(bids[0].meta).to.deep.equal({
-        advertiserDomains: VALID_BID.adomain,
-      });
-      expect(bids[0]).not.to.have.any.keys('adm', 'mtype', 'vastXml', 'reward', 'ext');
-    });
+    }
 
     if (FEATURES.NATIVE) {
       it('maps the standard Native response wrapper to Prebid Native ORTB markup', function () {
