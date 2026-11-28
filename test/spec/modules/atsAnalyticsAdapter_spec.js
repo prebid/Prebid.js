@@ -58,9 +58,13 @@ describe('ats analytics adapter', function () {
           'params': {
             'placementId': '10433394'
           },
-          'userId': {
-            'idl_env': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'
-          },
+          'userIdAsEids': [{
+            'source': 'liveramp.com',
+            'uids': [{
+              'id': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g',
+              'atype': 3
+            }]
+          }],
           'adUnitCode': 'div-gpt-ad-1438287399331-0',
           'transactionId': '2f481ff1-8d20-4c28-8e36-e384e9e3eec6',
           'sizes': '300x250,300x600',
@@ -440,7 +444,7 @@ describe('ats analytics adapter', function () {
         expect(result[0].has_envelope).to.equal(false);
       });
 
-      it('should return true for legacy userId.idl_env (backward compatibility)', function () {
+      it('should ignore a raw userId.idl_env on the bid (IDs are only read from userIdAsEids)', function () {
         const bidRequestArgs = {
           'bidderCode': 'appnexus',
           'auctionStart': 1580739265161,
@@ -455,7 +459,7 @@ describe('ats analytics adapter', function () {
         };
 
         const result = bidRequestedHandler(bidRequestArgs);
-        expect(result[0].has_envelope).to.equal(true);
+        expect(result[0].has_envelope).to.equal(false);
       });
 
       it('should return false when userIdAsEids has liveramp source but uids is null', function () {
