@@ -2416,31 +2416,6 @@ describe('Unit: Prebid Module', function () {
         expect(auctionArgs.adUnits[1].ortb2Imp?.ext?.tid).to.not.exist;
       });
 
-      it('should notify targeting of the latest auction for each adUnit', async function () {
-        const latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
-        const getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
-
-        await runAuction({
-          adUnits: [
-            {
-              code: 'test1',
-              mediaTypes: { banner: { sizes: [] } },
-              bids: []
-            }, {
-              code: 'test2',
-              mediaTypes: { banner: { sizes: [] } },
-              bids: []
-            }
-          ]
-        });
-
-        expect(latestStub.firstCall.calledWith('test1', 2)).to.equal(true);
-        expect(latestStub.secondCall.calledWith('test2', 2)).to.equal(true);
-
-        latestStub.restore();
-        getAuctionStub.restore();
-      });
-
       it('should execute callback immediately if adUnits is empty', async function () {
         var bidsBackHandler = function bidsBackHandlerCallback() {
         };
@@ -3803,7 +3778,7 @@ describe('Unit: Prebid Module', function () {
     });
     it('returns an array containing the highest bid object for the given adUnitCode', function () {
       const adUnitcode = '/19968336/header-bid-tag-0';
-      targeting.setLatestAuctionForAdUnit(adUnitcode, auctionId);
+      targeting.setLatestAuctionForAdUnit(adUnitcode, auctionId, [adUnitcode]);
       const highestCpmBids = pbjs.getHighestCpmBids(adUnitcode);
       expect(highestCpmBids.length).to.equal(1);
       const expectedBid = auctionManager.getBidsReceived()[1];
