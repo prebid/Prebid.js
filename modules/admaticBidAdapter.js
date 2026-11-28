@@ -138,7 +138,7 @@ export const spec = {
       SYNC_URL = `https://static.cdn.${domain.url}/${bidderName}/sync.html`;
 
       host = host.replace('https://', '').replace('http://', '').replace('/', '');
-      return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
+      return { method: 'POST', url: `https://${host}/pb`, data: payload };
     }
   },
 
