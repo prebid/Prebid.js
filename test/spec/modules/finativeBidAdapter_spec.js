@@ -32,6 +32,7 @@ describe('Finative adapter', function () {
 
       assert.equal(request.method, 'POST');
       assert.ok(request.data);
+      assert.isUndefined(request.options?.contentType);
     });
 
     it('should have default request structure', function () {

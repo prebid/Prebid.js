@@ -143,9 +143,6 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
       bids: validBidRequests
     };
   },
