@@ -205,6 +205,11 @@ export type InvocationHandle = {
   managed: boolean;
   closed: boolean;
   /**
+   * True once a newer invocation has started for the submodule, including one on the container that replaced
+   * this one's after a config update.
+   */
+  superseded: boolean;
+  /**
    * Store ID data on the submodule's behalf, without it counting as the submodule managing storage.
    */
   store(value: SerializableId): void;
@@ -245,7 +250,7 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
     handle({ isCurrent, onChange }) {
       // An invocation's callback can complete after a refresh has started a newer one, or after the ID system was
       // reinitialized; its result is stale then, so it must not overwrite storage or the decoded ID.
-      const isStale = () => submodule.handle !== handle || !isCurrent();
+      const isStale = () => handle.superseded || !isCurrent();
       function write<A extends any[]>(op: string, fn: (...args: A) => void) {
         return (...args: A) => {
           if (isStale()) {
@@ -274,6 +279,7 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
         },
         managed: false,
         closed: false,
+        superseded: false,
         store(value) {
           if (!isStale() && hasStorage()) setStoredValue(submodule, value);
         },
@@ -300,6 +306,7 @@ export function newIdStore(submodule: SubmoduleContainer<UserIdProvider>): IdSto
           }
         }
       };
+      if (submodule.handle) submodule.handle.superseded = true;
       submodule.handle = handle;
       return handle;
     }
