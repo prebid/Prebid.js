@@ -88,9 +88,7 @@ describe('imAnalyticsAdapter', function() {
           auctionId: 'auc-1',
           timestamp: 1234567890,
           bidderRequests: [{
-            bids: [{
-              userId: {}
-            }]
+            bids: [{}]
           }],
           adUnits: [{}, {}]
         };
@@ -104,7 +102,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/pv');
       });
 
-      it('should include imuid as uid in pv payload', async function() {
+      it('should not read a raw bid.userId.imuid into the pv payload uid', async function() {
         const args = {
           auctionId: 'auc-1',
           timestamp: 1234567890,
@@ -125,7 +123,7 @@ describe('imAnalyticsAdapter', function() {
 
         expect(requests.length).to.equal(1);
         const payload = JSON.parse(await requests[0].data.text());
-        expect(payload.uid).to.equal('test-imuid');
+        expect(payload.uid).to.equal('');
       });
 
       it('should set uid to empty string when imuid is not available', async function() {
@@ -421,7 +419,7 @@ describe('imAnalyticsAdapter', function() {
         expect(requests[0].url).to.include('/won');
       });
 
-      it('should include uid in won payload', async function() {
+      it('should include uid (empty) in won payload', async function() {
         const clock = sandbox.useFakeTimers();
 
         imAnalyticsAdapter.track({
@@ -429,9 +427,7 @@ describe('imAnalyticsAdapter', function() {
           args: {
             auctionId: 'auc-1',
             bidderRequests: [{
-              bids: [{
-                userId: { imuid: 'test-imuid' }
-              }]
+              bids: [{}]
             }]
           }
         });
@@ -448,7 +444,7 @@ describe('imAnalyticsAdapter', function() {
 
         clock.tick(BID_WON_TIMEOUT + 10);
         const payload = JSON.parse(await requests[0].data.text());
-        expect(payload.uid).to.equal('test-imuid');
+        expect(payload.uid).to.equal('');
       });
 
       it('should not send if no won bids', function() {

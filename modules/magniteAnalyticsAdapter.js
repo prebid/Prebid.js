@@ -839,14 +839,6 @@ magniteAdapter.track = ({ eventType, args }) => {
         ]);
       }
 
-      // User ID Data included in auction
-      const userIds = Object.keys(deepAccess(args, 'bidderRequests.0.bids.0.userId', {})).map(id => {
-        return { provider: id, hasId: true };
-      });
-      if (userIds.length) {
-        auctionData.user = { ids: userIds };
-      }
-
       if (serverConfig) {
         auctionData.serverTimeoutMillis = serverConfig.timeout;
       }
