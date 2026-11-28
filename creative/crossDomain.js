@@ -110,7 +110,13 @@ export function renderer(win) {
     }
 
     const forward = [];
+    const pending = [];
     let handshakeComplete;
+    let rendererReady = false;
+
+    function forwardMessage(data) {
+      forward.forEach(cb => cb(data));
+    }
 
     // a message can be handled before the parser has created the implied <body> of a body-less document
     function whenBodyReady(fn) {
@@ -128,6 +134,9 @@ export function renderer(win) {
       } catch (e) {
         return;
       }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return;
+      }
       if (!handshakeComplete && data.message === MESSAGE_RESPONSE && data.adId === adId) {
         handshakeComplete = true;
         whenBodyReady(guard(() => {
@@ -138,20 +147,32 @@ export function renderer(win) {
           });
           renderer.onload = guard(function () {
             const W = renderer.contentWindow;
+            const script = W.document.createElement('script');
+            // Keep literal </script> strings in the JavaScript out of the HTML parser.
+            script.textContent = data.renderer;
+            W.document.body.appendChild(script);
             // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
             // does not appear to work if P comes from another frame
             W.Promise.resolve(W.render(data, { sendMessage, mkFrame, onMessage: (cb) => forward.push(guard(cb)) }, win)).then(
               () => sendMessage(MESSAGE_EVENT, { event: EVENT_AD_RENDER_SUCCEEDED }),
               onError
             );
+            // render() registers its listeners synchronously; its promise can depend on follow-up messages.
+            rendererReady = true;
+            pending.splice(0).forEach(forwardMessage);
           });
           // Attach 'srcdoc' after 'onload', otherwise the latter seems to randomly run prematurely in tests
           // https://stackoverflow.com/questions/62087163/iframe-onload-event-when-content-is-set-from-srcdoc
-          renderer.srcdoc = `<script>${data.renderer}</script>`;
+          // The native renderer, which may come from a different Prebid version, keeps its own frame by matching iframe[srcdoc*="render"].
+          renderer.srcdoc = '<!doctype html><html><head><!-- prebid renderer --></head><body></body></html>';
           win.document.body.appendChild(renderer);
         }));
       } else if (handshakeComplete) {
-        forward.forEach(cb => cb(data));
+        if (rendererReady) {
+          forwardMessage(data);
+        } else {
+          pending.push(data);
+        }
       }
     }
   };
