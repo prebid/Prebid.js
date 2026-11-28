@@ -78,7 +78,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       method: 'POST',
       url: BIDDER_ENDPOINT_URL,
       data: openRTBRequest,
-      options: { contentType: 'application/json' },
       bids: [validBidRequest],
     };
   });

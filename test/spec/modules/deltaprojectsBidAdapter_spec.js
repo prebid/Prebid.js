@@ -85,6 +85,10 @@ describe('deltaprojectsBidAdapter', function() {
       expect(bannerRequest.method).to.equal('POST');
     });
 
+    it('does not set a contentType, so no CORS preflight is triggered', function () {
+      expect(bannerRequest.options?.contentType).to.be.undefined;
+    });
+
     it('sends screen dimensions', function () {
       expect(bannerRequestBody.device.w).to.equal(screen.width);
       expect(bannerRequestBody.device.h).to.equal(screen.height);
