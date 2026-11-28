@@ -77,6 +77,12 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data).slots[0].slotname).to.equal('_main_page_-leaderboard');
     });
 
+    it('should not set a contentType, so no CORS preflight is triggered', function () {
+      const req = spec.buildRequests([minimalBid()], bidderRequest);
+
+      expect(req.options?.contentType).to.be.undefined;
+    });
+
     it('should include all extra bid params', function () {
       const req = spec.buildRequests([bidWithParams({ 'ag': '25' })], bidderRequest);
 
