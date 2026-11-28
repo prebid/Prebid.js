@@ -131,7 +131,6 @@ export const spec = {
         url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=pbjs%2F$prebid.version$`,
         data: openRtbBidRequest,
         options: {
-          contentType: 'application/json',
           withCredentials: true
         }
       };
