@@ -262,6 +262,12 @@ describe('Pangle Adapter with video', function() {
       expect(requests[0].method).to.equal('POST');
     });
 
+    it('should not set a contentType, so no CORS preflight is triggered', function() {
+      const requests = spec.buildRequests(videoBidRequest, bidderRequest);
+      expect(requests[0].options?.contentType).to.be.undefined;
+      expect(requests[0].options.withCredentials).to.equal(true);
+    });
+
     it('should have a valid URL and payload for an out-stream video bid', function () {
       const requests = spec.buildRequests(videoBidRequest, bidderRequest);
       expect(requests[0].url).to.equal('https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads');
