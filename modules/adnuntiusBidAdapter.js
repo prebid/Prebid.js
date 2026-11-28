@@ -378,6 +378,13 @@ export const spec = {
         networks[network].metaData = payloadRelatedData;
       }
 
+      ['excludedLineItems', 'excludedCreatives'].forEach(key => {
+        const ids = bid.params?.[key];
+        if (isArray(ids) && ids.length > 0) {
+          networks[network][key] = [...new Set((networks[network][key] || []).concat(ids))];
+        }
+      });
+
       const bidTargeting = { ...bid.params.targeting || {} };
       targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest, bid);
       const mediaTypes = bid.mediaTypes || {};
