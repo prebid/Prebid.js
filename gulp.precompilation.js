@@ -241,7 +241,8 @@ function copyVerbatim() {
     `${name}/**/*.d.ts`,
     `${name}/**/*.d.mts`,
   ]).concat([
-    '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
+    '!./src/types/local/**/*', // exclude "local", type definitions that should not be visible to consumers
+    '!./test/fixtures/schema/**/*', // inputs to schema generation tests, some of them invalid on purpose
   ]), {base: '.', since: gulp.lastRun(copyVerbatim)})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }

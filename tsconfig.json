@@ -33,6 +33,7 @@
     "./dist/**/*",
     "./build/**/*",
     "./node_modules/**/*",
-    "integrationExamples/**/*"
+    "integrationExamples/**/*",
+    "test/fixtures/schema/typeError/**/*" // a type error on purpose
   ]
 }

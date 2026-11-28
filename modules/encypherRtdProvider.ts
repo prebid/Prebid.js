@@ -97,7 +97,7 @@ function base64url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function decodeBase64url(value: unknown): Uint8Array {
+function decodeBase64url(value: unknown): Uint8Array<ArrayBuffer> {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]+$/.test(value)) throw new Error('invalid base64url');
   const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
   const binary = atob(padded);
@@ -315,7 +315,7 @@ async function verifyRecord(record: C2paSignalV1, jwks: unknown, publisherDomain
   const jwk = selectJwk(jwks, protectedHeader.kid);
   const recordRevision = validClaims(claims, record, publisherDomain, urlHash, Math.floor(Date.now() / 1000));
   if (!jwk || recordRevision === null) return null;
-  let signature: Uint8Array;
+  let signature: Uint8Array<ArrayBuffer>;
   try {
     signature = decodeBase64url(segments[2]);
   } catch {

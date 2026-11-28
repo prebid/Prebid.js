@@ -1,0 +1,65 @@
+name: Check JSON schema changes
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  check:
+    name: Compare JSON schemas with the base branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Calculate base SHA
+        id: base
+        run: |
+          echo "base=$(git rev-parse HEAD^1)" >> $GITHUB_OUTPUT
+      - name: Check out base branch
+        run: |
+          git checkout ${{ steps.base.outputs.base }}
+      - name: Install dependencies for base branch
+        uses: ./.github/actions/npm-ci
+      - name: Generate base branch schemas
+        run: |
+          mkdir -p "${{ runner.temp }}/base-schema"
+          # a base branch without the task has no schemas
+          if npx gulp --tasks-simple | grep -qx generate-schemas; then
+            npx gulp generate-schemas --out "${{ runner.temp }}/base-schema"
+          fi
+      - name: Check out head branch
+        run: |
+          git checkout ${{ github.sha }}
+      - name: Install dependencies
+        uses: ./.github/actions/npm-ci
+      - name: Compare
+        id: compare
+        run: |
+          report="${{ runner.temp }}/schema-report.md"
+          if npx gulp check-schema --against "${{ runner.temp }}/base-schema" --report "$report"; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          elif [ -s "$report" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            cat "$report" >> $GITHUB_STEP_SUMMARY
+          else
+            exit 1
+          fi
+      - name: Prepare comment
+        if: ${{ steps.compare.outputs.changed == 'true' }}
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('${{ runner.temp }}/schema-report.md').toString();
+            fs.writeFileSync('${{ runner.temp }}/comment.json', JSON.stringify({
+              issue_number: context.issue.number,
+              body: `This PR changes the JSON schemas published in \`dist/schema/\`. The next release will publish them with a new \`$id\`; consumers that pinned the previous one should review the change.\n\n${report}`
+            }));
+      - name: Upload comment data
+        if: ${{ steps.compare.outputs.changed == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: comment
+          path: ${{ runner.temp }}/comment.json
