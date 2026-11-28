@@ -5,8 +5,21 @@ import {
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import { attachIdSystem } from '../../../modules/userId/index.js';
+import {
+  attachIdSystem,
+  COOKIE_SUFFIXES,
+  coreStorage,
+  getConsentHash,
+  HTML5_SUFFIXES,
+  init,
+  setSubmoduleRegistry
+} from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
+import { config } from 'src/config.js';
+import { hook } from 'src/hook.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import { allConsent } from 'src/consentHandler.js';
+import 'src/prebid.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
@@ -830,6 +843,174 @@ describe('LotameId', function() {
       });
     });
   });
+
+  describe('storage handle', function () {
+    const CACHED_ID = 'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87c';
+    const NEW_ID = 'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87f';
+    const STORAGE = { name: 'panoramaId', type: 'cookie&html5', expires: 7 };
+    let handle;
+
+    beforeEach(function () {
+      handle = {
+        get: sinon.stub(),
+        manage: sinon.spy(),
+        set: sinon.spy(),
+        touch: sinon.spy(),
+        remove: sinon.spy(),
+      };
+    });
+
+    function handleWasUsed() {
+      return ['get', 'manage', 'set', 'touch', 'remove'].some(method => handle[method].called);
+    }
+
+    function freshCache() {
+      getCookieStub.withArgs('panoramaId_expiry').returns(String(Date.now() + 100000));
+      getCookieStub.withArgs('panoramaId').returns(CACHED_ID);
+    }
+
+    function callbackResult(method, config, body) {
+      const callback = sinon.spy();
+      lotamePanoramaIdSubmodule[method](config, undefined, undefined, handle).callback(callback);
+      server.requests[0].respond(200, responseHeader, body == null ? '' : JSON.stringify(body));
+      sinon.assert.calledOnce(callback);
+      return callback.args[0][0];
+    }
+
+    ['getId', 'extendId'].forEach(method => {
+      describe(method, function () {
+        [
+          ['without storage', {}, false],
+          ['with storage', { storage: STORAGE }, true],
+        ].forEach(([desc, config, managed]) => {
+          describe(desc, function () {
+            it(`should ${managed ? '' : 'not '}manage storage`, function () {
+              freshCache();
+              lotamePanoramaIdSubmodule[method](config, undefined, undefined, handle);
+              expect(handle.manage.called).to.equal(managed);
+              if (!managed) {
+                expect(handleWasUsed()).to.be.false;
+              }
+            });
+
+            it('should return the cached id while it is fresh', function () {
+              freshCache();
+              expect(lotamePanoramaIdSubmodule[method](config, undefined, undefined, handle)).to.eql({ id: CACHED_ID });
+            });
+
+            it('should return no id when the client has not consented', function () {
+              getCookieStub.withArgs('panoramaId_expiry_1234').returns(String(Date.now() + 100000));
+              freshCache();
+              expect(lotamePanoramaIdSubmodule[method]({ ...config, params: { clientId: '1234' } }, undefined, undefined, handle))
+                .to.eql({ id: undefined, reason: 'NO_CLIENT_CONSENT' });
+            });
+
+            it('should call back with the id the server returns', function () {
+              expect(callbackResult(method, config, { profile_id: 'profile', core_id: NEW_ID, expiry_ts: 10 })).to.equal(NEW_ID);
+            });
+
+            it('should call back with no id when the server clears it', function () {
+              expect(callbackResult(method, config, { profile_id: 'profile', expiry_ts: 10 })).to.be.undefined;
+              sinon.assert.calledWith(setCookieStub, 'panoramaId', '');
+            });
+
+            it('should call back with no id when the response is empty', function () {
+              expect(callbackResult(method, config)).to.be.undefined;
+            });
+
+            it('should not write through the handle', function () {
+              callbackResult(method, config, { profile_id: 'profile', core_id: NEW_ID, expiry_ts: 10 });
+              sinon.assert.notCalled(handle.set);
+              sinon.assert.notCalled(handle.touch);
+              sinon.assert.notCalled(handle.remove);
+            });
+          });
+        });
+
+        describe('with storage and a copy stored by the User ID module', function () {
+          beforeEach(function () {
+            getCookieStub.withArgs('panoramaId_cst').returns('hash');
+          });
+
+          it('should remove it', function () {
+            lotamePanoramaIdSubmodule[method]({ storage: STORAGE }, undefined, undefined, handle);
+            sinon.assert.callOrder(handle.manage, handle.remove);
+          });
+
+          it('should remove it before reading its own cache', function () {
+            freshCache();
+            lotamePanoramaIdSubmodule[method]({ storage: STORAGE }, undefined, undefined, handle);
+            sinon.assert.callOrder(handle.remove, getCookieStub.withArgs('panoramaId'));
+          });
+
+          it('should keep its own localStorage panoramaId, which remove() deletes', function () {
+            getLocalStorageStub.withArgs('panoramaId').returns(CACHED_ID);
+            lotamePanoramaIdSubmodule[method]({ storage: STORAGE }, undefined, undefined, handle);
+            sinon.assert.callOrder(handle.remove, setLocalStorageStub.withArgs('panoramaId', CACHED_ID));
+          });
+
+          it('should be detected from localStorage too', function () {
+            getCookieStub.withArgs('panoramaId_cst').returns(null);
+            getLocalStorageStub.withArgs('panoramaId_cst').returns('hash');
+            lotamePanoramaIdSubmodule[method]({ storage: STORAGE }, undefined, undefined, handle);
+            sinon.assert.calledOnce(handle.remove);
+          });
+        });
+
+        it('should not remove anything when the User ID module stored nothing', function () {
+          freshCache();
+          handle.get.returns(CACHED_ID);
+          lotamePanoramaIdSubmodule[method]({ storage: STORAGE }, undefined, undefined, handle);
+          sinon.assert.notCalled(handle.remove);
+          sinon.assert.neverCalledWith(setLocalStorageStub, 'panoramaId', sinon.match.any);
+        });
+
+        it('should not use the handle when the storage name is wrong', function () {
+          lotamePanoramaIdSubmodule[method]({ storage: { ...STORAGE, name: 'other' } }, undefined, undefined, handle);
+          expect(handleWasUsed()).to.be.false;
+        });
+      });
+    });
+
+    it('should only log an invalid storage type', function () {
+      freshCache();
+      expect(lotamePanoramaIdSubmodule.getId({ storage: { ...STORAGE, type: 'other' } }, undefined, undefined, handle))
+        .to.eql({ id: CACHED_ID });
+      sinon.assert.calledOnce(utils.logError);
+    });
+
+    it('should not log a missing storage type', function () {
+      freshCache();
+      lotamePanoramaIdSubmodule.getId({ storage: { name: 'panoramaId' } }, undefined, undefined, handle);
+      sinon.assert.notCalled(utils.logError);
+    });
+  });
+
+  describe('onDataDeletionRequest', function () {
+    beforeEach(function () {
+      sandbox.stub(lotamePanoramaIdSubmodule, 'findRootDomain').returns('example.com');
+    });
+
+    function clearedKeys() {
+      const cookies = setCookieStub.args
+        .filter(([, value, expires, , domain]) => value === '' && new Date(expires).getTime() === 0 && domain === 'example.com')
+        .map(([key]) => key);
+      const localStorage = removeFromLocalStorageStub.args.map(([key]) => key);
+      expect(cookies).to.have.members(localStorage);
+      return localStorage;
+    }
+
+    it('should clear its own keys', function () {
+      lotamePanoramaIdSubmodule.onDataDeletionRequest({ name: 'lotamePanoramaId' });
+      expect(clearedKeys()).to.have.members(['panoramaId', 'panoramaId_expiry', '_cc_id']);
+    });
+
+    it('should clear the client expiry', function () {
+      lotamePanoramaIdSubmodule.onDataDeletionRequest({ name: 'lotamePanoramaId', params: { clientId: '1234' } });
+      expect(clearedKeys()).to.have.members(['panoramaId', 'panoramaId_expiry', '_cc_id', 'panoramaId_expiry_1234']);
+    });
+  });
+
   describe('eid', () => {
     before(() => {
       attachIdSystem(lotamePanoramaIdSubmodule);
@@ -845,5 +1026,126 @@ describe('LotameId', function() {
         uids: [{ id: 'some-random-id-value', atype: 1 }],
       });
     });
+  });
+});
+
+describe('LotameId through the User ID module with storage configured', function () {
+  const STALE_ID = 'stale-panorama-id';
+  const NEW_ID = 'new-panorama-id';
+  const STORAGE_NAME = 'panoramaId';
+  const EXPIRED = new Date(0).toUTCString();
+  const LOTAME_KEYS = ['panoramaId_expiry', 'panoramaId_expiry_1234', '_cc_id'];
+  let sandbox;
+
+  function clearStorage() {
+    COOKIE_SUFFIXES.forEach(suffix => coreStorage.setCookie(STORAGE_NAME + suffix, '', EXPIRED));
+    HTML5_SUFFIXES.forEach(suffix => coreStorage.removeDataFromLocalStorage(STORAGE_NAME + suffix));
+    LOTAME_KEYS.forEach(key => {
+      coreStorage.setCookie(key, '', EXPIRED);
+      coreStorage.removeDataFromLocalStorage(key);
+    });
+  }
+
+  function seedCoreCopy(id) {
+    const future = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
+    coreStorage.setCookie(STORAGE_NAME, id, future);
+    coreStorage.setCookie(`${STORAGE_NAME}_cst`, getConsentHash(), future);
+    coreStorage.setDataInLocalStorage(STORAGE_NAME, id);
+    coreStorage.setDataInLocalStorage(`${STORAGE_NAME}_exp`, future);
+    coreStorage.setDataInLocalStorage(`${STORAGE_NAME}_cst`, getConsentHash());
+  }
+
+  function startUserId(params) {
+    init(config);
+    setSubmoduleRegistry([lotamePanoramaIdSubmodule]);
+    config.setConfig({
+      userSync: {
+        syncDelay: 0,
+        auctionDelay: 100,
+        userIds: [{
+          name: 'lotamePanoramaId',
+          params,
+          storage: { name: STORAGE_NAME, type: 'cookie&html5', expires: 7 }
+        }]
+      }
+    });
+  }
+
+  async function waitForRequest() {
+    for (let i = 0; i < 20 && server.requests.length === 0; i++) {
+      await new Promise(resolve => setTimeout(resolve));
+    }
+  }
+
+  function expectCoreCopyRemoved() {
+    expect(coreStorage.getCookie(`${STORAGE_NAME}_cst`)).to.not.be.ok;
+    expect(coreStorage.getDataFromLocalStorage(`${STORAGE_NAME}_cst`)).to.not.be.ok;
+    expect(coreStorage.getDataFromLocalStorage(`${STORAGE_NAME}_exp`)).to.not.be.ok;
+    expect(coreStorage.getCookie(STORAGE_NAME)).to.not.equal(STALE_ID);
+  }
+
+  before(function () {
+    hook.ready();
+  });
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'logInfo');
+    allConsent.reset();
+    clearStorage();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    clearStorage();
+    config.resetConfig();
+    init(config);
+  });
+
+  it(`should use the id from Lotame's server instead of a stale stored copy, and remove that copy`, async function () {
+    seedCoreCopy(STALE_ID);
+    startUserId();
+    const ids = getGlobal().getUserIdsAsync();
+    await waitForRequest();
+
+    expect(getGlobal().getUserIds().lotamePanoramaId).to.be.undefined;
+    expectCoreCopyRemoved();
+    server.requests[0].respond(200, responseHeader, JSON.stringify({
+      profile_id: 'profile',
+      core_id: NEW_ID,
+      expiry_ts: Date.now() + 60 * 60 * 1000,
+    }));
+    await ids;
+
+    expect(getGlobal().getUserIds().lotamePanoramaId).to.equal(NEW_ID);
+    expect(coreStorage.getDataFromLocalStorage(STORAGE_NAME)).to.equal(NEW_ID);
+    expectCoreCopyRemoved();
+  });
+
+  it(`should drop a stale stored copy when Lotame's server clears the id`, async function () {
+    seedCoreCopy(STALE_ID);
+    startUserId();
+    const ids = getGlobal().getUserIdsAsync();
+    await waitForRequest();
+    server.requests[0].respond(200, responseHeader, JSON.stringify({
+      profile_id: 'profile',
+      expiry_ts: Date.now() + 60 * 60 * 1000,
+    }));
+    await ids;
+
+    expect(getGlobal().getUserIds().lotamePanoramaId).to.be.undefined;
+    expectCoreCopyRemoved();
+  });
+
+  it('should not serve a stale stored copy without client consent', async function () {
+    seedCoreCopy(STALE_ID);
+    coreStorage.setDataInLocalStorage('panoramaId_expiry', String(Date.now() + 60 * 60 * 1000));
+    coreStorage.setDataInLocalStorage('panoramaId_expiry_1234', String(Date.now() + 60 * 60 * 1000));
+    startUserId({ clientId: '1234' });
+    await getGlobal().getUserIdsAsync();
+
+    expect(server.requests.length).to.equal(0);
+    expect(getGlobal().getUserIds().lotamePanoramaId).to.be.undefined;
+    expectCoreCopyRemoved();
   });
 });
