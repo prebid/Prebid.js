@@ -6,6 +6,10 @@ import { Renderer } from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('./richaudienceBidAdapter.d.ts').RichaudienceBidParams} RichaudienceBidParams
+ */
+
 const BIDDER_CODE = 'richaudience';
 
 export const spec = {

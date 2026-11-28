@@ -5,6 +5,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { CLIENT_SECTIONS, hasSection } from '../src/fpd/oneClient.js';
 
+/**
+ * @typedef {import('./rtbhouseBidAdapter.d.ts').RtbhouseBidParams} RtbhouseBidParams
+ */
+
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
