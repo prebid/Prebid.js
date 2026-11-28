@@ -11,8 +11,8 @@ exports.config = {
   ],
   logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
   bail: 1,
-  // wrapping workers in xvfb-run (found on ubuntu-26.04 runners) breaks their IPC: "write EINVAL". Browsers are headless or remote.
-  autoXvfb: false,
+  // browsers are headless or remote, so there is nothing for a display server to do
+  displayServerEnabled: false,
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.
   connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
   connectionRetryCount: 3, // additional retries for transient session issues
