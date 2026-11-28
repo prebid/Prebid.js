@@ -18,11 +18,7 @@ const utils = {
    * "still not existing", regardless of why the first attempt failed.
    */
   topFrame: function() {
-    // Deliberately a no-op on W3C sessions: webdriverio's bidi implementation tracks
-    // the active context itself, and switching to the top level mid-test makes it
-    // report "execution contexts cleared" and lose the frame. Legacy drivers have no
-    // such bookkeeping and do need the explicit reset.
-    return browser.isW3C === false ? browser.switchToFrame(null) : Promise.resolve();
+    return browser.switchFrame(null);
   },
   switchFrames: async function(...frameRefs) {
     for (const frameRef of frameRefs) {
@@ -32,19 +28,6 @@ const utils = {
   switchFrame: async function(frameRef) {
     const iframe = await $(frameRef);
     await iframe.waitForExist({ timeout: DEFAULT_TIMEOUT });
-    // Legacy JSONWire drivers (the chromedriver 2.x that ships with older BrowserStack
-    // images) reject webdriverio's frame locator: it posts the entire element object,
-    // which deserializes to a HashMap rather than a WebElement, giving
-    // "Unsupported frame locator: java.util.HashMap". They do accept the legacy
-    // `{ELEMENT: id}` reference.
-    //
-    // Do not be tempted to pass a frame *index* instead. It is accepted by every
-    // dialect, but this driver does not order frames the way `window.frames` does,
-    // so a correctly computed index silently selects a different document - which
-    // looks exactly like the creative having failed to render.
-    if (browser.isW3C === false) {
-      return browser.switchToFrame({ ELEMENT: iframe.elementId });
-    }
     await browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 5000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
