@@ -125,10 +125,7 @@ export const spec = {
     return {
       method: REQUEST_METHOD,
       url: SSP_ENDPOINT,
-      data: payload,
-      options: {
-        contentType: 'application/json'
-      }
+      data: payload
     };
   },
   interpretResponse(serverResponse) {
