@@ -23,7 +23,11 @@ pbjs.setConfig({
       waitForIt: true,
       params: {
         timeout: 300,
-        telemetry: true
+        telemetry: true,
+        gamTargeting: {
+          includeAttestationId: true,
+          packages: ['VPP-V1']
+        }
       }
     }]
   }
@@ -35,8 +39,40 @@ pbjs.setConfig({
 | `timeout` | `300` | Provider deadline in milliseconds for WebCrypto hashing plus signal and JWKS reads. The effective budget is the smaller of this value and the RTD core `auctionDelay`. A provider with no RTD delay budget does not start asynchronous work. |
 | `telemetry` | unset | Set to `true` to emit diagnostic-only delivery events after the auction callback. |
 | `adoptionReporting` | `true` | Enables privacy-minimized, domain-level adoption reporting on consent-allowed signal lookups. Set to `false` to stop future adoption observations without changing auction behavior. |
+| `gamTargeting` | `false` | Ad server key-values for GAM line items. Either `false` or an object with the optional `includeAttestationId` boolean and the optional `packages` string array. See Targeting Contract V1. |
 
 The signal origin is not configurable. Lookups and telemetry use exactly `https://signals.encypher.com`.
+
+## Targeting Contract V1: GAM key-values
+
+With `gamTargeting` set to an object, the module implements the standard RTD `getTargetingData` hook, so Prebid's ad server targeting carries the result for each ad unit that reached a verified injection in that auction. The module makes no extra request and adds no auction delay.
+
+| Key | Value | Emitted when |
+| --- | --- | --- |
+| `encypher_verified` | `"1"` | The ad unit received `ortb2Imp.ext.c2pa` in this auction. |
+| `encypher_att` | attestation ID, the same value as `ortb2Imp.ext.c2pa.id` | `includeAttestationId` is `true` and the ID matches `[A-Za-z0-9_-]{1,32}`. |
+| `encypher_pkg` | array of publisher package codes, copied verbatim from `packages` | `packages` is non-empty. |
+
+Rules:
+
+- Absence is the negative signal. A miss, stale, revoked, invalid, or timed-out outcome emits nothing, and neither does an auction that a consent gate suppressed.
+- The module emits targeting only for the closing auction's verified injections. Overlapping auctions remain separate even when ad unit codes or publisher-supplied auction IDs are reused. Ad server refresh isolation also requires the core fix or wrapper correction described below.
+- Each `packages` entry must match `[A-Za-z0-9_-]{1,32}`. The module never derives package codes from provenance evidence.
+- A malformed `gamTargeting` value, an unknown key inside it, or a rejected package code logs one warning at `init` and leaves targeting off. Existing installs that omit the parameter see no behavior change.
+- The serialized key-value payload is at most 256 bytes per ad unit. On overflow the module drops `encypher_pkg`, then `encypher_att`, then `encypher_verified`. Only `encypher_pkg` can reach the cap in practice: with `encypher_pkg` gone the payload is at most 75 bytes, because the attestation ID is limited to 32 characters.
+- Keys are lowercase ASCII; values are ASCII. Package codes and attestation IDs may contain uppercase letters. No URL, digest, price, deal, or user value appears in targeting.
+
+For repeated auctions using the same ad unit code, module-only GAM targeting requires a Prebid build containing the [latest-auction ad unit targeting fix](https://github.com/prebid/Prebid.js/pull/16187). Older cores read `adserverTargeting` from retained auctions, so an earlier verified result can reappear after a later miss or revocation. Clearing GPT keys **before** `pbjs.setTargetingForGPTAsync()` is ineffective: that call recomputes and reapplies the stale values. Verify the actual wrapper build with a verified-then-miss refresh; the Encypher module version alone does not establish that the core fix is present.
+
+Until that core fix is in the wrapper build, do not rely on module-only targeting for refreshed slots. A wrapper correction must run **after** the last Prebid targeting write and **before every GPT refresh**, using the closing auction's result and current consent. This also applies when `presetGPTTargeting` writes targeting automatically. The correction must clear all three Encypher keys when that auction is unverified or transmission is no longer permitted; retained `getAdserverTargeting` values are not evidence of the current auction's verification.
+
+## GAM line-item setup
+
+1. In Google Ad Manager, open Inventory, then Key-values, and create `encypher_verified` with the predefined value `1`. Create `encypher_att` as a freeform key only if you set `includeAttestationId`, and `encypher_pkg` with one predefined value per package code you configured.
+2. Apply the keys to the matching GPT **slot**, not to the page-level `googletag.pubads()` service. `pbjs.setTargetingForGPTAsync()` handles slot matching automatically, subject to the repeated-auction caveat above. Manual code must use `slot.setTargeting` only for the slot whose `getAdUnitPath()` or `getSlotElementId()` matches the ad unit code, and clear its three Encypher keys when the closing auction is unverified or current consent blocks transmission. Do not treat the merged `pbjs.getAdserverTargetingForAdUnitCode(code)` result as current-auction verification on an affected core. Page-level keys survive slot-level clearing and can incorrectly label other slots.
+3. Add `encypher_verified` is `1` to the line item's custom targeting. For a programmatic guaranteed or preferred deal, set the same custom targeting on the proposal line item; the key is ordinary GAM custom targeting and needs no buyer-side change.
+4. For lift measurement, duplicate the line item with `encypher_verified` is none of `1` as the negative control, and keep every other setting identical.
+5. Confirm delivery on a signed page and on an unsigned control page before raising the line item's priority. An unsigned page must show no `encypher_verified` value at all.
 
 ## `imp.ext.c2pa` data injected
 
@@ -64,7 +100,7 @@ The module adds one compact object to each impression and preserves all existing
 | `ref` | HTTPS URL | Content-addressed public evidence URL derived from the signed manifest SHA-256 digest. Its canonical 43-character unpadded base64url suffix encodes 32 bytes. |
 | `att` | compact JWS | ES256 attestation binding the record ID to the URL digest, exact publisher domain, manifest digest, policy version, revision, and expiration. |
 
-The serialized extension is limited to 1 KiB.
+The measured limit is 1024 UTF-8 bytes of `JSON.stringify` over the four-field record itself, as returned by the signal origin, not over the surrounding `ext` object. A record one byte over the limit is classified invalid and injects nothing, so a minting service must check the compact record's own serialized size.
 
 ## Validation, freshness, and fail-open behavior
 
@@ -87,6 +123,8 @@ The module invokes the callback exactly once within the configured total deadlin
 
 When configured, the module establishes auction-local shallow copies of the ad-unit, `ortb2Imp`, and impression `ext` objects before RTD providers start. Publisher-supplied objects and any existing publisher `c2pa` value remain unchanged. After a verified hit, the module adds a fresh four-field carrier in place on that stable auction graph. References captured by other RTD providers remain live, so their later asynchronous writes and Encypher's carrier both reach the auction.
 
+Because of those copies, `pbjs.adUnits` never carries the record. Wrapper code that wants to read the carrier itself, instead of using `gamTargeting`, must read `adUnits[].ortb2Imp.ext.c2pa` from the `auctionEnd` payload. Core normalization can clone `ortb2Imp`; the four-field carrier value survives, not its object identity.
+
 ## Trust split and residual authority risk
 
 The record JWS authenticates the carrier and its signed claims. The pinned `https://api.encypher.com` JWKS origin supplies the verification key. The exact `https://signals.encypher.com` origin is the online authority for the current `ready`, `miss`, `revoked`, or `stale` decision and dataset version.
@@ -101,7 +139,9 @@ The provider skips all work when COPPA applies, the US Privacy string records a 
 
 GPP consent is checked independently of the legacy US Privacy string. Applicable US national and state sections 7-12 block transmission on sale, sharing, targeted-advertising opt-outs, or GPC. Object and segmented section representations are supported. Unknown applicable sections, missing or malformed consent fields, and unresolved configured GPP consent fail closed. Only applicable sections are inspected; an exact `[-1]` applicable-section list means no GPP section applies. Other privacy gates still apply.
 
-Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
+Blocked calls complete the RTD callback without URL hashing, signal or JWKS requests, cached-signal injection, diagnostics, or adoption reporting. The module emits no targeting for a blocked auction and checks consent again when targeting is requested. Preventing an older core from reapplying a retained auction's GAM values still requires the core fix or the after-Prebid, before-refresh wrapper correction described above. Ordinary auctions continue. Consent is checked again for every auction, including auctions that could otherwise reuse a cached signal.
+
+The targeting-time check uses the consent snapshot supplied by Prebid's RTD core; the module does not poll the CMP for mid-auction changes. A wrapper correction must use its own current consent decision immediately before refresh, and clear the keys if transmission is no longer permitted.
 
 Allowed lookup requests disclose the canonical URL digest, canonical publisher hostname, and module version to the fixed signal authority. They do not upload the raw URL, page content, manifest, cookies, bids, prices, deals, or creatives. Requests omit browser credentials and referrers. The URL digest is not an anonymization guarantee; canonical URLs can contain visitor-specific query values.
 
