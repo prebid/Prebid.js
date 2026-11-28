@@ -12,6 +12,10 @@ import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { deepAccess } from '../../../src/utils.js';
+import { auctionManager } from '../../../src/auctionManager.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { ACTIVITY_TRANSMIT_EIDS } from '../../../src/activities/activities.js';
+import { MODULE_TYPE_ANALYTICS } from '../../../src/activities/modules.js';
 
 const events = require('src/events.js');
 const utils = require('src/utils.js');
@@ -680,31 +684,92 @@ describe('magnite analytics adapter', function () {
       });
     });
 
-    it('should pass along user ids', function () {
-      const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
-      auctionInit.bidderRequests[0].bids[0].userId = {
-        criteoId: 'sadfe4334',
-        lotamePanoramaId: 'asdf3gf4eg',
-        pubcid: 'dsfa4545-svgdfs5',
-        sharedId: { id1: 'asdf', id2: 'sadf4344' }
-      };
+    describe('user ids', function () {
+      let auctionFpd;
 
-      events.emit(AUCTION_INIT, auctionInit);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
-      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
-      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+      beforeEach(function () {
+        auctionFpd = {};
+        sandbox.stub(auctionManager.index, 'getAuction').callsFake(({ auctionId }) => {
+          if (auctionFpd[auctionId]) {
+            return { getFPD: () => ({ global: auctionFpd[auctionId], bidder: {} }) };
+          }
+        });
+      });
 
-      const message = JSON.parse(server.requests[0].requestBody);
+      function runAuction(auctionInit = MOCK.AUCTION_INIT) {
+        events.emit(AUCTION_INIT, auctionInit);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+        return JSON.parse(server.requests[0].requestBody);
+      }
 
-      expect(message.auctions[0].user).to.deep.equal({
-        ids: [
-          { provider: 'criteoId', 'hasId': true },
-          { provider: 'lotamePanoramaId', 'hasId': true },
-          { provider: 'pubcid', 'hasId': true },
-          { provider: 'sharedId', 'hasId': true },
-        ]
+      it("should pass along the sources of the auction's EIDs", function () {
+        auctionFpd[MOCK.AUCTION_INIT.auctionId] = {
+          user: {
+            eids: [
+              { source: 'criteo.com', uids: [{ id: 'sadfe4334', atype: 1 }] }
+            ],
+            ext: {
+              eids: [
+                { source: 'crwdcntrl.net', uids: [{ id: 'asdf3gf4eg', atype: 1 }] },
+                { source: 'pubcid.org', uids: [{ id: 'dsfa4545-svgdfs5', atype: 1 }] },
+                { source: 'criteo.com', uids: [{ id: 'sadfe4334', atype: 1 }] }
+              ]
+            }
+          }
+        };
+
+        const message = runAuction();
+
+        expect(message.auctions[0].user).to.deep.equal({
+          ids: [
+            { provider: 'criteo.com', hasId: true },
+            { provider: 'crwdcntrl.net', hasId: true },
+            { provider: 'pubcid.org', hasId: true },
+          ]
+        });
+      });
+
+      it('should not send user when the auction has no EIDs', function () {
+        auctionFpd[MOCK.AUCTION_INIT.auctionId] = { user: { ext: { eids: [] } } };
+        expect(runAuction().auctions[0].user).to.equal(undefined);
+      });
+
+      it('should not send user when there is no first party data for the auction (e.g. no User ID module)', function () {
+        expect(runAuction().auctions[0].user).to.equal(undefined);
+      });
+
+      it('should not send user when transmitEids is denied to the analytics adapter', function () {
+        auctionFpd[MOCK.AUCTION_INIT.auctionId] = {
+          user: { ext: { eids: [{ source: 'pubcid.org', uids: [{ id: 'dsfa4545-svgdfs5', atype: 1 }] }] } }
+        };
+        const unregister = registerActivityControl(ACTIVITY_TRANSMIT_EIDS, 'test', (params) => {
+          if (params.componentType === MODULE_TYPE_ANALYTICS && params.componentName === 'magnite') {
+            return { allow: false };
+          }
+        });
+        let message;
+        try {
+          message = runAuction();
+        } finally {
+          unregister();
+        }
+        expect(message.auctions[0].user).to.equal(undefined);
+      });
+
+      it('should not read user ids from a raw bid.userId', function () {
+        const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+        auctionInit.bidderRequests[0].bids[0].userId = {
+          criteoId: 'sadfe4334',
+          lotamePanoramaId: 'asdf3gf4eg',
+          pubcid: 'dsfa4545-svgdfs5',
+          sharedId: { id1: 'asdf', id2: 'sadf4344' }
+        };
+
+        expect(runAuction(auctionInit).auctions[0].user).to.equal(undefined);
       });
     });
 

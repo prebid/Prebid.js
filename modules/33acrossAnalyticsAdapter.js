@@ -449,7 +449,8 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         bids: [],
       };
     }),
-    userIds: Object.keys(bidderRequests?.[0]?.bids?.[0]?.userId || {}),
+    // Since Prebid 10, user IDs are not set on bids (only as EIDs in ortb2.user.ext.eids)
+    userIds: [],
   };
 
   locals.transactionManagers[auctionId] ||=
